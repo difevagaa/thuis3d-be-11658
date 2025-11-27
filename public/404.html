@@ -20,8 +20,9 @@
         var search = location.search;
         var hash = location.hash;
         
-        // Store the redirect path
-        sessionStorage.setItem('redirect', path + search + hash);
+        // Store the redirect path (without leading slash to avoid double slashes)
+        var redirectPath = path + search + hash;
+        sessionStorage.setItem('redirect', redirectPath);
         
         // Redirect to the base URL (index.html will handle the routing)
         location.replace(
@@ -33,8 +34,8 @@
   </head>
   <body>
     <noscript>
-      <p>Por favor, habilita JavaScript para ver este sitio web.</p>
-      <p>Please enable JavaScript to view this website.</p>
+      <p lang="es">Por favor, habilita JavaScript para ver este sitio web.</p>
+      <p lang="en">Please enable JavaScript to view this website.</p>
     </noscript>
   </body>
 </html>

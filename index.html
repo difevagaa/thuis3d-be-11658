@@ -130,7 +130,9 @@
         var redirect = sessionStorage.getItem('redirect');
         if (redirect) {
           sessionStorage.removeItem('redirect');
-          window.history.replaceState(null, null, '/' + redirect);
+          // Ensure no double slashes by removing leading slash if present
+          var path = redirect.charAt(0) === '/' ? redirect : '/' + redirect;
+          window.history.replaceState(null, null, path);
         }
       })();
     </script>
