@@ -40,9 +40,10 @@ export default function GiftCard() {
   const [showCustomAmount, setShowCustomAmount] = useState(false);
 
   // Calculate the display amount for preview
+  // Show 0 when no amount selected yet, otherwise show the selected amount
   const displayAmount = buyForm.amount === "custom" 
     ? parseFloat(buyForm.customAmount) || 0
-    : parseFloat(buyForm.amount) || 50;
+    : buyForm.amount ? parseFloat(buyForm.amount) : 0;
 
   // Handle amount selection
   const handleAmountSelect = (amount: number | "custom") => {
