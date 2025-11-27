@@ -1,0 +1,11 @@
+{
+  "title": "3D Printing Blog",
+  "subtitle": "Discover the latest news, tutorials and tips about 3D printing",
+  "loading": "Loading blog...",
+  "readMore": "Read more",
+  "author": "Admin",
+  "empty": {
+    "title": "No published articles",
+    "description": "Come back soon to see new content about 3D printing"
+  }
+}

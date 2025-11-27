@@ -1,0 +1,18 @@
+{
+  "email": "E-mail",
+  "password": "Wachtwoord",
+  "confirmPassword": "Bevestig wachtwoord",
+  "name": "Naam",
+  "fullName": "Volledige naam",
+  "phone": "Telefoon",
+  "address": "Adres",
+  "city": "Stad",
+  "postalCode": "Postcode",
+  "country": "Land",
+  "message": "Bericht",
+  "description": "Beschrijving",
+  "submit": "Verzenden",
+  "required": "Verplicht veld",
+  "invalidEmail": "Ongeldig e-mailadres",
+  "passwordMismatch": "Wachtwoorden komen niet overeen"
+}

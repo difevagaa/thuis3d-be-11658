@@ -1,0 +1,45 @@
+{
+  "hero": {
+    "viewMore": "Meer Zien"
+  },
+  "featured": {
+    "title": "⭐ Uitgelichte Producten",
+    "subtitle": "Ontdek onze populairste creaties",
+    "refreshProducts": "Producten Verversen",
+    "viewAllProducts": "Alle Producten Bekijken",
+    "viewDetails": "Details Bekijken"
+  },
+  "quickAccess": {
+    "catalog": {
+      "title": "Productcatalogus",
+      "description": "Verken onze collectie 3D-geprinte producten met geavanceerde technologie",
+      "button": "Producten Bekijken"
+    },
+    "quote": {
+      "title": "Vraag een Offerte Aan",
+      "description": "Ontvang binnen enkele minuten een persoonlijke offerte voor uw project",
+      "button": "Aanvragen"
+    },
+    "giftCard": {
+      "title": "Cadeaukaarten",
+      "description": "Het perfecte cadeau voor 3D-printliefhebbers",
+      "button": "Kopen"
+    }
+  },
+  "whyUs": {
+    "title": "Waarom Voor Ons Kiezen?",
+    "subtitle": "Kwaliteit en toewijding in elk project",
+    "quality": {
+      "title": "Superieure Kwaliteit",
+      "description": "We gebruiken de beste materialen en 3D-printtechnologie om uitzonderlijke resultaten te garanderen"
+    },
+    "speed": {
+      "title": "Snelle Levering",
+      "description": "Geoptimaliseerde processen waarmee we uw projecten in de kortst mogelijke tijd kunnen leveren"
+    },
+    "guarantee": {
+      "title": "Totale Garantie",
+      "description": "We ondersteunen ons werk met een volledige tevredenheidsgarantie op al onze producten"
+    }
+  }
+}

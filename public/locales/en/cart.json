@@ -1,0 +1,51 @@
+{
+  "title": "Shopping Cart",
+  "empty": {
+    "title": "Your cart is empty",
+    "description": "Add products to start your purchase",
+    "button": "View Products"
+  },
+  "item": {
+    "material": "Material",
+    "color": "Color",
+    "text": "Text",
+    "subtotal": "Subtotal",
+    "remove": "Remove"
+  },
+  "summary": {
+    "title": "Order Summary",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "giftCard": "Gift Card",
+    "tax": "VAT (21%)",
+    "total": "Total"
+  },
+  "coupon": {
+    "title": "Coupon Code",
+    "placeholder": "Code",
+    "apply": "Apply",
+    "remove": "Remove",
+    "applied": "Coupon applied successfully",
+    "removed": "Coupon removed",
+    "invalid": "Invalid or expired coupon",
+    "expired": "This coupon has expired",
+    "unavailable": "This coupon is no longer available",
+    "minPurchase": "Minimum purchase of €{amount} required"
+  },
+  "giftCard": {
+    "title": "Gift Card",
+    "placeholder": "Code",
+    "apply": "Apply",
+    "remove": "Remove",
+    "balance": "Balance",
+    "applied": "Card applied. Balance: €{balance}",
+    "removed": "Gift card removed",
+    "invalid": "Invalid card code",
+    "expired": "This card has expired",
+    "noBalance": "This card has no available balance",
+    "redeemed": "You have applied a gift card for €{amount}"
+  },
+  "checkout": "Proceed to Checkout",
+  "itemRemoved": "Product removed from cart",
+  "loginRequired": "You must log in to continue with the purchase"
+}

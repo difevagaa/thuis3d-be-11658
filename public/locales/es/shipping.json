@@ -1,0 +1,33 @@
+{
+  "title": "Información de Envío",
+  "description": "Completa tus datos para continuar con la compra",
+  "form": {
+    "fullName": "Nombre Completo",
+    "email": "Email",
+    "phone": "Teléfono",
+    "address": "Dirección Completa",
+    "city": "Ciudad",
+    "postalCode": "Código Postal",
+    "country": "País",
+    "countryPlaceholder": "Selecciona un país",
+    "selectCountry": "Selecciona el país de envío"
+  },
+  "placeholders": {
+    "fullName": "Juan Pérez",
+    "email": "tu@email.com",
+    "phone": "+34 600 000 000",
+    "address": "Calle, número, piso, puerta",
+    "city": "Madrid",
+    "postalCode": "28001"
+  },
+  "buttons": {
+    "back": "Volver",
+    "continue": "Continuar al Pago"
+  },
+  "messages": {
+    "loading": "Cargando...",
+    "saved": "Información de envío guardada",
+    "error": "Error al guardar la información",
+    "completeFirst": "Debes completar la información de envío primero"
+  }
+}

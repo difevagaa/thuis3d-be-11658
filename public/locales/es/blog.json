@@ -1,0 +1,11 @@
+{
+  "title": "Blog de Impresión 3D",
+  "subtitle": "Descubre las últimas novedades, tutoriales y consejos sobre impresión 3D",
+  "loading": "Cargando blog...",
+  "readMore": "Leer más",
+  "author": "Admin",
+  "empty": {
+    "title": "No hay artículos publicados",
+    "description": "Vuelve pronto para ver nuevos contenidos sobre impresión 3D"
+  }
+}

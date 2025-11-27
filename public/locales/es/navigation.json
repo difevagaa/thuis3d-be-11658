@@ -1,0 +1,17 @@
+{
+  "home": "Inicio",
+  "products": "Productos",
+  "quotes": "Cotizaciones",
+  "giftCards": "Tarjetas de Regalo",
+  "blog": "Blog",
+  "gallery": "Galería",
+  "cart": "Carrito",
+  "myAccount": "Mi Cuenta",
+  "adminPanel": "Panel de Admin",
+  "login": "Iniciar Sesión",
+  "logout": "Cerrar Sesión",
+  "register": "Registrarse",
+  "myOrders": "Mis Pedidos",
+  "myQuotes": "Mis Cotizaciones",
+  "settings": "Configuración"
+}

@@ -1,0 +1,45 @@
+{
+  "hero": {
+    "viewMore": "View More"
+  },
+  "featured": {
+    "title": "⭐ Featured Products",
+    "subtitle": "Discover our most popular creations",
+    "refreshProducts": "Refresh Products",
+    "viewAllProducts": "View All Products",
+    "viewDetails": "View Details"
+  },
+  "quickAccess": {
+    "catalog": {
+      "title": "Product Catalog",
+      "description": "Explore our collection of 3D printed products with cutting-edge technology",
+      "button": "View Products"
+    },
+    "quote": {
+      "title": "Request a Quote",
+      "description": "Get a personalized quote for your project in minutes",
+      "button": "Request"
+    },
+    "giftCard": {
+      "title": "Gift Cards",
+      "description": "The perfect gift for 3D printing enthusiasts",
+      "button": "Buy"
+    }
+  },
+  "whyUs": {
+    "title": "Why Choose Us?",
+    "subtitle": "Quality and commitment in every project",
+    "quality": {
+      "title": "Superior Quality",
+      "description": "We use the best materials and 3D printing technology to guarantee exceptional results"
+    },
+    "speed": {
+      "title": "Fast Delivery",
+      "description": "Optimized processes that allow us to deliver your projects in the shortest time possible"
+    },
+    "guarantee": {
+      "title": "Total Guarantee",
+      "description": "We back our work with a complete satisfaction guarantee on all our products"
+    }
+  }
+}

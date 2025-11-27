@@ -1,0 +1,11 @@
+{
+  "title": "3D-Printblog",
+  "subtitle": "Ontdek het laatste nieuws, tutorials en tips over 3D-printen",
+  "loading": "Blog laden...",
+  "readMore": "Lees meer",
+  "author": "Admin",
+  "empty": {
+    "title": "Geen gepubliceerde artikelen",
+    "description": "Kom snel terug voor nieuwe inhoud over 3D-printen"
+  }
+}

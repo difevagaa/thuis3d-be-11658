@@ -1,0 +1,14 @@
+{
+  "general": "Ha ocurrido un error",
+  "network": "Error de conexión",
+  "notFound": "No encontrado",
+  "unauthorized": "No autorizado",
+  "forbidden": "Acceso denegado",
+  "serverError": "Error del servidor",
+  "tryAgain": "Inténtalo de nuevo",
+  "404": "404",
+  "pageNotFound": "Página No Encontrada",
+  "pageNotFoundMessage": "Lo sentimos, la página que buscas no existe o ha sido movida.",
+  "goHome": "Ir al Inicio",
+  "goBack": "Volver"
+}

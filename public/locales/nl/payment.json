@@ -1,0 +1,48 @@
+{
+  "title": "Betalingsoverzicht",
+  "orderSummary": "Besteloverzicht",
+  "invoiceSummary": "Factuuroverzicht",
+  "invoice": "Factuur",
+  "items": "Artikelen",
+  "shippingInfo": "Verzendgegevens",
+  "fullName": "Naam",
+  "email": "E-mail",
+  "phone": "Telefoon",
+  "address": "Adres",
+  "country": "Land",
+  "paymentMethod": "Selecteer Uw Betaalmethode",
+  "methods": {
+    "bankTransfer": "Bankoverschrijving",
+    "creditCard": "Creditcard",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "methodDescriptions": {
+    "bankTransfer": "Betaling via directe bankoverschrijving",
+    "creditCard": "Veilige kaartbetaling",
+    "paypal": "Snelle en veilige betaling met PayPal",
+    "revolut": "Directe betaling met Revolut"
+  },
+  "companyInfo": "Bedrijfsinformatie",
+  "processing": "Verwerken...",
+  "backToShipping": "Terug naar Verzendgegevens",
+  "noShippingInfo": "Geen verzendgegevens beschikbaar",
+  "invalidPaymentMethod": "Ongeldige betaalmethode",
+  "totalToPay": "Totaal te Betalen",
+  "shippingAddress": "Verzendadres",
+  "paymentMethodTitle": "Betaalmethode",
+  "messages": {
+    "orderCreated": "Bestelling succesvol aangemaakt",
+    "invoicePaid": "Factuur succesvol betaald",
+    "paymentRegistered": "Betaling geregistreerd. U ontvangt bevestiging wanneer de betaling is geverifieerd.",
+    "loginRequired": "U moet inloggen om aankopen te doen",
+    "error": "Fout bij het verwerken van betaling",
+    "errorLoadingInvoice": "Fout bij het laden van factuurgegevens",
+    "mustCompleteShipping": "U moet eerst de verzendgegevens invullen",
+    "errorCreatingOrderItems": "Fout bij het aanmaken van bestellingsartikelen",
+    "errorProcessingOrder": "Fout bij het verwerken van bestelling",
+    "paypalNotConfigured": "PayPal is niet correct geconfigureerd",
+    "revolutNotConfigured": "Revolut is niet correct geconfigureerd",
+    "redirectingToInstructions": "Doorverwijzen naar betalingsinstructies..."
+  }
+}

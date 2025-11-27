@@ -1,0 +1,17 @@
+{
+  "dashboard": "Panel de Control",
+  "users": "Usuarios",
+  "orders": "Pedidos",
+  "products": "Productos",
+  "categories": "Categorías",
+  "materials": "Materiales",
+  "colors": "Colores",
+  "quotes": "Cotizaciones",
+  "messages": "Mensajes",
+  "settings": "Configuración",
+  "translations": "Traducciones",
+  "translationManagement": "Gestión de Traducciones",
+  "translationQueue": "Cola de Traducción",
+  "dynamicContent": "Contenido Dinámico",
+  "translationSettings": "Configuración de Traducción"
+}

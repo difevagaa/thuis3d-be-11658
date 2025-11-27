@@ -1,0 +1,30 @@
+{
+  "brand": {
+    "tagline": "Professioneel 3D-printen en op maat gemaakt ontwerp"
+  },
+  "help": {
+    "title": "Hulp",
+    "faq": "FAQ",
+    "terms": "Algemene Voorwaarden",
+    "privacy": "Privacybeleid",
+    "cookies": "Cookiebeleid",
+    "legal": "Juridische Kennisgeving"
+  },
+  "quickLinks": {
+    "title": "Snelle Links",
+    "catalog": "Catalogus",
+    "requestQuote": "Offerte Aanvragen",
+    "giftCards": "Cadeaukaarten",
+    "blog": "Blog"
+  },
+  "newsletter": {
+    "title": "Nieuwsbrief",
+    "description": "Ontvang aanbiedingen en nieuws",
+    "placeholder": "Uw e-mail",
+    "subscribed": "Bedankt voor uw inschrijving!"
+  },
+  "payment": {
+    "title": "Geaccepteerde betaalmethoden:"
+  },
+  "copyright": "Alle rechten voorbehouden"
+}

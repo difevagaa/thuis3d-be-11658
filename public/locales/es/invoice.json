@@ -1,0 +1,55 @@
+{
+  "title": "FACTURA",
+  "loading": "Cargando...",
+  "company": {
+    "loading": "Cargando..."
+  },
+  "dates": {
+    "issueDate": "Fecha de emisión",
+    "dueDate": "Fecha de vencimiento"
+  },
+  "billedTo": "Facturado a",
+  "customer": "Cliente",
+  "paymentInfo": "Información de Pago",
+  "status": "Estado",
+  "paymentStatus": {
+    "paid": "Pagado",
+    "pending": "Pendiente",
+    "failed": "Fallido"
+  },
+  "method": "Método",
+  "paymentMethods": {
+    "bank_transfer": "Transferencia Bancaria",
+    "card": "Tarjeta",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "order": "Pedido",
+  "items": {
+    "title": "Artículos",
+    "description": "Descripción",
+    "quantity": "Cant.",
+    "unitPrice": "P. Unit.",
+    "total": "Total",
+    "customText": "Texto"
+  },
+  "summary": {
+    "subtotal": "Subtotal",
+    "discount": "Descuento",
+    "coupon": "Cupón",
+    "giftCard": "Tarjeta Regalo",
+    "shipping": "Envío",
+    "tax": "IVA (21%)",
+    "total": "TOTAL"
+  },
+  "notes": {
+    "title": "Notas"
+  },
+  "footer": "Gracias por su compra",
+  "actions": {
+    "print": "Imprimir",
+    "back": "Volver a Facturas"
+  },
+  "notFound": "No se encontró la factura",
+  "loadError": "Error al cargar factura"
+}

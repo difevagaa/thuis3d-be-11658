@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://thuis3d.com/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /auth/
+
+# Allow all public pages
+Allow: /productos
+Allow: /blog
+Allow: /cotizaciones
+Allow: /tarjetas-regalo

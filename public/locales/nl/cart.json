@@ -1,0 +1,51 @@
+{
+  "title": "Winkelwagen",
+  "empty": {
+    "title": "Uw winkelwagen is leeg",
+    "description": "Voeg producten toe om uw aankoop te starten",
+    "button": "Producten Bekijken"
+  },
+  "item": {
+    "material": "Materiaal",
+    "color": "Kleur",
+    "text": "Tekst",
+    "subtotal": "Subtotaal",
+    "remove": "Verwijderen"
+  },
+  "summary": {
+    "title": "Besteloverzicht",
+    "subtotal": "Subtotaal",
+    "discount": "Korting",
+    "giftCard": "Cadeaukaart",
+    "tax": "BTW (21%)",
+    "total": "Totaal"
+  },
+  "coupon": {
+    "title": "Kortingscode",
+    "placeholder": "Code",
+    "apply": "Toepassen",
+    "remove": "Verwijderen",
+    "applied": "Kortingscode succesvol toegepast",
+    "removed": "Kortingscode verwijderd",
+    "invalid": "Ongeldige of verlopen kortingscode",
+    "expired": "Deze kortingscode is verlopen",
+    "unavailable": "Deze kortingscode is niet meer beschikbaar",
+    "minPurchase": "Minimale aankoop van €{amount} vereist"
+  },
+  "giftCard": {
+    "title": "Cadeaukaart",
+    "placeholder": "Code",
+    "apply": "Toepassen",
+    "remove": "Verwijderen",
+    "balance": "Saldo",
+    "applied": "Kaart toegepast. Saldo: €{balance}",
+    "removed": "Cadeaukaart verwijderd",
+    "invalid": "Ongeldige kaartcode",
+    "expired": "Deze kaart is verlopen",
+    "noBalance": "Deze kaart heeft geen beschikbaar saldo",
+    "redeemed": "U heeft een cadeaukaart toegepast voor €{amount}"
+  },
+  "checkout": "Doorgaan naar Betalen",
+  "itemRemoved": "Product verwijderd uit winkelwagen",
+  "loginRequired": "U moet inloggen om verder te gaan met de aankoop"
+}

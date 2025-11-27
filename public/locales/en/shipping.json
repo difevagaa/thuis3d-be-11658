@@ -1,0 +1,33 @@
+{
+  "title": "Shipping Information",
+  "description": "Complete your details to continue with the purchase",
+  "form": {
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Full Address",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "countryPlaceholder": "Select a country",
+    "selectCountry": "Select shipping country"
+  },
+  "placeholders": {
+    "fullName": "John Doe",
+    "email": "your@email.com",
+    "phone": "+44 123 456 789",
+    "address": "Street, number, floor, door",
+    "city": "London",
+    "postalCode": "SW1A 1AA"
+  },
+  "buttons": {
+    "back": "Back",
+    "continue": "Continue to Payment"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "saved": "Shipping information saved",
+    "error": "Error saving information",
+    "completeFirst": "You must complete shipping information first"
+  }
+}
