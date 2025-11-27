@@ -1,0 +1,55 @@
+{
+  "title": "Catálogo de Productos",
+  "searchByCode": {
+    "title": "Buscar por Código de Producto",
+    "description": "Si tienes el código de producto, ingrésalo aquí para acceder directamente al producto.",
+    "placeholder": "Ej: A3B5C2",
+    "search": "Buscar",
+    "clear": "Limpiar Búsqueda",
+    "success": "✓ Mostrando producto encontrado por código. Haz clic en 'Limpiar Búsqueda' para ver el catálogo completo."
+  },
+  "filters": {
+    "title": "Filtros",
+    "category": "Categoría",
+    "material": "Material",
+    "priceRange": "Rango de Precio",
+    "all": "Todas"
+  },
+  "sort": {
+    "newest": "Más Recientes",
+    "priceAsc": "Precio: Menor a Mayor",
+    "priceDesc": "Precio: Mayor a Menor"
+  },
+  "productsFound": "productos encontrados",
+  "viewDetails": "Ver Detalles",
+  "freeShipping": "🎉 ¡Envío GRATIS!",
+  "noProducts": "No se encontraron productos con estos filtros",
+  "loading": "Cargando producto...",
+  "code": "Código",
+  "specifications": "Especificaciones",
+  "weight": "Peso",
+  "dimensions": "Dimensiones",
+  "material": "Material",
+  "color": "Color",
+  "customText": "Texto Personalizado",
+  "customTextPlaceholder": "Ingresa tu texto personalizado...",
+  "quantity": "Cantidad",
+  "buyNow": "Comprar Ahora",
+  "buy": "Comprar",
+  "requestQuote": "Solicitar Cotización",
+  "selectMaterial": "Selecciona un material",
+  "selectColor": "Selecciona un color",
+  "selectMaterialFirst": "Primero selecciona un material",
+  "noColorsAvailable": "No hay colores disponibles",
+  "videoTitle": "Video del Producto",
+  "videoNotSupported": "Tu navegador no soporta el video.",
+  "addedToCart": "Producto agregado al carrito",
+  "quoteRequested": "Cotización solicitada. Te contactaremos pronto.",
+  "mustLogin": "Debes iniciar sesión para",
+  "mustLoginQuote": "Debes iniciar sesión para solicitar cotizaciones",
+  "customization": {
+    "title": "Personalización",
+    "selectColorFor": "Seleccionar color para",
+    "selectImageFor": "Seleccionar imagen para"
+  }
+}

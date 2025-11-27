@@ -1,0 +1,48 @@
+{
+  "title": "Resumen de Pago",
+  "orderSummary": "Resumen del Pedido",
+  "invoiceSummary": "Resumen de Factura",
+  "invoice": "Factura",
+  "items": "Artículos",
+  "shippingInfo": "Información de Envío",
+  "fullName": "Nombre",
+  "email": "Email",
+  "phone": "Teléfono",
+  "address": "Dirección",
+  "country": "País",
+  "paymentMethod": "Selecciona tu Método de Pago",
+  "methods": {
+    "bankTransfer": "Transferencia Bancaria",
+    "creditCard": "Tarjeta de Crédito",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "methodDescriptions": {
+    "bankTransfer": "Pago mediante transferencia bancaria directa",
+    "creditCard": "Pago seguro con tarjeta",
+    "paypal": "Pago rápido y seguro con PayPal",
+    "revolut": "Pago instantáneo con Revolut"
+  },
+  "companyInfo": "Información de la Empresa",
+  "processing": "Procesando...",
+  "backToShipping": "Volver a Información de Envío",
+  "noShippingInfo": "No hay información de envío disponible",
+  "invalidPaymentMethod": "Método de pago no válido",
+  "totalToPay": "Total a Pagar",
+  "shippingAddress": "Dirección de Envío",
+  "paymentMethodTitle": "Método de Pago",
+  "messages": {
+    "orderCreated": "Pedido creado exitosamente",
+    "invoicePaid": "Factura pagada exitosamente",
+    "paymentRegistered": "Pago registrado. Recibirás confirmación cuando se verifique el pago.",
+    "loginRequired": "Debes iniciar sesión para realizar compras",
+    "error": "Error al procesar el pago",
+    "errorLoadingInvoice": "Error al cargar datos de factura",
+    "mustCompleteShipping": "Debes completar la información de envío primero",
+    "errorCreatingOrderItems": "Error al crear items del pedido",
+    "errorProcessingOrder": "Error al procesar el pedido",
+    "paypalNotConfigured": "PayPal no está configurado correctamente",
+    "revolutNotConfigured": "Revolut no está configurado correctamente",
+    "redirectingToInstructions": "Redirigiendo a instrucciones de pago..."
+  }
+}

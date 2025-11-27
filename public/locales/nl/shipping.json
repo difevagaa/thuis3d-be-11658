@@ -1,0 +1,33 @@
+{
+  "title": "Verzendgegevens",
+  "description": "Vul uw gegevens in om verder te gaan met de aankoop",
+  "form": {
+    "fullName": "Volledige Naam",
+    "email": "E-mail",
+    "phone": "Telefoon",
+    "address": "Volledig Adres",
+    "city": "Stad",
+    "postalCode": "Postcode",
+    "country": "Land",
+    "countryPlaceholder": "Selecteer een land",
+    "selectCountry": "Selecteer verzendland"
+  },
+  "placeholders": {
+    "fullName": "Jan Jansen",
+    "email": "uw@email.com",
+    "phone": "+31 6 12345678",
+    "address": "Straat, nummer, verdieping, deur",
+    "city": "Amsterdam",
+    "postalCode": "1012 AB"
+  },
+  "buttons": {
+    "back": "Terug",
+    "continue": "Doorgaan naar Betaling"
+  },
+  "messages": {
+    "loading": "Laden...",
+    "saved": "Verzendgegevens opgeslagen",
+    "error": "Fout bij het opslaan van informatie",
+    "completeFirst": "U moet eerst de verzendgegevens invullen"
+  }
+}

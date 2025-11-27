@@ -1,0 +1,55 @@
+{
+  "title": "FACTUUR",
+  "loading": "Laden...",
+  "company": {
+    "loading": "Laden..."
+  },
+  "dates": {
+    "issueDate": "Datum van uitgifte",
+    "dueDate": "Vervaldatum"
+  },
+  "billedTo": "Gefactureerd aan",
+  "customer": "Klant",
+  "paymentInfo": "Betalingsinformatie",
+  "status": "Status",
+  "paymentStatus": {
+    "paid": "Betaald",
+    "pending": "In behandeling",
+    "failed": "Mislukt"
+  },
+  "method": "Methode",
+  "paymentMethods": {
+    "bank_transfer": "Bankoverschrijving",
+    "card": "Kaart",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "order": "Bestelling",
+  "items": {
+    "title": "Artikelen",
+    "description": "Beschrijving",
+    "quantity": "Aantal",
+    "unitPrice": "Stukprijs",
+    "total": "Totaal",
+    "customText": "Tekst"
+  },
+  "summary": {
+    "subtotal": "Subtotaal",
+    "discount": "Korting",
+    "coupon": "Kortingscode",
+    "giftCard": "Cadeaukaart",
+    "shipping": "Verzending",
+    "tax": "BTW (21%)",
+    "total": "TOTAAL"
+  },
+  "notes": {
+    "title": "Opmerkingen"
+  },
+  "footer": "Bedankt voor uw aankoop",
+  "actions": {
+    "print": "Afdrukken",
+    "back": "Terug naar Facturen"
+  },
+  "notFound": "Factuur niet gevonden",
+  "loadError": "Fout bij laden factuur"
+}

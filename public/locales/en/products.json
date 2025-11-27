@@ -1,0 +1,55 @@
+{
+  "title": "Product Catalog",
+  "searchByCode": {
+    "title": "Search by Product Code",
+    "description": "If you have the product code, enter it here to access the product directly.",
+    "placeholder": "Ex: A3B5C2",
+    "search": "Search",
+    "clear": "Clear Search",
+    "success": "✓ Showing product found by code. Click 'Clear Search' to view the full catalog."
+  },
+  "filters": {
+    "title": "Filters",
+    "category": "Category",
+    "material": "Material",
+    "priceRange": "Price Range",
+    "all": "All"
+  },
+  "sort": {
+    "newest": "Most Recent",
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low"
+  },
+  "productsFound": "products found",
+  "viewDetails": "View Details",
+  "freeShipping": "🎉 FREE Shipping!",
+  "noProducts": "No products found with these filters",
+  "loading": "Loading product...",
+  "code": "Code",
+  "specifications": "Specifications",
+  "weight": "Weight",
+  "dimensions": "Dimensions",
+  "material": "Material",
+  "color": "Color",
+  "customText": "Custom Text",
+  "customTextPlaceholder": "Enter your custom text...",
+  "quantity": "Quantity",
+  "buyNow": "Buy Now",
+  "buy": "Buy",
+  "requestQuote": "Request Quote",
+  "selectMaterial": "Select a material",
+  "selectColor": "Select a color",
+  "selectMaterialFirst": "Select a material first",
+  "noColorsAvailable": "No colors available",
+  "videoTitle": "Product Video",
+  "videoNotSupported": "Your browser does not support the video.",
+  "addedToCart": "Product added to cart",
+  "quoteRequested": "Quote requested. We'll contact you soon.",
+  "mustLogin": "You must log in to",
+  "mustLoginQuote": "You must log in to request quotes",
+  "customization": {
+    "title": "Customization",
+    "selectColorFor": "Select color for",
+    "selectImageFor": "Select image for"
+  }
+}

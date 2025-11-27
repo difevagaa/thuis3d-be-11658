@@ -1,0 +1,17 @@
+{
+  "home": "Home",
+  "products": "Products",
+  "quotes": "Quotes",
+  "giftCards": "Gift Cards",
+  "blog": "Blog",
+  "gallery": "Gallery",
+  "cart": "Cart",
+  "myAccount": "My Account",
+  "adminPanel": "Admin Panel",
+  "login": "Sign In",
+  "logout": "Sign Out",
+  "register": "Register",
+  "myOrders": "My Orders",
+  "myQuotes": "My Quotes",
+  "settings": "Settings"
+}

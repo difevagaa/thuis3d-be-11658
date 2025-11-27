@@ -1,0 +1,55 @@
+{
+  "title": "Productcatalogus",
+  "searchByCode": {
+    "title": "Zoeken op Productcode",
+    "description": "Als u de productcode heeft, voer deze hier in voor directe toegang tot het product.",
+    "placeholder": "Bv: A3B5C2",
+    "search": "Zoeken",
+    "clear": "Zoekopdracht Wissen",
+    "success": "✓ Product gevonden met code. Klik op 'Zoekopdracht Wissen' om de volledige catalogus te bekijken."
+  },
+  "filters": {
+    "title": "Filters",
+    "category": "Categorie",
+    "material": "Materiaal",
+    "priceRange": "Prijsbereik",
+    "all": "Alle"
+  },
+  "sort": {
+    "newest": "Meest Recent",
+    "priceAsc": "Prijs: Laag naar Hoog",
+    "priceDesc": "Prijs: Hoog naar Laag"
+  },
+  "productsFound": "producten gevonden",
+  "viewDetails": "Details Bekijken",
+  "freeShipping": "🎉 GRATIS Verzending!",
+  "noProducts": "Geen producten gevonden met deze filters",
+  "loading": "Product laden...",
+  "code": "Code",
+  "specifications": "Specificaties",
+  "weight": "Gewicht",
+  "dimensions": "Afmetingen",
+  "material": "Materiaal",
+  "color": "Kleur",
+  "customText": "Aangepaste Tekst",
+  "customTextPlaceholder": "Voer uw aangepaste tekst in...",
+  "quantity": "Hoeveelheid",
+  "buyNow": "Nu Kopen",
+  "buy": "Kopen",
+  "requestQuote": "Offerte Aanvragen",
+  "selectMaterial": "Selecteer een materiaal",
+  "selectColor": "Selecteer een kleur",
+  "selectMaterialFirst": "Selecteer eerst een materiaal",
+  "noColorsAvailable": "Geen kleuren beschikbaar",
+  "videoTitle": "Productvideo",
+  "videoNotSupported": "Uw browser ondersteunt de video niet.",
+  "addedToCart": "Product toegevoegd aan winkelwagen",
+  "quoteRequested": "Offerte aangevraagd. We nemen binnenkort contact met u op.",
+  "mustLogin": "U moet inloggen om",
+  "mustLoginQuote": "U moet inloggen om offertes aan te vragen",
+  "customization": {
+    "title": "Aanpassing",
+    "selectColorFor": "Selecteer kleur voor",
+    "selectImageFor": "Selecteer afbeelding voor"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "general": "Er is een fout opgetreden",
+  "network": "Verbindingsfout",
+  "notFound": "Niet gevonden",
+  "unauthorized": "Niet geautoriseerd",
+  "forbidden": "Toegang geweigerd",
+  "serverError": "Serverfout",
+  "tryAgain": "Probeer opnieuw",
+  "404": "404",
+  "pageNotFound": "Pagina Niet Gevonden",
+  "pageNotFoundMessage": "Sorry, de pagina die je zoekt bestaat niet of is verplaatst.",
+  "goHome": "Ga naar Home",
+  "goBack": "Ga Terug"
+}

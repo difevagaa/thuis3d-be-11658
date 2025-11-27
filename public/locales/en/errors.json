@@ -1,0 +1,14 @@
+{
+  "general": "An error occurred",
+  "network": "Connection error",
+  "notFound": "Not found",
+  "unauthorized": "Unauthorized",
+  "forbidden": "Access denied",
+  "serverError": "Server error",
+  "tryAgain": "Try again",
+  "404": "404",
+  "pageNotFound": "Page Not Found",
+  "pageNotFoundMessage": "Sorry, the page you are looking for does not exist or has been moved.",
+  "goHome": "Go to Home",
+  "goBack": "Go Back"
+}

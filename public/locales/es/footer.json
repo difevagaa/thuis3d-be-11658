@@ -1,0 +1,30 @@
+{
+  "brand": {
+    "tagline": "Impresión 3D profesional y diseño personalizado"
+  },
+  "help": {
+    "title": "Ayuda",
+    "faq": "FAQ",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "cookies": "Política de Cookies",
+    "legal": "Aviso Legal"
+  },
+  "quickLinks": {
+    "title": "Enlaces Rápidos",
+    "catalog": "Catálogo",
+    "requestQuote": "Solicitar Presupuesto",
+    "giftCards": "Tarjetas Regalo",
+    "blog": "Blog"
+  },
+  "newsletter": {
+    "title": "Newsletter",
+    "description": "Recibe ofertas y novedades",
+    "placeholder": "Tu email",
+    "subscribed": "¡Gracias por suscribirte!"
+  },
+  "payment": {
+    "title": "Métodos de pago aceptados:"
+  },
+  "copyright": "Todos los derechos reservados"
+}

@@ -1,0 +1,49 @@
+{
+  "success": {
+    "profileUpdated": "Profile updated successfully",
+    "replySent": "✉️ Reply sent to administrator",
+    "codeCopied": "Code copied to clipboard",
+    "quoteSubmitted": "Quote submitted successfully",
+    "orderCreated": "Order created successfully",
+    "paymentSuccess": "Payment processed successfully",
+    "couponGenerated": "Coupon generated! Code: {{code}}",
+    "messageSent": "Message sent successfully",
+    "fileDownloaded": "File downloaded",
+    "invoiceDownloaded": "Invoice downloaded successfully"
+  },
+  "error": {
+    "profileUpdateFailed": "Error updating profile",
+    "replyFailed": "Error sending reply",
+    "quoteSubmitFailed": "Error submitting quote",
+    "fileTooLarge": "{{filename}} exceeds {{size}}MB limit",
+    "uploadFailed": "Error uploading file",
+    "paymentFailed": "Error processing payment",
+    "redeemFailed": "Error redeeming",
+    "general": "An error occurred",
+    "unauthorized": "You must log in",
+    "noFileAvailable": "No file available",
+    "downloadFailed": "Error downloading file",
+    "loadingFailed": "Error loading data",
+    "noInvoiceAvailable": "No invoice available",
+    "invoiceOnlyWhenPaid": "Invoice can only be downloaded when order is paid",
+    "generatingInvoiceFailed": "Error generating invoice",
+    "noInvoiceContent": "Could not generate invoice content",
+    "quoteNotFound": "Quote not found",
+    "loadingQuoteFailed": "Error loading quote details",
+    "loadingOrderFailed": "Error loading order",
+    "loadingMessagesFailed": "Error loading messages",
+    "sendingReplyFailed": "Error sending reply",
+    "writeMessageOrAttach": "Write a message or attach a file",
+    "loadingGiftCardsFailed": "Error loading gift cards",
+    "noPermissionInvoice": "You don't have permission to view this invoice",
+    "loadingInvoiceFailed": "Error loading invoice"
+  },
+  "info": {
+    "uploadingFiles": "Uploading attachments...",
+    "processing": "Processing...",
+    "loading": "Loading...",
+    "pleaseWait": "Please wait...",
+    "generatingInvoice": "Generating invoice...",
+    "saveToPdf": "Use 'Save as PDF' in the print dialog"
+  }
+}

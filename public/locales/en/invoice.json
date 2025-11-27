@@ -1,0 +1,55 @@
+{
+  "title": "INVOICE",
+  "loading": "Loading...",
+  "company": {
+    "loading": "Loading..."
+  },
+  "dates": {
+    "issueDate": "Issue date",
+    "dueDate": "Due date"
+  },
+  "billedTo": "Billed to",
+  "customer": "Customer",
+  "paymentInfo": "Payment Information",
+  "status": "Status",
+  "paymentStatus": {
+    "paid": "Paid",
+    "pending": "Pending",
+    "failed": "Failed"
+  },
+  "method": "Method",
+  "paymentMethods": {
+    "bank_transfer": "Bank Transfer",
+    "card": "Card",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "order": "Order",
+  "items": {
+    "title": "Items",
+    "description": "Description",
+    "quantity": "Qty.",
+    "unitPrice": "Unit Price",
+    "total": "Total",
+    "customText": "Text"
+  },
+  "summary": {
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "coupon": "Coupon",
+    "giftCard": "Gift Card",
+    "shipping": "Shipping",
+    "tax": "VAT (21%)",
+    "total": "TOTAL"
+  },
+  "notes": {
+    "title": "Notes"
+  },
+  "footer": "Thank you for your purchase",
+  "actions": {
+    "print": "Print",
+    "back": "Back to Invoices"
+  },
+  "notFound": "Invoice not found",
+  "loadError": "Error loading invoice"
+}

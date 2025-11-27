@@ -1,0 +1,48 @@
+{
+  "title": "Payment Summary",
+  "orderSummary": "Order Summary",
+  "invoiceSummary": "Invoice Summary",
+  "invoice": "Invoice",
+  "items": "Items",
+  "shippingInfo": "Shipping Information",
+  "fullName": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "address": "Address",
+  "country": "Country",
+  "paymentMethod": "Select Your Payment Method",
+  "methods": {
+    "bankTransfer": "Bank Transfer",
+    "creditCard": "Credit Card",
+    "paypal": "PayPal",
+    "revolut": "Revolut"
+  },
+  "methodDescriptions": {
+    "bankTransfer": "Payment via direct bank transfer",
+    "creditCard": "Secure card payment",
+    "paypal": "Fast and secure payment with PayPal",
+    "revolut": "Instant payment with Revolut"
+  },
+  "companyInfo": "Company Information",
+  "processing": "Processing...",
+  "backToShipping": "Back to Shipping Information",
+  "noShippingInfo": "No shipping information available",
+  "invalidPaymentMethod": "Invalid payment method",
+  "totalToPay": "Total to Pay",
+  "shippingAddress": "Shipping Address",
+  "paymentMethodTitle": "Payment Method",
+  "messages": {
+    "orderCreated": "Order created successfully",
+    "invoicePaid": "Invoice paid successfully",
+    "paymentRegistered": "Payment registered. You will receive confirmation when payment is verified.",
+    "loginRequired": "You must log in to make purchases",
+    "error": "Error processing payment",
+    "errorLoadingInvoice": "Error loading invoice data",
+    "mustCompleteShipping": "You must complete shipping information first",
+    "errorCreatingOrderItems": "Error creating order items",
+    "errorProcessingOrder": "Error processing order",
+    "paypalNotConfigured": "PayPal is not configured correctly",
+    "revolutNotConfigured": "Revolut is not configured correctly",
+    "redirectingToInstructions": "Redirecting to payment instructions..."
+  }
+}

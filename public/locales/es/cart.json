@@ -1,0 +1,51 @@
+{
+  "title": "Carrito de Compras",
+  "empty": {
+    "title": "Tu carrito está vacío",
+    "description": "Agrega productos para comenzar tu compra",
+    "button": "Ver Productos"
+  },
+  "item": {
+    "material": "Material",
+    "color": "Color",
+    "text": "Texto",
+    "subtotal": "Subtotal",
+    "remove": "Eliminar"
+  },
+  "summary": {
+    "title": "Resumen del Pedido",
+    "subtotal": "Subtotal",
+    "discount": "Descuento",
+    "giftCard": "Tarjeta Regalo",
+    "tax": "IVA (21%)",
+    "total": "Total"
+  },
+  "coupon": {
+    "title": "Código de Cupón",
+    "placeholder": "Código",
+    "apply": "Aplicar",
+    "remove": "Remover",
+    "applied": "Cupón aplicado exitosamente",
+    "removed": "Cupón removido",
+    "invalid": "Cupón inválido o expirado",
+    "expired": "Este cupón ha expirado",
+    "unavailable": "Este cupón ya no está disponible",
+    "minPurchase": "Compra mínima de €{amount} requerida"
+  },
+  "giftCard": {
+    "title": "Tarjeta de Regalo",
+    "placeholder": "Código",
+    "apply": "Aplicar",
+    "remove": "Remover",
+    "balance": "Saldo",
+    "applied": "Tarjeta aplicada. Saldo: €{balance}",
+    "removed": "Tarjeta de regalo removida",
+    "invalid": "Código de tarjeta inválido",
+    "expired": "Esta tarjeta ha expirado",
+    "noBalance": "Esta tarjeta no tiene saldo disponible",
+    "redeemed": "Has aplicado una tarjeta regalo por €{amount}"
+  },
+  "checkout": "Proceder al Pago",
+  "itemRemoved": "Producto eliminado del carrito",
+  "loginRequired": "Debes iniciar sesión para continuar con la compra"
+}

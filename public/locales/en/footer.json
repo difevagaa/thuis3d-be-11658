@@ -1,0 +1,30 @@
+{
+  "brand": {
+    "tagline": "Professional 3D printing and custom design"
+  },
+  "help": {
+    "title": "Help",
+    "faq": "FAQ",
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "legal": "Legal Notice"
+  },
+  "quickLinks": {
+    "title": "Quick Links",
+    "catalog": "Catalog",
+    "requestQuote": "Request Quote",
+    "giftCards": "Gift Cards",
+    "blog": "Blog"
+  },
+  "newsletter": {
+    "title": "Newsletter",
+    "description": "Receive offers and news",
+    "placeholder": "Your email",
+    "subscribed": "Thanks for subscribing!"
+  },
+  "payment": {
+    "title": "Accepted payment methods:"
+  },
+  "copyright": "All rights reserved"
+}

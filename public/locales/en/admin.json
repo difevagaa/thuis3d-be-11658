@@ -1,0 +1,17 @@
+{
+  "dashboard": "Dashboard",
+  "users": "Users",
+  "orders": "Orders",
+  "products": "Products",
+  "categories": "Categories",
+  "materials": "Materials",
+  "colors": "Colors",
+  "quotes": "Quotes",
+  "messages": "Messages",
+  "settings": "Settings",
+  "translations": "Translations",
+  "translationManagement": "Translation Management",
+  "translationQueue": "Translation Queue",
+  "dynamicContent": "Dynamic Content",
+  "translationSettings": "Translation Settings"
+}

@@ -1,0 +1,49 @@
+{
+  "success": {
+    "profileUpdated": "Profiel succesvol bijgewerkt",
+    "replySent": "✉️ Antwoord verzonden naar beheerder",
+    "codeCopied": "Code gekopieerd naar klembord",
+    "quoteSubmitted": "Offerte succesvol verzonden",
+    "orderCreated": "Bestelling succesvol aangemaakt",
+    "paymentSuccess": "Betaling succesvol verwerkt",
+    "couponGenerated": "Coupon gegenereerd! Code: {{code}}",
+    "messageSent": "Bericht succesvol verzonden",
+    "fileDownloaded": "Bestand gedownload",
+    "invoiceDownloaded": "Factuur succesvol gedownload"
+  },
+  "error": {
+    "profileUpdateFailed": "Fout bij bijwerken profiel",
+    "replyFailed": "Fout bij verzenden antwoord",
+    "quoteSubmitFailed": "Fout bij verzenden offerte",
+    "fileTooLarge": "{{filename}} overschrijdt {{size}}MB limiet",
+    "uploadFailed": "Fout bij uploaden bestand",
+    "paymentFailed": "Fout bij verwerken betaling",
+    "redeemFailed": "Fout bij inwisselen",
+    "general": "Er is een fout opgetreden",
+    "unauthorized": "Je moet inloggen",
+    "noFileAvailable": "Geen bestand beschikbaar",
+    "downloadFailed": "Fout bij downloaden bestand",
+    "loadingFailed": "Fout bij laden gegevens",
+    "noInvoiceAvailable": "Geen factuur beschikbaar",
+    "invoiceOnlyWhenPaid": "Factuur kan alleen worden gedownload wanneer bestelling is betaald",
+    "generatingInvoiceFailed": "Fout bij genereren factuur",
+    "noInvoiceContent": "Kon factuurinhoud niet genereren",
+    "quoteNotFound": "Offerte niet gevonden",
+    "loadingQuoteFailed": "Fout bij laden offertedetails",
+    "loadingOrderFailed": "Fout bij laden bestelling",
+    "loadingMessagesFailed": "Fout bij laden berichten",
+    "sendingReplyFailed": "Fout bij verzenden antwoord",
+    "writeMessageOrAttach": "Schrijf een bericht of voeg een bestand bij",
+    "loadingGiftCardsFailed": "Fout bij laden cadeaukaarten",
+    "noPermissionInvoice": "Je hebt geen toestemming om deze factuur te bekijken",
+    "loadingInvoiceFailed": "Fout bij laden factuur"
+  },
+  "info": {
+    "uploadingFiles": "Bijlagen uploaden...",
+    "processing": "Verwerken...",
+    "loading": "Laden...",
+    "pleaseWait": "Even geduld...",
+    "generatingInvoice": "Factuur genereren...",
+    "saveToPdf": "Gebruik 'Opslaan als PDF' in het afdrukdialoogvenster"
+  }
+}

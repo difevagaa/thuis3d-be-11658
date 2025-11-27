@@ -1,0 +1,49 @@
+{
+  "success": {
+    "profileUpdated": "Perfil actualizado exitosamente",
+    "replySent": "✉️ Respuesta enviada al administrador",
+    "codeCopied": "Código copiado al portapapeles",
+    "quoteSubmitted": "Cotización enviada exitosamente",
+    "orderCreated": "Pedido creado exitosamente",
+    "paymentSuccess": "Pago procesado exitosamente",
+    "couponGenerated": "¡Cupón generado! Código: {{code}}",
+    "messageSent": "Mensaje enviado exitosamente",
+    "fileDownloaded": "Archivo descargado",
+    "invoiceDownloaded": "Factura descargada correctamente"
+  },
+  "error": {
+    "profileUpdateFailed": "Error al actualizar perfil",
+    "replyFailed": "Error al enviar respuesta",
+    "quoteSubmitFailed": "Error al enviar cotización",
+    "fileTooLarge": "{{filename}} excede el límite de {{size}}MB",
+    "uploadFailed": "Error al subir archivo",
+    "paymentFailed": "Error al procesar el pago",
+    "redeemFailed": "Error al canjear",
+    "general": "Ha ocurrido un error",
+    "unauthorized": "Debes iniciar sesión",
+    "noFileAvailable": "No hay archivo disponible",
+    "downloadFailed": "Error al descargar archivo",
+    "loadingFailed": "Error al cargar datos",
+    "noInvoiceAvailable": "No hay factura disponible",
+    "invoiceOnlyWhenPaid": "La factura solo puede descargarse cuando el pedido está pagado",
+    "generatingInvoiceFailed": "Error al generar la factura",
+    "noInvoiceContent": "No se pudo generar el contenido de la factura",
+    "quoteNotFound": "Cotización no encontrada",
+    "loadingQuoteFailed": "Error al cargar detalles de la cotización",
+    "loadingOrderFailed": "Error al cargar el pedido",
+    "loadingMessagesFailed": "Error al cargar mensajes",
+    "sendingReplyFailed": "Error al enviar respuesta",
+    "writeMessageOrAttach": "Escribe un mensaje o adjunta un archivo",
+    "loadingGiftCardsFailed": "Error al cargar tarjetas de regalo",
+    "noPermissionInvoice": "No tienes permiso para ver esta factura",
+    "loadingInvoiceFailed": "Error al cargar factura"
+  },
+  "info": {
+    "uploadingFiles": "Subiendo archivos adjuntos...",
+    "processing": "Procesando...",
+    "loading": "Cargando...",
+    "pleaseWait": "Por favor espera...",
+    "generatingInvoice": "Generando factura...",
+    "saveToPdf": "Usa 'Guardar como PDF' en el diálogo de impresión"
+  }
+}

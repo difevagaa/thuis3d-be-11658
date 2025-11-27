@@ -1,0 +1,17 @@
+{
+  "home": "Home",
+  "products": "Producten",
+  "quotes": "Offertes",
+  "giftCards": "Cadeaukaarten",
+  "blog": "Blog",
+  "gallery": "Galerij",
+  "cart": "Winkelwagen",
+  "myAccount": "Mijn Account",
+  "adminPanel": "Beheerpaneel",
+  "login": "Inloggen",
+  "logout": "Uitloggen",
+  "register": "Registreren",
+  "myOrders": "Mijn Bestellingen",
+  "myQuotes": "Mijn Offertes",
+  "settings": "Instellingen"
+}

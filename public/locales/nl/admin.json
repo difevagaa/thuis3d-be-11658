@@ -1,0 +1,17 @@
+{
+  "dashboard": "Dashboard",
+  "users": "Gebruikers",
+  "orders": "Bestellingen",
+  "products": "Producten",
+  "categories": "Categorieën",
+  "materials": "Materialen",
+  "colors": "Kleuren",
+  "quotes": "Offertes",
+  "messages": "Berichten",
+  "settings": "Instellingen",
+  "translations": "Vertalingen",
+  "translationManagement": "Vertaalbeheer",
+  "translationQueue": "Vertaalwachtrij",
+  "dynamicContent": "Dynamische Inhoud",
+  "translationSettings": "Vertaalinstellingen"
+}

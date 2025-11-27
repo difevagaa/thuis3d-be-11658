@@ -1,0 +1,45 @@
+{
+  "hero": {
+    "viewMore": "Ver Más"
+  },
+  "featured": {
+    "title": "⭐ Productos Destacados",
+    "subtitle": "Descubre nuestras creaciones más populares",
+    "refreshProducts": "Actualizar Productos",
+    "viewAllProducts": "Ver Todos los Productos",
+    "viewDetails": "Ver Detalles"
+  },
+  "quickAccess": {
+    "catalog": {
+      "title": "Catálogo de Productos",
+      "description": "Explora nuestra colección de productos impresos en 3D con tecnología de punta",
+      "button": "Ver Productos"
+    },
+    "quote": {
+      "title": "Solicita un Presupuesto",
+      "description": "Obtén un presupuesto personalizado para tu proyecto en minutos",
+      "button": "Solicitar"
+    },
+    "giftCard": {
+      "title": "Tarjetas Regalo",
+      "description": "El regalo perfecto para los entusiastas de la impresión 3D",
+      "button": "Comprar"
+    }
+  },
+  "whyUs": {
+    "title": "¿Por Qué Elegirnos?",
+    "subtitle": "Calidad y compromiso en cada proyecto",
+    "quality": {
+      "title": "Calidad Superior",
+      "description": "Utilizamos los mejores materiales y tecnología de impresión 3D para garantizar resultados excepcionales"
+    },
+    "speed": {
+      "title": "Entrega Rápida",
+      "description": "Procesos optimizados que nos permiten entregar tus proyectos en el menor tiempo posible"
+    },
+    "guarantee": {
+      "title": "Garantía Total",
+      "description": "Respaldamos nuestro trabajo con una garantía completa de satisfacción en todos nuestros productos"
+    }
+  }
+}

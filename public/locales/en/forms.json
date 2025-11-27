@@ -1,0 +1,18 @@
+{
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "name": "Name",
+  "fullName": "Full name",
+  "phone": "Phone",
+  "address": "Address",
+  "city": "City",
+  "postalCode": "Postal code",
+  "country": "Country",
+  "message": "Message",
+  "description": "Description",
+  "submit": "Submit",
+  "required": "Required field",
+  "invalidEmail": "Invalid email",
+  "passwordMismatch": "Passwords do not match"
+}
