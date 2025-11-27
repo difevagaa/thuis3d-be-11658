@@ -81,8 +81,8 @@ export function useAutoSEO() {
       });
       
       // Save all multilingual keywords to database
-      // Save more keywords per language to ensure Belgian customers can find products
-      const allLanguages: SupportedSEOLanguage[] = ['es', 'en', 'nl'];
+      // Prioritize Dutch (nl) for Belgian customers, then English (en), then Spanish (es)
+      const allLanguages: SupportedSEOLanguage[] = ['nl', 'en', 'es'];
       for (const lang of allLanguages) {
         const langKeywords = multilingualKeywords[lang];
         // Save up to 10 keywords per language for better coverage
@@ -249,8 +249,8 @@ export function useAutoSEO() {
       });
       
       // Save all multilingual keywords to database
-      // Save more keywords per language for better coverage
-      const allLanguages: SupportedSEOLanguage[] = ['es', 'en', 'nl'];
+      // Prioritize Dutch (nl) for Belgian customers, then English (en), then Spanish (es)
+      const allLanguages: SupportedSEOLanguage[] = ['nl', 'en', 'es'];
       for (const lang of allLanguages) {
         const langKeywords = multilingualKeywords[lang];
         // Save up to 10 keywords per language for better coverage

@@ -223,7 +223,8 @@ export function extractKeywords(
     language?: SupportedSEOLanguage;
   }
 ): KeywordAnalysis[] {
-  const language: SupportedSEOLanguage = context?.language || 'es';
+  // Default to Dutch for Belgian market focus
+  const language: SupportedSEOLanguage = context?.language || 'nl';
   const stopWords = getStopWordsForLanguage(language);
   
   // Clean and normalize text
@@ -341,11 +342,11 @@ function getStopWordsForLanguage(language: SupportedSEOLanguage): Set<string> {
   switch (language) {
     case 'en':
       return STOP_WORDS_EN;
-    case 'nl':
-      return STOP_WORDS_NL;
     case 'es':
-    default:
       return STOP_WORDS_ES;
+    default:
+      // Default to Dutch for Belgian market focus
+      return STOP_WORDS_NL;
   }
 }
 
@@ -365,7 +366,8 @@ export function extractMultilingualKeywords(
     productType?: string;
   }
 ): MultilingualKeywordResult {
-  const languages: SupportedSEOLanguage[] = ['es', 'en', 'nl'];
+  // Prioritize Dutch (nl) for Belgian market, then English, then Spanish
+  const languages: SupportedSEOLanguage[] = ['nl', 'en', 'es'];
   const result: MultilingualKeywordResult = {
     es: [],
     en: [],
@@ -373,10 +375,12 @@ export function extractMultilingualKeywords(
     combined: []
   };
 
-  // Extract Spanish keywords from the original text (product descriptions are in Spanish)
-  const spanishKeywords = extractKeywords(text, { ...context, language: 'es' });
-  result.es = spanishKeywords;
-  result.combined.push(...spanishKeywords);
+  // Extract keywords for each language in priority order (Dutch first for Belgian market)
+  for (const lang of languages) {
+    const langKeywords = extractKeywords(text, { ...context, language: lang });
+    result[lang] = langKeywords;
+    result.combined.push(...langKeywords);
+  }
 
   // Generate native keywords for each target language based on industry terms
   // Belgian customers predominantly search in Dutch and English
@@ -546,7 +550,7 @@ function translateKeyword(
 function calculateRelevance(
   keyword: string,
   context?: { category?: string; productType?: string },
-  language: SupportedSEOLanguage = 'es'
+  language: SupportedSEOLanguage = 'nl'
 ): number {
   let score = 50;
   
@@ -591,7 +595,7 @@ function calculateRelevance(
  */
 function estimateSearchVolume(
   keyword: string,
-  language: SupportedSEOLanguage = 'es'
+  language: SupportedSEOLanguage = 'nl'
 ): 'high' | 'medium' | 'low' {
   const wordCount = keyword.split(' ').length;
   
