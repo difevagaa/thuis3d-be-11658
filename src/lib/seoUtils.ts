@@ -344,7 +344,6 @@ function getStopWordsForLanguage(language: SupportedSEOLanguage): Set<string> {
       return STOP_WORDS_EN;
     case 'es':
       return STOP_WORDS_ES;
-    case 'nl':
     default:
       // Default to Dutch for Belgian market focus
       return STOP_WORDS_NL;
@@ -376,20 +375,12 @@ export function extractMultilingualKeywords(
     combined: []
   };
 
-  // Extract Dutch keywords first for Belgian market focus
-  const dutchKeywords = extractKeywords(text, { ...context, language: 'nl' });
-  result.nl = dutchKeywords;
-  result.combined.push(...dutchKeywords);
-
-  // Extract English keywords for international reach
-  const englishKeywords = extractKeywords(text, { ...context, language: 'en' });
-  result.en = englishKeywords;
-  result.combined.push(...englishKeywords);
-
-  // Extract Spanish keywords from the original text (product descriptions may be in Spanish)
-  const spanishKeywords = extractKeywords(text, { ...context, language: 'es' });
-  result.es = spanishKeywords;
-  result.combined.push(...spanishKeywords);
+  // Extract keywords for each language in priority order (Dutch first for Belgian market)
+  for (const lang of languages) {
+    const langKeywords = extractKeywords(text, { ...context, language: lang });
+    result[lang] = langKeywords;
+    result.combined.push(...langKeywords);
+  }
 
   // Generate native keywords for each target language based on industry terms
   // Belgian customers predominantly search in Dutch and English
