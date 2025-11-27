@@ -70,12 +70,24 @@ Para que ambos funcionen (`thuis3d.be` y `www.thuis3d.be`):
 
 ### 🔧 Paso 3: Configurar SSL/TLS en Cloudflare
 
-1. En el panel de Cloudflare, ve a **SSL/TLS**
+1. En el panel de Cloudflare, ve a **SSL/TLS** → **Overview**
 2. Selecciona el modo **Full** o **Full (strict)**
    - **Full**: Cloudflare → GitHub Pages con SSL
    - **Full (strict)**: Requiere certificado válido en el origen (GitHub lo proporciona)
 
-> ⚠️ **No uses "Flexible"** ya que puede causar bucles de redirección.
+3. Ve a **SSL/TLS** → **Edge Certificates** y configura:
+   - **Minimum TLS Version**: TLS 1.2 (recomendado)
+   - **TLS 1.3**: Habilitado
+   - **Automatic HTTPS Rewrites**: Habilitado
+   - **Always Use HTTPS**: Habilitado
+
+4. Verifica que **Universal SSL** esté activo:
+   - El estado debe mostrar "Active"
+   - Si muestra "Pending", espera hasta 24 horas
+
+> ⚠️ **No uses "Flexible"** ya que puede causar bucles de redirección y errores SSL.
+> 
+> ⚠️ **Si ves ERR_SSL_VERSION_OR_CIPHER_MISMATCH**, consulta la sección de solución de problemas más abajo.
 
 ---
 
@@ -131,6 +143,105 @@ Para redirigir el tráfico de `www` al dominio raíz:
 
 1. Cambia el modo SSL/TLS a **Full** o **Full (strict)**
 2. Verifica que no hay reglas de página contradictorias
+
+#### Error SSL (ERR_SSL_VERSION_OR_CIPHER_MISMATCH)
+
+Este error indica que el navegador y el servidor no pueden acordar una versión de protocolo SSL/TLS o un conjunto de cifrado compatible. Sigue estos pasos para solucionarlo:
+
+##### 🔧 Paso 1: Verificar configuración SSL/TLS en Cloudflare
+
+1. Inicia sesión en el panel de Cloudflare
+2. Selecciona tu dominio `thuis3d.be`
+3. Ve a **SSL/TLS** → **Overview**
+4. Asegúrate de que el modo de encriptación esté configurado en **Full** o **Full (strict)**:
+   - ❌ **Off**: No usar, no es seguro
+   - ❌ **Flexible**: Puede causar problemas de compatibilidad
+   - ✅ **Full**: Encripta entre Cloudflare y GitHub Pages
+   - ✅ **Full (strict)**: Más seguro, requiere certificado válido en origen
+
+##### 🔧 Paso 2: Configurar versión mínima de TLS
+
+1. En Cloudflare, ve a **SSL/TLS** → **Edge Certificates**
+2. Busca la sección **Minimum TLS Version**
+3. Configura a **TLS 1.2** (recomendado):
+   - TLS 1.0 y 1.1 están obsoletos y no son seguros
+   - TLS 1.2 es compatible con la mayoría de navegadores modernos
+   - TLS 1.3 es el más seguro pero puede causar incompatibilidad con navegadores antiguos
+
+##### 🔧 Paso 3: Verificar Edge Certificates
+
+1. En **SSL/TLS** → **Edge Certificates**
+2. Verifica que el **Universal SSL** esté activo
+3. Si ves "Pending Validation", espera hasta 24 horas
+4. Si el certificado está fallando:
+   - Ve a **Edge Certificates** → **Order Advanced Certificate**
+   - O desactiva y reactiva Universal SSL
+
+##### 🔧 Paso 4: Compatibilidad de cifrados
+
+1. En **SSL/TLS** → **Edge Certificates**
+2. Asegúrate de que **TLS 1.3** esté habilitado
+3. Habilita **Automatic HTTPS Rewrites** en **SSL/TLS** → **Edge Certificates**
+
+##### 🔧 Paso 5: Verificar configuración de GitHub Pages
+
+1. Ve a tu repositorio → **Settings** → **Pages**
+2. Verifica que **Enforce HTTPS** esté marcado
+3. Si no puedes marcar la casilla:
+   - Espera a que GitHub genere el certificado SSL (hasta 24 horas)
+   - Verifica que el archivo `CNAME` contenga exactamente `thuis3d.be`
+
+##### 🔧 Paso 6: Limpiar caché y DNS
+
+1. **Limpia caché de Cloudflare**:
+   - Ve a **Caching** → **Configuration** → **Purge Everything**
+
+2. **Limpia caché del navegador**:
+   - Chrome: `Ctrl + Shift + Del` → Selecciona "Imágenes y archivos en caché"
+   - O usa una ventana de incógnito
+
+3. **Limpia caché DNS local**:
+   ```bash
+   # Windows
+   ipconfig /flushdns
+   
+   # macOS
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+   
+   # Linux
+   sudo systemd-resolve --flush-caches
+   ```
+
+##### 🔧 Paso 7: Verificar con herramientas externas
+
+1. **SSL Labs Test**: https://www.ssllabs.com/ssltest/analyze.html?d=thuis3d.be
+   - Esto te mostrará la configuración SSL actual y problemas potenciales
+
+2. **Why No Padlock**: https://www.whynopadlock.com/
+   - Verifica si hay contenido mixto (HTTP/HTTPS)
+
+3. **Verificar certificado desde terminal**:
+   ```bash
+   openssl s_client -connect thuis3d.be:443 -servername thuis3d.be
+   ```
+
+##### ⚠️ Causas comunes del error SSL_VERSION_OR_CIPHER_MISMATCH
+
+| Causa | Solución |
+|-------|----------|
+| Certificado SSL pendiente o inválido | Esperar 24h o regenerar en Cloudflare |
+| Modo SSL incorrecto (Flexible) | Cambiar a Full o Full (strict) |
+| TLS versión muy antigua configurada | Establecer mínimo TLS 1.2 |
+| Conflicto entre Cloudflare y GitHub | Desactivar proxy temporalmente (nube gris) |
+| Certificado de origen expirado | GitHub Pages regenera automáticamente |
+| DNS mal configurado | Verificar registros A/CNAME |
+
+##### ⏱️ Tiempos de resolución esperados
+
+- Cambios en SSL/TLS de Cloudflare: 5-10 minutos
+- Generación de certificado Universal SSL: hasta 24 horas
+- Certificado de GitHub Pages: hasta 24 horas
+- Propagación DNS completa: hasta 48 horas
 
 ---
 
