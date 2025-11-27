@@ -5,6 +5,7 @@ import { Play } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { useTranslation } from "react-i18next";
+import { RichTextDisplay } from "@/components/RichTextDisplay";
 
 interface GalleryItem {
   id: string;
@@ -122,9 +123,10 @@ export default function Gallery() {
                 <CardContent className="p-3 md:p-4">
                   <h3 className="font-semibold text-base md:text-lg mb-1 md:mb-2">{item.title}</h3>
                   {item.description && (
-                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 md:line-clamp-3">
-                      {item.description}
-                    </p>
+                    <RichTextDisplay 
+                      content={item.description} 
+                      className="text-xs md:text-sm text-muted-foreground line-clamp-2 md:line-clamp-3 [&_p]:mb-0"
+                    />
                   )}
                 </CardContent>
               </Card>

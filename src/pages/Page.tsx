@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { RichTextDisplay } from "@/components/RichTextDisplay";
 
 export default function Page() {
   const { slug } = useParams();
@@ -48,11 +49,10 @@ export default function Page() {
       <Card>
         <CardContent className="p-8">
           <h1 className="text-4xl font-bold mb-6">{page.title}</h1>
-          <div className="prose prose-lg max-w-none">
-            {page.content.split('\n').map((paragraph: string, idx: number) => (
-              <p key={idx} className="mb-4">{paragraph}</p>
-            ))}
-          </div>
+          <RichTextDisplay 
+            content={page.content} 
+            className="prose-lg"
+          />
         </CardContent>
       </Card>
     </div>
