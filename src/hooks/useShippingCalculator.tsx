@@ -166,16 +166,18 @@ export const useShippingCalculator = () => {
     }
 
     // PASO 4: Buscar tarifa por código postal
+    // CRÍTICO: Filtrar por applies_to_products ya que este método es para productos
     logger.debug('Checking postal code specific rate...');
     const { data: postalCodeRate } = await supabase
       .from("shipping_postal_codes")
-      .select("shipping_cost")
+      .select("shipping_cost, applies_to_products")
       .eq("country_code", countryCode)
       .eq("postal_code", postalCode)
       .eq("is_enabled", true)
       .maybeSingle();
 
-    if (postalCodeRate) {
+    // Solo usar la tarifa si aplica a productos
+    if (postalCodeRate && postalCodeRate.applies_to_products !== false) {
       const cost = Number(postalCodeRate.shipping_cost);
       logger.info(`Using POSTAL CODE rate: €${cost}`);
       return { cost, isFree: false, country: countryCode };
@@ -208,6 +210,7 @@ export const useShippingCalculator = () => {
     }
     
     // Usar la función de cálculo por zona si existe peso o código postal
+    // CRÍTICO: Filtrar por applies_to_products ya que este método es para productos
     const { data: zones, error: zonesError } = await supabase
       .from('shipping_zones')
       .select('*')
@@ -215,11 +218,14 @@ export const useShippingCalculator = () => {
       .eq('is_active', true)
       .order('postal_code_prefix', { ascending: false });
     
-    if (!zonesError && zones && zones.length > 0) {
-      logger.debug(`Found ${zones.length} shipping zones for ${countryName}`);
+    // Filtrar zonas que aplican a productos
+    const productZones = zones?.filter(zone => zone.applies_to_products !== false) || [];
+    
+    if (!zonesError && productZones.length > 0) {
+      logger.debug(`Found ${productZones.length} shipping zones for ${countryName} (products)`);
       
       // Buscar zona que coincida con el código postal
-      let matchedZone = zones.find(zone => 
+      let matchedZone = productZones.find(zone => 
         zone.postal_code_prefix && 
         zone.postal_code_prefix.length > 0 &&
         postalCode.startsWith(zone.postal_code_prefix)
@@ -227,17 +233,17 @@ export const useShippingCalculator = () => {
       
       // Si no hay match por prefijo, buscar zona predeterminada
       if (!matchedZone) {
-        matchedZone = zones.find(zone => zone.is_default === true);
+        matchedZone = productZones.find(zone => zone.is_default === true);
       }
       
       // Si no hay zona predeterminada, usar zona sin prefijo
       if (!matchedZone) {
-        matchedZone = zones.find(zone => !zone.postal_code_prefix || zone.postal_code_prefix === '');
+        matchedZone = productZones.find(zone => !zone.postal_code_prefix || zone.postal_code_prefix === '');
       }
       
       // Si aún no hay match, usar la primera zona
       if (!matchedZone) {
-        matchedZone = zones[0];
+        matchedZone = productZones[0];
       }
       
       if (matchedZone) {
