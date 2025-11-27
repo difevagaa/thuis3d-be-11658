@@ -177,11 +177,16 @@ const menuSections: MenuSection[] = [
   }
 ];
 
+// Utility function to check if we're on the dashboard
+export function isOnDashboardPath(pathname: string): boolean {
+  return pathname === "/admin" || pathname === "/admin/dashboard";
+}
+
 export function AdminNavigationGrid() {
   const location = useLocation();
   
   // Check if we're on the main dashboard
-  const isOnDashboard = location.pathname === "/admin" || location.pathname === "/admin/dashboard";
+  const isOnDashboard = isOnDashboardPath(location.pathname);
   
   // Only show navigation grid on main admin pages
   if (!isOnDashboard) return null;

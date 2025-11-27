@@ -2,10 +2,10 @@ import { ReactNode, useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNotificationBell from "./AdminNotificationBell";
-import { AdminQuickNav, AdminBreadcrumb } from "./AdminNavigationGrid";
+import { AdminQuickNav, AdminBreadcrumb, menuSections, isOnDashboardPath } from "./AdminNavigationGrid";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
-import { Home, LayoutGrid, Menu, X } from "lucide-react";
+import { Home, LayoutGrid, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,7 +23,7 @@ export const AdminLayout = ({
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const isOnDashboard = location.pathname === "/admin" || location.pathname === "/admin/dashboard";
+  const isOnDashboard = isOnDashboardPath(location.pathname);
   
   const checkAdminAccess = useCallback(async () => {
     try {
@@ -176,97 +176,9 @@ export const AdminLayout = ({
 
 // Mobile Navigation Component
 function MobileNavigation({ onNavigate }: { onNavigate: () => void }) {
-  const location = useLocation();
-  
-  const sections = [
-    {
-      title: "Principal",
-      items: [
-        { label: "Dashboard", url: "/admin/dashboard" }
-      ]
-    },
-    {
-      title: "Catálogo",
-      items: [
-        { label: "Productos", url: "/admin/productos" },
-        { label: "Categorías", url: "/admin/categorias" },
-        { label: "Materiales", url: "/admin/materiales" },
-        { label: "Colores", url: "/admin/colores" }
-      ]
-    },
-    {
-      title: "Ventas",
-      items: [
-        { label: "Pedidos", url: "/admin/pedidos" },
-        { label: "Cotizaciones", url: "/admin/cotizaciones" },
-        { label: "Facturas", url: "/admin/facturas" },
-        { label: "Estados", url: "/admin/estados" }
-      ]
-    },
-    {
-      title: "Calculadora 3D",
-      items: [
-        { label: "Configuración", url: "/admin/calculadora-3d" },
-        { label: "Descuentos", url: "/admin/descuentos-cantidad" },
-        { label: "Calibración", url: "/admin/calibracion" },
-        { label: "Perfiles", url: "/admin/perfiles-calibracion" },
-        { label: "Precisión", url: "/admin/precision-calculadora" },
-        { label: "Soportes", url: "/admin/deteccion-soportes" },
-        { label: "Modelos", url: "/admin/modelos-vista-previa" }
-      ]
-    },
-    {
-      title: "Clientes",
-      items: [
-        { label: "Usuarios", url: "/admin/usuarios" },
-        { label: "Roles", url: "/admin/roles" }
-      ]
-    },
-    {
-      title: "Marketing",
-      items: [
-        { label: "Lealtad", url: "/admin/loyalty" },
-        { label: "Cupones", url: "/admin/coupons" },
-        { label: "Tarjetas", url: "/admin/gift-cards" },
-        { label: "SEO", url: "/admin/seo" }
-      ]
-    },
-    {
-      title: "Comunicación",
-      items: [
-        { label: "Mensajes", url: "/admin/messages" },
-        { label: "Reseñas", url: "/admin/reviews" },
-        { label: "Visitantes", url: "/admin/visitantes" }
-      ]
-    },
-    {
-      title: "Contenido",
-      items: [
-        { label: "Personalizar", url: "/admin/personalizador" },
-        { label: "Contenido", url: "/admin/contenido" },
-        { label: "Páginas", url: "/admin/pages" },
-        { label: "Legal", url: "/admin/paginas-legales" },
-        { label: "Blog", url: "/admin/blog" },
-        { label: "Galería", url: "/admin/galeria" }
-      ]
-    },
-    {
-      title: "Configuración",
-      items: [
-        { label: "PINs", url: "/admin/pin" },
-        { label: "Pagos", url: "/admin/configuracion-pagos" },
-        { label: "IVA", url: "/admin/configuracion-iva" },
-        { label: "Envíos", url: "/admin/gestion-envios" },
-        { label: "Idiomas", url: "/admin/traducciones" },
-        { label: "Backup", url: "/admin/backup-config" },
-        { label: "Papelera", url: "/admin/trash" }
-      ]
-    }
-  ];
-
   return (
     <div className="space-y-6">
-      {sections.map((section, idx) => (
+      {menuSections.map((section, idx) => (
         <div key={idx}>
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
             {section.title}

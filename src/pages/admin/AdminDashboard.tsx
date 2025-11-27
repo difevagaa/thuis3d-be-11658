@@ -11,19 +11,40 @@ import { logger } from '@/lib/logger';
 import { AdminNavigationGrid } from "@/components/AdminNavigationGrid";
 import { useNavigate } from "react-router-dom";
 
+interface RecentOrder {
+  id: string;
+  total: number;
+  created_at: string;
+  profiles?: { full_name: string };
+}
+
+interface DashboardStats {
+  totalRevenue: number;
+  totalOrders: number;
+  totalQuotes: number;
+  totalCustomers: number;
+  totalExpenses: number;
+  onlineUsers: number;
+  visitorsToday: number;
+  lastOrderDate: string | null;
+  recentOrders: RecentOrder[];
+}
+
+const initialStats: DashboardStats = {
+  totalRevenue: 0,
+  totalOrders: 0,
+  totalQuotes: 0,
+  totalCustomers: 0,
+  totalExpenses: 0,
+  onlineUsers: 0,
+  visitorsToday: 0,
+  lastOrderDate: null,
+  recentOrders: []
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalQuotes: 0,
-    totalCustomers: 0,
-    totalExpenses: 0,
-    onlineUsers: 0,
-    visitorsToday: 0,
-    lastOrderDate: null as string | null,
-    recentOrders: [] as Array<{ id: string; total: number; created_at: string; profiles?: { full_name: string } }>
-  });
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
   const [loading, setLoading] = useState(true);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [newExpense, setNewExpense] = useState({
