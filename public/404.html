@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thuis3D.be - Redirigiendo...</title>
+    <script>
+      // Single Page App (SPA) redirect script for GitHub Pages
+      // This script redirects all 404 requests to index.html while preserving the URL path
+      // GitHub Pages does not natively support SPA routing, so this workaround is necessary
+      
+      (function() {
+        // Store the current path in sessionStorage
+        var segmentCount = 0; // Adjust if your app is in a subdirectory
+        var location = window.location;
+        var pathSegmentsToKeep = segmentCount;
+        
+        // Get the path after the base URL
+        var path = location.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
+        var search = location.search;
+        var hash = location.hash;
+        
+        // Store the redirect path
+        sessionStorage.setItem('redirect', path + search + hash);
+        
+        // Redirect to the base URL (index.html will handle the routing)
+        location.replace(
+          location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '') +
+          location.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/'
+        );
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <p>Por favor, habilita JavaScript para ver este sitio web.</p>
+      <p>Please enable JavaScript to view this website.</p>
+    </noscript>
+  </body>
+</html>
