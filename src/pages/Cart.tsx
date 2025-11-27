@@ -197,9 +197,10 @@ const Cart = () => {
       setAppliedGiftCard(data);
       sessionStorage.setItem("applied_gift_card", JSON.stringify(data));
       
-      // Send notification about gift card redemption
+      // Send notification about gift card redemption with broadcast for immediate update
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Use RPC and then trigger a broadcast for immediate UI update
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
           p_type: 'giftcard_redeemed',
@@ -207,6 +208,19 @@ const Cart = () => {
           p_message: t('cart:giftCard.redeemed', { amount: data.current_balance.toFixed(2) }),
           p_link: '/carrito'
         });
+        
+        // Trigger a broadcast to ensure immediate notification refresh
+        try {
+          const userChannel = supabase.channel(`user-notifications-broadcast-${user.id}`);
+          await userChannel.send({
+            type: 'broadcast',
+            event: 'new-notification',
+            payload: { type: 'giftcard_redeemed', timestamp: new Date().toISOString() }
+          });
+          supabase.removeChannel(userChannel);
+        } catch (e) {
+          // Broadcast failure is not critical - notification is already in database
+        }
       }
       
       toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));

@@ -264,6 +264,20 @@ export const sendGiftCardActivationNotification = async (
         p_message: `Has recibido una tarjeta regalo de €${giftCardData.initial_amount} de ${giftCardData.sender_name || 'un amigo'}. ¡Ya puedes usarla en tus compras!`,
         p_link: '/mi-cuenta?tab=giftcards'
       });
+      
+      // Trigger a broadcast for immediate notification update
+      try {
+        const userChannel = supabase.channel(`user-notifications-broadcast-${recipientProfile.id}`);
+        await userChannel.send({
+          type: 'broadcast',
+          event: 'new-notification',
+          payload: { type: 'gift_card_activated', timestamp: new Date().toISOString() }
+        });
+        supabase.removeChannel(userChannel);
+      } catch (e) {
+        // Broadcast failure is not critical - notification is already in database
+      }
+      
       logger.log('In-app notification sent to recipient:', recipientProfile.id);
     }
   } catch (error) {

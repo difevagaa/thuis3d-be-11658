@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell, X } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,96 +28,18 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const isMountedRef = useRef(true);
+  const userIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | undefined;
-    let isMounted = true;
+  // Memoized load function to avoid recreating on each render
+  const loadNotifications = useCallback(async () => {
+    if (!isMountedRef.current) return;
     
-    const setupSubscription = async () => {
-      // First load notifications (check isMounted before and after)
-      if (!isMounted) return;
-      await loadNotifications();
-      if (!isMounted) return;
-      
-      // Get current user for filtering
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !isMounted) return;
-      const currentUserId = user.id;
-      
-      // Set up realtime subscription for INSERT and UPDATE events
-      // The filter on user_id ensures we only receive notifications for the current user
-      channel = supabase
-        .channel(`user-notifications-${currentUserId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${currentUserId}`,
-          },
-          (payload) => {
-            if (isMounted) {
-              logger.debug('📬 New notification received:', payload);
-              loadNotifications();
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${currentUserId}`,
-          },
-          () => {
-            if (isMounted) {
-              loadNotifications();
-            }
-          }
-        )
-        .subscribe((status, err) => {
-          if (err) {
-            logger.error('🔔 Notification subscription error:', err);
-          } else {
-            logger.debug('🔔 Notification subscription status:', status);
-          }
-        });
-    };
-    
-    setupSubscription();
-
-    return () => {
-      isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, []);
-
-  const loadNotifications = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !isMountedRef.current) return;
 
       // Filtrar SOLO notificaciones de tipo cliente (excluyendo las administrativas)
-      // Tipos de notificaciones que los clientes pueden recibir:
-      // - order: Nuevo pedido creado
-      // - order_update: Actualización de estado de pedido
-      // - order_paid: Pago confirmado
-      // - order_cancelled: Pedido cancelado
-      // - invoice: Nueva factura generada
-      // - quote: Nueva cotización enviada/recibida
-      // - quote_update: Actualización de cotización
-      // - loyalty_points: Puntos de lealtad ganados
-      // - loyalty_coupon_available: Cupón de lealtad disponible
-      // - loyalty_next_goal: Próxima meta de lealtad
-      // - loyalty_milestone: Hito de lealtad alcanzado
-      // - admin_reply: Respuesta del administrador
-      // - message_received: Mensaje recibido en chat
-      // Note: Both 'quote_update' and 'quote_updated' are included for backwards compatibility
-      // as different parts of the system may use either naming convention
       const clientTypes = [
         'order', 'order_update', 'order_paid', 'order_cancelled',
         'invoice', 'quote', 'quote_update', 'quote_updated',
@@ -136,12 +58,97 @@ export default function NotificationBell() {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      if (isMountedRef.current) {
+        setNotifications(data || []);
+        setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      }
     } catch (error) {
       logger.error("Error loading client notifications:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    let dbChannel: ReturnType<typeof supabase.channel> | undefined;
+    let broadcastChannel: ReturnType<typeof supabase.channel> | undefined;
+    
+    const setupSubscription = async () => {
+      // First load notifications
+      await loadNotifications();
+      if (!isMountedRef.current) return;
+      
+      // Get current user for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isMountedRef.current) return;
+      userIdRef.current = user.id;
+      
+      // Set up realtime subscription for database changes (INSERT and UPDATE events)
+      // Using event: '*' for better reliability, then filter in callback
+      dbChannel = supabase
+        .channel(`user-notifications-db-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+          },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            
+            // Check if this notification is for the current user
+            const newRecord = payload.new as Notification & { user_id?: string };
+            const oldRecord = payload.old as Notification & { user_id?: string };
+            const recordUserId = newRecord?.user_id || oldRecord?.user_id;
+            
+            if (recordUserId === userIdRef.current) {
+              logger.debug('📬 New notification received via postgres_changes:', payload);
+              loadNotifications();
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) {
+            logger.error('🔔 Notification DB subscription error:', err);
+          } else {
+            logger.debug('🔔 Notification DB subscription status:', status);
+          }
+        });
+      
+      // Set up a broadcast channel for immediate updates
+      // This provides faster notification delivery when triggered manually
+      broadcastChannel = supabase
+        .channel(`user-notifications-broadcast-${user.id}`)
+        .on(
+          'broadcast',
+          { event: 'new-notification' },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            logger.debug('📬 New notification received via broadcast:', payload);
+            loadNotifications();
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) {
+            logger.error('🔔 Notification broadcast subscription error:', err);
+          } else {
+            logger.debug('🔔 Notification broadcast subscription status:', status);
+          }
+        });
+    };
+    
+    setupSubscription();
+
+    return () => {
+      isMountedRef.current = false;
+      if (dbChannel) {
+        supabase.removeChannel(dbChannel);
+      }
+      if (broadcastChannel) {
+        supabase.removeChannel(broadcastChannel);
+      }
+    };
+  }, [loadNotifications]);
 
   const markAsRead = async (id: string) => {
     try {
