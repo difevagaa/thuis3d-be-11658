@@ -149,14 +149,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const subtotal = parseFloat(quote.estimated_price || '0');
+    // CRÍTICO: Incluir el costo de envío de la cotización si existe
+    const shippingCost = parseFloat(quote.shipping_cost || '0');
     const tax = shouldApplyTax ? (subtotal * taxRate) / 100 : 0;
-    const total = subtotal + tax;
+    const total = subtotal + tax + shippingCost;
 
     console.log('[QUOTE APPROVAL] Tax calculation:', { 
       quote_tax_enabled: quote.tax_enabled,
       shouldApplyTax, 
       taxRate, 
-      subtotal, 
+      subtotal,
+      shippingCost,
       tax, 
       total 
     });
@@ -175,7 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
         tax: tax,
         total: total,
         notes: `Factura generada automáticamente para cotización ${quote.quote_type}`,
-        shipping: 0,
+        shipping: shippingCost,
         discount: 0
       })
       .select()
@@ -257,7 +260,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <p><strong>Número de Factura:</strong> ${safeInvoiceNumber}</p>
                   <p><strong>Tipo:</strong> ${escapeHtml(quote.quote_type)}</p>
                   <p class="amount">€${total.toFixed(2)}</p>
-                  <p style="font-size: 12px; color: #666;">Subtotal: €${subtotal.toFixed(2)} | IVA (${taxRate}%): €${tax.toFixed(2)}</p>
+                  <p style="font-size: 12px; color: #666;">Subtotal: €${subtotal.toFixed(2)}${shippingCost > 0 ? ` | Envío: €${shippingCost.toFixed(2)}` : ''} | IVA (${taxRate}%): €${tax.toFixed(2)}</p>
                 </div>
                 
                 <div style="text-align: center;">

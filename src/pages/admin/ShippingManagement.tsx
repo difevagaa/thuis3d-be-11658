@@ -58,12 +58,18 @@ interface PostalCode {
   quotes_shipping_cost: number | null;
 }
 
+interface EditingPostalCode extends PostalCode {
+  isEditing?: boolean;
+}
+
 export default function ShippingManagement() {
   const [settings, setSettings] = useState<any>(null);
   const [countries, setCountries] = useState<any[]>([]);
   const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
   const [zones, setZones] = useState<ShippingZone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingPostalCodeId, setEditingPostalCodeId] = useState<string | null>(null);
+  const [editingPostalCodeData, setEditingPostalCodeData] = useState<EditingPostalCode | null>(null);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
   const [showZoneForm, setShowZoneForm] = useState(false);
   
@@ -261,6 +267,49 @@ export default function ShippingManagement() {
       logger.error("Error adding postal code:", error);
       toast.error("Error al añadir código postal");
     }
+  };
+
+  const updatePostalCode = async (data: {
+    id: string;
+    shipping_cost: number;
+    applies_to_products: boolean;
+    applies_to_quotes: boolean;
+    quotes_shipping_cost: number | null;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from("shipping_postal_codes")
+        .update({
+          shipping_cost: data.shipping_cost,
+          applies_to_products: data.applies_to_products,
+          applies_to_quotes: data.applies_to_quotes,
+          quotes_shipping_cost: data.quotes_shipping_cost
+        })
+        .eq("id", data.id);
+
+      if (error) throw error;
+      toast.success("Código postal actualizado");
+      setEditingPostalCodeId(null);
+      setEditingPostalCodeData(null);
+      loadData();
+    } catch (error) {
+      logger.error("Error updating postal code:", error);
+      toast.error("Error al actualizar código postal");
+    }
+  };
+
+  const startEditingPostalCode = (pc: PostalCode) => {
+    setEditingPostalCodeId(pc.id);
+    setEditingPostalCodeData({
+      ...pc,
+      applies_to_products: pc.applies_to_products ?? true,
+      applies_to_quotes: pc.applies_to_quotes ?? true
+    });
+  };
+
+  const cancelEditingPostalCode = () => {
+    setEditingPostalCodeId(null);
+    setEditingPostalCodeData(null);
   };
 
   const deletePostalCode = async (id: string) => {
@@ -1133,27 +1182,150 @@ export default function ShippingManagement() {
                   <TableRow>
                     <TableHead>País</TableHead>
                     <TableHead>Código Postal</TableHead>
-                    <TableHead>Costo (€)</TableHead>
+                    <TableHead>Costo Productos (€)</TableHead>
+                    <TableHead>Costo Cotizaciones (€)</TableHead>
+                    <TableHead>Aplica a</TableHead>
                     <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {postalCodes.map((pc) => (
-                    <TableRow key={pc.id}>
-                      <TableCell>{pc.country_code}</TableCell>
-                      <TableCell>{pc.postal_code}</TableCell>
-                      <TableCell>€{Number(pc.shipping_cost).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deletePostalCode(pc.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {postalCodes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No hay códigos postales especiales configurados
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    postalCodes.map((pc) => (
+                      <TableRow key={pc.id}>
+                        <TableCell>{pc.country_code}</TableCell>
+                        <TableCell className="font-mono font-medium">{pc.postal_code}</TableCell>
+                        <TableCell>
+                          {editingPostalCodeId === pc.id ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="w-24"
+                              value={editingPostalCodeData?.shipping_cost ?? ''}
+                              onChange={(e) => setEditingPostalCodeData(prev => prev ? {
+                                ...prev,
+                                shipping_cost: parseFloat(e.target.value) || 0
+                              } : null)}
+                            />
+                          ) : (
+                            <span>€{Number(pc.shipping_cost).toFixed(2)}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingPostalCodeId === pc.id ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="w-24"
+                              value={editingPostalCodeData?.quotes_shipping_cost ?? ''}
+                              onChange={(e) => setEditingPostalCodeData(prev => prev ? {
+                                ...prev,
+                                quotes_shipping_cost: e.target.value === '' ? null : parseFloat(e.target.value)
+                              } : null)}
+                              placeholder="Mismo"
+                            />
+                          ) : (
+                            <span>
+                              {pc.quotes_shipping_cost != null 
+                                ? `€${Number(pc.quotes_shipping_cost).toFixed(2)}`
+                                : <span className="text-muted-foreground text-xs">Mismo costo</span>
+                              }
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingPostalCodeId === pc.id ? (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`edit-pc-products-${pc.id}`}
+                                  checked={editingPostalCodeData?.applies_to_products ?? true}
+                                  onCheckedChange={(checked) => setEditingPostalCodeData(prev => prev ? {
+                                    ...prev,
+                                    applies_to_products: !!checked
+                                  } : null)}
+                                />
+                                <Label htmlFor={`edit-pc-products-${pc.id}`} className="text-xs">Productos</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`edit-pc-quotes-${pc.id}`}
+                                  checked={editingPostalCodeData?.applies_to_quotes ?? true}
+                                  onCheckedChange={(checked) => setEditingPostalCodeData(prev => prev ? {
+                                    ...prev,
+                                    applies_to_quotes: !!checked
+                                  } : null)}
+                                />
+                                <Label htmlFor={`edit-pc-quotes-${pc.id}`} className="text-xs">Cotizaciones</Label>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {(pc.applies_to_products ?? true) && (
+                                <Badge variant="secondary" className="text-xs">Productos</Badge>
+                              )}
+                              {(pc.applies_to_quotes ?? true) && (
+                                <Badge variant="outline" className="text-xs">Cotizaciones</Badge>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {editingPostalCodeId === pc.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    if (editingPostalCodeData) {
+                                      updatePostalCode({
+                                        id: pc.id,
+                                        shipping_cost: editingPostalCodeData.shipping_cost,
+                                        applies_to_products: editingPostalCodeData.applies_to_products ?? true,
+                                        applies_to_quotes: editingPostalCodeData.applies_to_quotes ?? true,
+                                        quotes_shipping_cost: editingPostalCodeData.quotes_shipping_cost
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={cancelEditingPostalCode}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEditingPostalCode(pc)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deletePostalCode(pc.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
