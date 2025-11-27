@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { Gift, CreditCard, Mail, Search, Sparkles, Send, CheckCircle2, ShoppingCart, Heart } from "lucide-react";
+import GiftCardPrintable from "@/components/GiftCardPrintable";
 
 function generateGiftCardCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -20,6 +21,9 @@ function generateGiftCardCode(): string {
   }
   return code;
 }
+
+// Predefined amounts for gift cards
+const GIFT_CARD_AMOUNTS = [25, 50, 100, 200];
 
 export default function GiftCard() {
   const { t } = useTranslation('giftCards');
@@ -33,6 +37,24 @@ export default function GiftCard() {
   });
   const [checkCode, setCheckCode] = useState("");
   const [balance, setBalance] = useState<number | null>(null);
+  const [showCustomAmount, setShowCustomAmount] = useState(false);
+
+  // Calculate the display amount for preview
+  // Show 0 when no amount selected yet, otherwise show the selected amount
+  const displayAmount = buyForm.amount === "custom" 
+    ? parseFloat(buyForm.customAmount) || 0
+    : buyForm.amount ? parseFloat(buyForm.amount) : 0;
+
+  // Handle amount selection
+  const handleAmountSelect = (amount: number | "custom") => {
+    if (amount === "custom") {
+      setShowCustomAmount(true);
+      setBuyForm({ ...buyForm, amount: "custom" });
+    } else {
+      setShowCustomAmount(false);
+      setBuyForm({ ...buyForm, amount: amount.toString(), customAmount: "" });
+    }
+  };
 
   const handleBuyGiftCard = async () => {
     try {
@@ -181,120 +203,302 @@ export default function GiftCard() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-4xl font-bold mb-8">{t('title')}</h1>
+    <div className="min-h-screen">
+      {/* Hero Section with gradient background */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-purple-600 py-12 md:py-20">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 opacity-20">
+          <svg width="100%" height="100%">
+            <defs>
+              <pattern id="gift-hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                <circle cx="30" cy="30" r="3" fill="white" opacity="0.6" />
+                <circle cx="10" cy="10" r="2" fill="white" opacity="0.4" />
+                <circle cx="50" cy="50" r="2" fill="white" opacity="0.4" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#gift-hero-pattern)" />
+          </svg>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-white/20 backdrop-blur-md p-4 rounded-full">
+              <Gift className="h-12 w-12 md:h-16 md:w-16 text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+            {t('title')}
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+            {t('heroSubtitle', { defaultValue: 'El regalo perfecto para cualquier ocasión. Personalízala con tu mensaje especial.' })}
+          </p>
+        </div>
+      </div>
 
-      <Tabs defaultValue="buy" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="buy">{t('buyCard')}</TabsTrigger>
-          <TabsTrigger value="check">{t('checkBalance')}</TabsTrigger>
-        </TabsList>
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        {/* How It Works Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+            {t('howItWorks', { defaultValue: '¿Cómo funciona?' })}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-700">
+              <div className="bg-orange-500 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+              <ShoppingCart className="h-8 w-8 text-orange-500 mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">{t('step1Title', { defaultValue: 'Elige el monto' })}</h3>
+              <p className="text-sm text-muted-foreground">{t('step1Description', { defaultValue: 'Selecciona un monto predefinido o personalizado para tu tarjeta de regalo.' })}</p>
+            </div>
+            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-700">
+              <div className="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+              <Mail className="h-8 w-8 text-red-500 mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">{t('step2Title', { defaultValue: 'Personaliza' })}</h3>
+              <p className="text-sm text-muted-foreground">{t('step2Description', { defaultValue: 'Añade un mensaje personal y los datos del destinatario.' })}</p>
+            </div>
+            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-700">
+              <div className="bg-purple-500 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+              <Send className="h-8 w-8 text-purple-500 mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">{t('step3Title', { defaultValue: 'Envía' })}</h3>
+              <p className="text-sm text-muted-foreground">{t('step3Description', { defaultValue: 'El destinatario recibirá la tarjeta digital lista para usar.' })}</p>
+            </div>
+          </div>
+        </div>
 
-        <TabsContent value="buy">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('buyCardTitle')}</CardTitle>
-              <CardDescription>{t('buyCardDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>{t('amount')}</Label>
-                <Select
-                  value={buyForm.amount}
-                  onValueChange={(value) => setBuyForm({ ...buyForm, amount: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectAmount')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">€25</SelectItem>
-                    <SelectItem value="50">€50</SelectItem>
-                    <SelectItem value="100">€100</SelectItem>
-                    <SelectItem value="200">€200</SelectItem>
-                    <SelectItem value="custom">{t('customAmount')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Main Content with Tabs */}
+        <Tabs defaultValue="buy" className="w-full max-w-5xl mx-auto">
+          <TabsList className="grid w-full grid-cols-2 mb-8 h-14">
+            <TabsTrigger value="buy" className="text-base md:text-lg gap-2 h-full">
+              <Gift className="h-5 w-5" />
+              {t('buyCard')}
+            </TabsTrigger>
+            <TabsTrigger value="check" className="text-base md:text-lg gap-2 h-full">
+              <Search className="h-5 w-5" />
+              {t('checkBalance')}
+            </TabsTrigger>
+          </TabsList>
 
-              {buyForm.amount === "custom" && (
-                <div>
-                  <Label>{t('customAmount')}</Label>
-                  <Input
-                    type="number"
-                    placeholder={t('customAmountPlaceholder')}
-                    value={buyForm.customAmount}
-                    onChange={(e) => setBuyForm({ ...buyForm, customAmount: e.target.value })}
+          <TabsContent value="buy">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left side - Form */}
+              <Card className="border-2 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-orange-500/10 to-purple-500/10 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-br from-orange-500 to-purple-600 p-2 rounded-lg">
+                      <CreditCard className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle>{t('buyCardTitle')}</CardTitle>
+                      <CardDescription>{t('buyCardDescription')}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                  {/* Amount Selection */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-orange-500" />
+                      {t('amount')}
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {GIFT_CARD_AMOUNTS.map((amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          onClick={() => handleAmountSelect(amount)}
+                          className={`p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
+                            buyForm.amount === amount.toString() && !showCustomAmount
+                              ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white border-transparent shadow-lg'
+                              : 'bg-card hover:bg-muted border-border hover:border-orange-300'
+                          }`}
+                        >
+                          <span className="text-xl font-bold">€{amount}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAmountSelect("custom")}
+                      className={`w-full p-3 rounded-xl border-2 transition-all duration-200 ${
+                        showCustomAmount
+                          ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white border-transparent'
+                          : 'bg-card hover:bg-muted border-border hover:border-orange-300'
+                      }`}
+                    >
+                      {t('customAmount', { defaultValue: 'Monto personalizado' })}
+                    </button>
+                    
+                    {showCustomAmount && (
+                      <div className="mt-3">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">€</span>
+                          <Input
+                            type="number"
+                            placeholder={t('customAmountPlaceholder', { defaultValue: 'Ingresa el monto' })}
+                            value={buyForm.customAmount}
+                            onChange={(e) => setBuyForm({ ...buyForm, customAmount: e.target.value })}
+                            className="pl-8 text-lg font-semibold h-12"
+                            min="1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recipient Email */}
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-red-500" />
+                      {t('recipientEmail')} *
+                    </Label>
+                    <Input
+                      type="email"
+                      placeholder={t('recipientEmailPlaceholder')}
+                      value={buyForm.recipientEmail}
+                      onChange={(e) => setBuyForm({ ...buyForm, recipientEmail: e.target.value })}
+                      className="h-12"
+                    />
+                  </div>
+
+                  {/* Sender Name */}
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-pink-500" />
+                      {t('yourName')} *
+                    </Label>
+                    <Input
+                      placeholder={t('yourNamePlaceholder')}
+                      value={buyForm.senderName}
+                      onChange={(e) => setBuyForm({ ...buyForm, senderName: e.target.value })}
+                      className="h-12"
+                    />
+                  </div>
+
+                  {/* Message */}
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">{t('message')}</Label>
+                    <Textarea
+                      placeholder={t('messagePlaceholder')}
+                      value={buyForm.message}
+                      onChange={(e) => setBuyForm({ ...buyForm, message: e.target.value })}
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={handleBuyGiftCard} 
+                    className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    disabled={!buyForm.amount || (showCustomAmount && !buyForm.customAmount) || !buyForm.recipientEmail || !buyForm.senderName}
+                  >
+                    <Gift className="mr-2 h-5 w-5" />
+                    {t('buyGiftCard')}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Right side - Preview */}
+              <div className="space-y-6">
+                <div className="text-center lg:text-left">
+                  <h3 className="text-lg font-semibold mb-2">{t('preview', { defaultValue: 'Vista previa' })}</h3>
+                  <p className="text-sm text-muted-foreground">{t('previewDescription', { defaultValue: 'Así se verá tu tarjeta de regalo' })}</p>
+                </div>
+                
+                <div className="flex justify-center lg:justify-start">
+                  <GiftCardPrintable
+                    code="XXXX-XXXX-XXXX-XXXX"
+                    amount={displayAmount}
+                    message={buyForm.message || t('defaultMessage', { defaultValue: '¡Felicidades! Este regalo es para ti.' })}
+                    senderName={buyForm.senderName || t('yourNamePlaceholder')}
+                    recipientEmail={buyForm.recipientEmail || t('recipientEmailPlaceholder')}
                   />
                 </div>
-              )}
 
-              <div>
-                <Label>{t('recipientEmail')} *</Label>
-                <Input
-                  type="email"
-                  placeholder={t('recipientEmailPlaceholder')}
-                  value={buyForm.recipientEmail}
-                  onChange={(e) => setBuyForm({ ...buyForm, recipientEmail: e.target.value })}
-                />
+                {/* Benefits */}
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-700">
+                  <CardContent className="pt-6">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      {t('benefitsTitle', { defaultValue: 'Beneficios' })}
+                    </h4>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{t('benefit1', { defaultValue: 'Entrega instantánea por correo electrónico' })}</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{t('benefit2', { defaultValue: 'Válida para todos los productos de la tienda' })}</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{t('benefit3', { defaultValue: 'Sin fecha de caducidad' })}</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{t('benefit4', { defaultValue: 'Personalizable con tu mensaje' })}</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
               </div>
+            </div>
+          </TabsContent>
 
-              <div>
-                <Label>{t('yourName')} *</Label>
-                <Input
-                  placeholder={t('yourNamePlaceholder')}
-                  value={buyForm.senderName}
-                  onChange={(e) => setBuyForm({ ...buyForm, senderName: e.target.value })}
-                />
-              </div>
+          <TabsContent value="check">
+            <div className="max-w-xl mx-auto">
+              <Card className="border-2 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-2 rounded-lg">
+                      <Search className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle>{t('checkBalanceTitle')}</CardTitle>
+                      <CardDescription>{t('checkBalanceDescription')}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-blue-500" />
+                      {t('cardCode')}
+                    </Label>
+                    <Input
+                      placeholder={t('cardCodePlaceholder')}
+                      value={checkCode}
+                      onChange={(e) => setCheckCode(e.target.value.toUpperCase())}
+                      className="h-12 font-mono text-center text-lg tracking-widest"
+                    />
+                  </div>
 
-              <div>
-                <Label>{t('message')}</Label>
-                <Textarea
-                  placeholder={t('messagePlaceholder')}
-                  value={buyForm.message}
-                  onChange={(e) => setBuyForm({ ...buyForm, message: e.target.value })}
-                  rows={4}
-                />
-              </div>
+                  <Button 
+                    onClick={handleCheckBalance} 
+                    className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
+                    disabled={!checkCode}
+                  >
+                    <Search className="mr-2 h-5 w-5" />
+                    {t('checkBalance')}
+                  </Button>
 
-              <Button onClick={handleBuyGiftCard} className="w-full">
-                {t('buyGiftCard')}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="check">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('checkBalanceTitle')}</CardTitle>
-              <CardDescription>{t('checkBalanceDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>{t('cardCode')}</Label>
-                <Input
-                  placeholder={t('cardCodePlaceholder')}
-                  value={checkCode}
-                  onChange={(e) => setCheckCode(e.target.value.toUpperCase())}
-                />
-              </div>
-
-              <Button onClick={handleCheckBalance} className="w-full">
-                {t('checkBalance')}
-              </Button>
-
-              {balance !== null && (
-                <div className="mt-4 p-4 bg-primary/10 rounded-lg">
-                  <p className="text-center text-2xl font-bold">
-                    {t('availableBalance', { defaultValue: 'Saldo Disponible' })}: €{balance.toFixed(2)}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  {balance !== null && (
+                    <div className="mt-6 p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl border-2 border-green-200 dark:border-green-700">
+                      <div className="text-center">
+                        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground mb-2">{t('availableBalance', { defaultValue: 'Saldo Disponible' })}</p>
+                        <p className="text-4xl md:text-5xl font-bold text-green-600 dark:text-green-400">
+                          €{balance.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

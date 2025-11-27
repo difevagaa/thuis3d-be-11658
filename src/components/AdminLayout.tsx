@@ -5,11 +5,21 @@ import AdminNotificationBell from "./AdminNotificationBell";
 import { AdminQuickNav, AdminBreadcrumb, menuSections, isOnDashboardPath } from "./AdminNavigationGrid";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
-import { Home, LayoutGrid, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import { 
+  Home, 
+  RefreshCw, 
+  RotateCcw, 
+  Contrast, 
+  Maximize, 
+  Minimize 
+} from "lucide-react";
 interface AdminLayoutProps {
   children: ReactNode;
 }
@@ -21,9 +31,81 @@ export const AdminLayout = ({
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  const isOnDashboard = isOnDashboardPath(location.pathname);
+  const [isGrayscale, setIsGrayscale] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Toggle grayscale mode for accessibility
+  const toggleGrayscale = useCallback(() => {
+    setIsGrayscale((prev) => {
+      const newValue = !prev;
+      if (newValue) {
+        document.documentElement.classList.add("grayscale");
+        toast.success("Modo blanco y negro activado");
+      } else {
+        document.documentElement.classList.remove("grayscale");
+        toast.success("Modo blanco y negro desactivado");
+      }
+      return newValue;
+    });
+  }, []);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = useCallback(() => {
+    // Check for browser support
+    if (!document.documentElement.requestFullscreen) {
+      toast.error("Tu navegador no soporta pantalla completa");
+      return;
+    }
+    
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        toast.success("Pantalla completa activada");
+      }).catch((err) => {
+        logger.error("Error entering fullscreen:", { error: err });
+        toast.error("No se pudo activar pantalla completa");
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+        toast.success("Pantalla completa desactivada");
+      }).catch((err) => {
+        logger.error("Error exiting fullscreen:", { error: err });
+      });
+    }
+  }, []);
+
+  // Refresh the page
+  const handleRefreshPage = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  // Refresh data (re-run queries, trigger a global refresh event)
+  const handleRefreshData = useCallback(() => {
+    setIsRefreshing(true);
+    // Dispatch a custom event that components can listen to for refreshing their data
+    window.dispatchEvent(new CustomEvent("admin-refresh-data"));
+    toast.success("Actualizando datos...");
+    // Reset the refreshing state after a short delay
+    setTimeout(() => setIsRefreshing(false), 1000);
+  }, []);
+
+  // Listen for fullscreen change events
+  useEffect(() => {
+    // Check for browser support before adding listener
+    if (typeof document.fullscreenElement === "undefined") {
+      return;
+    }
+    
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
   
   const checkAdminAccess = useCallback(async () => {
     try {
@@ -128,37 +210,104 @@ export const AdminLayout = ({
                 <AdminBreadcrumb />
               </div>
             </div>
+            <TooltipProvider delayDuration={300}>
+              <div className="flex items-center gap-1">
+                {/* Home - Go to homepage */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => navigate("/")}
+                      className="h-9 w-9"
+                    >
+                      <Home className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ir a la página de inicio</p>
+                  </TooltipContent>
+                </Tooltip>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-2">
-              {/* Back to Dashboard - shown when not on dashboard */}
-              {!isOnDashboard && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/admin/dashboard")}
-                  className="hidden sm:inline-flex items-center gap-2"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  <span className="hidden md:inline">Inicio Admin</span>
-                </Button>
-              )}
-              
-              {/* Go to Store */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/")}
-                title="Ir a la tienda"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Home className="h-5 w-5" />
-              </Button>
-              
-              {/* Notifications */}
-              <AdminNotificationBell />
-            </div>
-          </div>
+                {/* Refresh Page */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={handleRefreshPage}
+                      className="h-9 w-9"
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Recargar página</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Refresh Data */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={handleRefreshData}
+                      className="h-9 w-9"
+                      disabled={isRefreshing}
+                    >
+                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Actualizar datos</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Toggle Grayscale Mode */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={toggleGrayscale}
+                      className={`h-9 w-9 ${isGrayscale ? "bg-accent" : ""}`}
+                    >
+                      <Contrast className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isGrayscale ? "Desactivar" : "Activar"} modo blanco y negro</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Toggle Fullscreen */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={toggleFullscreen}
+                      className="h-9 w-9"
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-5 w-5" />
+                      ) : (
+                        <Maximize className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isFullscreen ? "Salir de" : "Activar"} pantalla completa</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Notification Bell */}
+                <AdminNotificationBell />
+              </div>
+            </TooltipProvider>
+          </header>
+          <main className="p-6">{children}</main>
         </div>
       </header>
 
