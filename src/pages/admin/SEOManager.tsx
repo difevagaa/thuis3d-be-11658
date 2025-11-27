@@ -47,7 +47,7 @@ export default function SEOManager() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("general");
   const [newKeyword, setNewKeyword] = useState("");
-  const [newKeywordLanguage, setNewKeywordLanguage] = useState<'es' | 'en' | 'nl'>('es');
+  const [newKeywordLanguage, setNewKeywordLanguage] = useState<'es' | 'en' | 'nl'>('nl');
   const [seoScore, setSeoScore] = useState(0);
   const [seoAnalysis, setSeoAnalysis] = useState<SEOAnalysis | null>(null);
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
@@ -721,8 +721,8 @@ export default function SEOManager() {
     setNewKeyword(value);
     
     if (value.length >= 3) {
-      // Generate suggestions based on the input
-      const suggestions = extractKeywords(value, { language: 'es' });
+      // Generate suggestions based on the input, using Dutch as default for Belgian market
+      const suggestions = extractKeywords(value, { language: newKeywordLanguage });
       setKeywordSuggestions(suggestions.slice(0, 5).map(s => s.keyword));
       setShowSuggestions(suggestions.length > 0);
     } else {
