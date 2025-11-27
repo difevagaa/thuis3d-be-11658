@@ -6,22 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown, Plus, Package, PenLine, ClipboardList, Sparkles } from "lucide-react";
 import { logger } from '@/lib/logger';
+import { AdminNavigationGrid } from "@/components/AdminNavigationGrid";
+import { useNavigate } from "react-router-dom";
+
+interface RecentOrder {
+  id: string;
+  total: number;
+  created_at: string;
+  profiles?: { full_name: string };
+}
+
+interface DashboardStats {
+  totalRevenue: number;
+  totalOrders: number;
+  totalQuotes: number;
+  totalCustomers: number;
+  totalExpenses: number;
+  onlineUsers: number;
+  visitorsToday: number;
+  lastOrderDate: string | null;
+  recentOrders: RecentOrder[];
+}
+
+const initialStats: DashboardStats = {
+  totalRevenue: 0,
+  totalOrders: 0,
+  totalQuotes: 0,
+  totalCustomers: 0,
+  totalExpenses: 0,
+  onlineUsers: 0,
+  visitorsToday: 0,
+  lastOrderDate: null,
+  recentOrders: []
+};
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalQuotes: 0,
-    totalCustomers: 0,
-    totalExpenses: 0,
-    onlineUsers: 0,
-    visitorsToday: 0,
-    lastOrderDate: null as string | null,
-    recentOrders: [] as any[]
-  });
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
   const [loading, setLoading] = useState(true);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -157,243 +180,235 @@ export default function AdminDashboard() {
 
   const netProfit = stats.totalRevenue - stats.totalExpenses;
 
-  if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-        <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline">Registrar Gasto</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Registrar Nuevo Gasto</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Concepto</Label>
-                <Input
-                  value={newExpense.concept}
-                  onChange={(e) => setNewExpense({ ...newExpense, concept: e.target.value })}
-                  placeholder="Materia prima, transporte, etc."
-                />
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-background p-6 md:p-8 border border-border/50">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/20 to-transparent rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <span className="text-sm text-muted-foreground">Panel de Administración</span>
               </div>
-              <div>
-                <Label>Monto (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={newExpense.amount}
-                  onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                  placeholder="Ej: 125.00"
-                />
-              </div>
-              <div>
-                <Label>Fecha</Label>
-                <Input
-                  type="date"
-                  value={newExpense.date}
-                  onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                />
-              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                Bienvenido de nuevo
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Aquí tienes un resumen de tu negocio hoy
+              </p>
             </div>
-            <DialogFooter>
-              <Button onClick={handleAddExpense}>Guardar Gasto</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registrar Gasto
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Registrar Nuevo Gasto</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Concepto</Label>
+                    <Input
+                      value={newExpense.concept}
+                      onChange={(e) => setNewExpense({ ...newExpense, concept: e.target.value })}
+                      placeholder="Materia prima, transporte, etc."
+                    />
+                  </div>
+                  <div>
+                    <Label>Monto (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newExpense.amount}
+                      onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                      placeholder="Ej: 125.00"
+                    />
+                  </div>
+                  <div>
+                    <Label>Fecha</Label>
+                    <Input
+                      type="date"
+                      value={newExpense.date}
+                      onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleAddExpense}>Guardar Gasto</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" onClick={() => window.location.href = '/admin/pedidos'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Ingresos Totales</CardTitle>
-              <div className="text-3xl font-bold text-primary">€{stats.totalRevenue.toFixed(2)}</div>
-              {stats.lastOrderDate && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Último: {new Date(stats.lastOrderDate).toLocaleDateString('es-ES')}
-                </p>
-              )}
-            </div>
-            <div 
-              className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center"
-              style={{
-                animation: 'float 18s ease-in-out infinite'
-              }}
-            >
-              <Euro className="h-8 w-8 text-primary" />
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Gastos Totales</CardTitle>
-              <div className="text-3xl font-bold text-destructive">€{stats.totalExpenses.toFixed(2)}</div>
-            </div>
-            <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center">
-              <TrendingDown className="h-8 w-8 text-destructive" />
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Beneficio Neto</CardTitle>
-              <div className={`text-3xl font-bold ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                €{netProfit.toFixed(2)}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 col-span-1" 
+          onClick={() => navigate('/admin/pedidos')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Euro className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Ingresos</p>
+                <p className="text-lg font-bold text-blue-500">€{stats.totalRevenue.toFixed(0)}</p>
               </div>
             </div>
-            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${netProfit >= 0 ? 'bg-success/20' : 'bg-destructive/20'}`}>
-              <TrendingUp className={`h-8 w-8 ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`} />
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20" onClick={() => window.location.href = '/admin/pedidos'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Total Pedidos</CardTitle>
-              <div className="text-3xl font-bold text-accent">{stats.totalOrders}</div>
-            </div>
-            <div 
-              className="h-16 w-16 rounded-full bg-accent/20 flex items-center justify-center"
-              style={{
-                animation: 'smooth-bounce 15s ease-in-out infinite'
-              }}
-            >
-              <ShoppingCart className="h-8 w-8 text-accent" />
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20" onClick={() => window.location.href = '/admin/cotizaciones'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Cotizaciones</CardTitle>
-              <div className="text-3xl font-bold text-warning">{stats.totalQuotes}</div>
-            </div>
-            <div 
-              className="h-16 w-16 rounded-full bg-warning/20 flex items-center justify-center"
-              style={{
-                animation: 'gentle-swing 20s ease-in-out infinite'
-              }}
-            >
-              <FileText className="h-8 w-8 text-warning" />
-            </div>
-          </CardHeader>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/20" onClick={() => window.location.href = '/admin/visitantes'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Visitantes</CardTitle>
-              <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>{stats.totalCustomers}</div>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1">
-                  <div 
-                    className="h-2 w-2 rounded-full bg-success" 
-                    style={{
-                      animation: 'pulse-slow 3s ease-in-out infinite'
-                    }}
-                  />
-                  <p className="text-xs font-semibold text-success">
-                    {stats.onlineUsers} en línea
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {stats.visitorsToday} hoy
-                </p>
-              </div>
-            </div>
-            <div 
-              className="h-16 w-16 rounded-full flex items-center justify-center relative" 
-              style={{ 
-                backgroundColor: 'hsl(var(--chart-2) / 0.2)',
-                animation: 'flame 8s ease-in-out infinite'
-              }}
-            >
-              <Users 
-                className="h-8 w-8" 
-                style={{ 
-                  color: 'hsl(var(--chart-2))',
-                  animation: 'gentle-swing 16s ease-in-out infinite'
-                }} 
-              />
-              {stats.onlineUsers > 0 && (
-                <div 
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-success flex items-center justify-center shadow-lg"
-                  style={{
-                    animation: 'pulse-slow 3s ease-in-out infinite'
-                  }}
-                >
-                  <span className="text-[10px] font-bold text-white">{stats.onlineUsers}</span>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-primary/20 bg-gradient-to-br from-card to-card/50">
-          <CardHeader>
-            <CardTitle className="text-xl">Accesos Rápidos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" 
-              size="lg"
-              onClick={() => window.location.href = "/admin/productos/crear"}
-            >
-              Crear Producto Nuevo
-            </Button>
-            <Button 
-              className="w-full bg-gradient-accent hover:opacity-90 transition-opacity" 
-              size="lg"
-              onClick={() => window.location.href = "/admin/cotizaciones"}
-            >
-              Crear Cotización Manual
-            </Button>
-            <Button 
-              className="w-full bg-gradient-secondary hover:opacity-90 transition-opacity" 
-              size="lg"
-              onClick={() => window.location.href = "/admin/pedidos/crear"}
-            >
-              Crear Pedido Manual
-            </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-success/20 bg-gradient-to-br from-card to-success/5">
-          <CardHeader>
-            <CardTitle className="text-xl">Resumen Financiero</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-success/10 border border-success/20">
-                <span className="text-sm font-medium">Ingresos:</span>
-                <span className="font-bold text-lg text-success">€{stats.totalRevenue.toFixed(2)}</span>
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/20">
+                <TrendingDown className="h-5 w-5 text-red-500" />
               </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <span className="text-sm font-medium">Gastos:</span>
-                <span className="font-bold text-lg text-destructive">-€{stats.totalExpenses.toFixed(2)}</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Gastos</p>
+                <p className="text-lg font-bold text-red-500">€{stats.totalExpenses.toFixed(0)}</p>
               </div>
-              <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary/30">
-                <span className="font-semibold text-base">Beneficio Neto:</span>
-                <span className={`font-bold text-2xl ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  €{netProfit.toFixed(2)}
-                </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-green-500/10 to-green-600/5 border-green-500/20' : 'from-red-500/10 to-red-600/5 border-red-500/20'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${netProfit >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                <TrendingUp className={`h-5 w-5 ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Beneficio</p>
+                <p className={`text-lg font-bold ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>€{netProfit.toFixed(0)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20" 
+          onClick={() => navigate('/admin/pedidos')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <ShoppingCart className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Pedidos</p>
+                <p className="text-lg font-bold text-purple-500">{stats.totalOrders}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20" 
+          onClick={() => navigate('/admin/cotizaciones')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-500/20">
+                <FileText className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Cotizaciones</p>
+                <p className="text-lg font-bold text-orange-500">{stats.totalQuotes}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20" 
+          onClick={() => navigate('/admin/visitantes')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-cyan-500/20 relative">
+                <Users className="h-5 w-5 text-cyan-500" />
+                {stats.onlineUsers > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                    {stats.onlineUsers}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Visitantes</p>
+                <p className="text-lg font-bold text-cyan-500">{stats.totalCustomers}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button
+          onClick={() => navigate('/admin/productos')}
+          variant="outline"
+          className="h-auto py-4 justify-start gap-3 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all group"
+        >
+          <div className="p-2 rounded-lg bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+            <Package className="h-5 w-5 text-purple-500" />
+          </div>
+          <div className="text-left">
+            <p className="font-medium">Nuevo Producto</p>
+            <p className="text-xs text-muted-foreground">Añadir al catálogo</p>
+          </div>
+        </Button>
+
+        <Button
+          onClick={() => navigate('/admin/cotizaciones/crear')}
+          variant="outline"
+          className="h-auto py-4 justify-start gap-3 hover:bg-orange-500/10 hover:border-orange-500/50 transition-all group"
+        >
+          <div className="p-2 rounded-lg bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
+            <PenLine className="h-5 w-5 text-orange-500" />
+          </div>
+          <div className="text-left">
+            <p className="font-medium">Nueva Cotización</p>
+            <p className="text-xs text-muted-foreground">Crear manualmente</p>
+          </div>
+        </Button>
+
+        <Button
+          onClick={() => navigate('/admin/pedidos/crear')}
+          variant="outline"
+          className="h-auto py-4 justify-start gap-3 hover:bg-green-500/10 hover:border-green-500/50 transition-all group"
+        >
+          <div className="p-2 rounded-lg bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
+            <ClipboardList className="h-5 w-5 text-green-500" />
+          </div>
+          <div className="text-left">
+            <p className="font-medium">Nuevo Pedido</p>
+            <p className="text-xs text-muted-foreground">Registrar venta</p>
+          </div>
+        </Button>
+      </div>
+
+      {/* Navigation Grid */}
+      <AdminNavigationGrid />
     </div>
   );
 }
