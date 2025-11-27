@@ -51,6 +51,12 @@ export const AdminLayout = ({
 
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
+    // Check for browser support
+    if (!document.documentElement.requestFullscreen) {
+      toast.error("Tu navegador no soporta pantalla completa");
+      return;
+    }
+    
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
@@ -86,6 +92,11 @@ export const AdminLayout = ({
 
   // Listen for fullscreen change events
   useEffect(() => {
+    // Check for browser support before adding listener
+    if (typeof document.fullscreenElement === "undefined") {
+      return;
+    }
+    
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
