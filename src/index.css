@@ -690,3 +690,9 @@
 .rich-text-content iframe {
   @apply max-w-full my-4 rounded;
 }
+
+/* Grayscale mode for accessibility */
+html.grayscale,
+html.grayscale * {
+  filter: grayscale(100%) !important;
+}
