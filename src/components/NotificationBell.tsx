@@ -83,13 +83,32 @@ export default function NotificationBell() {
       userIdRef.current = user.id;
       
       // Set up realtime subscription for database changes (INSERT and UPDATE events)
-      // Using event: '*' for better reliability, then filter in callback
+      // Using specific events for better efficiency
       dbChannel = supabase
         .channel(`user-notifications-db-${user.id}`)
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+          },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            
+            // Check if this notification is for the current user
+            const newRecord = payload.new as Notification & { user_id?: string };
+            
+            if (newRecord?.user_id === userIdRef.current) {
+              logger.debug('📬 New notification received via postgres_changes:', payload);
+              loadNotifications();
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
             schema: 'public',
             table: 'notifications',
           },
@@ -102,7 +121,7 @@ export default function NotificationBell() {
             const recordUserId = newRecord?.user_id || oldRecord?.user_id;
             
             if (recordUserId === userIdRef.current) {
-              logger.debug('📬 New notification received via postgres_changes:', payload);
+              logger.debug('📬 Notification updated via postgres_changes:', payload);
               loadNotifications();
             }
           }

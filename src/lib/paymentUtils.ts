@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
+import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 export interface Address {
   street: string;
@@ -266,17 +267,7 @@ export const sendGiftCardActivationNotification = async (
       });
       
       // Trigger a broadcast for immediate notification update
-      try {
-        const userChannel = supabase.channel(`user-notifications-broadcast-${recipientProfile.id}`);
-        await userChannel.send({
-          type: 'broadcast',
-          event: 'new-notification',
-          payload: { type: 'gift_card_activated', timestamp: new Date().toISOString() }
-        });
-        supabase.removeChannel(userChannel);
-      } catch (e) {
-        // Broadcast failure is not critical - notification is already in database
-      }
+      await triggerNotificationRefresh(recipientProfile.id);
       
       logger.log('In-app notification sent to recipient:', recipientProfile.id);
     }

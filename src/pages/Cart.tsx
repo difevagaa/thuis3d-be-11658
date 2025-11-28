@@ -12,6 +12,7 @@ import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode, validateGiftCardCode } from "@/lib/validation";
+import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 interface CartItem {
   id: string;
@@ -200,7 +201,7 @@ const Cart = () => {
       // Send notification about gift card redemption with broadcast for immediate update
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Use RPC and then trigger a broadcast for immediate UI update
+        // Use RPC to create the notification
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
           p_type: 'giftcard_redeemed',
@@ -210,17 +211,7 @@ const Cart = () => {
         });
         
         // Trigger a broadcast to ensure immediate notification refresh
-        try {
-          const userChannel = supabase.channel(`user-notifications-broadcast-${user.id}`);
-          await userChannel.send({
-            type: 'broadcast',
-            event: 'new-notification',
-            payload: { type: 'giftcard_redeemed', timestamp: new Date().toISOString() }
-          });
-          supabase.removeChannel(userChannel);
-        } catch (e) {
-          // Broadcast failure is not critical - notification is already in database
-        }
+        await triggerNotificationRefresh(user.id);
       }
       
       toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));
