@@ -433,7 +433,7 @@ export default function Payment() {
         return;
       }
 
-      // For card payment, redirect to Revolut (since there's no direct payment gateway)
+      // For card payment, show payment info first before redirecting to bank
       if (method === "card") {
         if (paymentConfig.revolut_link) {
           // Save temporary info
@@ -452,14 +452,11 @@ export default function Payment() {
           // Generar número de pedido temporal
           const tempOrderNumber = `TEMP-${Date.now()}`;
           
-          // Mostrar información y abrir Revolut
+          // Mostrar información de pago (NO abrir enlace automáticamente)
           setSelectedPaymentMethod("card");
           setOrderCreated({ orderNumber: tempOrderNumber, total });
           
-          // Abrir enlace de Revolut para pago con tarjeta
-          window.open(paymentConfig.revolut_link, '_blank');
-          
-          toast.success(t('payment:messages.redirectingToPayment'));
+          toast.success(t('payment:messages.bankTransferSelected'));
           setProcessing(false);
           return;
         } else {
@@ -1059,13 +1056,61 @@ export default function Payment() {
                 <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  {t('payment:instructions.revolutOpened')}
-                </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
-                  {t('payment:instructions.completePaymentInRevolut')}
-                </p>
+              {/* Payment Information - Similar to Bank Transfer */}
+              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
+                  <CreditCard className="h-5 w-5" />
+                  {t('payment:instructions.cardPaymentTitle')}
+                </h3>
+                
+                <div className="grid gap-4">
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {orderCreated.orderNumber}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(orderCreated.orderNumber)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        €{orderCreated.total.toFixed(2)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`€${orderCreated.total.toFixed(2)}`)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning - Will be redirected to bank page */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.redirectToBankWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.payWithAmount')} <strong>€{orderCreated.total.toFixed(2)}</strong> {t('payment:instructions.andOrderNumber')} <strong>{orderCreated.orderNumber}</strong>
+                  </p>
+                </div>
               </div>
 
               {/* QR Codes */}
