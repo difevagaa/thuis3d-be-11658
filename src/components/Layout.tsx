@@ -100,17 +100,18 @@ export const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
+    <div className="min-h-screen min-h-dvh flex flex-col w-full max-w-full overflow-x-hidden">
+      {/* Header with safe area support for notched devices */}
       <header 
         className="sticky top-0 z-40 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60"
         style={{ 
           backgroundColor: 'var(--home-menu-bg, var(--header-bg, var(--navbar-bg, hsl(var(--background)))))',
-          color: 'var(--home-menu-text, var(--header-text, inherit))'
+          color: 'var(--home-menu-text, var(--header-text, inherit))',
+          paddingTop: 'env(safe-area-inset-top, 0)'
         }}
       >
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
+        <div className="w-full max-w-full mx-auto px-2 sm:px-4">
+          <div className="flex h-14 sm:h-16 items-center justify-between">
             {/* Mobile Menu Button */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
@@ -328,7 +329,7 @@ export const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
 
       {/* Footer */}
       <Footer />

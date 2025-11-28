@@ -217,21 +217,24 @@ export const AdminLayout = ({
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="min-h-screen min-h-dvh flex w-full max-w-full overflow-x-hidden bg-gradient-to-br from-background via-muted/20 to-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          {/* Modern Header */}
-          <header className="sticky top-0 z-40 h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-accent/50 transition-colors rounded-lg" />
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          {/* Modern Header with safe area support for notched devices */}
+          <header 
+            className="sticky top-0 z-40 h-14 md:h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-2 sm:px-4 flex items-center justify-between shadow-sm"
+            style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}
+          >
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <SidebarTrigger className="hover:bg-accent/50 transition-colors rounded-lg flex-shrink-0" />
               
               {/* Page Title with Gradient */}
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${pageInfo.color} flex items-center justify-center shadow-lg`}>
-                  <span className="text-lg">{pageInfo.emoji}</span>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${pageInfo.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
+                  <span className="text-sm sm:text-lg">{pageInfo.emoji}</span>
                 </div>
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                <div className="hidden sm:block min-w-0">
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
                     {pageInfo.title}
                   </h1>
                   <p className="text-xs text-muted-foreground">Panel de Administración</p>
@@ -241,7 +244,7 @@ export const AdminLayout = ({
 
             {/* Header Actions */}
             <TooltipProvider delayDuration={300}>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                 {/* Home Button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -358,7 +361,7 @@ export const AdminLayout = ({
                 </Tooltip>
 
                 {/* Notification Bell */}
-                <div className="ml-2 border-l border-border/50 pl-2">
+                <div className="ml-1 sm:ml-2 border-l border-border/50 pl-1 sm:pl-2">
                   <AdminNotificationBell />
                 </div>
               </div>
@@ -366,8 +369,8 @@ export const AdminLayout = ({
           </header>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-auto">
-            <div className="container max-w-7xl mx-auto p-6">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto">
+            <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
               {children}
             </div>
           </main>
