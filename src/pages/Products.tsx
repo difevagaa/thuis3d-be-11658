@@ -29,6 +29,12 @@ const Products = () => {
   useEffect(() => {
     loadData();
 
+    // Subscribe to auth state changes to reload products with correct filtering
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Reload products when user logs in/out to show correct role-based products
+      loadData();
+    });
+
     // Subscribe to product changes for real-time updates
     const productsChannel = supabase
       .channel('products-list-changes')
@@ -69,6 +75,7 @@ const Products = () => {
       .subscribe();
 
     return () => {
+      authSubscription.unsubscribe();
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(rolesChannel);
       supabase.removeChannel(productRolesChannel);
@@ -81,12 +88,16 @@ const Products = () => {
 
   const loadData = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      // First, ensure session is valid by calling getSession() 
+      // This will auto-refresh the token if needed
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      // Get user roles if logged in
+      // Get user from the session (already validated)
+      const user = session?.user ?? null;
+      
+      // Get user roles if logged in (only if session is valid)
       let userRoles: string[] = [];
-      if (user) {
+      if (user && !sessionError) {
         const { data: rolesData } = await supabase
           .from("user_roles")
           .select("role")
@@ -97,7 +108,7 @@ const Products = () => {
           .filter(role => role.length > 0);
       }
 
-      // Fetch products
+      // Fetch products - this should always succeed regardless of auth state
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
