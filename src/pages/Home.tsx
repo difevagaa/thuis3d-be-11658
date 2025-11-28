@@ -607,10 +607,6 @@ const Home = () => {
       event: '*',
       schema: 'public',
       table: 'product_images'
-    }, loadFeaturedProducts).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'product_roles'
     }, loadFeaturedProducts).subscribe();
 
     // Subscribe to banner changes
@@ -635,22 +631,10 @@ const Home = () => {
       table: 'homepage_features'
     }, loadFeatures).subscribe();
 
-    // Subscribe to role changes for visibility updates
-    const rolesChannel = supabase.channel('homepage-roles-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'user_roles'
-    }, loadFeaturedProducts).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'custom_roles'
-    }, loadFeaturedProducts).subscribe();
-
     return () => {
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bannersChannel);
       supabase.removeChannel(sectionsChannel);
-      supabase.removeChannel(rolesChannel);
     };
   }, []);
   const loadBanners = async () => {
