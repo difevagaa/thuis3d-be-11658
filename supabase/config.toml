@@ -14,3 +14,51 @@ verify_jwt = false
 
 [functions.auto-translate]
 verify_jwt = true
+
+[functions.send-gift-card-email]
+verify_jwt = true
+
+[functions.send-chat-notification-email]
+verify_jwt = false
+
+[functions.create-gift-card]
+verify_jwt = false
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false
+
+[functions.send-order-confirmation]
+verify_jwt = false
+
+[functions.send-order-status-email]
+verify_jwt = false
+
+[functions.send-quote-update-email]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.notify-admins]
+verify_jwt = false
+
+[functions.test-email]
+verify_jwt = false
+
+[functions.seed-calibrations]
+verify_jwt = true
+
+[functions.verify-admin-pin]
+verify_jwt = true
+
+[functions.process-quote-approval]
+verify_jwt = true
+
+[functions.redeem-loyalty-coupon]
+verify_jwt = true
+
+[functions.send-loyalty-points-email]
+verify_jwt = false

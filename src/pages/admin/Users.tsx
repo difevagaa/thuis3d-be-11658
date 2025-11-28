@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserPlus, Pencil, Trash2, Lock, Unlock, Key, Eye, Clock, MapPin, Activity } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Key, Eye, Clock, MapPin, Activity, Search, Users as UsersIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
 
 export default function Users() {
   const [users, setUsers] = useState<any[]>([]);
@@ -25,6 +26,7 @@ export default function Users() {
   const [showUserDetailsDialog, setShowUserDetailsDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [userDetails, setUserDetails] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [newUser, setNewUser] = useState({
     email: "",
     password: "",
@@ -367,36 +369,70 @@ export default function Users() {
     }
   };
 
-  if (loading) return <div>Cargando...</div>;
+  // Filter users based on search term
+  const filteredUsers = users.filter(user => 
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate stats - optimize by calculating time once
+  const now = new Date().getTime();
+  const fiveMinutesInMs = 5 * 60 * 1000;
+  
+  const onlineUsers = users.filter(user => {
+    return user.last_activity_at && 
+      (now - new Date(user.last_activity_at).getTime()) < fiveMinutesInMs;
+  }).length;
+
+  const adminUsers = users.filter(user => 
+    user.user_roles?.some((r: any) => r.role === 'admin')
+  ).length;
+
+  // Calculate new users (last 30 days) - optimize by calculating date once
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const newUsersCount = users.filter(u => new Date(u.created_at) > thirtyDaysAgo).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center animate-pulse">
+            <UsersIcon className="h-6 w-6 text-white" />
+          </div>
+          <p className="text-muted-foreground">Cargando usuarios...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Usuarios</h1>
-
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Usuarios del Sistema</CardTitle>
-              <CardDescription>Administra los usuarios y sus roles</CardDescription>
-            </div>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Crear Usuario
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nuevo Usuario</DialogTitle>
-                  <DialogDescription>
-                    Crea una nueva cuenta de usuario manualmente
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Nombre Completo *</Label>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <AdminPageHeader
+        title="Gestión de Usuarios"
+        description="Administra los usuarios, sus roles y permisos"
+        emoji="👥"
+        gradient="from-pink-500 to-rose-600"
+        actions={
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nuevo Usuario
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nuevo Usuario</DialogTitle>
+                <DialogDescription>
+                  Crea una nueva cuenta de usuario manualmente
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Nombre Completo *</Label>
                     <Input
                       value={newUser.full_name}
                       onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
@@ -469,42 +505,111 @@ export default function Users() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+        }
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <AdminStatCard
+          title="Total Usuarios"
+          value={users.length}
+          emoji="👥"
+          gradient="from-pink-500/10 to-rose-500/5"
+        />
+        <AdminStatCard
+          title="En Línea"
+          value={onlineUsers}
+          emoji="🟢"
+          description="Últimos 5 minutos"
+          gradient="from-green-500/10 to-emerald-500/5"
+        />
+        <AdminStatCard
+          title="Administradores"
+          value={adminUsers}
+          emoji="👑"
+          gradient="from-amber-500/10 to-orange-500/5"
+        />
+        <AdminStatCard
+          title="Nuevos (30 días)"
+          value={newUsersCount}
+          emoji="✨"
+          gradient="from-blue-500/10 to-indigo-500/5"
+        />
+      </div>
+
+      {/* Search and Filters */}
+      <Card className="mb-6 border-border/50">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre, email o teléfono..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Badge variant="outline" className="h-10 px-4 flex items-center gap-2">
+              <span>📊</span>
+              <span>{filteredUsers.length} de {users.length} usuarios</span>
+            </Badge>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader className="border-b border-border/50 bg-muted/30">
+          <CardTitle className="flex items-center gap-2">
+            <span>📋</span>
+            Lista de Usuarios
+          </CardTitle>
+          <CardDescription>
+            Gestiona los usuarios y sus permisos del sistema
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha de Registro</TableHead>
-                  <TableHead>Acciones</TableHead>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableHead className="font-semibold">Nombre</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Teléfono</TableHead>
+                  <TableHead className="font-semibold">Rol</TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="font-semibold">Registro</TableHead>
+                  <TableHead className="font-semibold text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No hay usuarios registrados
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="text-4xl">👤</span>
+                        <p className="text-muted-foreground">
+                          {searchTerm ? "No se encontraron usuarios con ese criterio" : "No hay usuarios registrados"}
+                        </p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((user) => {
-                    const userRole = user.user_roles?.[0]?.role;
-                    const roleInfo = roles.find(r => r.value === userRole);
-                    const roleLabel = roleInfo?.label || userRole || 'Sin rol';
-                    return (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.full_name || '-'}</TableCell>
-                      <TableCell>{user.email || '-'}</TableCell>
-                      <TableCell>{user.phone || '-'}</TableCell>
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.email || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.phone || '-'}</TableCell>
                       <TableCell>
                         {user.user_roles && user.user_roles.length > 0 ? (
-                          <Badge>{roleLabel}</Badge>
+                          <Badge className={
+                            user.user_roles[0].role === 'admin' 
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0' 
+                              : ''
+                          }>
+                            {user.user_roles[0].role === 'admin' ? '👑 ' : ''}{user.user_roles[0].role}
+                          </Badge>
                         ) : (
                           <Badge variant="secondary">Sin rol</Badge>
                         )}
@@ -531,35 +636,36 @@ export default function Users() {
                       <TableCell>
                         {user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : '-'}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => viewUserDetails(user.id)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            <span className="hidden sm:inline">Ver</span>
+                            <Eye className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => openEditDialog(user)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            <span className="hidden sm:inline">Editar</span>
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
                                 size="sm" 
-                                variant="outline"
+                                variant="ghost"
                                 onClick={() => {
                                   setSelectedUser(user);
                                   setSelectedRole(user.user_roles?.[0]?.role || '');
                                 }}
+                                className="h-8 px-2"
                               >
-                                Rol
+                                🔐
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -590,19 +696,19 @@ export default function Users() {
                           </Dialog>
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => resetPassword(user.email, user.full_name || user.email)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Key className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            <span className="hidden sm:inline">Reset</span>
+                            <Key className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
-                            variant="destructive"
+                            variant="ghost"
                             onClick={() => deleteUser(user.id, user.full_name || user.email)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            <span className="hidden sm:inline">Eliminar</span>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
