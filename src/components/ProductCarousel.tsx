@@ -34,12 +34,12 @@ export default function ProductCarousel({
     }
   }, [currentIndex, images, loadedImages, imageError]);
 
-  // Auto-rotation only if enabled (10 seconds for featured products)
+  // Auto-rotation only if enabled (20 seconds for product images)
   useEffect(() => {
     if (!autoRotate || images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % images.length);
-    }, 10000); // 10 seconds
+    }, 20000); // 20 seconds
     return () => clearInterval(interval);
   }, [images.length, autoRotate]);
   const goToPrevious = () => {
