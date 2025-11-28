@@ -177,23 +177,28 @@ export default function Users() {
         return;
       }
 
-      // Delete ALL existing roles (user can only have one role)
-      const { error: deleteError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", selectedUser.id);
+      // Check if user has any existing role record
+      const existingRoleRecord = selectedUser.user_roles?.[0];
 
-      if (deleteError) throw deleteError;
+      if (existingRoleRecord) {
+        // Update the existing role record directly instead of delete + insert
+        const { error: updateError } = await supabase
+          .from("user_roles")
+          .update({ role: selectedRole })
+          .eq("id", existingRoleRecord.id);
 
-      // Insert new role
-      const { error } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: selectedUser.id,
-          role: selectedRole
-        });
+        if (updateError) throw updateError;
+      } else {
+        // User has no role, insert a new one
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: selectedUser.id,
+            role: selectedRole
+          });
 
-      if (error) throw error;
+        if (insertError) throw insertError;
+      }
 
       toast.success("Rol asignado exitosamente");
       setSelectedUser(null);
@@ -297,23 +302,28 @@ export default function Users() {
 
       // Update role if changed
       if (editingUser.current_role) {
-        // Delete ALL existing roles
-        const { error: deleteError } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", editingUser.id);
+        // Check if user has an existing role record
+        const existingRoleRecord = editingUser.user_roles?.[0];
 
-        if (deleteError) throw deleteError;
+        if (existingRoleRecord) {
+          // Update the existing role record directly instead of delete + insert
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .update({ role: editingUser.current_role })
+            .eq("id", existingRoleRecord.id);
 
-        // Insert new role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: editingUser.id,
-            role: editingUser.current_role
-          });
+          if (roleError) throw roleError;
+        } else {
+          // User has no role, insert a new one
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .insert({
+              user_id: editingUser.id,
+              role: editingUser.current_role
+            });
 
-        if (roleError) throw roleError;
+          if (roleError) throw roleError;
+        }
       }
 
       toast.success("Usuario actualizado exitosamente");
