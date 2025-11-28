@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ const SYSTEM_ROLES = [
   { name: 'client', display_name: 'Cliente', description: 'Usuario cliente registrado', is_system: true },
   { name: 'moderator', display_name: 'Moderador', description: 'Moderador de contenido', is_system: true }
 ];
+
+const SYSTEM_ROLE_NAMES = SYSTEM_ROLES.map(sr => sr.name);
 
 interface RoleUser {
   id: string;
@@ -59,6 +61,22 @@ export default function RolesPermissions() {
     { value: "/admin/estadisticas", label: "📈 Estadísticas" },
     { value: "/admin/configuracion", label: "⚙️ Configuración" }
   ];
+
+  // Create a lookup map for availablePages for O(1) lookup
+  const pagesLookup = useMemo(() => {
+    const map: Record<string, string> = {};
+    availablePages.forEach(p => {
+      map[p.value] = p.label.replace(/^[^\s]+\s/, ''); // Remove emoji prefix
+    });
+    return map;
+  }, []);
+
+  // Memoize the current role display name for the users dialog
+  const currentRoleDisplayName = useMemo(() => {
+    if (!showUsersDialogRole) return '';
+    const role = allRoles.find(r => r.name === showUsersDialogRole);
+    return role?.display_name || showUsersDialogRole;
+  }, [showUsersDialogRole, allRoles]);
 
   useEffect(() => {
     loadRoles();
@@ -174,8 +192,7 @@ export default function RolesPermissions() {
       const roleName = newRole.name.toLowerCase().replace(/\s+/g, '_');
       
       // Prevent creating custom roles with system role names
-      const systemRoleNames = SYSTEM_ROLES.map(sr => sr.name);
-      if (systemRoleNames.includes(roleName)) {
+      if (SYSTEM_ROLE_NAMES.includes(roleName)) {
         toast.error(`No puedes crear un rol llamado "${roleName}" porque es un rol del sistema. Usa otro nombre.`);
         return;
       }
@@ -551,7 +568,7 @@ export default function RolesPermissions() {
                               {(role.allowed_pages || []).length > 0 ? (
                                 (role.allowed_pages || []).slice(0, 3).map((page: string) => (
                                   <Badge key={page} variant="outline" className="text-xs">
-                                    {availablePages.find(p => p.value === page)?.label?.replace(/^[^\s]+\s/, '') || page}
+                                    {pagesLookup[page] || page}
                                   </Badge>
                                 ))
                               ) : (
@@ -618,7 +635,7 @@ export default function RolesPermissions() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Usuarios con rol "{showUsersDialogRole && allRoles.find(r => r.name === showUsersDialogRole)?.display_name}"
+              Usuarios con rol "{currentRoleDisplayName}"
             </DialogTitle>
             <DialogDescription>
               Lista de usuarios que tienen asignado este rol
