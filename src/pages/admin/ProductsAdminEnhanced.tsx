@@ -290,7 +290,27 @@ export default function ProductsAdminEnhanced() {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: 0, stock: 0, allow_direct_purchase: true, allow_quote_request: true, enable_material_selection: false, enable_color_selection: false, enable_custom_text: false, category_id: null, tax_enabled: true, weight: null, length: null, width: null, height: null, video_url: null, shipping_type: "standard", custom_shipping_cost: null, product_code: "" });
+    setFormData({
+      name: "",
+      description: "",
+      price: 0,
+      stock: 0,
+      allow_direct_purchase: true,
+      allow_quote_request: true,
+      enable_material_selection: false,
+      enable_color_selection: false,
+      enable_custom_text: false,
+      category_id: null,
+      tax_enabled: true,
+      weight: null,
+      length: null,
+      width: null,
+      height: null,
+      video_url: null,
+      shipping_type: "standard",
+      custom_shipping_cost: null,
+      product_code: ""
+    });
     setSelectedMaterials([]);
     setSelectedColors([]);
     setSelectedRoles([]);
@@ -648,7 +668,27 @@ export default function ProductsAdminEnhanced() {
                           const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
                           const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
                           setEditingProductId(product.id);
-                          setFormData({ name: product.name, description: product.description || "", price: product.price || 0, stock: product.stock || 0, category_id: product.category_id || null, allow_direct_purchase: product.allow_direct_purchase ?? true, allow_quote_request: product.allow_quote_request ?? true, enable_material_selection: product.enable_material_selection ?? false, enable_color_selection: product.enable_color_selection ?? false, enable_custom_text: product.enable_custom_text ?? false, tax_enabled: product.tax_enabled ?? true, weight: product.weight || null, length: product.length || null, width: product.width || null, height: product.height || null, video_url: product.video_url || null, shipping_type: product.shipping_type || "standard", custom_shipping_cost: product.custom_shipping_cost || null, product_code: product.product_code || "" });
+                          setFormData({
+                            name: product.name,
+                            description: product.description || "",
+                            price: product.price || 0,
+                            stock: product.stock || 0,
+                            category_id: product.category_id || null,
+                            allow_direct_purchase: product.allow_direct_purchase ?? true,
+                            allow_quote_request: product.allow_quote_request ?? true,
+                            enable_material_selection: product.enable_material_selection ?? false,
+                            enable_color_selection: product.enable_color_selection ?? false,
+                            enable_custom_text: product.enable_custom_text ?? false,
+                            tax_enabled: product.tax_enabled ?? true,
+                            weight: product.weight || null,
+                            length: product.length || null,
+                            width: product.width || null,
+                            height: product.height || null,
+                            video_url: product.video_url || null,
+                            shipping_type: product.shipping_type || "standard",
+                            custom_shipping_cost: product.custom_shipping_cost || null,
+                            product_code: product.product_code || ""
+                          });
                           setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
                           setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
                           setSelectedColors(productColors?.map((c: any) => c.color_id) || []);

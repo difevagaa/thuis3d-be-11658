@@ -24,6 +24,7 @@ interface Product {
   price: number;
   stock: number;
   allow_direct_purchase: boolean;
+  allow_quote_request?: boolean;
   enable_material_selection: boolean;
   enable_color_selection: boolean;
   enable_custom_text: boolean;
@@ -844,7 +845,7 @@ const ProductDetail = () => {
                   </Button>
                 )}
                 
-                {(product as any).allow_quote_request !== false && (
+                {product.allow_quote_request !== false && (
                   <Button
                     variant={product.allow_direct_purchase ? "outline" : "default"}
                     className="flex-1 text-xs md:text-sm"
