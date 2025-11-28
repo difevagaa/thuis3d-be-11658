@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +78,7 @@ export default function GiftCardsEnhanced() {
       setGiftCards(data || []);
     } catch (error) {
       logger.error('❌ Error loading gift cards (Enhanced):', error);
-      toast.error("Error al cargar tarjetas regalo");
+      i18nToast.error("error.loadingGiftCardsFailed");
     } finally {
       setLoading(false);
     }
@@ -86,19 +86,19 @@ export default function GiftCardsEnhanced() {
 
   const createGiftCard = async () => {
     if (newCard.initial_amount <= 0) {
-      toast.error("El monto debe ser mayor a 0");
+      i18nToast.error("error.giftCardAmountRequired");
       return;
     }
 
     if (!newCard.recipient_email.trim()) {
-      toast.error("El email del destinatario es obligatorio");
+      i18nToast.error("error.giftCardEmailRequired");
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newCard.recipient_email)) {
-      toast.error("El email no tiene un formato válido");
+      i18nToast.error("error.giftCardEmailInvalid");
       return;
     }
 
@@ -125,14 +125,14 @@ export default function GiftCardsEnhanced() {
       // Send email
       await sendGiftCardEmail(newGiftCard);
 
-      toast.success("Tarjeta regalo creada y email enviado exitosamente");
+      i18nToast.success("success.giftCardCreated");
       setNewCard({ recipient_email: "", sender_name: "", initial_amount: 0, message: "", tax_enabled: false });
       
       // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
       logger.error("Error creating gift card:", error);
-      toast.error("Error al crear tarjeta regalo: " + (error.message || "Error desconocido"));
+      i18nToast.error("error.giftCardSaveFailed", { error: error.message || 'Unknown error' });
     }
   };
 
@@ -151,7 +151,7 @@ export default function GiftCardsEnhanced() {
       if (error) throw error;
     } catch (error: any) {
       logger.error('Email error:', error);
-      toast.error("Tarjeta creada pero falló el envío de email");
+      i18nToast.error("error.giftCardEmailCreatedButFailed");
     }
   };
 
@@ -159,12 +159,12 @@ export default function GiftCardsEnhanced() {
     if (!editingCard) return;
 
     if (editingCard.current_balance < 0) {
-      toast.error("El saldo no puede ser negativo");
+      i18nToast.error("error.giftCardBalanceNegative");
       return;
     }
 
     if (editingCard.initial_amount < 0) {
-      toast.error("El monto inicial no puede ser negativo");
+      i18nToast.error("error.giftCardAmountNegative");
       return;
     }
 
@@ -180,14 +180,14 @@ export default function GiftCardsEnhanced() {
         .eq("id", editingCard.id);
 
       if (error) throw error;
-      toast.success("Tarjeta actualizada exitosamente");
+      i18nToast.success("success.giftCardUpdated");
       setEditingCard(null);
       
       // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
       logger.error("Error updating gift card:", error);
-      toast.error("Error al actualizar tarjeta: " + (error.message || "Error desconocido"));
+      i18nToast.error("error.giftCardSaveFailed", { error: error.message || 'Unknown error' });
     }
   };
 
@@ -207,22 +207,22 @@ export default function GiftCardsEnhanced() {
       }
       
       logger.log('✅ Gift card deleted successfully (Enhanced)');
-      toast.success("Tarjeta eliminada exitosamente");
+      i18nToast.success("success.giftCardDeleted");
       
       // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
       logger.error("❌ Error deleting gift card (Enhanced):", error);
-      toast.error("Error al eliminar tarjeta: " + (error.message || "Error desconocido"));
+      i18nToast.error("error.giftCardDeleteFailed", { error: error.message || 'Unknown error' });
     }
   };
 
   const resendEmail = async (card: any) => {
     try {
       await sendGiftCardEmail(card);
-      toast.success("Email reenviado exitosamente");
+      i18nToast.success("success.giftCardEmailResent");
     } catch (error) {
-      toast.error("Error al reenviar email");
+      i18nToast.error("error.giftCardEmailFailed");
     }
   };
 

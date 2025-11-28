@@ -11,6 +11,7 @@ import { ShoppingCart, MessageSquare, Check, ZoomIn } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import ProductReviews from "@/components/ProductReviews";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";

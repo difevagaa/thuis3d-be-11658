@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Copy, CreditCard } from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle2, Copy, CreditCard, Building2, Info, QrCode, AlertTriangle } from "lucide-react";
+import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
@@ -27,7 +27,7 @@ export default function PaymentInstructions() {
       
       const pendingOrderStr = sessionStorage.getItem("pending_order");
       if (!pendingOrderStr) {
-        toast.error("No se encontró información del pedido");
+        i18nToast.error("error.orderInfoMissing");
         navigate("/");
         return;
       }
@@ -217,7 +217,7 @@ export default function PaymentInstructions() {
       }
 
       setRealOrderNumber(order.order_number);
-      toast.success(t('payment:messages.orderCreated'));
+      i18nToast.success("success.orderCreated");
     } catch (error) {
       handleSupabaseError(error, {
         toastMessage: t('payment:messages.errorProcessingOrder'),
@@ -279,7 +279,7 @@ export default function PaymentInstructions() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    i18nToast.success("success.copiedToClipboard");
   };
 
   if (!orderNumber) {
@@ -291,7 +291,7 @@ export default function PaymentInstructions() {
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-lg">Creando tu pedido...</p>
+            <p className="text-lg">{t('payment:creatingOrder')}</p>
           </CardContent>
         </Card>
       </div>
@@ -300,73 +300,75 @@ export default function PaymentInstructions() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
-      <Card>
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="w-6 h-6 text-green-600" />
+      <Card className="shadow-lg">
+        <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-t-lg">
+          <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <CardTitle className="text-2xl">
-            {isInvoicePayment ? '¡Pago de Factura!' : '¡Pedido Recibido!'}
+          <CardTitle className="text-2xl text-green-800 dark:text-green-200">
+            {isInvoicePayment ? t('payment:instructions.invoicePaymentTitle') : t('payment:instructions.orderReceived')}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-green-700 dark:text-green-300">
             {isInvoicePayment ? (
-              <>Tu número de factura es: <strong>{realOrderNumber}</strong></>
+              <>{t('payment:instructions.invoiceNumber')}: <strong className="text-green-800 dark:text-green-200">{realOrderNumber}</strong></>
             ) : (
-              <>Tu número de pedido es: <strong>{realOrderNumber}</strong></>
+              <>{t('payment:instructions.orderNumber')}: <strong className="text-green-800 dark:text-green-200">{realOrderNumber}</strong></>
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-6">
           {method === "bank_transfer" && paymentConfig && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Instrucciones para Transferencia Bancaria
+            <div className="space-y-6">
+              {/* MONTO A TRANSFERIR - DESTACADO */}
+              {total && (
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToTransfer')}:</p>
+                  <p className="text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+                </div>
+              )}
+
+              {/* INFORMACIÓN BANCARIA - FONDO OSCURO PARA MEJOR CONTRASTE */}
+              <div className="bg-slate-800 dark:bg-slate-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-slate-600 pb-3">
+                  <Building2 className="h-5 w-5" />
+                  {t('payment:instructions.bankTransferTitle')}
                 </h3>
                 
-                {/* MONTO A TRANSFERIR - DESTACADO */}
-                {total && (
-                  <div className="bg-white border-2 border-primary rounded-lg p-4 mb-4">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Monto a Transferir:</p>
-                    <p className="text-3xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">IVA incluido</p>
-                  </div>
-                )}
-                
-                <div className="space-y-3 text-sm">
+                <div className="grid gap-4">
                   {paymentConfig.company_info && (
-                    <div>
-                      <p className="font-medium text-muted-foreground">Información de la Empresa:</p>
-                      <p className="whitespace-pre-line">{paymentConfig.company_info}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.companyInfo')}:</p>
+                      <p className="whitespace-pre-line text-white">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
-                    <div>
-                      <p className="font-medium text-muted-foreground">Banco:</p>
-                      <p>{paymentConfig.bank_name}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.bankName')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
-                    <div>
-                      <p className="font-medium text-muted-foreground">Titular de la Cuenta:</p>
-                      <p>{paymentConfig.bank_account_name}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.accountHolder')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
-                    <div>
-                      <p className="font-medium text-muted-foreground">IBAN:</p>
-                      <div className="flex items-center gap-2">
-                        <code className="bg-white px-3 py-2 rounded border flex-1">
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.iban')}:</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
                           {paymentConfig.bank_account_number}
                         </code>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="secondary"
                           onClick={() => copyToClipboard(paymentConfig.bank_account_number)}
+                          className="h-12 px-4"
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -374,16 +376,17 @@ export default function PaymentInstructions() {
                     </div>
                   )}
 
-                  <div>
-                    <p className="font-medium text-muted-foreground">Concepto de la Transferencia:</p>
-                    <div className="flex items-center gap-2">
-                      <code className="bg-white px-3 py-2 rounded border flex-1">
-                        Pedido {realOrderNumber}
+                  <div className="bg-slate-700/50 rounded-lg p-4">
+                    <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.transferReference')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {t('payment:instructions.order')} {realOrderNumber}
                       </code>
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => copyToClipboard(`Pedido ${realOrderNumber}`)}
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`${t('payment:instructions.order')} ${realOrderNumber}`)}
+                        className="h-12 px-4"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -391,9 +394,9 @@ export default function PaymentInstructions() {
                   </div>
 
                   {paymentConfig.bank_instructions && (
-                    <div>
-                      <p className="font-medium text-muted-foreground">Instrucciones Adicionales:</p>
-                      <p className="whitespace-pre-line text-muted-foreground">
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.additionalInstructions')}:</p>
+                      <p className="whitespace-pre-line text-slate-200">
                         {paymentConfig.bank_instructions}
                       </p>
                     </div>
@@ -402,29 +405,32 @@ export default function PaymentInstructions() {
               </div>
 
               {paymentImages.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold">Códigos QR y Referencias de Pago</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
+                  </div>
                   <p className="text-sm text-muted-foreground">
-                    Escanea cualquiera de estos códigos QR para realizar el pago
+                    {t('payment:instructions.scanQr')}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paymentImages.map((img, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-3 bg-white">
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
                         <img 
                           src={img} 
-                          alt={`Código QR ${index + 1}`}
-                          className="w-full h-56 object-contain rounded"
+                          alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
                         />
                         <div className="text-center space-y-1">
-                          <p className="font-medium text-sm">
-                            {index === 0 ? "QR Transferencia Bancaria" : 
-                             index === 1 ? "QR Revolut" : 
-                             `Código QR ${index + 1}`}
+                          <p className="font-semibold text-foreground">
+                            {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                             index === 1 ? t('payment:instructions.qrRevolut') : 
+                             `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {index === 0 ? "Escanea para transferencia directa" : 
-                             index === 1 ? "Pago rápido con Revolut" : 
-                             "Método de pago alternativo"}
+                            {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
+                             index === 1 ? t('payment:instructions.fastRevolutPayment') : 
+                             t('payment:instructions.alternativePayment')}
                           </p>
                         </div>
                       </div>
@@ -433,45 +439,47 @@ export default function PaymentInstructions() {
                 </div>
               )}
 
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que recibamos el pago.
-                </p>
-                <p className="text-sm text-warning-foreground/80 mt-1">
-                  Por favor, incluye el número de pedido <strong>{realOrderNumber}</strong> en el concepto de la transferencia.
-                </p>
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.pendingWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inTransferReference')}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
           {method === "card" && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm">
-                ✅ Tu pago con tarjeta ha sido procesado exitosamente.
-                Recibirás una confirmación por correo electrónico en breve.
+            <div className="bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-4">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                {t('payment:instructions.cardSuccess')}
               </p>
             </div>
           )}
 
           {method === "paypal" && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
                   <CreditCard className="h-5 w-5" />
-                  Pago con PayPal
+                  PayPal
                 </h3>
-                <p className="text-sm mb-3">
-                  Tu pedido está siendo procesado. Si completaste el pago en PayPal, 
-                  recibirás una confirmación pronto.
+                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
+                  {t('payment:instructions.paypalProcessing')}
                 </p>
-                <p className="text-sm font-medium">
-                  Número de pedido: <strong>{orderNumber}</strong>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t('payment:instructions.paymentPendingWarning')}
                 </p>
               </div>
             </div>
@@ -479,34 +487,34 @@ export default function PaymentInstructions() {
 
           {method === "revolut" && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
                   <CreditCard className="h-5 w-5" />
-                  Pago con Revolut
+                  Revolut
                 </h3>
-                <p className="text-sm mb-3">
-                  Tu pedido está siendo procesado. Si completaste el pago en Revolut, 
-                  recibirás una confirmación pronto.
+                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
+                  {t('payment:instructions.revolutProcessing')}
                 </p>
-                <p className="text-sm font-medium">
-                  Número de pedido: <strong>{orderNumber}</strong>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t('payment:instructions.paymentPendingWarning')}
                 </p>
               </div>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-6">
-            <Button onClick={() => navigate("/")} className="flex-1">
-              Volver al Inicio
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
+            <Button onClick={() => navigate("/")} className="flex-1" size="lg">
+              {t('payment:instructions.backToHome')}
             </Button>
-            <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1">
-              Ver Mis Pedidos
+            <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1" size="lg">
+              {t('payment:instructions.viewMyOrders')}
             </Button>
           </div>
         </CardContent>

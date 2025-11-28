@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Banknote } from "lucide-react";
+import { CreditCard, Banknote, Building2, ShieldCheck } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
