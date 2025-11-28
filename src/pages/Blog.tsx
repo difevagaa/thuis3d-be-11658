@@ -16,7 +16,7 @@ export default function Blog() {
   useEffect(() => {
     loadPosts();
 
-    // Subscribe to user_roles changes to reload posts with correct filtering
+    // Subscribe to role changes to reload posts with correct filtering
     const rolesChannel = supabase
       .channel('blog-roles-changes')
       .on('postgres_changes', {

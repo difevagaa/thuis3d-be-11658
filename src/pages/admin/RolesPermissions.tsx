@@ -15,14 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { logger } from '@/lib/logger';
 
-// System roles that cannot be deleted - defined outside component for performance
+// System roles - defined outside component for performance
 const SYSTEM_ROLES = [
   { name: 'admin', display_name: 'Administrador', description: 'Acceso completo al sistema', is_system: true },
   { name: 'client', display_name: 'Cliente', description: 'Usuario cliente registrado', is_system: true },
   { name: 'moderator', display_name: 'Moderador', description: 'Moderador de contenido', is_system: true }
 ];
 
-const SYSTEM_ROLE_NAMES = SYSTEM_ROLES.map(sr => sr.name);
+const SYSTEM_ROLE_NAMES = ['admin', 'client', 'moderator'];
 
 // Available pages - defined outside component for performance
 const AVAILABLE_PAGES = [
@@ -62,6 +62,13 @@ export default function RolesPermissions() {
     allowed_pages: [] as string[]
   });
 
+  // Memoize the current role display name for the users dialog
+  const currentRoleDisplayName = useMemo(() => {
+    if (!showUsersDialogRole) return '';
+    const role = allRoles.find(r => r.name === showUsersDialogRole);
+    return role?.display_name || showUsersDialogRole;
+  }, [showUsersDialogRole, allRoles]);
+
   // Create a lookup map for AVAILABLE_PAGES for O(1) lookup
   const pagesLookup = useMemo(() => {
     const map: Record<string, string> = {};
@@ -70,13 +77,6 @@ export default function RolesPermissions() {
     });
     return map;
   }, []);
-
-  // Memoize the current role display name for the users dialog
-  const currentRoleDisplayName = useMemo(() => {
-    if (!showUsersDialogRole) return '';
-    const role = allRoles.find(r => r.name === showUsersDialogRole);
-    return role?.display_name || showUsersDialogRole;
-  }, [showUsersDialogRole, allRoles]);
 
   useEffect(() => {
     loadRoles();
@@ -215,7 +215,7 @@ export default function RolesPermissions() {
         return;
       }
 
-      toast.success("Rol creado exitosamente. Ahora puedes asignar este rol a usuarios.");
+      toast.success("Rol creado exitosamente");
       setDialogOpen(false);
       setNewRole({ name: "", display_name: "", description: "", allowed_pages: [] });
       loadRoles();
@@ -228,13 +228,6 @@ export default function RolesPermissions() {
   const handleUpdateRole = async () => {
     try {
       if (!editingRole) return;
-
-      // System roles can't be edited from custom_roles table
-      if (editingRole.is_system) {
-        toast.error("Los roles del sistema no pueden ser editados");
-        setEditingRole(null);
-        return;
-      }
 
       const { error } = await supabase
         .from("custom_roles")
@@ -261,24 +254,18 @@ export default function RolesPermissions() {
     const usersWithRole = roleUsersList[name] || [];
     
     if (usersWithRole.length > 0) {
-      toast.error(`No se puede eliminar el rol "${displayName}" porque hay ${usersWithRole.length} usuario(s) asignado(s). Primero cambia el rol de estos usuarios.`);
+      toast.error(`No se puede eliminar el rol "${displayName}" porque hay ${usersWithRole.length} usuario(s) asignado(s).`);
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar el rol "${displayName}"?\n\nEsto también eliminará las referencias a este rol en productos y artículos del blog.`)) return;
+    if (!confirm(`¿Estás seguro de eliminar el rol "${displayName}"?`)) return;
 
     try {
       // Delete role references from product_roles
-      await supabase
-        .from("product_roles")
-        .delete()
-        .eq("role", name);
+      await supabase.from("product_roles").delete().eq("role", name);
 
       // Delete role references from blog_post_roles
-      await supabase
-        .from("blog_post_roles")
-        .delete()
-        .eq("role", name);
+      await supabase.from("blog_post_roles").delete().eq("role", name);
 
       // Delete the role itself
       const { error } = await supabase
@@ -288,7 +275,7 @@ export default function RolesPermissions() {
 
       if (error) throw error;
 
-      toast.success("Rol eliminado exitosamente. Las referencias en productos y blog han sido limpiadas.");
+      toast.success("Rol eliminado exitosamente");
       await loadRoles();
     } catch (error: any) {
       logger.error("Error deleting role:", error);
@@ -320,7 +307,7 @@ export default function RolesPermissions() {
             <DialogHeader>
               <DialogTitle>Crear Nuevo Rol</DialogTitle>
               <DialogDescription>
-                Define un nuevo rol personalizado para tu sistema. Este rol podrá ser asignado a usuarios y usado para filtrar contenido.
+                Define un nuevo rol personalizado para tu sistema
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -331,9 +318,6 @@ export default function RolesPermissions() {
                   onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
                   placeholder="vendedor, supervisor, etc."
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Este nombre se usará internamente. Usa letras minúsculas sin espacios.
-                </p>
               </div>
               <div>
                 <Label>Nombre Visible *</Label>
@@ -348,19 +332,16 @@ export default function RolesPermissions() {
                 <Textarea
                   value={newRole.description}
                   onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                  placeholder="Descripción del rol y sus responsabilidades..."
+                  placeholder="Descripción del rol..."
                   rows={3}
                 />
               </div>
               <div>
                 <Label className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Páginas del Panel Admin Permitidas
+                  Páginas Permitidas
                 </Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Selecciona las páginas del panel de administración a las que este rol tendrá acceso
-                </p>
-                <ScrollArea className="h-60 border rounded-md p-3">
+                <ScrollArea className="h-60 border rounded-md p-3 mt-2">
                   <div className="space-y-2">
                     {AVAILABLE_PAGES.map((page) => (
                       <div key={page.value} className="flex items-center space-x-2">
@@ -400,10 +381,9 @@ export default function RolesPermissions() {
             <div className="text-sm text-blue-800 dark:text-blue-200">
               <p className="font-medium mb-1">¿Cómo funcionan los roles?</p>
               <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
-                <li>Los <strong>roles del sistema</strong> (Admin, Cliente, Moderador) son predefinidos y no se pueden eliminar</li>
-                <li>Puedes crear <strong>roles personalizados</strong> para necesidades específicas de tu negocio</li>
-                <li>Los roles se usan para <strong>filtrar productos y artículos</strong> del blog (visibilidad por rol)</li>
-                <li>Los <strong>permisos de páginas</strong> determinan qué secciones del panel admin puede ver cada rol</li>
+                <li>Los <strong>roles del sistema</strong> (Admin, Cliente, Moderador) son predefinidos</li>
+                <li>Puedes crear <strong>roles personalizados</strong> para tu negocio</li>
+                <li>Haz clic en el número de usuarios para ver quiénes tienen cada rol</li>
               </ul>
             </div>
           </div>
@@ -413,16 +393,14 @@ export default function RolesPermissions() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">Todos los Roles ({allRoles.length})</TabsTrigger>
-          <TabsTrigger value="custom">Roles Personalizados ({customRoles.length})</TabsTrigger>
+          <TabsTrigger value="custom">Personalizados ({customRoles.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle>Todos los Roles</CardTitle>
-              <CardDescription>
-                Incluye roles del sistema y personalizados. Haz clic en el número de usuarios para ver quiénes tienen cada rol.
-              </CardDescription>
+              <CardDescription>Incluye roles del sistema y personalizados</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -437,83 +415,61 @@ export default function RolesPermissions() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allRoles.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No hay roles configurados
+                    {allRoles.map((role) => (
+                      <TableRow key={role.id || role.name}>
+                        <TableCell>
+                          {role.is_system ? (
+                            <Badge variant="default" className="gap-1">
+                              <Lock className="h-3 w-3" />
+                              Sistema
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Personalizado</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{role.display_name}</div>
+                            <div className="text-xs text-muted-foreground">{role.name}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="text-sm text-muted-foreground truncate">
+                            {role.description || '-'}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 hover:bg-primary/10"
+                            onClick={() => handleShowUsers(role.name)}
+                          >
+                            <Badge variant={roleUsers[role.name] > 0 ? "default" : "secondary"} className="gap-1 cursor-pointer">
+                              <Users className="h-3 w-3" />
+                              {roleUsers[role.name] || 0}
+                            </Badge>
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          {!role.is_system ? (
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setEditingRole(role)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteRole(role.id, role.name, role.display_name)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              No editable
+                            </span>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      allRoles.map((role) => (
-                        <TableRow key={role.id || role.name}>
-                          <TableCell>
-                            {role.is_system ? (
-                              <Badge variant="default" className="gap-1">
-                                <Lock className="h-3 w-3" />
-                                Sistema
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">Personalizado</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{role.display_name}</div>
-                              <div className="text-xs text-muted-foreground">{role.name}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-xs">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {role.description || '-'}
-                            </p>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="gap-1 hover:bg-primary/10"
-                              onClick={() => handleShowUsers(role.name)}
-                            >
-                              <Badge 
-                                variant={roleUsers[role.name] > 0 ? "default" : "secondary"} 
-                                className="gap-1 cursor-pointer"
-                              >
-                                <Users className="h-3 w-3" />
-                                {roleUsers[role.name] || 0}
-                              </Badge>
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {!role.is_system && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setEditingRole(role)}
-                                  >
-                                    <Pencil className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDeleteRole(role.id, role.name, role.display_name)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </>
-                              )}
-                              {role.is_system && (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Lock className="h-3 w-3" />
-                                  No editable
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -525,9 +481,7 @@ export default function RolesPermissions() {
           <Card>
             <CardHeader>
               <CardTitle>Roles Personalizados</CardTitle>
-              <CardDescription>
-                Roles creados para necesidades específicas de tu negocio
-              </CardDescription>
+              <CardDescription>Roles creados para tu negocio</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -536,17 +490,16 @@ export default function RolesPermissions() {
                     <TableRow>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Descripción</TableHead>
-                      <TableHead>Páginas Permitidas</TableHead>
+                      <TableHead>Páginas</TableHead>
                       <TableHead>Usuarios</TableHead>
-                      <TableHead>Fecha Creación</TableHead>
                       <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {customRoles.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          No hay roles personalizados creados. Haz clic en "Nuevo Rol" para crear uno.
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          No hay roles personalizados. Haz clic en "Nuevo Rol" para crear uno.
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -559,14 +512,12 @@ export default function RolesPermissions() {
                             </div>
                           </TableCell>
                           <TableCell className="max-w-xs">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {role.description || '-'}
-                            </p>
+                            <p className="text-sm text-muted-foreground truncate">{role.description || '-'}</p>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {(role.allowed_pages || []).length > 0 ? (
-                                (role.allowed_pages || []).slice(0, 3).map((page: string) => (
+                                (role.allowed_pages || []).slice(0, 2).map((page: string) => (
                                   <Badge key={page} variant="outline" className="text-xs">
                                     {pagesLookup[page] || page}
                                   </Badge>
@@ -574,46 +525,25 @@ export default function RolesPermissions() {
                               ) : (
                                 <span className="text-xs text-muted-foreground">Ninguna</span>
                               )}
-                              {(role.allowed_pages || []).length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{(role.allowed_pages || []).length - 3} más
-                                </Badge>
+                              {(role.allowed_pages || []).length > 2 && (
+                                <Badge variant="outline" className="text-xs">+{(role.allowed_pages || []).length - 2}</Badge>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="gap-1 hover:bg-primary/10"
-                              onClick={() => handleShowUsers(role.name)}
-                            >
-                              <Badge 
-                                variant={roleUsers[role.name] > 0 ? "default" : "secondary"} 
-                                className="gap-1 cursor-pointer"
-                              >
+                            <Button variant="ghost" size="sm" onClick={() => handleShowUsers(role.name)}>
+                              <Badge variant={roleUsers[role.name] > 0 ? "default" : "secondary"} className="gap-1">
                                 <Users className="h-3 w-3" />
                                 {roleUsers[role.name] || 0}
                               </Badge>
                             </Button>
                           </TableCell>
                           <TableCell>
-                            {role.created_at ? new Date(role.created_at).toLocaleDateString('es-ES') : '-'}
-                          </TableCell>
-                          <TableCell>
                             <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingRole(role)}
-                              >
+                              <Button size="sm" variant="outline" onClick={() => setEditingRole(role)}>
                                 <Pencil className="h-3 w-3" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteRole(role.id, role.name, role.display_name)}
-                              >
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteRole(role.id, role.name, role.display_name)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
@@ -629,7 +559,7 @@ export default function RolesPermissions() {
         </TabsContent>
       </Tabs>
 
-      {/* Users with Role Dialog */}
+      {/* Users Dialog */}
       <Dialog open={!!showUsersDialogRole} onOpenChange={(open) => !open && setShowUsersDialogRole(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -637,25 +567,18 @@ export default function RolesPermissions() {
               <Users className="h-5 w-5" />
               Usuarios con rol "{currentRoleDisplayName}"
             </DialogTitle>
-            <DialogDescription>
-              Lista de usuarios que tienen asignado este rol
-            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {showUsersDialogRole && (roleUsersList[showUsersDialogRole] || []).length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>No hay usuarios con este rol</p>
-                <p className="text-xs mt-1">Puedes asignar este rol desde la sección de Usuarios</p>
               </div>
             ) : (
               <ScrollArea className="max-h-60">
                 <div className="space-y-2">
                   {showUsersDialogRole && (roleUsersList[showUsersDialogRole] || []).map((user) => (
-                    <div 
-                      key={user.id} 
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
+                    <div key={user.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
                         <p className="font-medium">{user.full_name || 'Sin nombre'}</p>
                         <p className="text-xs text-muted-foreground">{user.email || 'Sin email'}</p>
@@ -667,9 +590,7 @@ export default function RolesPermissions() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUsersDialogRole(null)}>
-              Cerrar
-            </Button>
+            <Button variant="outline" onClick={() => setShowUsersDialogRole(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -679,18 +600,12 @@ export default function RolesPermissions() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Rol</DialogTitle>
-            <DialogDescription>
-              Actualiza la información del rol personalizado
-            </DialogDescription>
           </DialogHeader>
           {editingRole && (
             <div className="space-y-4">
               <div>
                 <Label>Nombre Interno</Label>
                 <Input value={editingRole.name} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground mt-1">
-                  El nombre interno no puede ser modificado
-                </p>
               </div>
               <div>
                 <Label>Nombre Visible</Label>
@@ -710,7 +625,7 @@ export default function RolesPermissions() {
               <div>
                 <Label className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Páginas del Panel Admin Permitidas
+                  Páginas Permitidas
                 </Label>
                 <ScrollArea className="h-60 mt-2 border rounded-md p-3">
                   <div className="space-y-2">
@@ -739,12 +654,8 @@ export default function RolesPermissions() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingRole(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleUpdateRole}>
-              Guardar Cambios
-            </Button>
+            <Button variant="outline" onClick={() => setEditingRole(null)}>Cancelar</Button>
+            <Button onClick={handleUpdateRole}>Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

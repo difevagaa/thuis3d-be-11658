@@ -39,7 +39,7 @@ export default function Users() {
   useEffect(() => {
     loadData();
 
-    // Subscribe to realtime changes in user_roles
+    // Subscribe to realtime changes in user_roles and custom_roles
     const rolesChannel = supabase
       .channel('user-roles-changes')
       .on('postgres_changes', {
@@ -494,11 +494,9 @@ export default function Users() {
                   </TableRow>
                 ) : (
                   users.map((user) => {
-                    // Get display name for the role
                     const userRole = user.user_roles?.[0]?.role;
                     const roleInfo = roles.find(r => r.value === userRole);
                     const roleLabel = roleInfo?.label || userRole || 'Sin rol';
-                    
                     return (
                     <TableRow key={user.id}>
                       <TableCell>{user.full_name || '-'}</TableCell>
