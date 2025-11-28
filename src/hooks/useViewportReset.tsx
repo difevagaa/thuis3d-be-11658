@@ -13,26 +13,17 @@ export function useViewportReset() {
    * Reset viewport to ensure proper adaptation on mobile devices
    */
   const resetViewport = useCallback(() => {
-    // Check if we're on a mobile device
-    const isMobile = window.innerWidth <= 768 || 
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Use more reliable mobile detection: touch-primary devices without hover
+    const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const isSmallViewport = window.innerWidth <= 768;
 
-    if (!isMobile) return;
+    if (!isTouchDevice && !isSmallViewport) return;
 
-    // Force a layout recalculation
-    const scrollPos = window.scrollY;
-    
-    // Reset scroll position to trigger viewport adaptation
-    window.scrollTo(0, 0);
-    
-    // Use requestAnimationFrame for smooth reset
+    // Force a single layout recalculation by reading offsetHeight
+    // This triggers a reflow without visible scroll jumps
     requestAnimationFrame(() => {
-      // Restore scroll position
-      window.scrollTo(0, scrollPos);
-      
-      // Force body width recalculation
-      document.body.style.width = '';
-      document.body.style.width = '100%';
+      // Reading offsetHeight forces a reflow
+      void document.body.offsetHeight;
     });
   }, []);
 

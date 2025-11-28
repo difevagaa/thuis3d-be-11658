@@ -220,8 +220,11 @@ export const AdminLayout = ({
       <div className="min-h-screen min-h-dvh flex w-full max-w-full overflow-x-hidden bg-gradient-to-br from-background via-muted/20 to-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-          {/* Modern Header */}
-          <header className="sticky top-0 z-40 h-14 md:h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-2 sm:px-4 flex items-center justify-between shadow-sm">
+          {/* Modern Header with safe area support for notched devices */}
+          <header 
+            className="sticky top-0 z-40 h-14 md:h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-2 sm:px-4 flex items-center justify-between shadow-sm"
+            style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}
+          >
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <SidebarTrigger className="hover:bg-accent/50 transition-colors rounded-lg flex-shrink-0" />
               
