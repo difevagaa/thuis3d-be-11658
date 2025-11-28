@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,14 +28,22 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
     product
   );
 
+  // Memoize sorted images to avoid re-sorting on every render
+  const sortedImages = useMemo(() => {
+    if (!product.product_images || product.product_images.length === 0) {
+      return [];
+    }
+    return [...product.product_images].sort((a, b) => a.display_order - b.display_order);
+  }, [product.product_images]);
+
   return (
     <Link to={`/producto/${product.id}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
         <CardContent className="p-2 md:p-3 lg:p-4">
           <div className="aspect-square bg-muted rounded-md mb-2 md:mb-3 lg:mb-4 overflow-hidden flex items-center justify-center">
-            {product.product_images && product.product_images.length > 0 ? (
+            {sortedImages.length > 0 ? (
               <ProductCarousel 
-                images={product.product_images.sort((a, b) => a.display_order - b.display_order)} 
+                images={sortedImages} 
                 alt={content.name || ''} 
                 autoRotate={true} 
               />
