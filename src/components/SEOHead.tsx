@@ -100,7 +100,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   }, [location.pathname]);
 
   // Determine final values with priority: props > page-specific > site customization > global seo > defaults
-  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Tuis3D | Professional 3D Printing Service & Design";
+  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Thuis3D | Professional 3D Printing Service & Design";
   const finalDescription = description || seoData?.meta_description || globalSettings?.site_description || "Expert 3D printing and CAD design service. We transform your ideas into reality with high-quality materials. Fast prototypes and series production.";
   
   // Combine all multilingual keywords for comprehensive SEO
@@ -124,7 +124,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Tuis3D - Professional 3D Printing Service",
+    "name": "Thuis3D - Professional 3D Printing Service",
     "url": baseUrl,
     "logo": finalImage,
     "description": finalDescription,
@@ -198,7 +198,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
       </script>
 
       {/* Additional SEO Meta Tags */}
-      <meta name="author" content="Thuis 3D" />
+      <meta name="author" content="Thuis3D" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
       <meta name="geo.region" content="BE" />
