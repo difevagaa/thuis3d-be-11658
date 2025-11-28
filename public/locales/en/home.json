@@ -3,43 +3,43 @@
     "viewMore": "View More"
   },
   "featured": {
-    "title": "⭐ Featured Products",
-    "subtitle": "Discover our most popular creations",
+    "title": "⭐ Featured 3D Printed Products",
+    "subtitle": "Discover our most popular FDM and Resin creations",
     "refreshProducts": "Refresh Products",
     "viewAllProducts": "View All Products",
     "viewDetails": "View Details"
   },
   "quickAccess": {
     "catalog": {
-      "title": "Product Catalog",
-      "description": "Explore our collection of 3D printed products with cutting-edge technology",
+      "title": "3D Printing Catalog",
+      "description": "Explore our collection of custom 3D printed products with FDM and SLA technology",
       "button": "View Products"
     },
     "quote": {
       "title": "Request a Quote",
-      "description": "Get a personalized quote for your project in minutes",
-      "button": "Request"
+      "description": "Get a personalized quote for your 3D printing or prototyping project in minutes",
+      "button": "Request Quote"
     },
     "giftCard": {
       "title": "Gift Cards",
-      "description": "The perfect gift for 3D printing enthusiasts",
+      "description": "The perfect gift for 3D printing enthusiasts and makers",
       "button": "Buy"
     }
   },
   "whyUs": {
-    "title": "Why Choose Us?",
-    "subtitle": "Quality and commitment in every project",
+    "title": "Your Partner in 3D Printing & Design",
+    "subtitle": "Quality additive manufacturing and custom prototyping",
     "quality": {
-      "title": "Superior Quality",
-      "description": "We use the best materials and 3D printing technology to guarantee exceptional results"
+      "title": "Premium Materials",
+      "description": "We use high-quality Filament, Resin, and advanced 3D printing technology (FDM, SLA) to guarantee exceptional results"
     },
     "speed": {
-      "title": "Fast Delivery",
-      "description": "Optimized processes that allow us to deliver your projects in the shortest time possible"
+      "title": "Fast Prototyping",
+      "description": "Optimized processes that allow us to deliver your custom 3D prints and prototypes in the shortest time possible"
     },
     "guarantee": {
       "title": "Total Guarantee",
-      "description": "We back our work with a complete satisfaction guarantee on all our products"
+      "description": "We back our work with a complete satisfaction guarantee on all our 3D printed products and designs"
     }
   }
 }

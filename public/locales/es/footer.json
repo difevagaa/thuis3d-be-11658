@@ -1,6 +1,6 @@
 {
   "brand": {
-    "tagline": "Impresión 3D profesional y diseño personalizado"
+    "tagline": "Servicio Profesional de Impresión 3D, Prototipado y Diseño Personalizado"
   },
   "help": {
     "title": "Ayuda",
@@ -12,14 +12,14 @@
   },
   "quickLinks": {
     "title": "Enlaces Rápidos",
-    "catalog": "Catálogo",
+    "catalog": "Catálogo de Impresión 3D",
     "requestQuote": "Solicitar Presupuesto",
     "giftCards": "Tarjetas Regalo",
     "blog": "Blog"
   },
   "newsletter": {
     "title": "Newsletter",
-    "description": "Recibe ofertas y novedades",
+    "description": "Recibe ofertas y novedades sobre impresión 3D",
     "placeholder": "Tu email",
     "subscribed": "¡Gracias por suscribirte!"
   },

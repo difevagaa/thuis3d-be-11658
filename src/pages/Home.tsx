@@ -265,7 +265,7 @@ const TranslatedBanner = ({
     return banner.video_url ? (
       <video src={banner.video_url} autoPlay muted loop playsInline className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
     ) : (
-      <img src={imageUrl} alt={altText} className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
+      <img src={imageUrl} alt={`3D printing service: ${altText}`} className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
     );
   };
   
