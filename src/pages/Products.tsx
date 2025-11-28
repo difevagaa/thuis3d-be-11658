@@ -42,15 +42,27 @@ const Products = () => {
         schema: 'public',
         table: 'product_images'
       }, loadData)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_roles'
+      }, loadData)
       .subscribe();
 
-    // Subscribe to user_roles changes to reload products with correct filtering
+    // Subscribe to role changes to reload products with correct filtering
     const rolesChannel = supabase
       .channel('products-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'user_roles'
+      }, () => {
+        loadData();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
       }, () => {
         loadData();
       })

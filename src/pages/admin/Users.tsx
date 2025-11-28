@@ -41,13 +41,20 @@ export default function Users() {
   useEffect(() => {
     loadData();
 
-    // Subscribe to realtime changes in user_roles
+    // Subscribe to realtime changes in user_roles and custom_roles
     const rolesChannel = supabase
       .channel('user-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'user_roles'
+      }, () => {
+        loadData();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
       }, () => {
         loadData();
       })
@@ -706,7 +713,7 @@ export default function Users() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 )}
               </TableBody>
             </Table>
