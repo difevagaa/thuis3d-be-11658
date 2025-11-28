@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -149,7 +149,7 @@ export default function ProductsAdminEnhanced() {
         setTaxRate(taxSettingsRes.data.tax_rate);
       }
     } catch (error) {
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -162,11 +162,11 @@ export default function ProductsAdminEnhanced() {
       if (error) throw error;
       if (data) {
         setFormData({ ...formData, product_code: data });
-        toast.success(`Código generado: ${data}`);
+        i18nToast.success("success.productCodeGenerated", { code: data });
       }
     } catch (error) {
       logger.error('Error generating product code:', error);
-      toast.error('Error al generar código');
+      i18nToast.error("error.productCodeGenerationFailed");
     } finally {
       setIsGeneratingCode(false);
     }
@@ -175,7 +175,7 @@ export default function ProductsAdminEnhanced() {
   const validateProductCode = async (code: string): Promise<boolean> => {
     if (!code || code.trim() === '') return true;
     if (!/^[A-Z0-9]{6}$/i.test(code)) {
-      toast.error('El código debe tener exactamente 6 caracteres alfanuméricos');
+      i18nToast.error("error.productCodeInvalid");
       return false;
     }
     try {
@@ -184,13 +184,13 @@ export default function ProductsAdminEnhanced() {
       const { data, error } = await query.maybeSingle();
       if (error) throw error;
       if (data) {
-        toast.error('Este código de producto ya existe');
+        i18nToast.error("error.productCodeExists");
         return false;
       }
       return true;
     } catch (error) {
       logger.error('Error validating product code:', error);
-      toast.error('Error al validar código');
+      i18nToast.error("error.productCodeValidationFailed");
       return false;
     }
   };
@@ -225,7 +225,7 @@ export default function ProductsAdminEnhanced() {
         if (selectedRoles.length > 0) {
           await supabase.from("product_roles").insert(selectedRoles.map(role => ({ product_id: editingProductId, role: String(role) })));
         }
-        toast.success("Producto actualizado correctamente");
+        i18nToast.success("success.productUpdated");
       } else {
         const { data: product, error: productError } = await supabase.from("products").insert([productData]).select().single();
         if (productError) throw productError;
@@ -264,12 +264,13 @@ export default function ProductsAdminEnhanced() {
           }
         }
         setEditingProductId(product.id);
-        toast.success("Producto creado. Ahora puedes subir imágenes.");
+        i18nToast.success("success.productCreated");
       }
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
       logger.error('[ProductsAdmin] Error:', error);
-      toast.error("Error al guardar producto");
+      const errorMessage = error?.message || error?.details || '';
+      i18nToast.error("error.productSaveFailed", { error: errorMessage || 'Unknown error' });
     }
   };
 
@@ -282,10 +283,10 @@ export default function ProductsAdminEnhanced() {
     if (!confirm("¿Mover este producto a la papelera?")) return;
     try {
       await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-      toast.success("Producto movido a la papelera");
+      i18nToast.success("success.productDeleted");
       loadData();
     } catch (error) {
-      toast.error("Error al eliminar producto");
+      i18nToast.error("error.productDeleteFailed");
     }
   };
 
@@ -323,8 +324,8 @@ export default function ProductsAdminEnhanced() {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("video/")) { toast.error("Por favor selecciona un archivo de video"); return; }
-    if (file.size > 20 * 1024 * 1024) { toast.error("El video no debe superar 20MB"); return; }
+    if (!file.type.startsWith("video/")) { i18nToast.error("error.invalidVideoFormat"); return; }
+    if (file.size > 20 * 1024 * 1024) { i18nToast.error("error.videoTooLarge"); return; }
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
@@ -333,10 +334,10 @@ export default function ProductsAdminEnhanced() {
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from("product-videos").getPublicUrl(filePath);
       setFormData({ ...formData, video_url: publicUrl });
-      toast.success("Video cargado exitosamente");
+      i18nToast.success("success.videoSaved");
     } catch (error) {
       logger.error("Error uploading video:", error);
-      toast.error("Error al cargar el video");
+      i18nToast.error("error.videoUploadFailed");
     }
   };
 
@@ -572,7 +573,7 @@ export default function ProductsAdminEnhanced() {
                             <div className="text-center p-8 border-2 border-dashed rounded-lg bg-muted/30">
                               <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                               <p className="text-muted-foreground">Primero guarda el producto para subir imágenes</p>
-                              <Button variant="secondary" className="mt-4" onClick={() => { if (!formData.name) { toast.error("Completa el nombre del producto"); setActiveTab("basic"); return; } handleSubmit(); }}>Guardar Producto Ahora</Button>
+                              <Button variant="secondary" className="mt-4" onClick={() => { if (!formData.name) { i18nToast.error("error.productNameRequired"); setActiveTab("basic"); return; } handleSubmit(); }}>Guardar Producto Ahora</Button>
                             </div>
                           )}
                         </CardContent>
