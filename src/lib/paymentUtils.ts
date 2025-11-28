@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
+import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 export interface Address {
   street: string;
@@ -264,6 +265,10 @@ export const sendGiftCardActivationNotification = async (
         p_message: `Has recibido una tarjeta regalo de €${giftCardData.initial_amount} de ${giftCardData.sender_name || 'un amigo'}. ¡Ya puedes usarla en tus compras!`,
         p_link: '/mi-cuenta?tab=giftcards'
       });
+      
+      // Trigger a broadcast for immediate notification update
+      await triggerNotificationRefresh(recipientProfile.id);
+      
       logger.log('In-app notification sent to recipient:', recipientProfile.id);
     }
   } catch (error) {
