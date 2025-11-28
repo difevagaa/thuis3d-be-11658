@@ -2582,7 +2582,6 @@ export type Database = {
           is_active: boolean | null
           keyword: string
           keyword_type: string | null
-          language: string | null
           relevance_score: number | null
           search_volume: number | null
           search_volume_estimate: string | null
@@ -2600,7 +2599,6 @@ export type Database = {
           is_active?: boolean | null
           keyword: string
           keyword_type?: string | null
-          language?: string | null
           relevance_score?: number | null
           search_volume?: number | null
           search_volume_estimate?: string | null
@@ -2618,7 +2616,6 @@ export type Database = {
           is_active?: boolean | null
           keyword?: string
           keyword_type?: string | null
-          language?: string | null
           relevance_score?: number | null
           search_volume?: number | null
           search_volume_estimate?: string | null

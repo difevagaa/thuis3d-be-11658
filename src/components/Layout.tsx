@@ -5,6 +5,7 @@ import { ShoppingCart, User, Moon, Sun, Package, LogOut, UserCircle, ShoppingBag
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
+import { ClientChatWidget } from "./ClientChatWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { Footer } from "./Footer";
 import { LanguageSelector } from "./LanguageSelector";
@@ -331,6 +332,9 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* Footer */}
       <Footer />
+      
+      {/* Client Chat Widget - for authenticated users */}
+      {user && <ClientChatWidget />}
     </div>
   );
 };
