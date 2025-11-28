@@ -55,7 +55,7 @@ export default function SEOManager() {
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const { regenerateAllProductSEO, validateSEO } = useAutoSEO();
+  const { regenerateAllProductSEO, regenerateAllCategorySEO, regenerateAllBlogSEO, validateSEO } = useAutoSEO();
 
   useEffect(() => {
     loadData();
@@ -452,32 +452,44 @@ export default function SEOManager() {
       
       // Use advanced client-side SEO generation with multilingual support
       // This generates keywords in all three languages (ES, EN, NL) for the Belgian market
-      const result = await regenerateAllProductSEO();
+      // Now includes product translations, category translations, and blog translations
       
-      if (!result.success) {
+      // Generate keywords for products (with translations)
+      const productResult = await regenerateAllProductSEO();
+      
+      // Generate keywords for categories (with translations)
+      const categoryResult = await regenerateAllCategorySEO();
+      
+      // Generate keywords for blog posts (with translations)
+      const blogResult = await regenerateAllBlogSEO();
+      
+      const totalProcessed = productResult.processed + categoryResult.processed + blogResult.processed;
+      const totalErrors = productResult.errors + categoryResult.errors + blogResult.errors;
+      
+      if (totalErrors > 0 && totalProcessed === 0) {
         throw new Error('Error en generación masiva');
       }
-      
-      // Note: We no longer call generate_product_keywords_optimized as it only generates
-      // Spanish keywords and overwrites the multilingual keywords generated above
       
       // Clean up low quality keywords
       const { data: cleanupCount } = await supabase.rpc("cleanup_low_quality_keywords");
       
       await loadData();
-      toast.success(`SEO multilingüe generado (ES, EN, NL). ${result.processed} productos procesados, ${cleanupCount || 0} keywords obsoletas eliminadas`);
+      toast.success(`SEO multilingüe generado (ES, EN, NL). ${productResult.processed} productos, ${categoryResult.processed} categorías, ${blogResult.processed} posts procesados. ${cleanupCount || 0} keywords obsoletas eliminadas`);
       
       // Log audit
       await supabase.from("seo_audit_log").insert({
         audit_type: "keywords",
         status: "success",
-        message: "Palabras clave multilingües generadas (ES, EN, NL) para mercado Bélgica",
+        message: "Palabras clave multilingües generadas (ES, EN, NL) para mercado Bélgica - Incluye traducciones de productos, categorías y blog",
         details: { 
           total_keywords: keywords.length,
-          products_processed: result.processed,
+          products_processed: productResult.processed,
+          categories_processed: categoryResult.processed,
+          blog_posts_processed: blogResult.processed,
           cleanup_count: cleanupCount || 0,
-          algorithm: 'semantic_multilingual_v2',
-          languages: ['es', 'en', 'nl']
+          algorithm: 'semantic_multilingual_v3',
+          languages: ['es', 'en', 'nl'],
+          sources: ['products', 'categories', 'blog']
         }
       });
     } catch (error: unknown) {

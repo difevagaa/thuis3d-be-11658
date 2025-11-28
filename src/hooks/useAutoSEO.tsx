@@ -185,7 +185,7 @@ export function useAutoSEO() {
         // Upsert keywords - first try to find existing, then insert or update
         for (const keyword of keywordsToSave) {
           // Check if keyword with same language and source already exists
-          // @ts-ignore - Avoid deep type instantiation error
+          // @ts-expect-error - Avoid deep type instantiation error
           const existingQuery = supabase
             .from('seo_keywords')
             .select('id')
@@ -508,7 +508,7 @@ export function useAutoSEO() {
         error: errorMessage
       };
     }
-  }, []);
+  }, [fetchEntityTranslations]);
 
   /**
    * Bulk generates SEO for all products
@@ -564,6 +564,301 @@ export function useAutoSEO() {
       return { success: false, processed: 0, errors: 1 };
     }
   }, [generateProductSEO]);
+
+  /**
+   * Generates and saves SEO keywords for a category with multilingual support
+   */
+  const generateCategorySEO = useCallback(async (
+    category: CategoryData
+  ): Promise<AutoSEOResult> => {
+    try {
+      // Base text in Spanish (source language)
+      const baseTextToAnalyze = `${category.name} ${category.description || ''}`;
+      
+      // Fetch category translations for EN and NL
+      const translations = await fetchEntityTranslations('category', category.id);
+      
+      // Group translations by language
+      const translationsByLang: Record<string, Record<string, string>> = {};
+      translations.forEach(t => {
+        if (!translationsByLang[t.language]) {
+          translationsByLang[t.language] = {};
+        }
+        translationsByLang[t.language][t.field_name] = t.translated_text;
+      });
+      
+      // Extract multilingual keywords for Belgium market (ES, EN, NL)
+      const multilingualKeywords = extractMultilingualKeywords(baseTextToAnalyze, {
+        category: category.name,
+        productType: 'category'
+      });
+      
+      // Enhance keywords with actual translations for each language
+      const targetLanguages: SupportedSEOLanguage[] = ['en', 'nl'];
+      for (const lang of targetLanguages) {
+        const langTranslations = translationsByLang[lang];
+        if (langTranslations) {
+          // Build text from translated category fields
+          const translatedName = langTranslations['name'] || '';
+          const translatedDescription = langTranslations['description'] || '';
+          const translatedText = `${translatedName} ${translatedDescription}`.trim();
+          
+          if (translatedText.length > 0) {
+            // Extract keywords from actual translated content
+            const translatedKeywords = extractKeywords(translatedText, {
+              category: category.name,
+              productType: 'category',
+              language: lang
+            });
+            
+            // Add translated keywords to the result (avoiding duplicates)
+            const existingKeywords = new Set(multilingualKeywords[lang].map(k => k.keyword.toLowerCase()));
+            translatedKeywords.forEach(kw => {
+              if (!existingKeywords.has(kw.keyword.toLowerCase())) {
+                multilingualKeywords[lang].push(kw);
+                multilingualKeywords.combined.push(kw);
+              }
+            });
+          }
+        }
+      }
+      
+      // Use combined keywords for backward compatibility
+      const keywords = multilingualKeywords.combined.slice(0, 10);
+      
+      // Generate meta description
+      const metaResult = generateMetaDescription(
+        category.name,
+        category.description || category.name,
+        {
+          maxLength: 160,
+          keywords: keywords.slice(0, 3).map(k => k.keyword),
+          includeCallToAction: true
+        }
+      );
+      
+      // Generate page title
+      const pageTitle = generatePageTitle(category.name, {
+        suffix: ' - Thuis 3D',
+        maxLength: 60
+      });
+      
+      // Save all multilingual keywords to database
+      const allLanguages: SupportedSEOLanguage[] = ['nl', 'en', 'es'];
+      for (const lang of allLanguages) {
+        const langKeywords = multilingualKeywords[lang];
+        const keywordsToSave = langKeywords.slice(0, 10).map(k => ({
+          keyword: k.keyword.toLowerCase().trim(),
+          source_type: 'category' as const,
+          source_id: category.id,
+          auto_generated: true,
+          is_active: true,
+          relevance_score: k.relevanceScore,
+          keyword_type: k.keywordType,
+          search_volume_estimate: k.searchVolume,
+          language: lang
+        }));
+        
+        // Upsert keywords
+        for (const keyword of keywordsToSave) {
+          const { data: existing } = await supabase
+            .from('seo_keywords')
+            .select('id')
+            .eq('keyword', keyword.keyword)
+            .eq('language', keyword.language)
+            .eq('source_type', keyword.source_type)
+            .eq('source_id', keyword.source_id)
+            .maybeSingle();
+          
+          if (existing) {
+            await supabase
+              .from('seo_keywords')
+              .update({
+                relevance_score: keyword.relevance_score,
+                keyword_type: keyword.keyword_type,
+                search_volume_estimate: keyword.search_volume_estimate,
+                is_active: keyword.is_active
+              })
+              .eq('id', existing.id);
+          } else {
+            await supabase.from('seo_keywords').insert(keyword);
+          }
+        }
+      }
+      
+      // Create meta tag for category page
+      const pagePath = `/products?category=${category.id}`;
+      const { data: existingTag } = await supabase
+        .from('seo_meta_tags')
+        .select('id')
+        .eq('page_path', pagePath)
+        .maybeSingle();
+      
+      const metaTagData = {
+        page_path: pagePath,
+        page_title: pageTitle,
+        meta_description: metaResult.description,
+        og_title: category.name,
+        og_description: metaResult.description,
+        twitter_title: category.name,
+        twitter_description: metaResult.description,
+        keywords: keywords.slice(0, 5).map(k => k.keyword),
+        updated_at: new Date().toISOString()
+      };
+      
+      if (existingTag) {
+        await supabase.from('seo_meta_tags').update(metaTagData).eq('id', existingTag.id);
+      } else {
+        await supabase.from('seo_meta_tags').insert(metaTagData);
+      }
+      
+      // Log the SEO generation
+      await supabase.from('seo_audit_log').insert({
+        audit_type: 'auto_generation',
+        status: 'success',
+        message: `SEO multilingüe generado para categoría: ${category.name}`,
+        details: {
+          category_id: category.id,
+          keywords_count: keywords.length,
+          keywords_es: multilingualKeywords.es.length,
+          keywords_en: multilingualKeywords.en.length,
+          keywords_nl: multilingualKeywords.nl.length,
+          languages: ['es', 'en', 'nl']
+        }
+      });
+      
+      clearSeoCache();
+      
+      return {
+        keywords,
+        metaDescription: metaResult.description,
+        pageTitle,
+        success: true,
+        multilingualKeywords: {
+          es: multilingualKeywords.es,
+          en: multilingualKeywords.en,
+          nl: multilingualKeywords.nl
+        }
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Error generating category SEO', { error, categoryId: category.id });
+      
+      return {
+        keywords: [],
+        metaDescription: '',
+        pageTitle: '',
+        success: false,
+        error: errorMessage
+      };
+    }
+  }, [fetchEntityTranslations]);
+
+  /**
+   * Bulk generates SEO for all categories
+   */
+  const regenerateAllCategorySEO = useCallback(async (): Promise<{
+    success: boolean;
+    processed: number;
+    errors: number;
+  }> => {
+    try {
+      toast.info('Generando SEO para categorías...');
+      
+      const { data: categories, error } = await supabase
+        .from('categories')
+        .select('id, name, description')
+        .is('deleted_at', null);
+      
+      if (error) throw error;
+      
+      let processed = 0;
+      let errors = 0;
+      
+      for (const category of categories || []) {
+        const result = await generateCategorySEO({
+          id: category.id,
+          name: category.name,
+          description: category.description || undefined
+        });
+        
+        if (result.success) {
+          processed++;
+        } else {
+          errors++;
+        }
+      }
+      
+      await supabase.from('seo_audit_log').insert({
+        audit_type: 'bulk_generation',
+        status: errors === 0 ? 'success' : 'warning',
+        message: `SEO de categorías completado: ${processed} procesadas, ${errors} errores`,
+        details: { processed, errors, total: categories?.length || 0 }
+      });
+      
+      toast.success(`SEO de categorías generado: ${processed} categorías procesadas`);
+      
+      return { success: true, processed, errors };
+    } catch (error) {
+      logger.error('Error in bulk category SEO generation', { error });
+      toast.error('Error al generar SEO de categorías');
+      return { success: false, processed: 0, errors: 1 };
+    }
+  }, [generateCategorySEO]);
+
+  /**
+   * Bulk generates SEO for all blog posts
+   */
+  const regenerateAllBlogSEO = useCallback(async (): Promise<{
+    success: boolean;
+    processed: number;
+    errors: number;
+  }> => {
+    try {
+      toast.info('Generando SEO para posts del blog...');
+      
+      const { data: posts, error } = await supabase
+        .from('blog_posts')
+        .select('id, slug, title, excerpt, content')
+        .is('deleted_at', null);
+      
+      if (error) throw error;
+      
+      let processed = 0;
+      let errors = 0;
+      
+      for (const post of posts || []) {
+        const result = await generateBlogSEO({
+          id: post.id,
+          slug: post.slug,
+          title: post.title,
+          excerpt: post.excerpt || undefined,
+          content: post.content || undefined
+        });
+        
+        if (result.success) {
+          processed++;
+        } else {
+          errors++;
+        }
+      }
+      
+      await supabase.from('seo_audit_log').insert({
+        audit_type: 'bulk_generation',
+        status: errors === 0 ? 'success' : 'warning',
+        message: `SEO de blog completado: ${processed} posts procesados, ${errors} errores`,
+        details: { processed, errors, total: posts?.length || 0 }
+      });
+      
+      toast.success(`SEO del blog generado: ${processed} posts procesados`);
+      
+      return { success: true, processed, errors };
+    } catch (error) {
+      logger.error('Error in bulk blog SEO generation', { error });
+      toast.error('Error al generar SEO del blog');
+      return { success: false, processed: 0, errors: 1 };
+    }
+  }, [generateBlogSEO]);
 
   /**
    * Validates current SEO configuration
@@ -667,7 +962,10 @@ export function useAutoSEO() {
   return {
     generateProductSEO,
     generateBlogSEO,
+    generateCategorySEO,
     regenerateAllProductSEO,
+    regenerateAllCategorySEO,
+    regenerateAllBlogSEO,
     validateSEO
   };
 }
