@@ -60,7 +60,7 @@
   "creatingOrder": "Creando tu pedido...",
   "confirmAndCreateOrder": "Confirmar y Crear Pedido",
   "changePaymentMethod": "Cambiar Método de Pago",
-  "openPaymentLink": "Abrir Enlace de Pago",
+  "openPaymentLink": "Ir a Página de Pago",
   "confirmPayment": "He realizado el pago",
   "instructions": {
     "title": "Instrucciones de Pago",
@@ -103,7 +103,13 @@
     "revolutProcessing": "Tu pedido está siendo procesado. Si completaste el pago en Revolut, recibirás una confirmación pronto.",
     "paymentPendingWarning": "Tu pedido estará en estado pendiente hasta que confirmemos el pago.",
     "backToHome": "Volver al Inicio",
-    "viewMyOrders": "Ver Mis Pedidos"
+    "viewMyOrders": "Ver Mis Pedidos",
+    "importantInstructions": "Instrucciones Importantes",
+    "step1ClickButton": "Al hacer clic en el botón",
+    "step1Redirect": "serás redirigido a Revolut",
+    "step2Amount": "En la página de Revolut, ingresa el monto:",
+    "step3Reference": "En la referencia/concepto, escribe el número de pedido:",
+    "step4Complete": "Completa el pago con tu tarjeta de crédito/débito"
   },
   "messages": {
     "orderCreated": "Pedido creado exitosamente",

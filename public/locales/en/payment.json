@@ -60,7 +60,7 @@
   "creatingOrder": "Creating your order...",
   "confirmAndCreateOrder": "Confirm and Create Order",
   "changePaymentMethod": "Change Payment Method",
-  "openPaymentLink": "Open Payment Link",
+  "openPaymentLink": "Go to Payment Page",
   "confirmPayment": "I have made the payment",
   "instructions": {
     "title": "Payment Instructions",
@@ -103,7 +103,13 @@
     "revolutProcessing": "Your order is being processed. If you completed the payment in Revolut, you will receive confirmation soon.",
     "paymentPendingWarning": "Your order will remain pending until we confirm payment.",
     "backToHome": "Back to Home",
-    "viewMyOrders": "View My Orders"
+    "viewMyOrders": "View My Orders",
+    "importantInstructions": "Important Instructions",
+    "step1ClickButton": "When you click the button",
+    "step1Redirect": "you will be redirected to Revolut",
+    "step2Amount": "On the Revolut page, enter the amount:",
+    "step3Reference": "In the reference/concept field, enter the order number:",
+    "step4Complete": "Complete the payment with your credit/debit card"
   },
   "messages": {
     "orderCreated": "Order created successfully",

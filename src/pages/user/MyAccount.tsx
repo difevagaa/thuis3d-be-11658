@@ -1089,7 +1089,7 @@ export default function MyAccount() {
                               {t('account:invoices.view')}
                             </Button>
                             
-                            {invoice.payment_status === 'pending' && (
+                            {invoice.payment_status !== 'paid' && (
                               <Button
                                 size="sm"
                                 onClick={() => {

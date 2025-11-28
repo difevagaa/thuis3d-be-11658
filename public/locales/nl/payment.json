@@ -60,7 +60,7 @@
   "creatingOrder": "Uw bestelling wordt aangemaakt...",
   "confirmAndCreateOrder": "Bevestigen en Bestelling Aanmaken",
   "changePaymentMethod": "Betaalmethode Wijzigen",
-  "openPaymentLink": "Betalingslink Openen",
+  "openPaymentLink": "Ga naar Betaalpagina",
   "confirmPayment": "Ik heb betaald",
   "instructions": {
     "title": "Betalingsinstructies",
@@ -103,7 +103,13 @@
     "revolutProcessing": "Uw bestelling wordt verwerkt. Als u de betaling in Revolut heeft voltooid, ontvangt u binnenkort een bevestiging.",
     "paymentPendingWarning": "Uw bestelling blijft in behandeling totdat we de betaling bevestigen.",
     "backToHome": "Terug naar Home",
-    "viewMyOrders": "Mijn Bestellingen Bekijken"
+    "viewMyOrders": "Mijn Bestellingen Bekijken",
+    "importantInstructions": "Belangrijke Instructies",
+    "step1ClickButton": "Wanneer u op de knop klikt",
+    "step1Redirect": "wordt u doorgestuurd naar Revolut",
+    "step2Amount": "Voer op de Revolut-pagina het bedrag in:",
+    "step3Reference": "Voer in het referentie/omschrijving veld het bestelnummer in:",
+    "step4Complete": "Voltooi de betaling met uw credit-/betaalpas"
   },
   "messages": {
     "orderCreated": "Bestelling succesvol aangemaakt",

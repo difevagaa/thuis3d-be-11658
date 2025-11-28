@@ -633,6 +633,12 @@ const Home = () => {
     loadFeatures();
     loadOrderConfig();
 
+    // Subscribe to auth state changes to reload featured products with correct filtering
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Reload featured products when user logs in/out to show correct role-based products
+      loadFeaturedProducts();
+    });
+
     // Subscribe to product changes for real-time updates
     const productsChannel = supabase.channel('homepage-products-changes').on('postgres_changes', {
       event: '*',
@@ -675,6 +681,7 @@ const Home = () => {
     }, loadOrderConfig).subscribe();
 
     return () => {
+      authSubscription.unsubscribe();
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bannersChannel);
       supabase.removeChannel(sectionsChannel);
@@ -792,13 +799,15 @@ const Home = () => {
     }
   };
   const loadFeaturedProducts = async () => {
-    const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
+    // First, ensure session is valid by calling getSession() 
+    // This will auto-refresh the token if needed
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    // Get user from the session (already validated)
+    const user = session?.user ?? null;
+    
     let userRoles: string[] = [];
-    if (user) {
+    if (user && !sessionError) {
       const {
         data: rolesData
       } = await supabase.from("user_roles").select("role").eq("user_id", user.id);

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Banknote, Building2, ShieldCheck, Copy, QrCode, AlertTriangle } from "lucide-react";
+import { CreditCard, Banknote, Building2, ShieldCheck, Copy, QrCode, AlertTriangle, Info } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
@@ -1100,7 +1100,21 @@ export default function Payment() {
                 </div>
               </div>
 
-              {/* Warning - Will be redirected to bank page */}
+              {/* Important Instructions - Will be redirected to Revolut */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  {t('payment:instructions.importantInstructions')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:openPaymentLink')}"</strong>, {t('payment:instructions.step1Redirect')}</li>
+                  <li>{t('payment:instructions.step2Amount')} <strong>€{orderCreated.total.toFixed(2)}</strong></li>
+                  <li>{t('payment:instructions.step3Reference')} <strong>{orderCreated.orderNumber}</strong></li>
+                  <li>{t('payment:instructions.step4Complete')}</li>
+                </ol>
+              </div>
+
+              {/* Warning */}
               <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -1185,6 +1199,46 @@ export default function Payment() {
         {/* Payment Methods - Only show if no payment method is selected */}
         {!selectedPaymentMethod && (
         <div className="space-y-4">
+          {/* QR Codes Section - Show FIRST before payment methods */}
+          {paymentImages.length > 0 && (
+            <Card className="shadow-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl flex items-center gap-2 text-primary">
+                  <QrCode className="h-6 w-6" />
+                  {t('payment:instructions.qrCodes')}
+                </CardTitle>
+                <CardDescription className="text-base">
+                  {t('payment:instructions.scanQr')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {paymentImages.map((img, index) => (
+                    <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                      <img 
+                        src={img} 
+                        alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                        className="w-full h-56 object-contain rounded-lg bg-white p-2"
+                      />
+                      <div className="text-center space-y-1">
+                        <p className="font-semibold text-foreground">
+                          {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                           index === 1 ? t('payment:instructions.qrRevolut') : 
+                           `${t('payment:instructions.qrCode')} ${index + 1}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
+                           index === 1 ? t('payment:instructions.fastRevolutPayment') : 
+                           t('payment:instructions.alternativePayment')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {paymentConfig.company_info && (
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2">
@@ -1208,24 +1262,19 @@ export default function Payment() {
               <CardDescription className="text-foreground/70">{t('payment:paymentMethod')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
-              {/* REVOLUT - Destacado como opción principal para tarjetas */}
-              {paymentConfig.revolut_enabled && paymentConfig.revolut_link && (
+              {/* TARJETA - Opción principal (usa Revolut internamente) */}
+              {paymentConfig.card_enabled && (
                 <Button
-                  onClick={() => handlePayment("revolut")}
+                  onClick={() => handlePayment("card")}
                   disabled={processing}
                   className="w-full h-auto py-4 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
                 >
                   <div className="flex items-center w-full">
-                    <div className="flex-shrink-0 mr-4">
-                      <svg className="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                        <path d="M12.31 11.14c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                      </svg>
-                    </div>
+                    <CreditCard className="h-10 w-10 mr-4" />
                     <div className="text-left flex-grow">
-                      <div className="font-bold text-lg">{t('payment:methods.revolut')}</div>
+                      <div className="font-bold text-lg">{t('payment:methods.creditCard')}</div>
                       <div className="text-xs text-white/90 mt-1">
-                        💳 {t('payment:methods.revolutDesc')}
+                        💳 {t('payment:methods.creditCardDesc')}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Visa</span>
@@ -1282,27 +1331,7 @@ export default function Payment() {
                 </Button>
               )}
 
-              {/* Tarjeta directa (si está habilitado) */}
-              {paymentConfig.card_enabled && (
-                <Button
-                  onClick={() => handlePayment("card")}
-                  disabled={processing}
-                  className="w-full h-auto py-4 text-lg border-2 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  variant="outline"
-                >
-                  <div className="flex items-center w-full">
-                    <CreditCard className="h-10 w-10 mr-4 text-purple-600" />
-                    <div className="text-left flex-grow">
-                      <div className="font-bold text-foreground">{t('payment:methods.creditCard')}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        💳 {t('payment:methods.creditCardDesc')}
-                      </div>
-                    </div>
-                  </div>
-                </Button>
-              )}
-
-              {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && !paymentConfig.revolut_enabled && (
+              {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && (
                 <div className="text-center text-muted-foreground py-8 bg-muted/30 rounded-lg">
                   <p>{t('payment:noPaymentMethods')}</p>
                 </div>
@@ -1329,46 +1358,6 @@ export default function Payment() {
               </div>
             </CardContent>
           </Card>
-
-          {/* QR Codes Section - Shown on payment selection page */}
-          {paymentImages.length > 0 && (
-            <Card className="shadow-md border-primary/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-primary" />
-                  {t('payment:instructions.qrCodes')}
-                </CardTitle>
-                <CardDescription>
-                  {t('payment:instructions.scanQr')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {paymentImages.map((img, index) => (
-                    <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
-                      <img 
-                        src={img} 
-                        alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                        className="w-full h-48 object-contain rounded-lg bg-white p-2"
-                      />
-                      <div className="text-center space-y-1">
-                        <p className="font-semibold text-foreground">
-                          {index === 0 ? t('payment:instructions.qrBankTransfer') : 
-                           index === 1 ? t('payment:instructions.qrRevolut') : 
-                           `${t('payment:instructions.qrCode')} ${index + 1}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
-                           index === 1 ? t('payment:instructions.fastRevolutPayment') : 
-                           t('payment:instructions.alternativePayment')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {!isInvoicePayment && (
             <Button
