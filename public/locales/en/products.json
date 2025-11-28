@@ -38,18 +38,21 @@
   "buy": "Buy",
   "requestQuote": "Request Quote",
   "selectMaterial": "Select a material",
+  "selectMaterialDesc": "Please choose a material before continuing",
   "selectColor": "Select a color",
+  "selectColorDesc": "Please choose a color before continuing",
   "selectMaterialFirst": "Select a material first",
+  "selectRequired": "Missing selections: {{sections}}",
+  "selectRequiredDesc": "Please complete all options marked with * before continuing",
   "noColorsAvailable": "No colors available",
+  "noOptionsAvailable": "No options available",
   "videoTitle": "Product Video",
   "videoNotSupported": "Your browser does not support the video.",
   "addedToCart": "Product added to cart",
   "quoteRequested": "Quote requested. We'll contact you soon.",
-  "mustLogin": "You must log in to",
+  "mustLogin": "You must log in to continue",
   "mustLoginQuote": "You must log in to request quotes",
-  "customization": {
-    "title": "Customization",
-    "selectColorFor": "Select color for",
-    "selectImageFor": "Select image for"
-  }
+  "customization": "Customization",
+  "required": "required",
+  "optional": "optional"
 }

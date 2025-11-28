@@ -249,17 +249,27 @@ const ProductDetail = () => {
         });
       
       if (missingSections.length > 0) {
-        toast.error(`Debe seleccionar: ${missingSections.map(s => s.section_name).join(', ')}`);
+        const sectionNames = missingSections.map(s => s.section_name).join(', ');
+        toast.error(t('selectRequired', { sections: sectionNames }), {
+          description: t('selectRequiredDesc'),
+          duration: 5000
+        });
         return;
       }
     } else {
       if (product.enable_material_selection && !selectedMaterial) {
-        toast.error(t('selectMaterial'));
+        toast.error(t('selectMaterial'), {
+          description: t('selectMaterialDesc'),
+          duration: 4000
+        });
         return;
       }
 
       if (product.enable_color_selection && !selectedColor) {
-        toast.error(t('selectColor'));
+        toast.error(t('selectColor'), {
+          description: t('selectColorDesc'),
+          duration: 4000
+        });
         return;
       }
     }
@@ -591,11 +601,29 @@ const ProductDetail = () => {
               {/* Mostrar secciones de personalización O selector de color tradicional */}
               {customizationSections.length > 0 ? (
                 <div className="space-y-3 md:space-y-4 border-t pt-3 md:pt-4">
-                  <h3 className="font-semibold text-sm md:text-base">Personalización</h3>
+                  <h3 className="font-semibold text-sm md:text-base flex items-center gap-2">
+                    {t('customization')}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      ({customizationSections.filter(s => s.is_required).length} {t('required')})
+                    </span>
+                  </h3>
                   {customizationSections.map((section) => (
-                    <div key={section.id} className="space-y-1 md:space-y-2">
-                      <Label className="text-xs md:text-sm">
-                        {section.section_name} {section.is_required && '*'}
+                    <div key={section.id} className={`space-y-1 md:space-y-2 p-3 rounded-lg border ${
+                      section.is_required && !sectionColorSelections[section.id] && !sectionImageSelections[section.id]
+                        ? 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+                        : 'border-border bg-muted/20'
+                    }`}>
+                      <Label className="text-xs md:text-sm font-medium flex items-center gap-2">
+                        {section.section_name}
+                        {section.is_required ? (
+                          <span className="text-destructive">*</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">({t('optional')})</span>
+                        )}
+                        {((section.section_type === 'color' && sectionColorSelections[section.id]) ||
+                          (section.section_type === 'image' && sectionImageSelections[section.id])) && (
+                          <Check className="h-4 w-4 text-green-500" />
+                        )}
                       </Label>
                       
                       {/* Mostrar imagen de referencia si existe */}
@@ -604,60 +632,67 @@ const ProductDetail = () => {
                           <img
                             src={section.availableImages[0].image_url}
                             alt={section.section_name}
-                            className="w-24 h-24 object-cover rounded border"
+                            className="w-24 h-24 object-cover rounded border shadow-sm"
                           />
                         </div>
                       )}
                       
                       {section.section_type === 'color' ? (
-                        <Select 
-                          value={sectionColorSelections[section.id] || ""} 
-                          onValueChange={(value) => setSectionColorSelections({
-                            ...sectionColorSelections,
-                            [section.id]: value
-                          })}
-                        >
-                          <SelectTrigger className="h-8 md:h-10 text-xs md:text-sm">
-                            <SelectValue placeholder={`Selecciona color`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {section.availableColors.map((color) => (
-                              <SelectItem key={color.id} value={color.id} className="text-xs md:text-sm">
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-3 h-3 md:w-4 md:h-4 rounded-full border"
-                                    style={{ backgroundColor: color.hex_code }}
-                                  />
-                                  {color.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        section.availableColors.length > 0 ? (
+                          <Select 
+                            value={sectionColorSelections[section.id] || ""} 
+                            onValueChange={(value) => setSectionColorSelections({
+                              ...sectionColorSelections,
+                              [section.id]: value
+                            })}
+                          >
+                            <SelectTrigger className={`h-8 md:h-10 text-xs md:text-sm ${
+                              section.is_required && !sectionColorSelections[section.id] ? 'border-amber-400' : ''
+                            }`}>
+                              <SelectValue placeholder={t('selectColor')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {section.availableColors.map((color) => (
+                                <SelectItem key={color.id} value={color.id} className="text-xs md:text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="w-3 h-3 md:w-4 md:h-4 rounded-full border shadow-sm"
+                                      style={{ backgroundColor: color.hex_code }}
+                                    />
+                                    {color.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">{t('noColorsAvailable')}</p>
+                        )
                       ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {section.availableImages.map((image) => (
-                            <div key={image.id} className="relative">
-                              <button
-                                type="button"
-                                onClick={() => setSectionImageSelections({
-                                  ...sectionImageSelections,
-                                  [section.id]: image.id
-                                })}
-                                className={`relative border-2 rounded-lg overflow-hidden transition-all hover:border-primary w-full ${
-                                  sectionImageSelections[section.id] === image.id
-                                    ? 'border-primary ring-2 ring-primary/20'
-                                    : 'border-border'
-                                }`}
-                              >
-                                <img
-                                  src={image.image_url}
-                                  alt={image.image_name}
-                                  className="w-full h-16 md:h-20 object-cover"
-                                />
-                                <p className="text-xs p-1 bg-background/80 text-center truncate">
-                                  {image.image_name}
-                                </p>
+                        section.availableImages.length > 0 ? (
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {section.availableImages.map((image) => (
+                              <div key={image.id} className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setSectionImageSelections({
+                                    ...sectionImageSelections,
+                                    [section.id]: image.id
+                                  })}
+                                  className={`relative border-2 rounded-lg overflow-hidden transition-all hover:border-primary w-full ${
+                                    sectionImageSelections[section.id] === image.id
+                                      ? 'border-primary ring-2 ring-primary/20'
+                                      : 'border-border'
+                                  }`}
+                                >
+                                  <img
+                                    src={image.image_url}
+                                    alt={image.image_name}
+                                    className="w-full h-16 md:h-20 object-cover"
+                                  />
+                                  <p className="text-xs p-1 bg-background/80 text-center truncate">
+                                    {image.image_name}
+                                  </p>
                                 {sectionImageSelections[section.id] === image.id && (
                                   <div className="absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
                                     <Check className="w-6 h-6 text-primary" />
@@ -705,6 +740,9 @@ const ProductDetail = () => {
                             </div>
                           ))}
                         </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">{t('noOptionsAvailable')}</p>
+                        )
                       )}
                     </div>
                   ))}

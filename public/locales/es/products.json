@@ -38,18 +38,21 @@
   "buy": "Comprar",
   "requestQuote": "Solicitar Cotización",
   "selectMaterial": "Selecciona un material",
+  "selectMaterialDesc": "Por favor elige un material antes de continuar",
   "selectColor": "Selecciona un color",
+  "selectColorDesc": "Por favor elige un color antes de continuar",
   "selectMaterialFirst": "Primero selecciona un material",
+  "selectRequired": "Faltan selecciones: {{sections}}",
+  "selectRequiredDesc": "Por favor completa todas las opciones marcadas con * antes de continuar",
   "noColorsAvailable": "No hay colores disponibles",
+  "noOptionsAvailable": "No hay opciones disponibles",
   "videoTitle": "Video del Producto",
   "videoNotSupported": "Tu navegador no soporta el video.",
   "addedToCart": "Producto agregado al carrito",
   "quoteRequested": "Cotización solicitada. Te contactaremos pronto.",
-  "mustLogin": "Debes iniciar sesión para",
+  "mustLogin": "Debes iniciar sesión para continuar",
   "mustLoginQuote": "Debes iniciar sesión para solicitar cotizaciones",
-  "customization": {
-    "title": "Personalización",
-    "selectColorFor": "Seleccionar color para",
-    "selectImageFor": "Seleccionar imagen para"
-  }
+  "customization": "Personalización",
+  "required": "obligatorias",
+  "optional": "opcional"
 }

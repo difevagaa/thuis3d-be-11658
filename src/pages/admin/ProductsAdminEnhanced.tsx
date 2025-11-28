@@ -241,12 +241,22 @@ export default function ProductsAdminEnhanced() {
             if (!section.section_name.trim()) continue;
             const { data: insertedSection, error: sectionError } = await (supabase as any)
               .from('product_customization_sections')
-              .insert({ product_id: product.id, section_name: section.section_name, display_order: section.display_order, is_required: section.is_required })
+              .insert({ 
+                product_id: product.id, 
+                section_name: section.section_name, 
+                display_order: section.display_order, 
+                is_required: section.is_required,
+                section_type: section.section_type || 'color'
+              })
               .select().single();
-            if (sectionError) continue;
-            if (section.selectedColors && section.selectedColors.length > 0) {
+            if (sectionError) {
+              logger.error('[ProductsAdmin] Error creating section:', sectionError);
+              continue;
+            }
+            if (section.section_type === 'color' && section.selectedColors && section.selectedColors.length > 0) {
               await (supabase as any).from('product_section_colors').insert(section.selectedColors.map((colorId: string) => ({ section_id: insertedSection.id, color_id: colorId })));
             }
+            // Note: Images are handled by ProductCustomizationSections component when saving
           }
         }
         setEditingProductId(product.id);
