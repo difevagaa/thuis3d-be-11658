@@ -159,7 +159,7 @@ export default function Materials() {
       setSelectedColors([]);
       await loadData();
     } catch (error) {
-      toast.error("Error al actualizar material");
+      i18nToast.error("error.materialSaveFailed");
     }
   };
 
@@ -194,7 +194,7 @@ export default function Materials() {
       clearSelection();
       loadData();
     } catch (error: any) {
-      toast.error("Error al eliminar materiales");
+      i18nToast.error("error.materialDeleteFailed");
     }
   };
 

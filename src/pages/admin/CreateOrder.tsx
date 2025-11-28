@@ -126,7 +126,7 @@ export default function CreateOrder() {
       }
     } catch (error) {
       logger.error("Error loading user data:", error);
-      toast.error("Error al cargar datos del cliente");
+      i18nToast.error("error.loadingFailed");
     }
   };
 

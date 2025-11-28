@@ -190,7 +190,7 @@ export default function SiteCustomizer() {
       }
     } catch (error) {
       logger.error("Error loading customization:", error);
-      toast.error("Error al cargar la personalización");
+      i18nToast.error("error.customizationLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -404,7 +404,7 @@ export default function SiteCustomizer() {
       loadSettings();
     } catch (error: any) {
       logger.error("Save error:", error);
-      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
+      i18nToast.error("error.configSaveFailed", { error: error.message || 'Unknown error' });
     }
   };
 

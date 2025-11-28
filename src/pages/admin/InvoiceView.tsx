@@ -33,7 +33,7 @@ export default function InvoiceView() {
       setInvoice(data);
     } catch (error: any) {
       logger.error("Error loading invoice:", error);
-      toast.error("Error al cargar factura");
+      i18nToast.error("error.invoiceLoadFailed");
       navigate("/admin/facturas");
     } finally {
       setLoading(false);

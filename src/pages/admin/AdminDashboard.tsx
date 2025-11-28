@@ -151,7 +151,7 @@ export default function AdminDashboard() {
       loadDashboardData();
     } catch (error) {
       logger.error("Error adding expense:", error);
-      toast.error("Error al registrar gasto");
+      i18nToast.error("error.expenseRegisterFailed");
     }
   };
 

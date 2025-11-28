@@ -183,7 +183,7 @@ export default function Loyalty() {
       if (error) throw error;
       await loadData();
     } catch (error) {
-      toast.error("Error al actualizar recompensa");
+      i18nToast.error("error.rewardSaveFailed");
     }
   };
 

@@ -166,7 +166,7 @@ export default function Quotes() {
       setEditingQuote(null);
       loadData();
     } catch (error: any) {
-      toast.error("Error al actualizar cotización");
+      i18nToast.error("error.quoteSaveFailed");
     }
   };
 

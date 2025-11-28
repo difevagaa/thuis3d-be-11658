@@ -83,7 +83,7 @@ export default function CreateQuote() {
         .maybeSingle();
       
       if (error || !data) {
-        toast.error("Error al cargar datos del usuario");
+        i18nToast.error("error.userLoadFailed");
         return;
       }
       
@@ -101,7 +101,7 @@ export default function CreateQuote() {
       }));
     } catch (error: any) {
       logger.error("Error loading user data:", error);
-      toast.error("Error al cargar datos del usuario");
+      i18nToast.error("error.userLoadFailed");
     }
   };
 

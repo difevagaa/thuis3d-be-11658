@@ -98,7 +98,7 @@ export default function OrdersEnhanced() {
         await checkAndSendGiftCardEmail(editingOrder.id);
       }
 
-      toast.success("Estado actualizado exitosamente");
+      i18nToast.success("success.statusUpdated");
       setEditingOrder(null);
       setSelectedStatus("");
     } catch (error: any) {

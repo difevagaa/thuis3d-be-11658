@@ -79,7 +79,7 @@ export default function QuoteDetail() {
       setTaxEnabled((data as any).tax_enabled ?? true);
     } catch (error: any) {
       logger.error("Error loading quote detail:", error);
-      toast.error("Error al cargar detalles de la cotización");
+      i18nToast.error("error.quoteLoadFailed");
     } finally {
       setLoading(false);
     }

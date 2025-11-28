@@ -221,7 +221,7 @@ export default function PaymentConfig() {
       await loadConfig();
     } catch (error: any) {
       logger.error("Error saving payment config:", error);
-      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
+      i18nToast.error("error.configSaveFailed", { error: error.message || 'Unknown error' });
     }
   };
 

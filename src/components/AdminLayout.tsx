@@ -145,7 +145,7 @@ export const AdminLayout = ({
   const handleRefreshData = useCallback(() => {
     setIsRefreshing(true);
     window.dispatchEvent(new CustomEvent("admin-refresh-data"));
-    toast.success("Actualizando datos...");
+    i18nToast.success("success.updatingData");
     setTimeout(() => setIsRefreshing(false), 1000);
   }, []);
 

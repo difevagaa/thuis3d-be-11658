@@ -113,7 +113,7 @@ export default function Colors() {
       setEditingColor(null);
       await loadColors();
     } catch (error) {
-      toast.error("Error al actualizar color");
+      i18nToast.error("error.colorSaveFailed");
     }
   };
 
@@ -148,7 +148,7 @@ export default function Colors() {
       clearSelection();
       loadColors();
     } catch (error: any) {
-      toast.error("Error al eliminar colores");
+      i18nToast.error("error.colorDeleteFailed");
     }
   };
 

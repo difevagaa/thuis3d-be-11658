@@ -117,7 +117,7 @@ export function SendAdminMessage() {
         console.error('Error sending admin email notification:', emailError);
       }
 
-      toast.success("✉️ Mensaje enviado a los administradores");
+      i18nToast.success("success.adminMessageSent");
       setSubject("");
       setMessage("");
       setAttachments([]);

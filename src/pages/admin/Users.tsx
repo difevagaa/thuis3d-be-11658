@@ -331,7 +331,7 @@ export default function Users() {
       setEditingUser(null);
       loadData();
     } catch (error: any) {
-      toast.error("Error al actualizar usuario");
+      i18nToast.error("error.userSaveFailed");
     }
   };
 
@@ -393,7 +393,7 @@ export default function Users() {
       setUserDetails(data);
       setShowUserDetailsDialog(true);
     } catch (error: any) {
-      toast.error("Error al cargar detalles del usuario");
+      i18nToast.error("error.userLoadFailed");
     }
   };
 

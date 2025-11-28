@@ -140,7 +140,7 @@ export default function Coupons() {
       if (error) throw error;
       await loadCoupons();
     } catch (error) {
-      toast.error("Error al actualizar cupón");
+      i18nToast.error("error.couponSaveFailed");
     }
   };
 

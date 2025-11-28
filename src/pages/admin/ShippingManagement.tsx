@@ -541,7 +541,7 @@ export default function ShippingManagement() {
         throw new Error('Error al actualizar algunas zonas');
       }
 
-      toast.success(`${selectedZones.length} zona(s) actualizada(s) correctamente`);
+      i18nToast.success("success.shippingZonesUpdated", { count: selectedZones.length });
       
       // Recargar datos y limpiar selección
       await loadData();

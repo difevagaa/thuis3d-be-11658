@@ -471,7 +471,7 @@ export default function Invoices() {
       loadData();
     } catch (error: any) {
       logger.error("Error creating invoice:", error);
-      toast.error("Error al crear factura");
+      i18nToast.error("error.invoiceSaveFailed");
     }
   };
 
@@ -556,7 +556,7 @@ export default function Invoices() {
       setEditDialogOpen(true);
     } catch (error) {
       logger.error("Error loading invoice for edit:", error);
-      toast.error("Error al cargar factura");
+      i18nToast.error("error.invoiceLoadFailed");
     }
   };
 
@@ -630,7 +630,7 @@ export default function Invoices() {
       loadData();
     } catch (error: any) {
       logger.error("Error updating invoice:", error);
-      toast.error("Error al actualizar factura");
+      i18nToast.error("error.invoiceSaveFailed");
     }
   };
 

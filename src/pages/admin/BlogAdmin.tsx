@@ -326,7 +326,7 @@ export default function BlogAdmin() {
       setSelectedRoles([]);
       await loadData();
     } catch (error) {
-      toast.error("Error al actualizar artículo");
+      i18nToast.error("error.articleSaveFailed");
     }
   };
 

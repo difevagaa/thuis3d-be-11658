@@ -140,7 +140,7 @@ export default function RolesPermissions() {
       setUsersDialogOpen(true);
     } catch (error: any) {
       logger.error("Error loading users for role:", error);
-      toast.error("Error al cargar usuarios del rol");
+      i18nToast.error("error.userRoleLoadFailed");
     }
   };
 
@@ -208,7 +208,7 @@ export default function RolesPermissions() {
       loadRoles();
     } catch (error: any) {
       logger.error("Error updating role:", error);
-      toast.error("Error al actualizar rol");
+      i18nToast.error("error.roleSaveFailed");
     }
   };
 

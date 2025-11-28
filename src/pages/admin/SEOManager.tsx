@@ -116,7 +116,7 @@ export default function SEOManager() {
       await calculateSeoScore(settingsData, keywordsData, metaData);
     } catch (error: unknown) {
       logger.error("Error loading SEO data:", { error });
-      toast.error("Error al cargar datos SEO");
+      i18nToast.error("error.seoLoadFailed");
     } finally {
       setLoading(false);
     }

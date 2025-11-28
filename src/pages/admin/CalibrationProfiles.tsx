@@ -256,11 +256,11 @@ export default function CalibrationProfiles() {
         if (insertError) throw insertError;
       }
 
-      toast.success(`✅ ${profilesCreated} perfiles generados exitosamente`);
+      i18nToast.success("success.calibrationProfilesGenerated", { count: profilesCreated });
       loadProfiles();
     } catch (error: any) {
       logger.error('Error generating profiles:', error);
-      toast.error('Error al generar perfiles: ' + error.message);
+      i18nToast.error("error.calibrationProfilesGenerateFailed", { error: error.message });
     } finally {
       setGenerating(false);
     }

@@ -178,7 +178,7 @@ export default function NotificationBell() {
       
       loadNotifications();
     } catch (error) {
-      toast.error("Error al marcar notificación");
+      i18nToast.error("error.notificationMarkFailed");
     }
   };
 
@@ -196,7 +196,7 @@ export default function NotificationBell() {
       loadNotifications();
       i18nToast.success("success.allNotificationsRead");
     } catch (error) {
-      toast.error("Error al marcar notificaciones");
+      i18nToast.error("error.notificationsMarkFailed");
     }
   };
 
