@@ -53,7 +53,7 @@ export default function Payment() {
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer todas las claves de configuración de pago incluyendo datos bancarios
+      // Read all payment configuration keys including bank account details
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
         'paypal_email', 'revolut_link', 'company_info',
@@ -400,15 +400,15 @@ export default function Payment() {
       
       const subtotal = calculateSubtotal(); // Precio sin IVA
       const couponDiscount = calculateCouponDiscount(); // Descuento de cupón
-      const effectiveShipping = getEffectiveShippingCost(); // Envío (0 si tiene cupón de envío gratis)
-      const tax = calculateTax(); // IVA calculado según configuración (después de descuento)
-      const total = calculateTotal(); // subtotal - descuento + IVA + envío
+      const effectiveShipping = getEffectiveShippingCost(); // Shipping (0 if has free shipping coupon)
+      const tax = calculateTax(); // Tax calculated according to settings (after discount)
+      const total = calculateTotal(); // subtotal - discount + tax + shipping
 
-      // Para transferencia bancaria, mostrar info de pago en la misma página
+      // For bank transfer, show payment info on the same page
       if (method === "bank_transfer") {
         
-        // Guardar información temporal en sessionStorage
-        // CRÍTICO: Incluir shipping y coupon en el pending_order
+        // Save temporary info in sessionStorage
+        // CRITICAL: Include shipping and coupon in the pending_order
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
           shippingInfo,
@@ -421,10 +421,10 @@ export default function Payment() {
           method: "bank_transfer"
         }));
 
-        // Generar número de pedido temporal para mostrar
+        // Generate temporary order number to display
         const tempOrderNumber = `TEMP-${Date.now()}`;
         
-        // Mostrar información de pago en la misma página
+        // Show payment info on the same page
         setSelectedPaymentMethod("bank_transfer");
         setOrderCreated({ orderNumber: tempOrderNumber, total });
         
@@ -433,10 +433,10 @@ export default function Payment() {
         return;
       }
 
-      // Para pago con tarjeta, redirigir a Revolut (ya que no hay pasarela de pago directa)
+      // For card payment, redirect to Revolut (since there's no direct payment gateway)
       if (method === "card") {
         if (paymentConfig.revolut_link) {
-          // Guardar información temporal
+          // Save temporary info
           sessionStorage.setItem("pending_order", JSON.stringify({
             cartItems,
             shippingInfo,
