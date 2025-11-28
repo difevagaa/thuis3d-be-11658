@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Banknote, Building2, ShieldCheck } from "lucide-react";
+import { CreditCard, Banknote, Building2, ShieldCheck, Copy, QrCode, AlertTriangle } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
@@ -27,6 +27,9 @@ export default function Payment() {
   const [processing, setProcessing] = useState(false);
   const [shippingCost, setShippingCost] = useState<number>(0);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [orderCreated, setOrderCreated] = useState<{ orderNumber: string; total: number } | null>(null);
+  const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [paymentConfig, setPaymentConfig] = useState({
     bank_transfer_enabled: true,
     card_enabled: true,
@@ -34,7 +37,11 @@ export default function Payment() {
     revolut_enabled: false,
     paypal_email: "",
     revolut_link: "",
-    company_info: ""
+    company_info: "",
+    bank_account_number: "",
+    bank_account_name: "",
+    bank_name: "",
+    bank_instructions: ""
   });
   
   const { calculateShipping } = useShippingCalculator();
@@ -46,10 +53,12 @@ export default function Payment() {
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer solo las claves de configuración de pago que usamos en todo el sistema
+      // Leer todas las claves de configuración de pago incluyendo datos bancarios
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
-        'paypal_email', 'revolut_link', 'company_info'
+        'paypal_email', 'revolut_link', 'company_info',
+        'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
+        'payment_images'
       ];
 
       const { data } = await supabase
@@ -60,7 +69,13 @@ export default function Payment() {
       if (data && data.length > 0) {
         const settings: any = {};
         data.forEach((setting) => {
-          if (setting.setting_key.includes('enabled')) {
+          if (setting.setting_key === 'payment_images') {
+            try {
+              setPaymentImages(JSON.parse(setting.setting_value));
+            } catch (e) {
+              setPaymentImages([]);
+            }
+          } else if (setting.setting_key.includes('enabled')) {
             settings[setting.setting_key] = setting.setting_value === "true";
           } else {
             settings[setting.setting_key] = setting.setting_value;
@@ -74,7 +89,11 @@ export default function Payment() {
           revolut_enabled: settings.revolut_enabled ?? false,
           paypal_email: settings.paypal_email || "",
           revolut_link: settings.revolut_link || "",
-          company_info: settings.company_info || ""
+          company_info: settings.company_info || "",
+          bank_account_number: settings.bank_account_number || "",
+          bank_account_name: settings.bank_account_name || "",
+          bank_name: settings.bank_name || "",
+          bank_instructions: settings.bank_instructions || ""
         });
       }
     } catch (error) {
@@ -251,6 +270,11 @@ export default function Payment() {
     return Number((subtotal - couponDiscount + tax + effectiveShipping).toFixed(2));
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(t('payment:messages.copiedToClipboard'));
+  };
+
   const handlePayment = async (method: string) => {
     // Validar método de pago
     if (method !== "bank_transfer" && method !== "card" && method !== "paypal" && method !== "revolut") {
@@ -380,7 +404,7 @@ export default function Payment() {
       const tax = calculateTax(); // IVA calculado según configuración (después de descuento)
       const total = calculateTotal(); // subtotal - descuento + IVA + envío
 
-      // Para transferencia bancaria, solo guardar info y redirigir a instrucciones
+      // Para transferencia bancaria, mostrar info de pago en la misma página
       if (method === "bank_transfer") {
         
         // Guardar información temporal en sessionStorage
@@ -397,23 +421,53 @@ export default function Payment() {
           method: "bank_transfer"
         }));
 
-        toast.success(t('payment:messages.redirectingToInstructions'));
+        // Generar número de pedido temporal para mostrar
+        const tempOrderNumber = `TEMP-${Date.now()}`;
         
-        // Navegar inmediatamente
-        navigate("/pago-instrucciones", { 
-          state: { 
-            orderNumber: `TEMP-${Date.now()}`,
-            method: "bank_transfer",
-            total,
-            isPending: true
-          } 
-        });
+        // Mostrar información de pago en la misma página
+        setSelectedPaymentMethod("bank_transfer");
+        setOrderCreated({ orderNumber: tempOrderNumber, total });
         
+        toast.success(t('payment:messages.bankTransferSelected'));
         setProcessing(false);
         return;
       }
 
-      // Para otros métodos de pago, crear el pedido normalmente
+      // Para pago con tarjeta, redirigir a Revolut (ya que no hay pasarela de pago directa)
+      if (method === "card") {
+        if (paymentConfig.revolut_link) {
+          // Guardar información temporal
+          sessionStorage.setItem("pending_order", JSON.stringify({
+            cartItems,
+            shippingInfo,
+            total,
+            subtotal,
+            tax,
+            shipping: effectiveShipping,
+            couponDiscount,
+            appliedCoupon,
+            method: "card"
+          }));
+
+          // Generar número de pedido temporal
+          const tempOrderNumber = `TEMP-${Date.now()}`;
+          
+          // Mostrar información y abrir Revolut
+          setSelectedPaymentMethod("card");
+          setOrderCreated({ orderNumber: tempOrderNumber, total });
+          
+          // Abrir enlace de Revolut para pago con tarjeta
+          window.open(paymentConfig.revolut_link, '_blank');
+          
+          toast.success(t('payment:messages.redirectingToPayment'));
+          setProcessing(false);
+          return;
+        } else {
+          toast.error(t('payment:messages.cardPaymentNotConfigured'));
+          setProcessing(false);
+          return;
+        }
+      }
 
       // Get saved gift card from cart if applied
       const savedGiftCard = sessionStorage.getItem("applied_gift_card");
@@ -802,7 +856,289 @@ export default function Payment() {
           </CardContent>
         </Card>
 
-        {/* Payment Methods */}
+        {/* Bank Transfer Payment Info - Show when bank transfer is selected */}
+        {selectedPaymentMethod === "bank_transfer" && orderCreated && (
+          <Card className="md:col-span-2 shadow-lg border-2 border-green-200 dark:border-green-800">
+            <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-t-lg">
+              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
+                <Building2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle className="text-2xl text-green-800 dark:text-green-200">
+                {t('payment:instructions.bankTransferTitle')}
+              </CardTitle>
+              <CardDescription className="text-green-700 dark:text-green-300">
+                {t('payment:instructions.orderNumber')}: <strong className="text-green-800 dark:text-green-200">{orderCreated.orderNumber}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              {/* Amount to Transfer */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToTransfer')}:</p>
+                <p className="text-4xl font-bold text-primary">€{orderCreated.total.toFixed(2)}</p>
+                <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+              </div>
+
+              {/* Bank Information */}
+              <div className="bg-slate-800 dark:bg-slate-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-slate-600 pb-3">
+                  <Building2 className="h-5 w-5" />
+                  {t('payment:instructions.bankDetails')}
+                </h3>
+                
+                <div className="grid gap-4">
+                  {paymentConfig.company_info && (
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.companyInfo')}:</p>
+                      <p className="whitespace-pre-line text-white">{paymentConfig.company_info}</p>
+                    </div>
+                  )}
+                  
+                  {paymentConfig.bank_name && (
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.bankName')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_name}</p>
+                    </div>
+                  )}
+                  
+                  {paymentConfig.bank_account_name && (
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.accountHolder')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_account_name}</p>
+                    </div>
+                  )}
+                  
+                  {paymentConfig.bank_account_number && (
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.iban')}:</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                          {paymentConfig.bank_account_number}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => copyToClipboard(paymentConfig.bank_account_number)}
+                          className="h-12 px-4"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-slate-700/50 rounded-lg p-4">
+                    <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.transferReference')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {t('payment:instructions.order')} {orderCreated.orderNumber}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`${t('payment:instructions.order')} ${orderCreated.orderNumber}`)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {paymentConfig.bank_instructions && (
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.additionalInstructions')}:</p>
+                      <p className="whitespace-pre-line text-slate-200">
+                        {paymentConfig.bank_instructions}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* QR Codes */}
+              {paymentImages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('payment:instructions.scanQr')}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {paymentImages.map((img, index) => (
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                        <img 
+                          src={img} 
+                          alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
+                        />
+                        <div className="text-center space-y-1">
+                          <p className="font-semibold text-foreground">
+                            {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                             index === 1 ? t('payment:instructions.qrRevolut') : 
+                             `${t('payment:instructions.qrCode')} ${index + 1}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
+                             index === 1 ? t('payment:instructions.fastRevolutPayment') : 
+                             t('payment:instructions.alternativePayment')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Warning */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.pendingWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.includeOrderNumber')} <strong>{orderCreated.orderNumber}</strong> {t('payment:instructions.inTransferReference')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Confirm Order Button */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                <Button 
+                  onClick={() => {
+                    navigate("/pago-instrucciones", { 
+                      state: { 
+                        orderNumber: orderCreated.orderNumber,
+                        method: "bank_transfer",
+                        total: orderCreated.total,
+                        isPending: true
+                      } 
+                    });
+                  }}
+                  className="flex-1" 
+                  size="lg"
+                >
+                  {t('payment:confirmAndCreateOrder')}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedPaymentMethod(null);
+                    setOrderCreated(null);
+                  }}
+                  variant="outline" 
+                  className="flex-1" 
+                  size="lg"
+                >
+                  {t('payment:changePaymentMethod')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Card Payment Info - Show when card is selected */}
+        {selectedPaymentMethod === "card" && orderCreated && (
+          <Card className="md:col-span-2 shadow-lg border-2 border-blue-200 dark:border-blue-800">
+            <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-t-lg">
+              <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
+                <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <CardTitle className="text-2xl text-blue-800 dark:text-blue-200">
+                {t('payment:instructions.cardPaymentTitle')}
+              </CardTitle>
+              <CardDescription className="text-blue-700 dark:text-blue-300">
+                {t('payment:instructions.orderNumber')}: <strong className="text-blue-800 dark:text-blue-200">{orderCreated.orderNumber}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              {/* Amount to Pay */}
+              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
+                <p className="text-4xl font-bold text-blue-600">€{orderCreated.total.toFixed(2)}</p>
+                <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  {t('payment:instructions.revolutOpened')}
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+                  {t('payment:instructions.completePaymentInRevolut')}
+                </p>
+              </div>
+
+              {/* QR Codes */}
+              {paymentImages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('payment:instructions.scanQrForCard')}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {paymentImages.map((img, index) => (
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                        <img 
+                          src={img} 
+                          alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                <Button 
+                  onClick={() => {
+                    if (paymentConfig.revolut_link) {
+                      window.open(paymentConfig.revolut_link, '_blank');
+                    }
+                  }}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
+                  size="lg"
+                >
+                  {t('payment:openPaymentLink')}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    navigate("/pago-instrucciones", { 
+                      state: { 
+                        orderNumber: orderCreated.orderNumber,
+                        method: "card",
+                        total: orderCreated.total,
+                        isPending: true
+                      } 
+                    });
+                  }}
+                  variant="outline" 
+                  className="flex-1" 
+                  size="lg"
+                >
+                  {t('payment:confirmPayment')}
+                </Button>
+              </div>
+              <Button 
+                onClick={() => {
+                  setSelectedPaymentMethod(null);
+                  setOrderCreated(null);
+                }}
+                variant="ghost" 
+                className="w-full" 
+              >
+                {t('payment:changePaymentMethod')}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Methods - Only show if no payment method is selected */}
+        {!selectedPaymentMethod && (
         <div className="space-y-4">
           {paymentConfig.company_info && (
             <Card className="border-primary/20 bg-primary/5">
@@ -959,6 +1295,7 @@ export default function Payment() {
             </Button>
           )}
         </div>
+        )}
       </div>
     </div>
   );
