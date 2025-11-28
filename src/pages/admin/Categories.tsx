@@ -267,7 +267,7 @@ export default function Categories() {
         <BulkDeleteActions
           selectedCount={selectedCount}
           onDelete={handleBulkDelete}
-          onClear={clearSelection}
+          onCancel={clearSelection}
         />
       )}
 

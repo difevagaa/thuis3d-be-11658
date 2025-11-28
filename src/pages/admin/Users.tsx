@@ -369,16 +369,23 @@ export default function Users() {
     user.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate stats
+  // Calculate stats - optimize by calculating time once
+  const now = new Date().getTime();
+  const fiveMinutesInMs = 5 * 60 * 1000;
+  
   const onlineUsers = users.filter(user => {
-    const isOnline = user.last_activity_at && 
-      (new Date().getTime() - new Date(user.last_activity_at).getTime()) < 5 * 60 * 1000;
-    return isOnline;
+    return user.last_activity_at && 
+      (now - new Date(user.last_activity_at).getTime()) < fiveMinutesInMs;
   }).length;
 
   const adminUsers = users.filter(user => 
     user.user_roles?.some((r: any) => r.role === 'admin')
   ).length;
+
+  // Calculate new users (last 30 days) - optimize by calculating date once
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const newUsersCount = users.filter(u => new Date(u.created_at) > thirtyDaysAgo).length;
 
   if (loading) {
     return (
@@ -517,11 +524,7 @@ export default function Users() {
         />
         <AdminStatCard
           title="Nuevos (30 días)"
-          value={users.filter(u => {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            return new Date(u.created_at) > thirtyDaysAgo;
-          }).length}
+          value={newUsersCount}
           emoji="✨"
           gradient="from-blue-500/10 to-indigo-500/5"
         />
