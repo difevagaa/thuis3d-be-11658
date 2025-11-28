@@ -455,7 +455,7 @@ export default function PaymentInstructions() {
 
           {method === "card" && paymentConfig && (
             <div className="space-y-6">
-              {/* MONTO A PAGAR - DESTACADO */}
+              {/* Amount to Pay - Highlighted */}
               {total && (
                 <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
                   <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
@@ -464,7 +464,7 @@ export default function PaymentInstructions() {
                 </div>
               )}
 
-              {/* INFORMACIÓN DEL PEDIDO - FONDO DESTACADO */}
+              {/* Order Information - Highlighted Background */}
               <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
                 <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
                   <CreditCard className="h-5 w-5" />
