@@ -49,6 +49,13 @@ export default function Users() {
       }, () => {
         loadData();
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
+      }, () => {
+        loadData();
+      })
       .subscribe();
 
     // Subscribe to profiles changes
@@ -486,14 +493,20 @@ export default function Users() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((user) => (
+                  users.map((user) => {
+                    // Get display name for the role
+                    const userRole = user.user_roles?.[0]?.role;
+                    const roleInfo = roles.find(r => r.value === userRole);
+                    const roleLabel = roleInfo?.label || userRole || 'Sin rol';
+                    
+                    return (
                     <TableRow key={user.id}>
                       <TableCell>{user.full_name || '-'}</TableCell>
                       <TableCell>{user.email || '-'}</TableCell>
                       <TableCell>{user.phone || '-'}</TableCell>
                       <TableCell>
                         {user.user_roles && user.user_roles.length > 0 ? (
-                          <Badge>{user.user_roles[0].role}</Badge>
+                          <Badge>{roleLabel}</Badge>
                         ) : (
                           <Badge variant="secondary">Sin rol</Badge>
                         )}
@@ -596,7 +609,7 @@ export default function Users() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 )}
               </TableBody>
             </Table>

@@ -27,6 +27,22 @@ export default function Blog() {
         logger.log('User roles changed, reloading posts...');
         loadPosts();
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
+      }, () => {
+        logger.log('Custom roles changed, reloading posts...');
+        loadPosts();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blog_post_roles'
+      }, () => {
+        logger.log('Blog post roles changed, reloading posts...');
+        loadPosts();
+      })
       .subscribe();
 
     return () => {
