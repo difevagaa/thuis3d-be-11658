@@ -4,28 +4,17 @@ import { useLocation } from "react-router-dom";
 export default function ScrollToTop() {
   const { pathname, key } = useLocation();
 
-  // Use useLayoutEffect for synchronous scrolling before paint
-  useLayoutEffect(() => {
-    // Scroll immediately
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname, key]);
-
-  // Additional effect to handle lazy-loaded components
+  // Disable browser's automatic scroll restoration
   useEffect(() => {
-    // Ensure scroll after React has committed DOM changes
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    };
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
 
-    // Immediate scroll
-    scrollToTop();
-
-    // Delayed scroll to handle lazy-loaded content
-    const timeoutId = setTimeout(scrollToTop, 0);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
+  // Use useLayoutEffect for synchronous scrolling before paint
+  // The 'key' dependency ensures scroll happens on back/forward navigation
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname, key]);
 
   return null;
