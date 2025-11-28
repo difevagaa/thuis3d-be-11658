@@ -18,19 +18,25 @@ export default function PaymentInstructions() {
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [creatingOrder, setCreatingOrder] = useState(false);
+  const [orderCreated, setOrderCreated] = useState(false);
   const [realOrderNumber, setRealOrderNumber] = useState(orderNumber);
 
 
   const createPendingOrder = async () => {
+    // Prevent duplicate order creation
+    if (creatingOrder || orderCreated) {
+      return;
+    }
+    
+    // Check if pending_order exists in sessionStorage
+    const pendingOrderStr = sessionStorage.getItem("pending_order");
+    if (!pendingOrderStr) {
+      // Order might have already been created and sessionStorage cleared
+      return;
+    }
+    
     try {
       setCreatingOrder(true);
-      
-      const pendingOrderStr = sessionStorage.getItem("pending_order");
-      if (!pendingOrderStr) {
-        i18nToast.error("error.orderInfoMissing");
-        navigate("/");
-        return;
-      }
 
       const pendingOrder = JSON.parse(pendingOrderStr);
       const { 
@@ -217,6 +223,7 @@ export default function PaymentInstructions() {
       }
 
       setRealOrderNumber(order.order_number);
+      setOrderCreated(true);
       i18nToast.success("success.orderCreated");
     } catch (error) {
       handleSupabaseError(error, {
@@ -236,8 +243,8 @@ export default function PaymentInstructions() {
     }
     loadPaymentConfig();
     
-    // Only create pending order for NEW purchases, NOT for invoice payments
-    if (isPending && method === "bank_transfer" && !isInvoicePayment) {
+    // Only create pending order for NEW purchases (bank_transfer or card), NOT for invoice payments
+    if (isPending && (method === "bank_transfer" || method === "card") && !isInvoicePayment) {
       createPendingOrder();
     }
   }, [orderNumber, method, navigate, isPending, isInvoicePayment]);

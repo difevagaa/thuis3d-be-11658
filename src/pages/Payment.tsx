@@ -1104,13 +1104,13 @@ export default function Payment() {
               <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
                   <Info className="h-5 w-5" />
-                  Instrucciones importantes
+                  {t('payment:instructions.importantInstructions')}
                 </h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
-                  <li>Al hacer clic en el botón <strong>"Ir a página de pago"</strong>, serás redirigido a Revolut</li>
-                  <li>En la página de Revolut, ingresa el <strong>monto: €{orderCreated.total.toFixed(2)}</strong></li>
-                  <li>En la referencia/concepto, escribe el <strong>número de pedido: {orderCreated.orderNumber}</strong></li>
-                  <li>Completa el pago con tu tarjeta de crédito/débito</li>
+                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:openPaymentLink')}"</strong>, {t('payment:instructions.step1Redirect')}</li>
+                  <li>{t('payment:instructions.step2Amount')} <strong>€{orderCreated.total.toFixed(2)}</strong></li>
+                  <li>{t('payment:instructions.step3Reference')} <strong>{orderCreated.orderNumber}</strong></li>
+                  <li>{t('payment:instructions.step4Complete')}</li>
                 </ol>
               </div>
 
