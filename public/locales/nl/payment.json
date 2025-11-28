@@ -121,6 +121,7 @@
     "redirectingToInstructions": "Doorverwijzen naar betalingsinstructies...",
     "redirectingToPayment": "Doorverwijzen naar betaling...",
     "bankTransferSelected": "Bankoverschrijving geselecteerd. Zie betalingsgegevens hieronder.",
+    "cardPaymentSelected": "Kaartbetaling geselecteerd. Zie betalingsgegevens hieronder.",
     "invalidPaymentMethod": "Ongeldige betaalmethode",
     "orderInfoNotFound": "Bestellingsinformatie niet gevonden",
     "copiedToClipboard": "Gekopieerd naar klembord"

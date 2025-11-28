@@ -121,6 +121,7 @@
     "redirectingToInstructions": "Redirigiendo a instrucciones de pago...",
     "redirectingToPayment": "Redirigiendo al pago...",
     "bankTransferSelected": "Transferencia bancaria seleccionada. Ver detalles de pago a continuación.",
+    "cardPaymentSelected": "Pago con tarjeta seleccionado. Ver detalles de pago a continuación.",
     "invalidPaymentMethod": "Método de pago no válido",
     "orderInfoNotFound": "No se encontró información del pedido",
     "copiedToClipboard": "Copiado al portapapeles"

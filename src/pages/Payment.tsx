@@ -456,7 +456,7 @@ export default function Payment() {
           setSelectedPaymentMethod("card");
           setOrderCreated({ orderNumber: tempOrderNumber, total });
           
-          toast.success(t('payment:messages.bankTransferSelected'));
+          toast.success(t('payment:messages.cardPaymentSelected'));
           setProcessing(false);
           return;
         } else {

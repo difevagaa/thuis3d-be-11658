@@ -121,6 +121,7 @@
     "redirectingToInstructions": "Redirecting to payment instructions...",
     "redirectingToPayment": "Redirecting to payment...",
     "bankTransferSelected": "Bank transfer selected. See payment details below.",
+    "cardPaymentSelected": "Card payment selected. See payment details below.",
     "invalidPaymentMethod": "Invalid payment method",
     "orderInfoNotFound": "Order information not found",
     "copiedToClipboard": "Copied to clipboard"
