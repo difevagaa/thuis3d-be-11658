@@ -25,6 +25,7 @@ export default function PaymentInstructions() {
   const createPendingOrder = async () => {
     // Prevent duplicate order creation
     if (creatingOrder || orderCreated) {
+      logger.debug('[PaymentInstructions] Order creation already in progress or completed');
       return;
     }
     
@@ -32,6 +33,8 @@ export default function PaymentInstructions() {
     const pendingOrderStr = sessionStorage.getItem("pending_order");
     if (!pendingOrderStr) {
       // Order might have already been created and sessionStorage cleared
+      // This is normal flow when returning to this page after order was created
+      logger.debug('[PaymentInstructions] No pending_order in sessionStorage - order may have been created already');
       return;
     }
     
