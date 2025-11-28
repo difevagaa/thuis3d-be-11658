@@ -16,6 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
+import { mapRewardTypeToDiscountType } from "@/lib/paymentUtils";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -171,18 +172,22 @@ export default function MyAccount() {
       
       // Cargar cupones canjeados directamente desde loyalty_redemptions
       // Use values from loyalty_rewards (reward_type, reward_value) when available
-      const userCoupons = redemptionsRes.data?.map(redemption => ({
-        id: redemption.id,
-        code: redemption.coupon_code,
-        discount_type: redemption.coupons?.discount_type || redemption.loyalty_rewards?.reward_type || 'percentage',
-        discount_value: redemption.coupons?.discount_value || redemption.loyalty_rewards?.reward_value || 0,
-        created_at: redemption.created_at,
-        status: redemption.status,
-        reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad',
-        is_active: redemption.coupons?.is_active ?? true,
-        times_used: redemption.coupons?.times_used || 0,
-        max_uses: redemption.coupons?.max_uses || 1
-      })) || [];
+      // Map reward types to discount types for consistent display
+      const userCoupons = redemptionsRes.data?.map(redemption => {
+        const rawDiscountType = redemption.coupons?.discount_type || redemption.loyalty_rewards?.reward_type || 'percentage';
+        return {
+          id: redemption.id,
+          code: redemption.coupon_code,
+          discount_type: mapRewardTypeToDiscountType(rawDiscountType),
+          discount_value: redemption.coupons?.discount_value || redemption.loyalty_rewards?.reward_value || 0,
+          created_at: redemption.created_at,
+          status: redemption.status,
+          reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad',
+          is_active: redemption.coupons?.is_active ?? true,
+          times_used: redemption.coupons?.times_used || 0,
+          max_uses: redemption.coupons?.max_uses || 1
+        };
+      }) || [];
       
       setMyCoupons(userCoupons);
     } catch (error) {

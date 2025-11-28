@@ -13,6 +13,7 @@ import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode, validateGiftCardCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { calculateCouponDiscount as calculateCouponDiscountUtil } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;
@@ -136,19 +137,18 @@ const Cart = () => {
       }
 
       // Check if coupon is product-specific and validate the product is in cart
+      // Also calculate applicable amount for min purchase check
+      let applicableAmount = subtotal;
       if (data.product_id) {
-        const hasProduct = cartItems.some(item => item.productId === data.product_id);
-        if (!hasProduct) {
+        const productItems = cartItems.filter(item => item.productId === data.product_id);
+        if (productItems.length === 0) {
           toast.error(t('cart:coupon.productNotInCart'));
           return;
         }
+        applicableAmount = productItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       }
-
-      // Check minimum purchase (for product-specific coupons, check the product's amount)
-      const applicableAmount = data.product_id 
-        ? cartItems.filter(item => item.productId === data.product_id).reduce((sum, item) => sum + (item.price * item.quantity), 0)
-        : subtotal;
       
+      // Check minimum purchase (for product-specific coupons, uses the product's amount)
       if (data.min_purchase && applicableAmount < data.min_purchase) {
         toast.error(t('cart:coupon.minPurchase', { amount: data.min_purchase }));
         return;
@@ -254,32 +254,8 @@ const Cart = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Calculate discount - handle product-specific coupons and free_shipping type
-  let discount = 0;
-  if (appliedCoupon) {
-    if (appliedCoupon.discount_type === "free_shipping") {
-      // Free shipping coupons are handled separately - discount is 0, shipping will be 0
-      discount = 0;
-    } else if (appliedCoupon.product_id) {
-      // Product-specific coupon: only apply to the specified product
-      const productAmount = cartItems
-        .filter(item => item.productId === appliedCoupon.product_id)
-        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      if (appliedCoupon.discount_type === "percentage") {
-        discount = productAmount * (appliedCoupon.discount_value / 100);
-      } else if (appliedCoupon.discount_type === "fixed") {
-        discount = Math.min(appliedCoupon.discount_value, productAmount);
-      }
-    } else {
-      // General coupon: apply to entire subtotal
-      if (appliedCoupon.discount_type === "percentage") {
-        discount = subtotal * (appliedCoupon.discount_value / 100);
-      } else if (appliedCoupon.discount_type === "fixed") {
-        discount = Math.min(appliedCoupon.discount_value, subtotal);
-      }
-    }
-  }
+  // Calculate discount using shared utility - handles product-specific coupons and all types
+  const discount = calculateCouponDiscountUtil(cartItems, appliedCoupon);
   
   // Apply gift card after coupon discount
   let giftCardApplied = 0;

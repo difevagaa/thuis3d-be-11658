@@ -13,7 +13,8 @@ import {
   convertCartToOrderItems, 
   calculateOrderTotals,
   generateOrderNotes,
-  updateGiftCardBalance 
+  updateGiftCardBalance,
+  calculateCouponDiscount as calculateCouponDiscountUtil
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
@@ -205,35 +206,9 @@ export default function Payment() {
     return subtotal;
   };
 
-  // Calcular descuento de cupón
+  // Calcular descuento de cupón - using shared utility
   const calculateCouponDiscount = () => {
-    if (!appliedCoupon) return 0;
-    
-    const subtotal = calculateSubtotal();
-    
-    if (appliedCoupon.discount_type === "free_shipping") {
-      // Free shipping is handled in shipping calculation, not as a discount
-      return 0;
-    } else if (appliedCoupon.product_id) {
-      // Product-specific coupon: only apply to the specified product
-      const productAmount = cartItems
-        .filter(item => item.productId === appliedCoupon.product_id)
-        .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
-      
-      if (appliedCoupon.discount_type === "percentage") {
-        return Number((productAmount * (appliedCoupon.discount_value / 100)).toFixed(2));
-      } else if (appliedCoupon.discount_type === "fixed") {
-        return Number(Math.min(appliedCoupon.discount_value, productAmount).toFixed(2));
-      }
-    } else {
-      // General coupon: apply to entire subtotal
-      if (appliedCoupon.discount_type === "percentage") {
-        return Number((subtotal * (appliedCoupon.discount_value / 100)).toFixed(2));
-      } else if (appliedCoupon.discount_type === "fixed") {
-        return Number(Math.min(appliedCoupon.discount_value, subtotal).toFixed(2));
-      }
-    }
-    return 0;
+    return calculateCouponDiscountUtil(cartItems, appliedCoupon);
   };
 
   // Get effective shipping cost (considering free shipping coupons)
