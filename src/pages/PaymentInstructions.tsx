@@ -453,11 +453,118 @@ export default function PaymentInstructions() {
             </div>
           )}
 
-          {method === "card" && (
-            <div className="bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-4">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                {t('payment:instructions.cardSuccess')}
-              </p>
+          {method === "card" && paymentConfig && (
+            <div className="space-y-6">
+              {/* Amount to Pay - Highlighted */}
+              {total && (
+                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
+                  <p className="text-4xl font-bold text-blue-600">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+                </div>
+              )}
+
+              {/* Order Information - Highlighted Background */}
+              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
+                  <CreditCard className="h-5 w-5" />
+                  {t('payment:instructions.cardPaymentTitle')}
+                </h3>
+                
+                <div className="grid gap-4">
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {realOrderNumber}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(realOrderNumber)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        €{Number(total).toFixed(2)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-700/50 rounded-lg p-4 mt-4">
+                  <p className="text-sm text-blue-200">
+                    {t('payment:instructions.revolutOpened')}
+                  </p>
+                  <p className="text-sm text-blue-100 mt-2">
+                    {t('payment:instructions.completePaymentInRevolut')}
+                  </p>
+                </div>
+              </div>
+
+              {/* QR Codes */}
+              {paymentImages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('payment:instructions.scanQrForCard')}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {paymentImages.map((img, index) => (
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                        <img 
+                          src={img} 
+                          alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
+                        />
+                        <div className="text-center space-y-1">
+                          <p className="font-semibold text-foreground">
+                            {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                             index === 1 ? t('payment:instructions.qrRevolut') : 
+                             `${t('payment:instructions.qrCode')} ${index + 1}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
+                             index === 1 ? t('payment:instructions.fastRevolutPayment') : 
+                             t('payment:instructions.alternativePayment')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Warning */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.paymentPendingWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inTransferReference')}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

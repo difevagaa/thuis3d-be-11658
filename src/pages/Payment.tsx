@@ -1285,6 +1285,46 @@ export default function Payment() {
             </CardContent>
           </Card>
 
+          {/* QR Codes Section - Shown on payment selection page */}
+          {paymentImages.length > 0 && (
+            <Card className="shadow-md border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <QrCode className="h-5 w-5 text-primary" />
+                  {t('payment:instructions.qrCodes')}
+                </CardTitle>
+                <CardDescription>
+                  {t('payment:instructions.scanQr')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {paymentImages.map((img, index) => (
+                    <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                      <img 
+                        src={img} 
+                        alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
+                        className="w-full h-48 object-contain rounded-lg bg-white p-2"
+                      />
+                      <div className="text-center space-y-1">
+                        <p className="font-semibold text-foreground">
+                          {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                           index === 1 ? t('payment:instructions.qrRevolut') : 
+                           `${t('payment:instructions.qrCode')} ${index + 1}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
+                           index === 1 ? t('payment:instructions.fastRevolutPayment') : 
+                           t('payment:instructions.alternativePayment')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {!isInvoicePayment && (
             <Button
               onClick={() => navigate("/informacion-envio")}
