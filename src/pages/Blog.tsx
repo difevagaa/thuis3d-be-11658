@@ -29,8 +29,36 @@ export default function Blog() {
       })
       .subscribe();
 
+    // Subscribe to blog_post_roles changes to update visibility immediately
+    const blogPostRolesChannel = supabase
+      .channel('blog-post-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blog_post_roles'
+      }, () => {
+        logger.log('Blog post roles changed, reloading posts...');
+        loadPosts();
+      })
+      .subscribe();
+
+    // Subscribe to blog_posts changes
+    const blogPostsChannel = supabase
+      .channel('blog-posts-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blog_posts'
+      }, () => {
+        logger.log('Blog posts changed, reloading...');
+        loadPosts();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(blogPostRolesChannel);
+      supabase.removeChannel(blogPostsChannel);
     };
   }, []);
 

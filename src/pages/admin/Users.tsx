@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -65,6 +65,18 @@ export default function Users() {
       })
       .subscribe();
 
+    // Subscribe to custom_roles changes to update role list dynamically
+    const customRolesChannel = supabase
+      .channel('users-custom-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
     // Actualizar estado de usuarios cada 30 segundos
     const statusInterval = setInterval(() => {
       loadData();
@@ -73,6 +85,7 @@ export default function Users() {
     return () => {
       supabase.removeChannel(rolesChannel);
       supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(customRolesChannel);
       clearInterval(statusInterval);
     };
   }, []);
@@ -130,6 +143,18 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Create a lookup map for role display names (O(1) lookup instead of O(n))
+  const roleDisplayNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    roles.forEach(r => map.set(r.value, r.label));
+    return map;
+  }, [roles]);
+
+  // Helper function to get display name for a role
+  const getRoleDisplayName = (roleName: string): string => {
+    return roleDisplayNameMap.get(roleName) || roleName;
   };
 
   const assignRole = async () => {
@@ -601,7 +626,7 @@ export default function Users() {
                               ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0' 
                               : ''
                           }>
-                            {user.user_roles[0].role === 'admin' ? '👑 ' : ''}{user.user_roles[0].role}
+                            {user.user_roles[0].role === 'admin' ? '👑 ' : ''}{getRoleDisplayName(user.user_roles[0].role)}
                           </Badge>
                         ) : (
                           <Badge variant="secondary">Sin rol</Badge>

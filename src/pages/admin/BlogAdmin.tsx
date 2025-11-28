@@ -67,8 +67,19 @@ export default function BlogAdmin() {
       }, loadData)
       .subscribe();
 
+    // Subscribe to custom_roles changes to update role list dynamically
+    const customRolesChannel = supabase
+      .channel('blog-custom-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
+      }, loadData)
+      .subscribe();
+
     return () => {
       supabase.removeChannel(blogChannel);
+      supabase.removeChannel(customRolesChannel);
     };
   }, []);
 
