@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Trash2, Plus, Package, DollarSign, Palette, Image, Shield, Info, Truck, Video, Box, Tag, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Package, DollarSign, Palette, Image, Shield, Info, Truck, Video, Box, Tag, Eye, EyeOff, CheckCircle2, MessageSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ export default function ProductsAdminEnhanced() {
     price: 0,
     stock: 0,
     allow_direct_purchase: true,
+    allow_quote_request: true,
     enable_material_selection: false,
     enable_color_selection: false,
     enable_custom_text: false,
@@ -289,7 +290,7 @@ export default function ProductsAdminEnhanced() {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: 0, stock: 0, allow_direct_purchase: true, enable_material_selection: false, enable_color_selection: false, enable_custom_text: false, category_id: null, tax_enabled: true, weight: null, length: null, width: null, height: null, video_url: null, shipping_type: "standard", custom_shipping_cost: null, product_code: "" });
+    setFormData({ name: "", description: "", price: 0, stock: 0, allow_direct_purchase: true, allow_quote_request: true, enable_material_selection: false, enable_color_selection: false, enable_custom_text: false, category_id: null, tax_enabled: true, weight: null, length: null, width: null, height: null, video_url: null, shipping_type: "standard", custom_shipping_cost: null, product_code: "" });
     setSelectedMaterials([]);
     setSelectedColors([]);
     setSelectedRoles([]);
@@ -480,6 +481,13 @@ export default function ProductsAdminEnhanced() {
                             </div>
                             <Switch checked={formData.allow_direct_purchase} onCheckedChange={(checked) => setFormData({ ...formData, allow_direct_purchase: checked })} />
                           </div>
+                          <div className="flex items-center justify-between p-4 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-full ${formData.allow_quote_request ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{formData.allow_quote_request ? <MessageSquare className="h-5 w-5" /> : <Info className="h-5 w-5" />}</div>
+                              <div><Label className="font-medium">Permitir Solicitar Cotización</Label><p className="text-sm text-muted-foreground">{formData.allow_quote_request ? 'Los clientes pueden solicitar cotización' : 'Botón de cotización oculto'}</p></div>
+                            </div>
+                            <Switch checked={formData.allow_quote_request} onCheckedChange={(checked) => setFormData({ ...formData, allow_quote_request: checked })} />
+                          </div>
                           <Separator />
                           <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -640,7 +648,7 @@ export default function ProductsAdminEnhanced() {
                           const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
                           const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
                           setEditingProductId(product.id);
-                          setFormData({ name: product.name, description: product.description || "", price: product.price || 0, stock: product.stock || 0, category_id: product.category_id || null, allow_direct_purchase: product.allow_direct_purchase ?? true, enable_material_selection: product.enable_material_selection ?? false, enable_color_selection: product.enable_color_selection ?? false, enable_custom_text: product.enable_custom_text ?? false, tax_enabled: product.tax_enabled ?? true, weight: product.weight || null, length: product.length || null, width: product.width || null, height: product.height || null, video_url: product.video_url || null, shipping_type: product.shipping_type || "standard", custom_shipping_cost: product.custom_shipping_cost || null, product_code: product.product_code || "" });
+                          setFormData({ name: product.name, description: product.description || "", price: product.price || 0, stock: product.stock || 0, category_id: product.category_id || null, allow_direct_purchase: product.allow_direct_purchase ?? true, allow_quote_request: product.allow_quote_request ?? true, enable_material_selection: product.enable_material_selection ?? false, enable_color_selection: product.enable_color_selection ?? false, enable_custom_text: product.enable_custom_text ?? false, tax_enabled: product.tax_enabled ?? true, weight: product.weight || null, length: product.length || null, width: product.width || null, height: product.height || null, video_url: product.video_url || null, shipping_type: product.shipping_type || "standard", custom_shipping_cost: product.custom_shipping_cost || null, product_code: product.product_code || "" });
                           setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
                           setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
                           setSelectedColors(productColors?.map((c: any) => c.color_id) || []);
