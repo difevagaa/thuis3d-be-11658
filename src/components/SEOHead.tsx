@@ -100,8 +100,8 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   }, [location.pathname]);
 
   // Determine final values with priority: props > page-specific > site customization > global seo > defaults
-  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Thuis 3D";
-  const finalDescription = description || seoData?.meta_description || globalSettings?.site_description || "Servicio profesional de impresión 3D";
+  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Tuis3D | Professional 3D Printing Service & Design";
+  const finalDescription = description || seoData?.meta_description || globalSettings?.site_description || "Expert 3D printing and CAD design service. We transform your ideas into reality with high-quality materials. Fast prototypes and series production.";
   
   // Combine all multilingual keywords for comprehensive SEO
   const allKeywords = useMemo(() => {
@@ -124,7 +124,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Thuis 3D",
+    "name": "Tuis3D - Professional 3D Printing Service",
     "url": baseUrl,
     "logo": finalImage,
     "description": finalDescription,
@@ -132,6 +132,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
       "@type": "Country",
       "name": "Belgium"
     },
+    "serviceType": ["3D Printing Service", "Prototyping", "Additive Manufacturing", "CAD Design", "Custom 3D Prints"],
     "availableLanguage": ["Spanish", "English", "Dutch"],
     "sameAs": [
       globalSettings?.twitter_handle ? `https://twitter.com/${globalSettings.twitter_handle.replace('@', '')}` : ""

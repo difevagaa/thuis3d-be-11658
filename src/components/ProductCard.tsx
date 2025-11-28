@@ -27,7 +27,7 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
         <CardContent className="p-2 md:p-3 lg:p-4">
           <div className="aspect-square bg-muted rounded-md mb-2 md:mb-3 lg:mb-4 overflow-hidden flex items-center justify-center">
             {firstImage ? (
-              <img src={firstImage} alt={content.name} className="w-full h-full object-cover" />
+              <img src={firstImage} alt={`3D printed product: ${content.name}`} className="w-full h-full object-cover" />
             ) : (
               <Printer className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 text-muted-foreground" />
             )}

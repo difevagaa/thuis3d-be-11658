@@ -179,7 +179,7 @@ export default function BlogPost() {
         <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
           <img
             src={post.featured_image}
-            alt={translatedPost.title || post.title}
+            alt={`3D printing blog article: ${translatedPost.title || post.title}`}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />

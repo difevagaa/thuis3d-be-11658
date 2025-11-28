@@ -440,7 +440,7 @@ const ProductDetail = () => {
             {productImages.length > 0 ? (
               <img 
                 src={productImages[currentImageIndex]} 
-                alt={product.name}
+                alt={`3D printed product: ${product.name}`}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -463,7 +463,7 @@ const ProductDetail = () => {
                 >
                   <img 
                     src={image} 
-                    alt={`${product.name} - ${index + 1}`}
+                    alt={`3D print view ${index + 1}: ${product.name}`}
                     className="w-full h-full object-cover"
                   />
                 </button>

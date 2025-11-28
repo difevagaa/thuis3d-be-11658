@@ -855,7 +855,7 @@ const Quotes = () => {
                             <div className="rounded-lg overflow-hidden border bg-background/50 max-w-sm mx-auto">
                               <img 
                                 src={analysisResult.preview} 
-                                alt={t('preview3D')} 
+                                alt="3D model preview for prototyping quote" 
                                 className="w-full h-auto"
                               />
                             </div>
