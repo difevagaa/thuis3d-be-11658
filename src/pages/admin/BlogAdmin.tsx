@@ -65,11 +65,6 @@ export default function BlogAdmin() {
         schema: 'public',
         table: 'blog_post_roles'
       }, loadData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'custom_roles'
-      }, loadData)
       .subscribe();
 
     return () => {
