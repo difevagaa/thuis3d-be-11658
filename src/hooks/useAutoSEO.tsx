@@ -30,6 +30,19 @@ interface ProductData {
   name: string;
   description?: string;
   category?: string;
+  categoryId?: string;
+}
+
+interface ProductTranslation {
+  language: string;
+  field_name: string;
+  translated_text: string;
+}
+
+interface CategoryData {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 interface BlogPostData {
@@ -46,19 +59,90 @@ interface BlogPostData {
  */
 export function useAutoSEO() {
   /**
+   * Fetches translations for an entity from the translations table
+   */
+  const fetchEntityTranslations = useCallback(async (
+    entityType: string,
+    entityId: string
+  ): Promise<ProductTranslation[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('translations')
+        .select('language, field_name, translated_text')
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId);
+      
+      if (error) {
+        logger.warn(`Failed to fetch translations for ${entityType}:${entityId}`, { error });
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      logger.warn(`Error fetching translations for ${entityType}:${entityId}`, { error });
+      return [];
+    }
+  }, []);
+
+  /**
    * Generates and saves SEO data for a product with multilingual keywords
+   * Fetches product translations and generates keywords from translated content
    */
   const generateProductSEO = useCallback(async (
     product: ProductData
   ): Promise<AutoSEOResult> => {
     try {
-      const textToAnalyze = `${product.name} ${product.description || ''}`;
+      // Base text in Spanish (source language)
+      const baseTextToAnalyze = `${product.name} ${product.description || ''}`;
+      
+      // Fetch product translations for EN and NL
+      const translations = await fetchEntityTranslations('product', product.id);
+      
+      // Group translations by language
+      const translationsByLang: Record<string, Record<string, string>> = {};
+      translations.forEach(t => {
+        if (!translationsByLang[t.language]) {
+          translationsByLang[t.language] = {};
+        }
+        translationsByLang[t.language][t.field_name] = t.translated_text;
+      });
       
       // Extract multilingual keywords for Belgium market (ES, EN, NL)
-      const multilingualKeywords = extractMultilingualKeywords(textToAnalyze, {
+      // Start with base keywords from Spanish content
+      const multilingualKeywords = extractMultilingualKeywords(baseTextToAnalyze, {
         category: product.category,
         productType: 'product'
       });
+      
+      // Enhance keywords with actual translations for each language
+      const targetLanguages: SupportedSEOLanguage[] = ['en', 'nl'];
+      for (const lang of targetLanguages) {
+        const langTranslations = translationsByLang[lang];
+        if (langTranslations) {
+          // Build text from translated product name and description
+          const translatedName = langTranslations['name'] || '';
+          const translatedDescription = langTranslations['description'] || '';
+          const translatedText = `${translatedName} ${translatedDescription}`.trim();
+          
+          if (translatedText.length > 0) {
+            // Extract keywords from actual translated content
+            const translatedKeywords = extractKeywords(translatedText, {
+              category: product.category,
+              productType: 'product',
+              language: lang
+            });
+            
+            // Add translated keywords to the result (avoiding duplicates)
+            const existingKeywords = new Set(multilingualKeywords[lang].map(k => k.keyword.toLowerCase()));
+            translatedKeywords.forEach(kw => {
+              if (!existingKeywords.has(kw.keyword.toLowerCase())) {
+                multilingualKeywords[lang].push(kw);
+                multilingualKeywords.combined.push(kw);
+              }
+            });
+          }
+        }
+      }
       
       // Use combined keywords for backward compatibility
       const keywords = multilingualKeywords.combined.slice(0, 10);
@@ -214,21 +298,65 @@ export function useAutoSEO() {
         error: errorMessage
       };
     }
-  }, []);
+  }, [fetchEntityTranslations]);
 
   /**
    * Generates and saves SEO data for a blog post with multilingual keywords
+   * Fetches blog post translations and generates keywords from translated content
    */
   const generateBlogSEO = useCallback(async (
     blogPost: BlogPostData
   ): Promise<AutoSEOResult> => {
     try {
-      const textToAnalyze = `${blogPost.title} ${blogPost.excerpt || ''} ${blogPost.content || ''}`;
+      // Base text in Spanish (source language)
+      const baseTextToAnalyze = `${blogPost.title} ${blogPost.excerpt || ''} ${blogPost.content || ''}`;
+      
+      // Fetch blog post translations for EN and NL
+      const translations = await fetchEntityTranslations('blog_post', blogPost.id);
+      
+      // Group translations by language
+      const translationsByLang: Record<string, Record<string, string>> = {};
+      translations.forEach(t => {
+        if (!translationsByLang[t.language]) {
+          translationsByLang[t.language] = {};
+        }
+        translationsByLang[t.language][t.field_name] = t.translated_text;
+      });
       
       // Extract multilingual keywords for Belgium market (ES, EN, NL)
-      const multilingualKeywords = extractMultilingualKeywords(textToAnalyze, {
+      const multilingualKeywords = extractMultilingualKeywords(baseTextToAnalyze, {
         productType: 'blog'
       });
+      
+      // Enhance keywords with actual translations for each language
+      const targetLanguages: SupportedSEOLanguage[] = ['en', 'nl'];
+      for (const lang of targetLanguages) {
+        const langTranslations = translationsByLang[lang];
+        if (langTranslations) {
+          // Build text from translated blog post fields
+          const translatedTitle = langTranslations['title'] || '';
+          const translatedExcerpt = langTranslations['excerpt'] || '';
+          const translatedContent = langTranslations['content'] || '';
+          const translatedText = `${translatedTitle} ${translatedExcerpt} ${translatedContent}`.trim();
+          
+          if (translatedText.length > 0) {
+            // Extract keywords from actual translated content
+            const translatedKeywords = extractKeywords(translatedText, {
+              productType: 'blog',
+              language: lang
+            });
+            
+            // Add translated keywords to the result (avoiding duplicates)
+            const existingKeywords = new Set(multilingualKeywords[lang].map(k => k.keyword.toLowerCase()));
+            translatedKeywords.forEach(kw => {
+              if (!existingKeywords.has(kw.keyword.toLowerCase())) {
+                multilingualKeywords[lang].push(kw);
+                multilingualKeywords.combined.push(kw);
+              }
+            });
+          }
+        }
+      }
       
       // Use combined keywords for backward compatibility
       const keywords = multilingualKeywords.combined.slice(0, 10);
