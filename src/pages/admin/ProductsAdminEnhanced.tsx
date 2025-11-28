@@ -20,6 +20,9 @@ import ProductImageUploader from "./ProductImageUploader";
 import ProductCustomizationSections from "@/components/admin/ProductCustomizationSections";
 import { logger } from '@/lib/logger';
 
+// Default section type for customization sections
+const DEFAULT_SECTION_TYPE = 'color' as const;
+
 export default function ProductsAdminEnhanced() {
   const [products, setProducts] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -246,14 +249,14 @@ export default function ProductsAdminEnhanced() {
                 section_name: section.section_name, 
                 display_order: section.display_order, 
                 is_required: section.is_required,
-                section_type: section.section_type || 'color'
+                section_type: section.section_type || DEFAULT_SECTION_TYPE
               })
               .select().single();
             if (sectionError) {
               logger.error('[ProductsAdmin] Error creating section:', sectionError);
               continue;
             }
-            if (section.section_type === 'color' && section.selectedColors && section.selectedColors.length > 0) {
+            if ((section.section_type || DEFAULT_SECTION_TYPE) === 'color' && section.selectedColors && section.selectedColors.length > 0) {
               await (supabase as any).from('product_section_colors').insert(section.selectedColors.map((colorId: string) => ({ section_id: insertedSection.id, color_id: colorId })));
             }
             // Note: Images are handled by ProductCustomizationSections component when saving

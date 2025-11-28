@@ -62,6 +62,31 @@ interface CustomizationSection {
   availableImages: SectionImage[];
 }
 
+// Helper function to check if a section is incomplete (required but not selected)
+const isSectionIncomplete = (
+  section: CustomizationSection,
+  sectionColorSelections: Record<string, string>,
+  sectionImageSelections: Record<string, string>
+): boolean => {
+  if (!section.is_required) return false;
+  if (section.section_type === 'color') {
+    return !sectionColorSelections[section.id];
+  }
+  return !sectionImageSelections[section.id];
+};
+
+// Helper function to check if a section has a selection
+const hasSectionSelection = (
+  section: CustomizationSection,
+  sectionColorSelections: Record<string, string>,
+  sectionImageSelections: Record<string, string>
+): boolean => {
+  if (section.section_type === 'color') {
+    return !!sectionColorSelections[section.id];
+  }
+  return !!sectionImageSelections[section.id];
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
   const { t } = useTranslation('products');
@@ -239,14 +264,7 @@ const ProductDetail = () => {
     // Validar secciones de personalización o selección tradicional
     if (customizationSections.length > 0) {
       const missingSections = customizationSections
-        .filter(section => {
-          if (!section.is_required) return false;
-          if (section.section_type === 'color') {
-            return !sectionColorSelections[section.id];
-          } else {
-            return !sectionImageSelections[section.id];
-          }
-        });
+        .filter(section => isSectionIncomplete(section, sectionColorSelections, sectionImageSelections));
       
       if (missingSections.length > 0) {
         const sectionNames = missingSections.map(s => s.section_name).join(', ');
@@ -609,7 +627,7 @@ const ProductDetail = () => {
                   </h3>
                   {customizationSections.map((section) => (
                     <div key={section.id} className={`space-y-1 md:space-y-2 p-3 rounded-lg border ${
-                      section.is_required && !sectionColorSelections[section.id] && !sectionImageSelections[section.id]
+                      isSectionIncomplete(section, sectionColorSelections, sectionImageSelections)
                         ? 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
                         : 'border-border bg-muted/20'
                     }`}>
@@ -620,8 +638,7 @@ const ProductDetail = () => {
                         ) : (
                           <span className="text-xs text-muted-foreground">({t('optional')})</span>
                         )}
-                        {((section.section_type === 'color' && sectionColorSelections[section.id]) ||
-                          (section.section_type === 'image' && sectionImageSelections[section.id])) && (
+                        {hasSectionSelection(section, sectionColorSelections, sectionImageSelections) && (
                           <Check className="h-4 w-4 text-green-500" />
                         )}
                       </Label>

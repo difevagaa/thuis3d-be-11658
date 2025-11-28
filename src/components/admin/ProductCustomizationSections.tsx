@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,11 @@ export default function ProductCustomizationSections({
   // Use ref to avoid re-running effect when onSectionsChange changes
   const onSectionsChangeRef = useRef(onSectionsChange);
   onSectionsChangeRef.current = onSectionsChange;
+
+  // Memoize the count of incomplete sections to avoid recalculating on every render
+  const incompleteSectionsCount = useMemo(() => {
+    return sections.filter(s => !s.section_name.trim()).length;
+  }, [sections]);
 
   const loadSections = useCallback(async () => {
     if (!productId) return;
@@ -674,10 +679,10 @@ export default function ProductCustomizationSections({
         {showSaveButton && sections.length > 0 && (
           <div className="flex items-center justify-between gap-2 pt-4 border-t">
             <div className="text-xs text-muted-foreground">
-              {sections.filter(s => !s.section_name.trim()).length > 0 ? (
+              {incompleteSectionsCount > 0 ? (
                 <span className="text-amber-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {sections.filter(s => !s.section_name.trim()).length} sección(es) sin nombre
+                  {incompleteSectionsCount} sección(es) sin nombre
                 </span>
               ) : (
                 <span className="text-green-600 flex items-center gap-1">
@@ -688,7 +693,7 @@ export default function ProductCustomizationSections({
             </div>
             <Button 
               onClick={saveSections} 
-              disabled={loading || !productId || sections.filter(s => !s.section_name.trim()).length > 0}
+              disabled={loading || !productId || incompleteSectionsCount > 0}
             >
               {loading ? 'Guardando...' : 'Guardar Secciones'}
             </Button>
