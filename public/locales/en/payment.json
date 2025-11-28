@@ -3,7 +3,9 @@
   "orderSummary": "Order Summary",
   "invoiceSummary": "Invoice Summary",
   "invoice": "Invoice",
+  "invoicePayment": "Invoice Payment",
   "items": "Items",
+  "quantity": "Quantity",
   "shippingInfo": "Shipping Information",
   "fullName": "Name",
   "email": "Email",
@@ -13,9 +15,20 @@
   "paymentMethod": "Select Your Payment Method",
   "methods": {
     "bankTransfer": "Bank Transfer",
-    "creditCard": "Credit Card",
+    "bankTransferDesc": "We will send you the bank details for direct transfer",
+    "creditCard": "Credit/Debit Card",
+    "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
-    "revolut": "Revolut"
+    "paypalDesc": "Pay securely with your PayPal account",
+    "revolut": "Card & Digital Payments",
+    "revolutDesc": "Pay with credit card, debit card or digital wallet",
+    "revolutBadges": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "bancontact": "Bancontact",
+      "googlePay": "Google Pay",
+      "applePay": "Apple Pay"
+    }
   },
   "methodDescriptions": {
     "bankTransfer": "Payment via direct bank transfer",
@@ -31,6 +44,54 @@
   "totalToPay": "Total to Pay",
   "shippingAddress": "Shipping Address",
   "paymentMethodTitle": "Payment Method",
+  "subtotal": "Subtotal",
+  "shipping": "Shipping",
+  "shippingFree": "Shipping (Free)",
+  "tax": "Tax",
+  "discount": "Discount",
+  "coupon": "Coupon",
+  "total": "Total",
+  "noPaymentMethods": "No payment methods are available at this time. Please contact support.",
+  "securePayment": "Your information is secure. We use SSL encryption.",
+  "securityNotice": {
+    "title": "Secure Payment",
+    "description": "We do not store any payment information, card numbers, or bank details. All payments are processed directly on the secure website of your chosen payment provider (PayPal, Bancontact, your bank, etc.). Your financial data is never shared with or stored by our store."
+  },
+  "creatingOrder": "Creating your order...",
+  "instructions": {
+    "title": "Payment Instructions",
+    "orderReceived": "Order Received!",
+    "invoicePaymentTitle": "Invoice Payment!",
+    "orderNumber": "Your order number is",
+    "invoiceNumber": "Your invoice number is",
+    "bankTransferTitle": "Bank Transfer Instructions",
+    "amountToTransfer": "Amount to Transfer",
+    "vatIncluded": "VAT included",
+    "companyInfo": "Company Information",
+    "bankName": "Bank",
+    "accountHolder": "Account Holder",
+    "iban": "IBAN",
+    "transferReference": "Transfer Reference",
+    "order": "Order",
+    "additionalInstructions": "Additional Instructions",
+    "qrCodes": "QR Codes and Payment References",
+    "scanQr": "Scan any of these QR codes to make payment",
+    "qrBankTransfer": "QR Bank Transfer",
+    "qrRevolut": "QR Revolut",
+    "qrCode": "QR Code",
+    "scanForDirectTransfer": "Scan for direct transfer",
+    "fastRevolutPayment": "Fast payment with Revolut",
+    "alternativePayment": "Alternative payment method",
+    "pendingWarning": "Your order will remain pending until we receive payment.",
+    "includeOrderNumber": "Please include the order number",
+    "inTransferReference": "in the transfer reference.",
+    "cardSuccess": "Your card payment has been processed successfully. You will receive a confirmation email shortly.",
+    "paypalProcessing": "Your order is being processed. If you completed the payment in PayPal, you will receive confirmation soon.",
+    "revolutProcessing": "Your order is being processed. If you completed the payment in Revolut, you will receive confirmation soon.",
+    "paymentPendingWarning": "Your order will remain pending until we confirm payment.",
+    "backToHome": "Back to Home",
+    "viewMyOrders": "View My Orders"
+  },
   "messages": {
     "orderCreated": "Order created successfully",
     "invoicePaid": "Invoice paid successfully",
@@ -43,6 +104,9 @@
     "errorProcessingOrder": "Error processing order",
     "paypalNotConfigured": "PayPal is not configured correctly",
     "revolutNotConfigured": "Revolut is not configured correctly",
-    "redirectingToInstructions": "Redirecting to payment instructions..."
+    "redirectingToInstructions": "Redirecting to payment instructions...",
+    "invalidPaymentMethod": "Invalid payment method",
+    "orderInfoNotFound": "Order information not found",
+    "copiedToClipboard": "Copied to clipboard"
   }
 }

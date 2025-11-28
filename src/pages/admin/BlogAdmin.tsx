@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -125,7 +125,7 @@ export default function BlogAdmin() {
       setAvailableRoles([...systemRoles, ...customRolesList]);
     } catch (error) {
       logger.error("Error in loadData:", error);
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ export default function BlogAdmin() {
         const imgHtml = `\n<figure class="my-4"><img src="${url}" alt="Imagen del artículo" class="rounded-lg shadow-md max-w-full h-auto" /></figure>\n`;
         targetSetter({ ...targetPost, content: (targetPost.content || '') + imgHtml });
       }
-      toast.success("Imagen subida exitosamente");
+      i18nToast.success("success.imageSaved");
     }
   };
 
@@ -185,7 +185,7 @@ export default function BlogAdmin() {
     try {
       // Validaciones básicas
       if (!newPost.title.trim()) {
-        toast.error("El título es obligatorio");
+        i18nToast.error("error.titleRequired");
         return;
       }
 
@@ -197,7 +197,7 @@ export default function BlogAdmin() {
         .replace(/[^a-z0-9-]/g, '');
 
       if (!base) {
-        toast.error("El slug es obligatorio");
+        i18nToast.error("error.pageSlugRequired");
         return;
       }
 
@@ -217,7 +217,7 @@ export default function BlogAdmin() {
 
       const content = (newPost.content || '').trim();
       if (!content) {
-        toast.error("El contenido es obligatorio");
+        i18nToast.error("error.contentRequired");
         return;
       }
 
@@ -248,7 +248,7 @@ export default function BlogAdmin() {
         if (rolesError) throw rolesError;
       }
 
-      toast.success("Artículo creado exitosamente");
+      i18nToast.success("success.articleCreated");
       setNewPost({
         title: "",
         slug: "",
@@ -320,13 +320,13 @@ export default function BlogAdmin() {
         if (rolesError) throw rolesError;
       }
 
-      toast.success("Artículo actualizado exitosamente");
+      i18nToast.success("success.articleUpdated");
       setEditDialogOpen(false);
       setEditingPost(null);
       setSelectedRoles([]);
       await loadData();
     } catch (error) {
-      toast.error("Error al actualizar artículo");
+      i18nToast.error("error.articleSaveFailed");
     }
   };
 
@@ -338,10 +338,10 @@ export default function BlogAdmin() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Artículo movido a la papelera");
+      i18nToast.success("success.articleDeleted");
       await loadData();
     } catch (error) {
-      toast.error("Error al eliminar artículo");
+      i18nToast.error("error.articleDeleteFailed");
     }
   };
 
@@ -605,7 +605,7 @@ export default function BlogAdmin() {
                     const url = await uploadImage(file);
                     if (url) {
                       setPost({ ...post, featured_image: url });
-                      toast.success("Imagen destacada subida exitosamente");
+                      i18nToast.success("success.featuredImageUploaded");
                     }
                   }}
                   disabled={uploadingImage}

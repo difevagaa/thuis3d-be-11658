@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Pencil, Trash2, Plus, FolderTree, Search } from "lucide-react";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
@@ -69,7 +69,7 @@ export default function Categories() {
       if (error) throw error;
       setCategories(data || []);
     } catch (error: any) {
-      toast.error("Error al cargar categorías");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function Categories() {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      toast.error("El nombre de la categoría es obligatorio");
+      i18nToast.error("error.categoryNameRequired");
       return;
     }
 
@@ -92,12 +92,12 @@ export default function Categories() {
 
         if (error) {
           if (error.code === '23505') {
-            toast.error("Ya existe una categoría con ese nombre");
+            i18nToast.error("error.categoryNameExists");
             return;
           }
           throw error;
         }
-        toast.success("Categoría actualizada exitosamente");
+        i18nToast.success("success.categoryUpdated");
       } else {
         const { error } = await supabase
           .from("categories")
@@ -105,12 +105,12 @@ export default function Categories() {
 
         if (error) {
           if (error.code === '23505') {
-            toast.error("Ya existe una categoría con ese nombre");
+            i18nToast.error("error.categoryNameExists");
             return;
           }
           throw error;
         }
-        toast.success("Categoría creada exitosamente");
+        i18nToast.success("success.categoryCreated");
       }
 
       setDialogOpen(false);
@@ -118,7 +118,7 @@ export default function Categories() {
       await loadCategories();
     } catch (error: any) {
       logger.error("Error saving category:", error);
-      toast.error("Error al guardar categoría: " + (error.message || "Error desconocido"));
+      i18nToast.error("error.categorySaveFailed", { error: error.message || 'Unknown error' });
     }
   };
 
@@ -132,10 +132,10 @@ export default function Categories() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Categoría movida a la papelera");
+      i18nToast.success("success.categoryDeleted");
       await loadCategories();
     } catch (error: any) {
-      toast.error("Error al eliminar categoría");
+      i18nToast.error("error.categoryDeleteFailed");
     }
   };
 
@@ -149,11 +149,11 @@ export default function Categories() {
         .in("id", idsToDelete);
 
       if (error) throw error;
-      toast.success(`${idsToDelete.length} categorías movidas a la papelera`);
+      i18nToast.success("success.categoriesDeleted", { count: idsToDelete.length });
       clearSelection();
       loadCategories();
     } catch (error: any) {
-      toast.error("Error al eliminar categorías");
+      i18nToast.error("error.categoryDeleteFailed");
     }
   };
 

@@ -73,7 +73,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("Sesión cerrada exitosamente");
+    i18nToast.success("success.logoutSuccess");
     navigate("/");
   };
 

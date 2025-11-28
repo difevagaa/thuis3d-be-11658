@@ -93,7 +93,7 @@ export default function HomepageSections() {
 
   const handleSubmit = async () => {
     if (!formData.section_key.trim() || !formData.title.trim()) {
-      toast.error("La clave de sección y el título son obligatorios");
+      i18nToast.error("error.sectionKeyAndTitleRequired");
       return;
     }
 
@@ -121,7 +121,7 @@ export default function HomepageSections() {
           .eq("id", editingSection.id);
 
         if (error) throw error;
-        toast.success("Sección actualizada correctamente");
+        i18nToast.success("success.sectionUpdated");
       } else {
         const { error } = await supabase
           .from("homepage_sections")
@@ -138,7 +138,7 @@ export default function HomepageSections() {
           }]);
 
         if (error) throw error;
-        toast.success("Sección creada correctamente");
+        i18nToast.success("success.sectionCreated");
       }
 
       resetForm();
@@ -182,7 +182,7 @@ export default function HomepageSections() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Sección eliminada correctamente");
+      i18nToast.success("success.sectionDeleted");
     } catch (error) {
       handleSupabaseError(error, {
         toastMessage: "Error al eliminar la sección",
@@ -227,7 +227,7 @@ export default function HomepageSections() {
       
       if (errorB) throw errorB;
 
-      toast.success("Orden actualizado correctamente");
+      i18nToast.success("success.orderSortUpdated");
     } catch (error) {
       handleSupabaseError(error, {
         toastMessage: "Error al actualizar el orden",
@@ -246,13 +246,13 @@ export default function HomepageSections() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error("Por favor selecciona un archivo de imagen válido");
+      i18nToast.error("error.invalidImageFormat");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no debe superar 5MB");
+      i18nToast.error("error.imageTooLarge");
       return;
     }
 
@@ -273,10 +273,10 @@ export default function HomepageSections() {
         .getPublicUrl(filePath);
 
       setFormData({ ...formData, image_url: publicUrl });
-      toast.success("Imagen subida correctamente");
+      i18nToast.success("success.imageSaved");
     } catch (error) {
       console.error("Error uploading image:", error);
-      toast.error("Error al subir la imagen");
+      i18nToast.error("error.imageUploadFailed");
     } finally {
       setUploadingImage(false);
     }

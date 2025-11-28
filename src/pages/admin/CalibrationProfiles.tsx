@@ -79,7 +79,7 @@ export default function CalibrationProfiles() {
       if (calError) throw calError;
 
       if (!calibrations || calibrations.length < 2) {
-        toast.error('Se necesitan al menos 2 calibraciones activas para generar perfiles');
+        i18nToast.error("error.calibrationProfilesMinRequired");
         return;
       }
 
@@ -256,11 +256,11 @@ export default function CalibrationProfiles() {
         if (insertError) throw insertError;
       }
 
-      toast.success(`✅ ${profilesCreated} perfiles generados exitosamente`);
+      i18nToast.success("success.calibrationProfilesGenerated", { count: profilesCreated });
       loadProfiles();
     } catch (error: any) {
       logger.error('Error generating profiles:', error);
-      toast.error('Error al generar perfiles: ' + error.message);
+      i18nToast.error("error.calibrationProfilesGenerateFailed", { error: error.message });
     } finally {
       setGenerating(false);
     }

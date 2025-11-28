@@ -164,7 +164,7 @@ export default function GiftCard() {
         }
       }
 
-      toast.success("Tarjeta creada. Redirigiendo al pago...");
+      i18nToast.success("success.cardRedirecting");
       
       // Redirect to payment page (el pedido se creará allí)
       navigate("/pago");

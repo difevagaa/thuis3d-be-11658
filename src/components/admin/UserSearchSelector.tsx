@@ -105,7 +105,7 @@ export default function UserSearchSelector({
       }
     } catch (error: unknown) {
       console.error("Error loading users:", error);
-      toast.error("Error al cargar usuarios");
+      i18nToast.error("error.usersLoadFailed");
     } finally {
       setLoading(false);
     }

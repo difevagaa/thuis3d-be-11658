@@ -178,7 +178,7 @@ export default function NotificationBell() {
       
       loadNotifications();
     } catch (error) {
-      toast.error("Error al marcar notificación");
+      i18nToast.error("error.notificationMarkFailed");
     }
   };
 
@@ -194,9 +194,9 @@ export default function NotificationBell() {
         .eq("is_read", false);
       
       loadNotifications();
-      toast.success("Todas las notificaciones marcadas como leídas");
+      i18nToast.success("success.allNotificationsRead");
     } catch (error) {
-      toast.error("Error al marcar notificaciones");
+      i18nToast.error("error.notificationsMarkFailed");
     }
   };
 
@@ -211,7 +211,7 @@ export default function NotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      toast.success("Notificación eliminada");
+      i18nToast.success("success.notificationDeleted");
     } catch (error: any) {
       logger.error("Error deleting notification:", error);
       toast.error("Error al eliminar notificación: " + (error.message || ""));
@@ -233,7 +233,7 @@ export default function NotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      toast.success("Notificaciones leídas eliminadas");
+      i18nToast.success("success.readNotificationsDeleted");
     } catch (error: any) {
       logger.error("Error deleting read notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || ""));

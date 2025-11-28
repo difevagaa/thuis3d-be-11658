@@ -107,7 +107,7 @@ export default function BlogPost() {
     } else {
       // Fallback: copy to clipboard
       await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado al portapapeles");
+      i18nToast.success("success.linkCopied");
     }
   };
 

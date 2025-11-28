@@ -180,7 +180,7 @@ export default function HomepageComponentOrder() {
     try {
       const result = await saveOrderConfig(components);
       if (result.success) {
-        toast.success("Orden de componentes guardado correctamente");
+        i18nToast.success("success.componentOrderSaved");
         setHasChanges(false);
       } else {
         throw result.error;
