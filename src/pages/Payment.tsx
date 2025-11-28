@@ -25,6 +25,7 @@ export default function Payment() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [processing, setProcessing] = useState(false);
   const [shippingCost, setShippingCost] = useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [paymentConfig, setPaymentConfig] = useState({
     bank_transfer_enabled: true,
     card_enabled: true,
@@ -116,6 +117,19 @@ export default function Payment() {
         logger.warn('No cart found in localStorage');
         setCartItems([]);
       }
+
+      // Load applied coupon from sessionStorage
+      const savedCoupon = sessionStorage.getItem("applied_coupon");
+      if (savedCoupon) {
+        try {
+          const parsedCoupon = JSON.parse(savedCoupon);
+          logger.debug('Applied coupon loaded', parsedCoupon);
+          setAppliedCoupon(parsedCoupon);
+        } catch (error) {
+          logger.error("Error parsing applied coupon:", error);
+          setAppliedCoupon(null);
+        }
+      }
     }
   }, [navigate]);
 
@@ -191,8 +205,50 @@ export default function Payment() {
     return subtotal;
   };
 
+  // Calcular descuento de cupón
+  const calculateCouponDiscount = () => {
+    if (!appliedCoupon) return 0;
+    
+    const subtotal = calculateSubtotal();
+    
+    if (appliedCoupon.discount_type === "free_shipping") {
+      // Free shipping is handled in shipping calculation, not as a discount
+      return 0;
+    } else if (appliedCoupon.product_id) {
+      // Product-specific coupon: only apply to the specified product
+      const productAmount = cartItems
+        .filter(item => item.productId === appliedCoupon.product_id)
+        .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
+      
+      if (appliedCoupon.discount_type === "percentage") {
+        return Number((productAmount * (appliedCoupon.discount_value / 100)).toFixed(2));
+      } else if (appliedCoupon.discount_type === "fixed") {
+        return Number(Math.min(appliedCoupon.discount_value, productAmount).toFixed(2));
+      }
+    } else {
+      // General coupon: apply to entire subtotal
+      if (appliedCoupon.discount_type === "percentage") {
+        return Number((subtotal * (appliedCoupon.discount_value / 100)).toFixed(2));
+      } else if (appliedCoupon.discount_type === "fixed") {
+        return Number(Math.min(appliedCoupon.discount_value, subtotal).toFixed(2));
+      }
+    }
+    return 0;
+  };
+
+  // Get effective shipping cost (considering free shipping coupons)
+  const getEffectiveShippingCost = () => {
+    if (appliedCoupon && appliedCoupon.discount_type === "free_shipping") {
+      return 0;
+    }
+    return shippingCost;
+  };
+
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   const calculateTax = () => {
+    const subtotal = calculateSubtotal();
+    const couponDiscount = calculateCouponDiscount();
+    
     const taxableAmount = cartItems
       .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
       .reduce((sum, item) => {
@@ -201,14 +257,23 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
+    // Calculate proportional discount for taxable amount
+    const taxableRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+    const taxableDiscount = couponDiscount * taxableRatio;
+    const taxableAfterDiscount = Math.max(0, taxableAmount - taxableDiscount);
+    
     // Use tax rate from settings
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((taxableAmount * taxRate).toFixed(2));
+    return Number((taxableAfterDiscount * taxRate).toFixed(2));
   };
 
-  // Total = subtotal + IVA + envío
+  // Total = subtotal - descuento + IVA + envío
   const calculateTotal = () => {
-    return Number((calculateSubtotal() + calculateTax() + shippingCost).toFixed(2));
+    const subtotal = calculateSubtotal();
+    const couponDiscount = calculateCouponDiscount();
+    const effectiveShipping = getEffectiveShippingCost();
+    const tax = calculateTax();
+    return Number((subtotal - couponDiscount + tax + effectiveShipping).toFixed(2));
   };
 
   const handlePayment = async (method: string) => {
@@ -335,22 +400,25 @@ export default function Payment() {
       const hasOnlyGiftCards = cartItems.every(item => item.isGiftCard);
       
       const subtotal = calculateSubtotal(); // Precio sin IVA
-      const tax = calculateTax(); // IVA calculado según configuración
-      const shipping = shippingCost; // Costo de envío calculado dinámicamente
-      const total = calculateTotal(); // subtotal + IVA + envío
+      const couponDiscount = calculateCouponDiscount(); // Descuento de cupón
+      const effectiveShipping = getEffectiveShippingCost(); // Envío (0 si tiene cupón de envío gratis)
+      const tax = calculateTax(); // IVA calculado según configuración (después de descuento)
+      const total = calculateTotal(); // subtotal - descuento + IVA + envío
 
       // Para transferencia bancaria, solo guardar info y redirigir a instrucciones
       if (method === "bank_transfer") {
         
         // Guardar información temporal en sessionStorage
-        // CRÍTICO: Incluir shipping en el pending_order
+        // CRÍTICO: Incluir shipping y coupon en el pending_order
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
           shippingInfo,
-          total, // Ya incluye subtotal + tax + shipping
+          total,
           subtotal,
           tax,
-          shipping, // CRÍTICO: Guardar costo de envío
+          shipping: effectiveShipping,
+          couponDiscount,
+          appliedCoupon,
           method: "bank_transfer"
         }));
 
@@ -361,7 +429,7 @@ export default function Payment() {
           state: { 
             orderNumber: `TEMP-${Date.now()}`,
             method: "bank_transfer",
-            total, // Ya incluye subtotal + tax
+            total,
             isPending: true
           } 
         });
@@ -382,17 +450,24 @@ export default function Payment() {
         giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
-      // CRÍTICO: El total final = total (ya incluye IVA) - descuentos
+      // CRÍTICO: El total final = total (ya incluye IVA y descuento de cupón) - descuento de tarjeta regalo
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+      const totalDiscount = Number((couponDiscount + giftCardDiscount).toFixed(2));
 
       // Preparar notas del pedido
-      let orderNotes = giftCardData ? `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})` : null;
+      let orderNotes = "";
+      if (appliedCoupon) {
+        orderNotes += `Cupón aplicado: ${appliedCoupon.code} (-€${couponDiscount.toFixed(2)})\n`;
+      }
+      if (giftCardData) {
+        orderNotes += `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})\n`;
+      }
       
       // Si es compra de tarjeta regalo, agregar info a las notas
       if (isGiftCardPurchase) {
         const giftCardItem = cartItems.find(item => item.isGiftCard);
         if (giftCardItem) {
-          orderNotes = `Tarjeta Regalo: ${giftCardItem.giftCardCode}\nPara: ${giftCardItem.giftCardRecipient}\nDe: ${giftCardItem.giftCardSender}`;
+          orderNotes += `Tarjeta Regalo: ${giftCardItem.giftCardCode}\nPara: ${giftCardItem.giftCardRecipient}\nDe: ${giftCardItem.giftCardSender}`;
         }
       }
 
@@ -403,14 +478,14 @@ export default function Payment() {
           user_id: user.id,
           subtotal,
           tax,
-          shipping,
-          discount: giftCardDiscount,
+          shipping: effectiveShipping,
+          discount: totalDiscount,
           total: finalTotal,
           payment_method: method,
           payment_status: method === "card" ? "paid" : "pending",
           shipping_address: JSON.stringify(shippingInfo),
           billing_address: JSON.stringify(shippingInfo),
-          notes: orderNotes
+          notes: orderNotes.trim() || null
         })
         .select()
         .single();
@@ -424,6 +499,33 @@ export default function Payment() {
           giftCardData.current_balance - giftCardDiscount
         );
         sessionStorage.removeItem("applied_gift_card");
+      }
+
+      // Increment coupon usage counter if coupon was applied
+      if (appliedCoupon && couponDiscount > 0) {
+        try {
+          const { error: couponUpdateError } = await supabase
+            .from("coupons")
+            .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+            .eq("id", appliedCoupon.id);
+          
+          if (couponUpdateError) {
+            logger.error("Error updating coupon usage:", couponUpdateError);
+          } else {
+            logger.info("Coupon usage incremented:", appliedCoupon.code);
+          }
+          
+          // If this is a redeemed loyalty coupon, update the redemption status
+          if (appliedCoupon.max_uses === 1) {
+            await supabase
+              .from("loyalty_redemptions")
+              .update({ status: 'used', used_at: new Date().toISOString() })
+              .eq("coupon_code", appliedCoupon.code);
+          }
+        } catch (couponError) {
+          logger.error("Error processing coupon:", couponError);
+        }
+        sessionStorage.removeItem("applied_coupon");
       }
 
       // Create order items using utility function
@@ -463,8 +565,13 @@ export default function Payment() {
           order_id: order.id,
           subtotal: subtotal,
           tax: tax,
-          shipping: shipping, // CRÍTICO: Incluir el costo de envío
-          total: total,
+          shipping: effectiveShipping, // CRÍTICO: Incluir el costo de envío efectivo
+          discount: totalDiscount, // Incluir total de descuentos (cupón + tarjeta regalo)
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: couponDiscount > 0 ? couponDiscount : null,
+          gift_card_code: giftCardData?.code || null,
+          gift_card_amount: giftCardDiscount > 0 ? giftCardDiscount : null,
+          total: finalTotal,
           payment_method: method,
           payment_status: method === "card" ? "paid" : "pending",
           issue_date: new Date().toISOString(),
@@ -492,8 +599,8 @@ export default function Payment() {
                 order_number: order.order_number,
                 subtotal: subtotal,
                 tax: tax,
-                shipping: shipping,
-                discount: giftCardDiscount,
+                shipping: effectiveShipping,
+                discount: totalDiscount,
                 total: finalTotal,
                 items: cartItems.map(item => ({
                   product_name: item.name,
@@ -672,9 +779,17 @@ export default function Payment() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
+                    {appliedCoupon && calculateCouponDiscount() > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Cupón ({appliedCoupon.code})</span>
+                        <span>-€{calculateCouponDiscount().toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Envío</span>
-                      <span>€{shippingCost.toFixed(2)}</span>
+                      <span className="text-muted-foreground">
+                        {appliedCoupon?.discount_type === 'free_shipping' ? 'Envío (Gratis)' : 'Envío'}
+                      </span>
+                      <span>€{getEffectiveShippingCost().toFixed(2)}</span>
                     </div>
                     {(() => {
                       const tax = calculateTax();

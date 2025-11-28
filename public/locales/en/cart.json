@@ -30,7 +30,8 @@
     "invalid": "Invalid or expired coupon",
     "expired": "This coupon has expired",
     "unavailable": "This coupon is no longer available",
-    "minPurchase": "Minimum purchase of €{amount} required"
+    "minPurchase": "Minimum purchase of €{{amount}} required",
+    "productNotInCart": "This coupon is only valid for a specific product that is not in your cart"
   },
   "giftCard": {
     "title": "Gift Card",
@@ -38,12 +39,12 @@
     "apply": "Apply",
     "remove": "Remove",
     "balance": "Balance",
-    "applied": "Card applied. Balance: €{balance}",
+    "applied": "Card applied. Balance: €{{balance}}",
     "removed": "Gift card removed",
     "invalid": "Invalid card code",
     "expired": "This card has expired",
     "noBalance": "This card has no available balance",
-    "redeemed": "You have applied a gift card for €{amount}"
+    "redeemed": "You have applied a gift card for €{{amount}}"
   },
   "checkout": "Proceed to Checkout",
   "itemRemoved": "Product removed from cart",

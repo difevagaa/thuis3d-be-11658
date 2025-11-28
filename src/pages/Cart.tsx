@@ -115,6 +115,7 @@ const Cart = () => {
         .select("*")
         .eq("code", couponCode.toUpperCase())
         .eq("is_active", true)
+        .is("deleted_at", null)
         .maybeSingle();
 
       if (error || !data) {
@@ -134,8 +135,21 @@ const Cart = () => {
         return;
       }
 
-      // Check minimum purchase
-      if (data.min_purchase && subtotal < data.min_purchase) {
+      // Check if coupon is product-specific and validate the product is in cart
+      if (data.product_id) {
+        const hasProduct = cartItems.some(item => item.productId === data.product_id);
+        if (!hasProduct) {
+          toast.error(t('cart:coupon.productNotInCart'));
+          return;
+        }
+      }
+
+      // Check minimum purchase (for product-specific coupons, check the product's amount)
+      const applicableAmount = data.product_id 
+        ? cartItems.filter(item => item.productId === data.product_id).reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        : subtotal;
+      
+      if (data.min_purchase && applicableAmount < data.min_purchase) {
         toast.error(t('cart:coupon.minPurchase', { amount: data.min_purchase }));
         return;
       }
@@ -240,28 +254,51 @@ const Cart = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Calculate discount
+  // Calculate discount - handle product-specific coupons and free_shipping type
   let discount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.discount_type === "percentage") {
-      discount = subtotal * (appliedCoupon.discount_value / 100);
-    } else if (appliedCoupon.discount_type === "fixed") {
-      discount = appliedCoupon.discount_value;
+    if (appliedCoupon.discount_type === "free_shipping") {
+      // Free shipping coupons are handled separately - discount is 0, shipping will be 0
+      discount = 0;
+    } else if (appliedCoupon.product_id) {
+      // Product-specific coupon: only apply to the specified product
+      const productAmount = cartItems
+        .filter(item => item.productId === appliedCoupon.product_id)
+        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      if (appliedCoupon.discount_type === "percentage") {
+        discount = productAmount * (appliedCoupon.discount_value / 100);
+      } else if (appliedCoupon.discount_type === "fixed") {
+        discount = Math.min(appliedCoupon.discount_value, productAmount);
+      }
+    } else {
+      // General coupon: apply to entire subtotal
+      if (appliedCoupon.discount_type === "percentage") {
+        discount = subtotal * (appliedCoupon.discount_value / 100);
+      } else if (appliedCoupon.discount_type === "fixed") {
+        discount = Math.min(appliedCoupon.discount_value, subtotal);
+      }
     }
   }
   
-  // Apply gift card
+  // Apply gift card after coupon discount
   let giftCardApplied = 0;
   if (appliedGiftCard) {
     const afterDiscount = subtotal - discount;
-    giftCardApplied = Math.min(appliedGiftCard.current_balance, afterDiscount);
+    giftCardApplied = Math.min(appliedGiftCard.current_balance, Math.max(0, afterDiscount));
   }
   
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
   const taxableAmount = cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = calculateTax(taxableAmount - (discount * (taxableAmount / subtotal)) - (giftCardApplied * (taxableAmount / subtotal)), true);
+  
+  // Calculate proportional discount and gift card amounts for taxable products
+  const taxableRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+  const taxableDiscount = discount * taxableRatio;
+  const taxableGiftCard = giftCardApplied * taxableRatio;
+  const taxableAfterDiscounts = Math.max(0, taxableAmount - taxableDiscount - taxableGiftCard);
+  const tax = calculateTax(taxableAfterDiscounts, true);
   const total = Math.max(0, subtotal - discount - giftCardApplied + tax);
 
   if (cartItems.length === 0) {

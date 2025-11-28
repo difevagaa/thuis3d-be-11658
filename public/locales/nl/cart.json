@@ -30,7 +30,8 @@
     "invalid": "Ongeldige of verlopen kortingscode",
     "expired": "Deze kortingscode is verlopen",
     "unavailable": "Deze kortingscode is niet meer beschikbaar",
-    "minPurchase": "Minimale aankoop van €{amount} vereist"
+    "minPurchase": "Minimale aankoop van €{{amount}} vereist",
+    "productNotInCart": "Deze kortingscode is alleen geldig voor een specifiek product dat niet in uw winkelwagen zit"
   },
   "giftCard": {
     "title": "Cadeaukaart",
@@ -38,12 +39,12 @@
     "apply": "Toepassen",
     "remove": "Verwijderen",
     "balance": "Saldo",
-    "applied": "Kaart toegepast. Saldo: €{balance}",
+    "applied": "Kaart toegepast. Saldo: €{{balance}}",
     "removed": "Cadeaukaart verwijderd",
     "invalid": "Ongeldige kaartcode",
     "expired": "Deze kaart is verlopen",
     "noBalance": "Deze kaart heeft geen beschikbaar saldo",
-    "redeemed": "U heeft een cadeaukaart toegepast voor €{amount}"
+    "redeemed": "U heeft een cadeaukaart toegepast voor €{{amount}}"
   },
   "checkout": "Doorgaan naar Betalen",
   "itemRemoved": "Product verwijderd uit winkelwagen",
