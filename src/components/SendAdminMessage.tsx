@@ -51,7 +51,7 @@ export function SendAdminMessage() {
 
   const handleSend = async () => {
     if (!message.trim()) {
-      toast.error("Por favor escribe un mensaje");
+      i18nToast.error("error.writeMessage");
       return;
     }
 
@@ -60,7 +60,7 @@ export function SendAdminMessage() {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Debes iniciar sesión");
+        i18nToast.error("error.mustLogin");
         return;
       }
 
@@ -73,7 +73,7 @@ export function SendAdminMessage() {
       let attachmentData: any[] = [];
       
       if (attachments.length > 0) {
-        toast.info("Subiendo archivos adjuntos...");
+        i18nToast.info("info.uploadingFiles");
         attachmentData = await uploadAttachments(attachments);
       }
 
@@ -84,7 +84,7 @@ export function SendAdminMessage() {
         .eq("role", "admin");
 
       if (!adminRoles || adminRoles.length === 0) {
-        toast.error("No hay administradores disponibles");
+        i18nToast.error("error.noAdminsAvailable");
         return;
       }
 

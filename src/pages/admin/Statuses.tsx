@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,7 +60,7 @@ export default function Statuses() {
       setOrderStatuses(orderRes.data || []);
       setQuoteStatuses(quoteRes.data || []);
     } catch (error) {
-      toast.error("Error al cargar estados");
+      i18nToast.error("error.statusLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function Statuses() {
 
   const createOrderStatus = async () => {
     if (!newOrderStatus.name.trim()) {
-      toast.error("El nombre del estado es obligatorio");
+      i18nToast.error("error.statusNameRequired");
       return;
     }
 
@@ -79,12 +79,12 @@ export default function Statuses() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un estado con ese nombre");
+          i18nToast.error("error.statusNameExists");
           return;
         }
         throw error;
       }
-      toast.success("Estado de pedido creado exitosamente");
+      i18nToast.success("success.orderStatusCreated");
       setNewOrderStatus({ name: "", color: "#3b82f6" });
       await loadStatuses();
     } catch (error: any) {
@@ -95,7 +95,7 @@ export default function Statuses() {
 
   const createQuoteStatus = async () => {
     if (!newQuoteStatus.name.trim()) {
-      toast.error("El nombre del estado es obligatorio");
+      i18nToast.error("error.statusNameRequired");
       return;
     }
 
@@ -106,12 +106,12 @@ export default function Statuses() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un estado con ese nombre");
+          i18nToast.error("error.statusNameExists");
           return;
         }
         throw error;
       }
-      toast.success("Estado de cotización creado exitosamente");
+      i18nToast.success("success.quoteStatusCreated");
       setNewQuoteStatus({ name: "", color: "#3b82f6" });
       await loadStatuses();
     } catch (error: any) {
@@ -125,10 +125,10 @@ export default function Statuses() {
     try {
       const { error } = await supabase.from("order_statuses").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
-      toast.success("Estado movido a la papelera");
+      i18nToast.success("success.statusDeleted");
       await loadStatuses();
     } catch (error) {
-      toast.error("Error al eliminar estado");
+      i18nToast.error("error.statusDeleteFailed");
     }
   };
 
@@ -137,10 +137,10 @@ export default function Statuses() {
     try {
       const { error } = await supabase.from("quote_statuses").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
-      toast.success("Estado movido a la papelera");
+      i18nToast.success("success.statusDeleted");
       await loadStatuses();
     } catch (error) {
-      toast.error("Error al eliminar estado");
+      i18nToast.error("error.statusDeleteFailed");
     }
   };
 

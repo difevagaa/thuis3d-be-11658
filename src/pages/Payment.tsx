@@ -691,7 +691,7 @@ export default function Payment() {
         {/* Order Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>{isInvoicePayment ? 'Resumen de Factura' : 'Resumen del Pedido'}</CardTitle>
+            <CardTitle>{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -700,31 +700,31 @@ export default function Payment() {
                 <>
                   <div className="flex justify-between items-center py-2">
                     <div>
-                      <p className="font-medium">Factura {shippingInfo.invoiceNumber}</p>
-                      <p className="text-sm text-muted-foreground">Pago de factura</p>
+                      <p className="font-medium">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
+                      <p className="text-sm text-muted-foreground">{t('payment:invoicePayment')}</p>
                     </div>
                   </div>
                   
                   <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t('payment:subtotal')}</span>
                       <span>€{Number(shippingInfo.subtotal || 0).toFixed(2)}</span>
                     </div>
                     {shippingInfo.shipping > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Envío</span>
+                        <span className="text-muted-foreground">{t('payment:shipping')}</span>
                         <span>€{Number(shippingInfo.shipping).toFixed(2)}</span>
                       </div>
                     )}
                     {shippingInfo.tax > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">IVA (21%)</span>
+                        <span className="text-muted-foreground">{t('payment:tax')} (21%)</span>
                         <span>€{Number(shippingInfo.tax).toFixed(2)}</span>
                       </div>
                     )}
                     {shippingInfo.discount > 0 && (
                       <div className="flex justify-between text-green-600">
-                        <span>{t('cart:summary.discount')}</span>
+                        <span>{t('payment:discount')}</span>
                         <span>-€{Number(shippingInfo.discount).toFixed(2)}</span>
                       </div>
                     )}
@@ -742,7 +742,7 @@ export default function Payment() {
                       <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Cantidad: {item.quantity} x €{Number(item.price).toFixed(2)}
+                          {t('payment:quantity')}: {item.quantity} x €{Number(item.price).toFixed(2)}
                         </p>
                       </div>
                       <p className="font-medium">€{(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
@@ -751,18 +751,18 @@ export default function Payment() {
                   
                    <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t('payment:subtotal')}</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
                     {appliedCoupon && calculateCouponDiscount() > 0 && (
                       <div className="flex justify-between text-green-600">
-                        <span>Cupón ({appliedCoupon.code})</span>
+                        <span>{t('payment:coupon')} ({appliedCoupon.code})</span>
                         <span>-€{calculateCouponDiscount().toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {appliedCoupon?.discount_type === 'free_shipping' ? 'Envío (Gratis)' : 'Envío'}
+                        {appliedCoupon?.discount_type === 'free_shipping' ? t('payment:shippingFree') : t('payment:shipping')}
                       </span>
                       <span>€{getEffectiveShippingCost().toFixed(2)}</span>
                     </div>
@@ -774,12 +774,12 @@ export default function Payment() {
                         <>
                           {tax > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">IVA ({taxSettings.rate}%)</span>
+                              <span className="text-muted-foreground">{t('payment:tax')} ({taxSettings.rate}%)</span>
                               <span>€{tax.toFixed(2)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                            <span>Total</span>
+                            <span>{t('payment:total')}</span>
                             <span>€{total.toFixed(2)}</span>
                           </div>
                         </>
@@ -805,96 +805,147 @@ export default function Payment() {
         {/* Payment Methods */}
         <div className="space-y-4">
           {paymentConfig.company_info && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Información de la Empresa</CardTitle>
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  {t('payment:companyInfo')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">{paymentConfig.company_info}</p>
+                <p className="text-sm text-foreground whitespace-pre-line">{paymentConfig.company_info}</p>
               </CardContent>
             </Card>
           )}
           
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
-              <CardDescription>{t('payment:paymentMethod')}</CardDescription>
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                {t('payment:paymentMethodTitle')}
+              </CardTitle>
+              <CardDescription className="text-foreground/70">{t('payment:paymentMethod')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {paymentConfig.bank_transfer_enabled && (
-                <Button
-                  onClick={() => handlePayment("bank_transfer")}
-                  disabled={processing}
-                  className="w-full h-20 text-lg"
-                  variant="outline"
-                >
-                  <Banknote className="h-8 w-8 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold">Transferencia Bancaria</div>
-                    <div className="text-xs text-muted-foreground">Te enviaremos los datos bancarios</div>
-                  </div>
-                </Button>
-              )}
-
-              {paymentConfig.card_enabled && (
-                <Button
-                  onClick={() => handlePayment("card")}
-                  disabled={processing}
-                  className="w-full h-20 text-lg"
-                  variant="outline"
-                >
-                  <CreditCard className="h-8 w-8 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold">Tarjeta de Crédito/Débito</div>
-                    <div className="text-xs text-muted-foreground">Visa, Mastercard, American Express</div>
-                  </div>
-                </Button>
-              )}
-
-              {paymentConfig.paypal_enabled && paymentConfig.paypal_email && (
-                <Button
-                  onClick={() => handlePayment("paypal")}
-                  disabled={processing}
-                  className="w-full h-20 text-lg"
-                  variant="outline"
-                >
-                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
-                    <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
-                  </svg>
-                  <div className="text-left">
-                    <div className="font-semibold">PayPal</div>
-                    <div className="text-xs text-muted-foreground">Pagar de forma segura con PayPal</div>
-                  </div>
-                </Button>
-              )}
-
+            <CardContent className="space-y-4 p-6">
+              {/* REVOLUT - Destacado como opción principal para tarjetas */}
               {paymentConfig.revolut_enabled && paymentConfig.revolut_link && (
                 <Button
                   onClick={() => handlePayment("revolut")}
                   disabled={processing}
-                  className="w-full h-20 text-lg"
+                  className="w-full h-auto py-4 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                >
+                  <div className="flex items-center w-full">
+                    <div className="flex-shrink-0 mr-4">
+                      <svg className="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                        <path d="M12.31 11.14c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                      </svg>
+                    </div>
+                    <div className="text-left flex-grow">
+                      <div className="font-bold text-lg">{t('payment:methods.revolut')}</div>
+                      <div className="text-xs text-white/90 mt-1">
+                        💳 {t('payment:methods.revolutDesc')}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Visa</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Mastercard</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Bancontact</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Google Pay</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Apple Pay</span>
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              )}
+
+              {/* TRANSFERENCIA BANCARIA */}
+              {paymentConfig.bank_transfer_enabled && (
+                <Button
+                  onClick={() => handlePayment("bank_transfer")}
+                  disabled={processing}
+                  className="w-full h-auto py-4 text-lg border-2 hover:bg-slate-50 dark:hover:bg-slate-800"
                   variant="outline"
                 >
-                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                  </svg>
-                  <div className="text-left">
-                    <div className="font-semibold">Revolut</div>
-                    <div className="text-xs text-muted-foreground">Tarjetas crédito/débito - Pago rápido y seguro</div>
+                  <div className="flex items-center w-full">
+                    <Banknote className="h-10 w-10 mr-4 text-green-600" />
+                    <div className="text-left flex-grow">
+                      <div className="font-bold text-foreground">{t('payment:methods.bankTransfer')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        🏦 {t('payment:methods.bankTransferDesc')}
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              )}
+
+              {/* PAYPAL */}
+              {paymentConfig.paypal_enabled && paymentConfig.paypal_email && (
+                <Button
+                  onClick={() => handlePayment("paypal")}
+                  disabled={processing}
+                  className="w-full h-auto py-4 text-lg border-2 hover:bg-blue-50 dark:hover:bg-blue-950"
+                  variant="outline"
+                >
+                  <div className="flex items-center w-full">
+                    <svg className="h-10 w-10 mr-4 text-[#003087]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
+                      <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
+                    </svg>
+                    <div className="text-left flex-grow">
+                      <div className="font-bold text-foreground">{t('payment:methods.paypal')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        🔒 {t('payment:methods.paypalDesc')}
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              )}
+
+              {/* Tarjeta directa (si está habilitado) */}
+              {paymentConfig.card_enabled && (
+                <Button
+                  onClick={() => handlePayment("card")}
+                  disabled={processing}
+                  className="w-full h-auto py-4 text-lg border-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  variant="outline"
+                >
+                  <div className="flex items-center w-full">
+                    <CreditCard className="h-10 w-10 mr-4 text-purple-600" />
+                    <div className="text-left flex-grow">
+                      <div className="font-bold text-foreground">{t('payment:methods.creditCard')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        💳 {t('payment:methods.creditCardDesc')}
+                      </div>
+                    </div>
                   </div>
                 </Button>
               )}
 
               {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && !paymentConfig.revolut_enabled && (
-                <p className="text-center text-muted-foreground py-8">
-                  No hay métodos de pago disponibles en este momento. Por favor, contacta con soporte.
-                </p>
+                <div className="text-center text-muted-foreground py-8 bg-muted/30 rounded-lg">
+                  <p>{t('payment:noPaymentMethods')}</p>
+                </div>
               )}
 
-              <p className="text-xs text-muted-foreground text-center pt-4">
-                Tu información está segura. Usamos encriptación SSL.
-              </p>
+              {/* Security Notice - We don't store payment data */}
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-green-800 dark:text-green-200 text-sm">
+                      {t('payment:securityNotice.title')}
+                    </h4>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1 leading-relaxed">
+                      {t('payment:securityNotice.description')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 pt-4 text-xs text-muted-foreground border-t">
+                <ShieldCheck className="h-4 w-4 text-green-600" />
+                <span>{t('payment:securePayment')}</span>
+              </div>
             </CardContent>
           </Card>
 

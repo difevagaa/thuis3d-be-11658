@@ -15,13 +15,20 @@
   "paymentMethod": "Select Your Payment Method",
   "methods": {
     "bankTransfer": "Bank Transfer",
-    "bankTransferDesc": "We will send you the bank details",
+    "bankTransferDesc": "We will send you the bank details for direct transfer",
     "creditCard": "Credit/Debit Card",
     "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
-    "paypalDesc": "Pay securely with PayPal",
-    "revolut": "Revolut",
-    "revolutDesc": "Credit/debit cards - Fast and secure payment"
+    "paypalDesc": "Pay securely with your PayPal account",
+    "revolut": "Card & Digital Payments",
+    "revolutDesc": "Pay with credit card, debit card or digital wallet",
+    "revolutBadges": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "bancontact": "Bancontact",
+      "googlePay": "Google Pay",
+      "applePay": "Apple Pay"
+    }
   },
   "methodDescriptions": {
     "bankTransfer": "Payment via direct bank transfer",
@@ -46,6 +53,10 @@
   "total": "Total",
   "noPaymentMethods": "No payment methods are available at this time. Please contact support.",
   "securePayment": "Your information is secure. We use SSL encryption.",
+  "securityNotice": {
+    "title": "Secure Payment",
+    "description": "We do not store any payment information, card numbers, or bank details. All payments are processed directly on the secure website of your chosen payment provider (PayPal, Bancontact, your bank, etc.). Your financial data is never shared with or stored by our store."
+  },
   "creatingOrder": "Creating your order...",
   "instructions": {
     "title": "Payment Instructions",
@@ -71,13 +82,13 @@
     "scanForDirectTransfer": "Scan for direct transfer",
     "fastRevolutPayment": "Fast payment with Revolut",
     "alternativePayment": "Alternative payment method",
-    "pendingWarning": "⚠️ Your order will remain pending until we receive payment.",
+    "pendingWarning": "Your order will remain pending until we receive payment.",
     "includeOrderNumber": "Please include the order number",
     "inTransferReference": "in the transfer reference.",
-    "cardSuccess": "✅ Your card payment has been processed successfully. You will receive a confirmation email shortly.",
+    "cardSuccess": "Your card payment has been processed successfully. You will receive a confirmation email shortly.",
     "paypalProcessing": "Your order is being processed. If you completed the payment in PayPal, you will receive confirmation soon.",
     "revolutProcessing": "Your order is being processed. If you completed the payment in Revolut, you will receive confirmation soon.",
-    "paymentPendingWarning": "⚠️ Your order will remain pending until we confirm payment.",
+    "paymentPendingWarning": "Your order will remain pending until we confirm payment.",
     "backToHome": "Back to Home",
     "viewMyOrders": "View My Orders"
   },

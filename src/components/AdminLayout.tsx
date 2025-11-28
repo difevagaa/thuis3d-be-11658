@@ -96,10 +96,10 @@ export const AdminLayout = ({
       const newValue = !prev;
       if (newValue) {
         document.documentElement.classList.add("grayscale");
-        toast.success("Modo blanco y negro activado");
+        i18nToast.success("success.bwModeEnabled");
       } else {
         document.documentElement.classList.remove("grayscale");
-        toast.success("Modo blanco y negro desactivado");
+        i18nToast.success("success.bwModeDisabled");
       }
       return newValue;
     });
@@ -108,22 +108,22 @@ export const AdminLayout = ({
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     if (!document.documentElement.requestFullscreen) {
-      toast.error("Tu navegador no soporta pantalla completa");
+      i18nToast.error("error.fullscreenNotSupported");
       return;
     }
     
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
-        toast.success("Pantalla completa activada");
+        i18nToast.success("success.fullscreenEnabled");
       }).catch((err) => {
         logger.error("Error entering fullscreen:", { error: err });
-        toast.error("No se pudo activar pantalla completa");
+        i18nToast.error("error.fullscreenActivationFailed");
       });
     } else {
       document.exitFullscreen().then(() => {
         setIsFullscreen(false);
-        toast.success("Pantalla completa desactivada");
+        i18nToast.success("success.fullscreenDisabled");
       }).catch((err) => {
         logger.error("Error exiting fullscreen:", { error: err });
       });
@@ -168,7 +168,7 @@ export const AdminLayout = ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Debes iniciar sesión");
+        i18nToast.error("error.mustLogin");
         navigate("/auth");
         return;
       }
@@ -180,14 +180,14 @@ export const AdminLayout = ({
         .maybeSingle();
       if (error) throw error;
       if (!data) {
-        toast.error("No tienes permisos de administrador");
+        i18nToast.error("error.noPermission");
         navigate("/");
         return;
       }
       setIsAdmin(true);
     } catch (error: unknown) {
       logger.error("Error checking admin access:", { error });
-      toast.error("Error al verificar permisos");
+      i18nToast.error("error.permissionVerifyFailed");
       navigate("/");
     } finally {
       setLoading(false);

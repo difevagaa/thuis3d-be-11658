@@ -157,14 +157,14 @@ export const ClientChatWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error("Debes iniciar sesión para enviar mensajes");
+        i18nToast.error("error.mustLoginToSendMessages");
         return;
       }
 
       let attachmentData: any[] = [];
       
       if (attachments.length > 0) {
-        toast.info("Subiendo archivos adjuntos...");
+        i18nToast.info("info.uploadingFiles");
         attachmentData = await uploadAttachments(attachments);
       }
 
@@ -182,7 +182,7 @@ export const ClientChatWidget = () => {
 
       if (error) throw error;
 
-      toast.success("Mensaje enviado exitosamente");
+      i18nToast.success("success.messageSent");
       setInput("");
       setAttachments([]);
       setUploadProgress({});

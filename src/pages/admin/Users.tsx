@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { UserPlus, Pencil, Trash2, Key, Eye, Clock, MapPin, Activity, Search, Users as UsersIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -164,14 +164,14 @@ export default function Users() {
       // Validate that selected role exists in available roles
       const roleExists = roles.some(r => r.value === selectedRole);
       if (!roleExists) {
-        toast.error("Rol inválido");
+        i18nToast.error("error.roleInvalid");
         return;
       }
 
       // Check if user already has this role
       const existingRole = selectedUser.user_roles?.find((r: any) => r.role === selectedRole);
       if (existingRole) {
-        toast.info("El usuario ya tiene este rol asignado");
+        i18nToast.info("info.userAlreadyHasRole");
         setSelectedUser(null);
         setSelectedRole("");
         return;
@@ -200,7 +200,7 @@ export default function Users() {
         if (insertError) throw insertError;
       }
 
-      toast.success("Rol asignado exitosamente");
+      i18nToast.success("success.roleAssigned");
       setSelectedUser(null);
       setSelectedRole("");
       loadData();
@@ -212,7 +212,7 @@ export default function Users() {
   const createUser = async () => {
     try {
       if (!newUser.email || !newUser.password || !newUser.full_name) {
-        toast.error("Por favor completa los campos obligatorios");
+        i18nToast.error("error.completeRequiredFields");
         return;
       }
 
@@ -244,7 +244,7 @@ export default function Users() {
 
         if (profileError) throw profileError;
 
-        toast.success("Usuario creado exitosamente");
+        i18nToast.success("success.userCreated");
         setNewUser({
           email: "",
           password: "",
@@ -326,7 +326,7 @@ export default function Users() {
         }
       }
 
-      toast.success("Usuario actualizado exitosamente");
+      i18nToast.success("success.userUpdated");
       setShowEditDialog(false);
       setEditingUser(null);
       loadData();
@@ -373,7 +373,7 @@ export default function Users() {
 
       if (error) throw error;
 
-      toast.success("Usuario eliminado exitosamente");
+      i18nToast.success("success.userDeleted");
       loadData();
     } catch (error: any) {
       toast.error("Error al eliminar usuario: " + (error.message || "Error desconocido"));

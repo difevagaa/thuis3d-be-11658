@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette } from "lucide-react";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
@@ -256,7 +256,7 @@ export default function SiteCustomizer() {
     const url = await uploadFile(file, 'customization');
     if (url) {
       setCustomization({ ...customization, [field]: url });
-      toast.success("Archivo subido exitosamente");
+      i18nToast.success("success.fileUploaded");
     }
   };
 
@@ -351,12 +351,12 @@ export default function SiteCustomizer() {
 
   const handleSave = async () => {
     if (!customization.site_name.trim()) {
-      toast.error("El nombre del sitio es obligatorio");
+      i18nToast.error("error.siteNameRequired");
       return;
     }
 
     if (!customization.company_name.trim()) {
-      toast.error("El nombre de la empresa es obligatorio");
+      i18nToast.error("error.companyNameRequired");
       return;
     }
 
@@ -399,7 +399,7 @@ export default function SiteCustomizer() {
 
       // Aplicar cambios CSS inmediatamente
       updateCSSVariables();
-      toast.success("Configuración guardada exitosamente");
+      i18nToast.success("success.configSaved");
       loadCustomization();
       loadSettings();
     } catch (error: any) {

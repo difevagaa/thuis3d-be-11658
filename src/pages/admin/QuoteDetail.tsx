@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
@@ -51,7 +51,7 @@ export default function QuoteDetail() {
       
       if (!quoteData) {
         logger.error('No quote found with id:', id);
-        toast.error("Cotización no encontrada");
+        i18nToast.error("error.quoteNotFound");
         setLoading(false);
         return;
       }
@@ -89,7 +89,7 @@ export default function QuoteDetail() {
     const pathToDownload = filePath || quote?.file_storage_path;
     
     if (!pathToDownload) {
-      toast.error("No hay archivo disponible");
+      i18nToast.error("error.noFileAvailable");
       return;
     }
 
@@ -109,10 +109,10 @@ export default function QuoteDetail() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast.success("Archivo descargado");
+      i18nToast.success("success.fileDownloaded");
     } catch (error: any) {
       logger.error("Error downloading file:", error);
-      toast.error("Error al descargar archivo");
+      i18nToast.error("error.downloadFailed");
     }
   };
 

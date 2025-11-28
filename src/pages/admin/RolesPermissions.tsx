@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Plus, Pencil, Trash2, Users, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { logger } from '@/lib/logger';
@@ -103,7 +103,7 @@ export default function RolesPermissions() {
       setRoleUsers(counts);
     } catch (error: any) {
       logger.error("Error loading roles:", error);
-      toast.error("Error al cargar roles");
+      i18nToast.error("error.rolesLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -147,7 +147,7 @@ export default function RolesPermissions() {
   const handleCreateRole = async () => {
     try {
       if (!newRole.name || !newRole.display_name) {
-        toast.error("Nombre y nombre visible son obligatorios");
+        i18nToast.error("error.roleNameRequired");
         return;
       }
 
@@ -171,20 +171,20 @@ export default function RolesPermissions() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un rol con ese nombre");
+          i18nToast.error("error.roleNameExists");
         } else {
           throw error;
         }
         return;
       }
 
-      toast.success("Rol creado exitosamente");
+      i18nToast.success("success.roleCreated");
       setDialogOpen(false);
       setNewRole({ name: "", display_name: "", description: "", allowed_pages: [] });
       loadRoles();
     } catch (error: any) {
       logger.error("Error creating role:", error);
-      toast.error("Error al crear rol");
+      i18nToast.error("error.roleSaveFailed");
     }
   };
 
@@ -203,7 +203,7 @@ export default function RolesPermissions() {
 
       if (error) throw error;
 
-      toast.success("Rol actualizado exitosamente");
+      i18nToast.success("success.roleUpdated");
       setEditingRole(null);
       loadRoles();
     } catch (error: any) {
@@ -223,11 +223,11 @@ export default function RolesPermissions() {
 
       if (error) throw error;
 
-      toast.success("Rol eliminado exitosamente");
+      i18nToast.success("success.roleDeleted");
       await loadRoles();
     } catch (error: any) {
       logger.error("Error deleting role:", error);
-      toast.error("Error al eliminar rol");
+      i18nToast.error("error.roleDeleteFailed");
     }
   };
 

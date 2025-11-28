@@ -139,7 +139,7 @@ const Auth = () => {
 
     try {
       if (!newPassword || newPassword.length < 6) {
-        toast.error("La contraseña debe tener al menos 6 caracteres");
+        i18nToast.error("error.passwordMinLength");
         return;
       }
 

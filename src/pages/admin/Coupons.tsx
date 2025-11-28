@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -79,7 +79,7 @@ export default function Coupons() {
       if (error) throw error;
       setCoupons(data || []);
     } catch (error) {
-      toast.error("Error al cargar cupones");
+      i18nToast.error("error.couponsLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -87,12 +87,12 @@ export default function Coupons() {
 
   const createCoupon = async () => {
     if (!newCoupon.code.trim()) {
-      toast.error("El código del cupón es obligatorio");
+      i18nToast.error("error.couponCodeRequired");
       return;
     }
 
     if (newCoupon.discount_value <= 0) {
-      toast.error("El valor del descuento debe ser mayor a 0");
+      i18nToast.error("error.couponDiscountRequired");
       return;
     }
 
@@ -106,12 +106,12 @@ export default function Coupons() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un cupón con ese código");
+          i18nToast.error("error.couponCodeExists");
           return;
         }
         throw error;
       }
-      toast.success("Cupón creado exitosamente");
+      i18nToast.success("success.couponCreated");
       setNewCoupon({
         code: "",
         discount_type: "percentage",
@@ -154,12 +154,12 @@ export default function Coupons() {
 
   const updateCoupon = async () => {
     if (!editingCoupon?.code.trim()) {
-      toast.error("El código del cupón es obligatorio");
+      i18nToast.error("error.couponCodeRequired");
       return;
     }
 
     if (editingCoupon.discount_value <= 0) {
-      toast.error("El valor del descuento debe ser mayor a 0");
+      i18nToast.error("error.couponDiscountRequired");
       return;
     }
 
@@ -182,13 +182,13 @@ export default function Coupons() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un cupón con ese código");
+          i18nToast.error("error.couponCodeExists");
           return;
         }
         throw error;
       }
       
-      toast.success("Cupón actualizado exitosamente");
+      i18nToast.success("success.couponUpdated");
       setIsEditDialogOpen(false);
       setEditingCoupon(null);
       await loadCoupons();
@@ -208,10 +208,10 @@ export default function Coupons() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Cupón eliminado exitosamente");
+      i18nToast.success("success.couponDeleted");
       await loadCoupons();
     } catch (error) {
-      toast.error("Error al eliminar cupón");
+      i18nToast.error("error.couponDeleteFailed");
     }
   };
 

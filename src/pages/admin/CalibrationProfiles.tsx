@@ -79,7 +79,7 @@ export default function CalibrationProfiles() {
       if (calError) throw calError;
 
       if (!calibrations || calibrations.length < 2) {
-        toast.error('Se necesitan al menos 2 calibraciones activas para generar perfiles');
+        i18nToast.error("error.calibrationProfilesMinRequired");
         return;
       }
 

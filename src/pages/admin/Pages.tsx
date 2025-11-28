@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Pencil } from "lucide-react";
@@ -56,7 +56,7 @@ export default function Pages() {
       if (error) throw error;
       setPages(data || []);
     } catch (error) {
-      toast.error("Error al cargar páginas");
+      i18nToast.error("error.pageLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export default function Pages() {
 
   const handleSave = async () => {
     if (!pageForm.title.trim()) {
-      toast.error("El título de la página es obligatorio");
+      i18nToast.error("error.pageTitleRequired");
       return;
     }
 
@@ -85,7 +85,7 @@ export default function Pages() {
     }
 
     if (!pageForm.content.trim()) {
-      toast.error("El contenido de la página es obligatorio");
+      i18nToast.error("error.pageContentRequired");
       return;
     }
 
@@ -99,12 +99,12 @@ export default function Pages() {
 
         if (error) {
           if (error.code === '23505') {
-            toast.error("Ya existe una página con ese slug");
+            i18nToast.error("error.pageSlugExists");
             return;
           }
           throw error;
         }
-        toast.success("Página actualizada exitosamente");
+        i18nToast.success("success.pageUpdated");
       } else {
         // Create
         const { error } = await supabase
@@ -113,12 +113,12 @@ export default function Pages() {
 
         if (error) {
           if (error.code === '23505') {
-            toast.error("Ya existe una página con ese slug");
+            i18nToast.error("error.pageSlugExists");
             return;
           }
           throw error;
         }
-        toast.success("Página creada exitosamente");
+        i18nToast.success("success.pageCreated");
       }
 
       setEditingPage(null);
@@ -173,7 +173,7 @@ export default function Pages() {
         ...pageForm, 
         content: (pageForm.content || '') + imgHtml
       });
-      toast.success("Imagen subida exitosamente");
+      i18nToast.success("success.imageSaved");
     }
   };
 
@@ -185,10 +185,10 @@ export default function Pages() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Página movida a la papelera");
+      i18nToast.success("success.pageDeleted");
       loadPages();
     } catch (error) {
-      toast.error("Error al eliminar página");
+      i18nToast.error("error.pageDeleteFailed");
     }
   };
 

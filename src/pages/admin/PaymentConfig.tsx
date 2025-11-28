@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { CreditCard, Banknote, Upload, X, Building2 } from "lucide-react";
 
 export default function PaymentConfig() {
@@ -77,7 +77,7 @@ export default function PaymentConfig() {
       }
     } catch (error) {
       logger.error("Error loading config:", error);
-      toast.error("Error al cargar configuración");
+      i18nToast.error("error.configLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function PaymentConfig() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     if (paymentImages.length >= 3) {
-      toast.error("Máximo 3 imágenes permitidas");
+      i18nToast.error("error.maxImagesReached", { max: 3 });
       return;
     }
 
@@ -109,10 +109,10 @@ export default function PaymentConfig() {
         .getPublicUrl(filePath);
 
       setPaymentImages([...paymentImages, publicUrl]);
-      toast.success("Imagen cargada correctamente");
+      i18nToast.success("success.imageSaved");
     } catch (error: any) {
       logger.error("Error uploading:", error);
-      toast.error("Error al cargar imagen");
+      i18nToast.error("error.imageUploadFailed");
     } finally {
       setUploading(false);
     }
@@ -217,7 +217,7 @@ export default function PaymentConfig() {
         }
       }
 
-      toast.success("Configuración de pagos guardada exitosamente");
+      i18nToast.success("success.paymentConfigSaved");
       await loadConfig();
     } catch (error: any) {
       logger.error("Error saving payment config:", error);

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { logger } from '@/lib/logger';
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
       await loadVisitorStats();
     } catch (error) {
       logger.error("Error loading dashboard:", error);
-      toast.error("Error al cargar dashboard");
+      i18nToast.error("error.dashboardLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
   const handleAddExpense = async () => {
     try {
       if (!newExpense.concept || newExpense.amount <= 0) {
-        toast.error("Por favor completa todos los campos");
+        i18nToast.error("error.completeRequiredFields");
         return;
       }
 
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      toast.success("Gasto registrado exitosamente");
+      i18nToast.success("success.expenseRegistered");
       setShowExpenseDialog(false);
       setNewExpense({ concept: "", amount: 0, date: new Date().toISOString().split('T')[0] });
       loadDashboardData();

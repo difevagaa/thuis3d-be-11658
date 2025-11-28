@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, Key, Trash2 } from "lucide-react";
@@ -45,7 +45,7 @@ export default function PinManagement() {
       setAdmins(profiles || []);
     } catch (error: any) {
       console.error("Error loading admins:", error);
-      toast.error("Error al cargar administradores");
+      i18nToast.error("error.adminsLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -61,17 +61,17 @@ export default function PinManagement() {
   const savePIN = async () => {
     try {
       if (!newPin || newPin.length !== 4) {
-        toast.error("El PIN debe tener exactamente 4 dígitos");
+        i18nToast.error("error.pinInvalid");
         return;
       }
 
       if (!/^\d{4}$/.test(newPin)) {
-        toast.error("El PIN solo puede contener números");
+        i18nToast.error("error.pinOnlyNumbers");
         return;
       }
 
       if (newPin !== confirmPin) {
-        toast.error("Los PIN no coinciden");
+        i18nToast.error("error.pinMismatch");
         return;
       }
 
@@ -82,12 +82,12 @@ export default function PinManagement() {
 
       if (error) throw error;
 
-      toast.success("PIN configurado exitosamente");
+      i18nToast.success("success.pinConfigured");
       setShowDialog(false);
       loadAdmins();
     } catch (error: any) {
       console.error("Error saving PIN:", error);
-      toast.error("Error al guardar PIN");
+      i18nToast.error("error.pinSaveFailed");
     }
   };
 
@@ -104,11 +104,11 @@ export default function PinManagement() {
 
       if (error) throw error;
 
-      toast.success("PIN eliminado exitosamente");
+      i18nToast.success("success.pinDeleted");
       loadAdmins();
     } catch (error: any) {
       console.error("Error resetting PIN:", error);
-      toast.error("Error al eliminar PIN");
+      i18nToast.error("error.pinDeleteFailed");
     }
   };
 

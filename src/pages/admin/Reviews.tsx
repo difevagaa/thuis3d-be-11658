@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Star, Trash2, Ban, Check, X } from "lucide-react";
@@ -78,10 +78,10 @@ export default function Reviews() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Reseña aprobada");
+      i18nToast.success("success.reviewApproved");
       await loadReviews();
     } catch (error) {
-      toast.error("Error al aprobar reseña");
+      i18nToast.error("error.reviewApproveFailed");
     }
   };
 
@@ -93,10 +93,10 @@ export default function Reviews() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Reseña rechazada");
+      i18nToast.success("success.reviewRejected");
       await loadReviews();
     } catch (error) {
-      toast.error("Error al rechazar reseña");
+      i18nToast.error("error.reviewRejectFailed");
     }
   };
 
@@ -110,10 +110,10 @@ export default function Reviews() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Reseña eliminada");
+      i18nToast.success("success.reviewDeleted");
       await loadReviews();
     } catch (error) {
-      toast.error("Error al eliminar reseña");
+      i18nToast.error("error.reviewDeleteFailed");
     }
   };
 
@@ -131,11 +131,11 @@ export default function Reviews() {
         .eq("id", editingReview.id);
 
       if (error) throw error;
-      toast.success("Reseña actualizada");
+      i18nToast.success("success.reviewUpdated");
       setEditingReview(null);
       await loadReviews();
     } catch (error) {
-      toast.error("Error al actualizar reseña");
+      i18nToast.error("error.reviewUpdateFailed");
     }
   };
 
@@ -150,7 +150,7 @@ export default function Reviews() {
       toast.success(currentlyBlocked ? "Usuario desbloqueado para reseñas" : "Usuario bloqueado para reseñas");
       await loadReviews();
     } catch (error) {
-      toast.error("Error al cambiar estado de bloqueo");
+      i18nToast.error("error.blockStatusFailed");
     }
   };
 

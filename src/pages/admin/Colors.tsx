@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Pencil, Trash2 } from "lucide-react";
@@ -65,7 +65,7 @@ export default function Colors() {
       if (error) throw error;
       setColors(data || []);
     } catch (error) {
-      toast.error("Error al cargar colores");
+      i18nToast.error("error.colorsLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function Colors() {
 
   const createColor = async () => {
     if (!newColor.name.trim()) {
-      toast.error("El nombre del color es obligatorio");
+      i18nToast.error("error.colorNameRequired");
       return;
     }
 
@@ -84,12 +84,12 @@ export default function Colors() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un color con ese nombre");
+          i18nToast.error("error.colorNameExists");
           return;
         }
         throw error;
       }
-      toast.success("Color creado exitosamente");
+      i18nToast.success("success.colorCreated");
       setNewColor({ name: "", hex_code: "#000000" });
       await loadColors();
     } catch (error: any) {
@@ -109,7 +109,7 @@ export default function Colors() {
         .eq("id", editingColor.id);
 
       if (error) throw error;
-      toast.success("Color actualizado exitosamente");
+      i18nToast.success("success.colorUpdated");
       setEditingColor(null);
       await loadColors();
     } catch (error) {
@@ -127,10 +127,10 @@ export default function Colors() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Color movido a la papelera");
+      i18nToast.success("success.colorDeleted");
       await loadColors();
     } catch (error) {
-      toast.error("Error al eliminar color");
+      i18nToast.error("error.colorDeleteFailed");
     }
   };
 

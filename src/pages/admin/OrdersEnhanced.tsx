@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
 import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
 import { Plus, Search, ShoppingCart, Eye, Pencil } from "lucide-react";
@@ -59,7 +59,7 @@ export default function OrdersEnhanced() {
       setOrders(ordersRes.data || []);
       setStatuses(statusesRes.data || []);
     } catch (error) {
-      toast.error("Error al cargar pedidos");
+      i18nToast.error("error.ordersLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -200,7 +200,7 @@ export default function OrdersEnhanced() {
           sender_name: existingCard.sender_name
         });
 
-        toast.success("Email de tarjeta regalo enviado");
+        i18nToast.success("success.giftCardEmailSent");
       }
     } catch (error) {
       console.error("Error processing gift card:", error);

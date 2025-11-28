@@ -34,7 +34,7 @@ const Admin = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error("Debes iniciar sesión");
+        i18nToast.error("error.mustLogin");
         navigate("/auth");
         return;
       }
@@ -49,14 +49,14 @@ const Admin = () => {
       if (error) throw error;
 
       if (!data) {
-        toast.error("No tienes permisos de administrador");
+        i18nToast.error("error.noPermission");
         navigate("/");
         return;
       }
 
       setIsAdmin(true);
     } catch (error: any) {
-      toast.error("Error al verificar permisos");
+      i18nToast.error("error.permissionVerifyFailed");
       navigate("/");
     } finally {
       setLoading(false);

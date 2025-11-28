@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { FilePlus, Pencil, Trash2, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -87,7 +87,7 @@ export default function Quotes() {
       setStatuses(statusesData.data || []);
       setUsers(usersData.data || []);
     } catch (error: any) {
-      toast.error("Error al cargar cotizaciones");
+      i18nToast.error("error.quotesLoadFailed");
     } finally {
       setLoading(false);
     }
@@ -160,7 +160,7 @@ export default function Quotes() {
           toast.warning('Cotización aprobada, pero la automatización falló. Crea la factura manualmente.');
         }
       } else {
-        toast.success("Cotización actualizada");
+        i18nToast.success("success.quoteUpdated");
       }
 
       setEditingQuote(null);
@@ -181,10 +181,10 @@ export default function Quotes() {
 
       if (error) throw error;
 
-      toast.success("Cotización movida a la papelera");
+      i18nToast.success("success.quoteDeleted");
       await loadData();
     } catch (error: any) {
-      toast.error("Error al eliminar cotización");
+      i18nToast.error("error.quoteDeleteFailed");
     }
   };
 

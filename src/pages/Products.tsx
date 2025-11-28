@@ -139,7 +139,7 @@ const Products = () => {
       setCategories(categoriesRes.data || []);
       setMaterials(materialsRes.data || []);
     } catch (error) {
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     }
   };
 
@@ -147,7 +147,7 @@ const Products = () => {
     const code = productCodeSearch.trim().toUpperCase();
     
     if (!code) {
-      toast.error("Por favor ingresa un código de producto");
+      i18nToast.error("error.enterProductCode");
       return;
     }
 
@@ -161,7 +161,7 @@ const Products = () => {
         .single();
 
       if (error || !productData) {
-        toast.error("No se encontró ningún producto con ese código");
+        i18nToast.error("error.productNotFound");
         return;
       }
       
@@ -170,7 +170,7 @@ const Products = () => {
       setSearchedByCode(true);
       toast.success(`Producto encontrado: ${productData.name}`);
     } catch (error) {
-      toast.error("Error al buscar el producto");
+      i18nToast.error("error.productSearchFailed");
     }
   };
 
@@ -178,7 +178,7 @@ const Products = () => {
     setProductCodeSearch("");
     setSearchedByCode(false);
     loadData(); // Recargar productos normales
-    toast.info("Búsqueda por código eliminada");
+    i18nToast.info("info.codeSearchCleared");
   };
 
   const filterAndSortProducts = () => {

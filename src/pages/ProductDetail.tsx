@@ -152,7 +152,7 @@ const ProductDetail = () => {
 
       // Los materiales y colores ya están cargados por el hook useMaterialColors
     } catch (error: unknown) {
-      toast.error("Error al cargar el producto");
+      i18nToast.error("error.productLoadFailed");
       navigate("/productos");
     } finally {
       setLoading(false);

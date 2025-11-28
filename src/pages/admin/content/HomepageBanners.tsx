@@ -64,7 +64,7 @@ export default function HomepageBanners() {
         table: 'homepage_banners'
       }, () => {
         loadBanners();
-        toast.info("Banners actualizados");
+        i18nToast.info("info.bannersUpdated");
       })
       .subscribe();
 
@@ -116,20 +116,20 @@ export default function HomepageBanners() {
     try {
       // Validación básica
       if (!formData.title || formData.title.trim() === '') {
-        toast.error("El título es obligatorio");
+        i18nToast.error("error.titleRequired");
         return;
       }
 
       // Si usa múltiples imágenes, validar que al menos haya una
       if (useMultipleImages) {
         if (bannerImages.length === 0) {
-          toast.error("Debes agregar al menos una imagen al carrusel");
+          i18nToast.error("error.mustAddCarouselImages");
           return;
         }
       } else {
         // Si usa imagen única, validar que exista
         if (!formData.image_url || formData.image_url.trim() === '') {
-          toast.error("Debes cargar una imagen para el banner");
+          i18nToast.error("error.bannerImageRequired");
           return;
         }
       }
@@ -233,7 +233,7 @@ export default function HomepageBanners() {
           }
         }
         
-        toast.success("Banner actualizado exitosamente");
+        i18nToast.success("success.bannerUpdated");
       } else {
         const { data, error } = await supabase
           .from("homepage_banners")
@@ -285,7 +285,7 @@ export default function HomepageBanners() {
           console.log("✅ Imágenes guardadas:", insertedImages?.length || imagesToInsert.length);
         }
         
-        toast.success("Banner creado exitosamente");
+        i18nToast.success("success.bannerCreated");
       }
       
       // Solo cerrar el modal y limpiar si todo salió bien
@@ -354,10 +354,10 @@ export default function HomepageBanners() {
         .eq("id", id);
       
       if (error) throw error;
-      toast.success("Banner eliminado");
+      i18nToast.success("success.bannerDeleted");
       loadBanners();
     } catch (error) {
-      toast.error("Error al eliminar banner");
+      i18nToast.error("error.bannerDeleteFailed");
     }
   };
 
@@ -366,7 +366,7 @@ export default function HomepageBanners() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Por favor selecciona un archivo de imagen");
+      i18nToast.error("error.invalidImageFormat");
       return;
     }
 
@@ -376,7 +376,7 @@ export default function HomepageBanners() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.error("❌ Error de autenticación:", userError);
-        toast.error("Debes estar autenticado para subir imágenes");
+        i18nToast.error("error.mustBeAuthenticatedToUploadImages");
         return;
       }
 
@@ -407,7 +407,7 @@ export default function HomepageBanners() {
       console.log("🔗 URL pública:", publicUrl);
 
       setFormData({ ...formData, image_url: publicUrl });
-      toast.success("Imagen cargada exitosamente");
+      i18nToast.success("success.imageSaved");
     } catch (error: any) {
       console.error("❌ Error completo:", error);
       toast.error(`Error al cargar la imagen: ${error.message || 'Error desconocido'}`);
@@ -421,12 +421,12 @@ export default function HomepageBanners() {
     if (!file) return;
 
     if (!file.type.startsWith("video/")) {
-      toast.error("Por favor selecciona un archivo de video");
+      i18nToast.error("error.invalidVideoFormat");
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      toast.error("El video no debe superar 20MB");
+      i18nToast.error("error.videoTooLarge");
       return;
     }
 
@@ -436,7 +436,7 @@ export default function HomepageBanners() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.error("❌ Error de autenticación:", userError);
-        toast.error("Debes estar autenticado para subir videos");
+        i18nToast.error("error.mustBeAuthenticatedToUploadVideos");
         return;
       }
 
@@ -467,7 +467,7 @@ export default function HomepageBanners() {
       console.log("🔗 URL pública:", publicUrl);
 
       setFormData({ ...formData, video_url: publicUrl });
-      toast.success("Video cargado exitosamente");
+      i18nToast.success("success.videoSaved");
     } catch (error: any) {
       console.error("❌ Error completo:", error);
       toast.error(`Error al cargar el video: ${error.message || 'Error desconocido'}`);
@@ -508,7 +508,7 @@ export default function HomepageBanners() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.error("❌ Error de autenticación:", userError);
-        toast.error("Debes estar autenticado para subir imágenes");
+        i18nToast.error("error.mustBeAuthenticatedToUploadImages");
         return;
       }
 

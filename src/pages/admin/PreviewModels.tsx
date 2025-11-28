@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 
 interface PreviewModel {
@@ -79,7 +79,7 @@ export default function PreviewModels() {
       if (error) throw error;
       setModels(data || []);
     } catch (error: any) {
-      toast.error("Error al cargar modelos");
+      i18nToast.error("error.modelsLoadFailed");
       console.error(error);
     } finally {
       setLoading(false);
@@ -104,21 +104,21 @@ export default function PreviewModels() {
           .eq('id', editingModel.id);
 
         if (error) throw error;
-        toast.success("Modelo actualizado");
+        i18nToast.success("success.modelUpdated");
       } else {
         const { error } = await supabase
           .from('preview_3d_models')
           .insert(modelData);
 
         if (error) throw error;
-        toast.success("Modelo creado");
+        i18nToast.success("success.modelCreated");
       }
 
       setDialogOpen(false);
       resetForm();
       await loadModels();
     } catch (error: any) {
-      toast.error("Error al guardar modelo");
+      i18nToast.error("error.modelSaveFailed");
       console.error(error);
     }
   };
@@ -146,10 +146,10 @@ export default function PreviewModels() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success("Modelo eliminado");
+      i18nToast.success("success.modelDeleted");
       await loadModels();
     } catch (error: any) {
-      toast.error("Error al eliminar modelo");
+      i18nToast.error("error.modelDeleteFailed");
       console.error(error);
     }
   };
@@ -165,7 +165,7 @@ export default function PreviewModels() {
       toast.success(currentState ? "Modelo desactivado" : "Modelo activado");
       loadModels();
     } catch (error: any) {
-      toast.error("Error al cambiar estado");
+      i18nToast.error("error.calibrationProfileToggleFailed");
       console.error(error);
     }
   };

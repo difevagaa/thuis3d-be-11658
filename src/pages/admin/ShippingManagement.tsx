@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Plus, Trash2, Save, Edit, X, MapPin, CheckSquare, Square } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -133,7 +133,7 @@ export default function ShippingManagement() {
       if (zonesRes.data) setZones(zonesRes.data);
     } catch (error) {
       logger.error("Error loading data:", error);
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function ShippingManagement() {
   const saveSettings = async () => {
     try {
       if (!settings) {
-        toast.error("No hay configuración para guardar");
+        i18nToast.error("error.noConfigToSave");
         return;
       }
 
@@ -181,10 +181,10 @@ export default function ShippingManagement() {
         }
       }
 
-      toast.success("Configuración guardada");
+      i18nToast.success("success.configSaved");
     } catch (error) {
       logger.error("Error saving settings:", error);
-      toast.error("Error al guardar configuración");
+      i18nToast.error("error.configSaveFailed");
     }
   };
 
@@ -196,11 +196,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("País actualizado");
+      i18nToast.success("success.countryUpdated");
       loadData();
     } catch (error) {
       logger.error("Error updating country:", error);
-      toast.error("Error al actualizar país");
+      i18nToast.error("error.countrySaveFailed");
     }
   };
 
@@ -214,11 +214,11 @@ export default function ShippingManagement() {
         });
 
       if (error) throw error;
-      toast.success("País añadido correctamente");
+      i18nToast.success("success.countryAdded");
       loadData();
     } catch (error) {
       logger.error("Error adding country:", error);
-      toast.error("Error al añadir país");
+      i18nToast.error("error.countrySaveFailed");
     }
   };
 
@@ -232,11 +232,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("País eliminado correctamente");
+      i18nToast.success("success.countryDeleted");
       loadData();
     } catch (error) {
       logger.error("Error deleting country:", error);
-      toast.error("Error al eliminar país");
+      i18nToast.error("error.countryDeleteFailed");
     }
   };
 
@@ -261,11 +261,11 @@ export default function ShippingManagement() {
         });
 
       if (error) throw error;
-      toast.success("Código postal añadido");
+      i18nToast.success("success.postalCodeAdded");
       loadData();
     } catch (error) {
       logger.error("Error adding postal code:", error);
-      toast.error("Error al añadir código postal");
+      i18nToast.error("error.postalCodeSaveFailed");
     }
   };
 
@@ -288,13 +288,13 @@ export default function ShippingManagement() {
         .eq("id", data.id);
 
       if (error) throw error;
-      toast.success("Código postal actualizado");
+      i18nToast.success("success.postalCodeUpdated");
       setEditingPostalCodeId(null);
       setEditingPostalCodeData(null);
       loadData();
     } catch (error) {
       logger.error("Error updating postal code:", error);
-      toast.error("Error al actualizar código postal");
+      i18nToast.error("error.postalCodeSaveFailed");
     }
   };
 
@@ -320,11 +320,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Código postal eliminado");
+      i18nToast.success("success.postalCodeDeleted");
       loadData();
     } catch (error) {
       logger.error("Error deleting postal code:", error);
-      toast.error("Error al eliminar código postal");
+      i18nToast.error("error.postalCodeDeleteFailed");
     }
   };
 
@@ -333,12 +333,12 @@ export default function ShippingManagement() {
     try {
       // Validate required fields
       if (!zoneFormData.zone_name || zoneFormData.zone_name.trim() === '') {
-        toast.error('El nombre de la zona es obligatorio');
+        i18nToast.error("error.zoneNameRequired");
         return;
       }
 
       if (!zoneFormData.country || zoneFormData.country.trim() === '') {
-        toast.error('El país es obligatorio');
+        i18nToast.error("error.countryRequired");
         return;
       }
 
@@ -348,17 +348,17 @@ export default function ShippingManagement() {
       const minimumCost = parseFloat(zoneFormData.minimum_cost);
 
       if (isNaN(baseCost) || baseCost < 0) {
-        toast.error('El costo base debe ser un número válido mayor o igual a 0');
+        i18nToast.error("error.baseCostInvalid");
         return;
       }
 
       if (isNaN(costPerKg) || costPerKg < 0) {
-        toast.error('El costo por kg debe ser un número válido mayor o igual a 0');
+        i18nToast.error("error.costPerKgInvalid");
         return;
       }
 
       if (isNaN(minimumCost) || minimumCost < 0) {
-        toast.error('El costo mínimo debe ser un número válido mayor o igual a 0');
+        i18nToast.error("error.minimumCostInvalid");
         return;
       }
 
@@ -504,7 +504,7 @@ export default function ShippingManagement() {
 
   const handleBulkEdit = async () => {
     if (selectedZones.length === 0) {
-      toast.error('Selecciona al menos una zona');
+      i18nToast.error("error.selectAtLeastOneZone");
       return;
     }
 
@@ -522,7 +522,7 @@ export default function ShippingManagement() {
       }
 
       if (Object.keys(updates).length === 0) {
-        toast.error('Ingresa al menos un valor para actualizar');
+        i18nToast.error("error.enterAtLeastOneValue");
         return;
       }
 

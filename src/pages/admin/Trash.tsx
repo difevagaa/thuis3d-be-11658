@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { RotateCcw, Trash2, ShieldAlert, Clock, User, Database, Calendar, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -190,10 +190,10 @@ export default function Trash() {
           p_table_name: pendingAction.table,
           p_record_id: pendingAction.id
         });
-        toast.success("Elemento restaurado exitosamente");
+        i18nToast.success("success.itemRestored");
       } else {
         // Eliminar permanentemente
-        toast.success("Elemento eliminado permanentemente");
+        i18nToast.success("success.itemPermanentlyDeleted");
       }
       
       setShowPinDialog(false);

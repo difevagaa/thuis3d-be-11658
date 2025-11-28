@@ -15,13 +15,20 @@
   "paymentMethod": "Selecciona tu Método de Pago",
   "methods": {
     "bankTransfer": "Transferencia Bancaria",
-    "bankTransferDesc": "Te enviaremos los datos bancarios",
+    "bankTransferDesc": "Te enviaremos los datos bancarios para transferencia directa",
     "creditCard": "Tarjeta de Crédito/Débito",
     "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
-    "paypalDesc": "Pagar de forma segura con PayPal",
-    "revolut": "Revolut",
-    "revolutDesc": "Tarjetas crédito/débito - Pago rápido y seguro"
+    "paypalDesc": "Paga de forma segura con tu cuenta PayPal",
+    "revolut": "Tarjetas y Pagos Digitales",
+    "revolutDesc": "Paga con tarjeta de crédito, débito o billetera digital",
+    "revolutBadges": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "bancontact": "Bancontact",
+      "googlePay": "Google Pay",
+      "applePay": "Apple Pay"
+    }
   },
   "methodDescriptions": {
     "bankTransfer": "Pago mediante transferencia bancaria directa",
@@ -46,6 +53,10 @@
   "total": "Total",
   "noPaymentMethods": "No hay métodos de pago disponibles en este momento. Por favor, contacta con soporte.",
   "securePayment": "Tu información está segura. Usamos encriptación SSL.",
+  "securityNotice": {
+    "title": "Pago Seguro",
+    "description": "No almacenamos ninguna información de pago, números de tarjeta ni datos bancarios. Todos los pagos se procesan directamente en la página web segura del proveedor de pago que elijas (PayPal, Bancontact, tu banco, etc.). Tus datos financieros nunca son compartidos ni almacenados por nuestra tienda."
+  },
   "creatingOrder": "Creando tu pedido...",
   "instructions": {
     "title": "Instrucciones de Pago",
@@ -71,13 +82,13 @@
     "scanForDirectTransfer": "Escanea para transferencia directa",
     "fastRevolutPayment": "Pago rápido con Revolut",
     "alternativePayment": "Método de pago alternativo",
-    "pendingWarning": "⚠️ Tu pedido estará en estado pendiente hasta que recibamos el pago.",
+    "pendingWarning": "Tu pedido estará en estado pendiente hasta que recibamos el pago.",
     "includeOrderNumber": "Por favor, incluye el número de pedido",
     "inTransferReference": "en el concepto de la transferencia.",
-    "cardSuccess": "✅ Tu pago con tarjeta ha sido procesado exitosamente. Recibirás una confirmación por correo electrónico en breve.",
+    "cardSuccess": "Tu pago con tarjeta ha sido procesado exitosamente. Recibirás una confirmación por correo electrónico en breve.",
     "paypalProcessing": "Tu pedido está siendo procesado. Si completaste el pago en PayPal, recibirás una confirmación pronto.",
     "revolutProcessing": "Tu pedido está siendo procesado. Si completaste el pago en Revolut, recibirás una confirmación pronto.",
-    "paymentPendingWarning": "⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.",
+    "paymentPendingWarning": "Tu pedido estará en estado pendiente hasta que confirmemos el pago.",
     "backToHome": "Volver al Inicio",
     "viewMyOrders": "Ver Mis Pedidos"
   },

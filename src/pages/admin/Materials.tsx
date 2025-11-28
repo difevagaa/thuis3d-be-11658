@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Pencil, Trash2 } from "lucide-react";
@@ -74,7 +74,7 @@ export default function Materials() {
       setMaterials(materialsRes.data || []);
       setColors(colorsRes.data || []);
     } catch (error) {
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export default function Materials() {
 
   const createMaterial = async () => {
     if (!newMaterial.name.trim()) {
-      toast.error("El nombre del material es obligatorio");
+      i18nToast.error("error.materialNameRequired");
       return;
     }
 
@@ -107,12 +107,12 @@ export default function Materials() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("Ya existe un material con ese nombre");
+          i18nToast.error("error.materialNameExists");
           return;
         }
         throw error;
       }
-      toast.success("Material creado exitosamente");
+      i18nToast.success("success.materialCreated");
       setNewMaterial({ name: "", description: "", cost: 0 });
       await loadData();
     } catch (error: any) {
@@ -154,7 +154,7 @@ export default function Materials() {
         if (colorsError) throw colorsError;
       }
 
-      toast.success("Material actualizado exitosamente");
+      i18nToast.success("success.materialUpdated");
       setEditingMaterial(null);
       setSelectedColors([]);
       await loadData();
@@ -173,10 +173,10 @@ export default function Materials() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Material movido a la papelera");
+      i18nToast.success("success.materialDeleted");
       await loadData();
     } catch (error) {
-      toast.error("Error al eliminar material");
+      i18nToast.error("error.materialDeleteFailed");
     }
   };
 

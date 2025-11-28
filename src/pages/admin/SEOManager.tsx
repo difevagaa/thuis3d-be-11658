@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Search, TrendingUp, FileText, BarChart3, Link2, AlertCircle, CheckCircle, RefreshCw, CheckCircle2, HelpCircle, Sparkles, Zap, Target, Eye, Globe2, Settings2, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -430,7 +430,7 @@ export default function SEOManager() {
         });
 
       if (error) throw error;
-      toast.success("Configuración SEO guardada");
+      i18nToast.success("success.seoConfigSaved");
       
       // Log audit
       await supabase.from("seo_audit_log").insert({
@@ -441,7 +441,7 @@ export default function SEOManager() {
       });
     } catch (error: unknown) {
       logger.error("Error saving settings:", { error });
-      toast.error("Error al guardar configuración");
+      i18nToast.error("error.configSaveFailed");
     }
   };
 
@@ -669,7 +669,7 @@ export default function SEOManager() {
 
   const generateMetaTags = async () => {
     try {
-      toast.info("Generando meta tags automáticamente...");
+      i18nToast.info("info.generatingMetaTags");
       
       // Call database function to generate meta tags
       const { data: generatedCount, error } = await supabase.rpc("generate_meta_tags_automatically");
@@ -724,7 +724,7 @@ export default function SEOManager() {
       toast.success(`Palabra clave agregada (${newKeywordLanguage.toUpperCase()})`);
     } catch (error: unknown) {
       logger.error("Error adding keyword:", { error });
-      toast.error("Error al agregar palabra clave");
+      i18nToast.error("error.keywordAddFailed");
     }
   };
 
@@ -752,16 +752,16 @@ export default function SEOManager() {
 
       if (error) throw error;
       await loadData();
-      toast.success("Palabra clave eliminada");
+      i18nToast.success("success.keywordDeleted");
     } catch (error: unknown) {
       logger.error("Error deleting keyword:", { error });
-      toast.error("Error al eliminar palabra clave");
+      i18nToast.error("error.keywordDeleteFailed");
     }
   };
 
   const runSeoAudit = async () => {
     try {
-      toast.info("Ejecutando auditoría SEO avanzada...");
+      i18nToast.info("info.seoAuditRunning");
       
       const recommendations: string[] = [];
       let auditScore = 100;
@@ -870,20 +870,20 @@ export default function SEOManager() {
       toast.success(`Auditoría completada - Puntuación: ${finalScore}/100`);
     } catch (error: unknown) {
       logger.error("Error running audit:", { error });
-      toast.error("Error al ejecutar auditoría");
+      i18nToast.error("error.seoAuditFailed");
     }
   };
 
   const generateSitemap = async () => {
     try {
-      toast.info("Generando sitemap...");
+      i18nToast.info("info.generatingSitemap");
       
       // This would call an edge function to generate sitemap
       const { error } = await supabase.functions.invoke("generate-sitemap");
       
       if (error) throw error;
       
-      toast.success("Sitemap generado exitosamente");
+      i18nToast.success("success.sitemapGenerated");
       
       await supabase.from("seo_audit_log").insert({
         audit_type: "sitemap",
@@ -892,13 +892,13 @@ export default function SEOManager() {
       });
     } catch (error: unknown) {
       logger.error("Error generating sitemap:", { error });
-      toast.error("Error al generar sitemap");
+      i18nToast.error("error.seoSitemapFailed");
     }
   };
 
   const verifyConfiguration = async () => {
     try {
-      toast.info("Verificando configuración SEO y Google Analytics...");
+      i18nToast.info("info.verifySeoConfig");
       
       const issues: string[] = [];
       const successes: string[] = [];
@@ -1049,7 +1049,7 @@ export default function SEOManager() {
       }
     } catch (error: unknown) {
       logger.error("Error verifying configuration:", { error });
-      toast.error("Error al verificar configuración");
+      i18nToast.error("error.seoVerifyFailed");
     }
   };
 

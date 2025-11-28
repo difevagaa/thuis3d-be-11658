@@ -191,7 +191,7 @@ export default function AdminNotificationBell() {
         .eq("is_read", false);
       
       loadNotifications();
-      toast.success("Todas las notificaciones marcadas como leídas");
+      i18nToast.success("success.allNotificationsRead");
     } catch (error) {
       toast.error("Error al marcar notificaciones");
     }
@@ -214,7 +214,7 @@ export default function AdminNotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      toast.success("Notificaciones leídas eliminadas");
+      i18nToast.success("success.readNotificationsDeleted");
     } catch (error: any) {
       logger.error("Error deleting read notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || "Error desconocido"));
@@ -237,7 +237,7 @@ export default function AdminNotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      toast.success("Todas las notificaciones eliminadas");
+      i18nToast.success("success.allNotificationsDeleted");
     } catch (error: any) {
       logger.error("Error deleting all notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || "Error desconocido"));

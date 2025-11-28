@@ -15,13 +15,20 @@
   "paymentMethod": "Selecteer Uw Betaalmethode",
   "methods": {
     "bankTransfer": "Bankoverschrijving",
-    "bankTransferDesc": "We sturen u de bankgegevens",
+    "bankTransferDesc": "We sturen u de bankgegevens voor directe overschrijving",
     "creditCard": "Creditcard/Betaalpas",
     "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
-    "paypalDesc": "Veilig betalen met PayPal",
-    "revolut": "Revolut",
-    "revolutDesc": "Credit-/betaalpassen - Snelle en veilige betaling"
+    "paypalDesc": "Veilig betalen met uw PayPal-account",
+    "revolut": "Kaart- en Digitale Betalingen",
+    "revolutDesc": "Betaal met creditcard, betaalpas of digitale portemonnee",
+    "revolutBadges": {
+      "visa": "Visa",
+      "mastercard": "Mastercard", 
+      "bancontact": "Bancontact",
+      "googlePay": "Google Pay",
+      "applePay": "Apple Pay"
+    }
   },
   "methodDescriptions": {
     "bankTransfer": "Betaling via directe bankoverschrijving",
@@ -46,6 +53,10 @@
   "total": "Totaal",
   "noPaymentMethods": "Er zijn momenteel geen betaalmethoden beschikbaar. Neem contact op met de klantenservice.",
   "securePayment": "Uw gegevens zijn veilig. We gebruiken SSL-versleuteling.",
+  "securityNotice": {
+    "title": "Veilige Betaling",
+    "description": "Wij slaan geen betalingsgegevens, kaartnummers of bankgegevens op. Alle betalingen worden rechtstreeks verwerkt op de beveiligde website van de door u gekozen betaalprovider (PayPal, Bancontact, uw bank, enz.). Uw financiële gegevens worden nooit gedeeld met of opgeslagen door onze winkel."
+  },
   "creatingOrder": "Uw bestelling wordt aangemaakt...",
   "instructions": {
     "title": "Betalingsinstructies",
@@ -71,13 +82,13 @@
     "scanForDirectTransfer": "Scan voor directe overschrijving",
     "fastRevolutPayment": "Snelle betaling met Revolut",
     "alternativePayment": "Alternatieve betaalmethode",
-    "pendingWarning": "⚠️ Uw bestelling blijft in behandeling totdat we de betaling ontvangen.",
+    "pendingWarning": "Uw bestelling blijft in behandeling totdat we de betaling ontvangen.",
     "includeOrderNumber": "Vermeld alstublieft het bestelnummer",
     "inTransferReference": "in de betalingsreferentie.",
-    "cardSuccess": "✅ Uw kaartbetaling is succesvol verwerkt. U ontvangt binnenkort een bevestigingsmail.",
+    "cardSuccess": "Uw kaartbetaling is succesvol verwerkt. U ontvangt binnenkort een bevestigingsmail.",
     "paypalProcessing": "Uw bestelling wordt verwerkt. Als u de betaling in PayPal heeft voltooid, ontvangt u binnenkort een bevestiging.",
     "revolutProcessing": "Uw bestelling wordt verwerkt. Als u de betaling in Revolut heeft voltooid, ontvangt u binnenkort een bevestiging.",
-    "paymentPendingWarning": "⚠️ Uw bestelling blijft in behandeling totdat we de betaling bevestigen.",
+    "paymentPendingWarning": "Uw bestelling blijft in behandeling totdat we de betaling bevestigen.",
     "backToHome": "Terug naar Home",
     "viewMyOrders": "Mijn Bestellingen Bekijken"
   },

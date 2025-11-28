@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, X, FileText, Receipt } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
@@ -70,7 +70,7 @@ export default function CreateQuote() {
       }
     } catch (error: any) {
       logger.error("Error loading data:", error);
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     }
   };
 
@@ -150,29 +150,29 @@ export default function CreateQuote() {
     
     // Validations
     if (!isNewClient && !quoteData.user_id) {
-      toast.error("Selecciona un usuario o marca como nuevo cliente");
+      i18nToast.error("error.selectUserOrNewClient");
       return;
     }
 
     if (isNewClient) {
       if (!quoteData.customer_name || !quoteData.customer_email) {
-        toast.error("Nombre y email son obligatorios para nuevos clientes");
+        i18nToast.error("error.newClientFieldsRequired");
         return;
       }
     }
 
     if (!quoteData.description) {
-      toast.error("La descripción del proyecto es obligatoria");
+      i18nToast.error("error.projectDescriptionRequired");
       return;
     }
 
     if (!quoteData.estimated_price || parseFloat(quoteData.estimated_price) <= 0) {
-      toast.error("El precio estimado debe ser mayor a 0");
+      i18nToast.error("error.estimatedPriceRequired");
       return;
     }
 
     if (!quoteData.status_id) {
-      toast.error("Selecciona un estado");
+      i18nToast.error("error.selectStatus");
       return;
     }
 
@@ -262,7 +262,7 @@ export default function CreateQuote() {
         }
       }
 
-      toast.success("Cotización creada exitosamente");
+      i18nToast.success("success.quoteCreated");
       navigate(`/admin/cotizaciones/${newQuote.id}`);
     } catch (error: any) {
       logger.error("Error creating quote:", error);

@@ -82,7 +82,7 @@ export default function HomepageQuickAccessCards() {
   const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.description.trim() || 
         !formData.button_text.trim() || !formData.button_url.trim()) {
-      toast.error("Todos los campos son obligatorios");
+      i18nToast.error("error.allFieldsRequired");
       return;
     }
 
@@ -94,14 +94,14 @@ export default function HomepageQuickAccessCards() {
           .eq("id", editingCard.id);
 
         if (error) throw error;
-        toast.success("Tarjeta actualizada correctamente");
+        i18nToast.success("success.cardUpdated");
       } else {
         const { error } = await supabase
           .from("homepage_quick_access_cards")
           .insert([formData]);
 
         if (error) throw error;
-        toast.success("Tarjeta creada correctamente");
+        i18nToast.success("success.cardCreated");
       }
 
       resetForm();
@@ -136,7 +136,7 @@ export default function HomepageQuickAccessCards() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Tarjeta eliminada correctamente");
+      i18nToast.success("success.cardDeleted");
     } catch (error: any) {
       console.error("Error al eliminar la tarjeta:", error);
       toast.error(error.message || "Error al eliminar la tarjeta");

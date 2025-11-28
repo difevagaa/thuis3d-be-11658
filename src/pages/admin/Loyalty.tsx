@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -118,7 +118,7 @@ export default function Loyalty() {
       setAdjustments(adjustmentsData || []);
     } catch (error) {
       logger.error("Error loading data:", error);
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -135,26 +135,26 @@ export default function Loyalty() {
         .eq("id", settings.id);
 
       if (error) throw error;
-      toast.success("Configuración actualizada");
+      i18nToast.success("success.configSaved");
       await loadData();
     } catch (error) {
-      toast.error("Error al actualizar configuración");
+      i18nToast.error("error.configSaveFailed");
     }
   };
 
   const createReward = async () => {
     if (!newReward.name.trim()) {
-      toast.error("El nombre de la recompensa es obligatorio");
+      i18nToast.error("error.rewardNameRequired");
       return;
     }
 
     if (newReward.points_required <= 0) {
-      toast.error("Los puntos requeridos deben ser mayores a 0");
+      i18nToast.error("error.rewardPointsRequired");
       return;
     }
 
     if (newReward.reward_value <= 0) {
-      toast.error("El valor de la recompensa debe ser mayor a 0");
+      i18nToast.error("error.rewardValueRequired");
       return;
     }
 
@@ -164,7 +164,7 @@ export default function Loyalty() {
         .insert([newReward]);
 
       if (error) throw error;
-      toast.success("Recompensa creada exitosamente");
+      i18nToast.success("success.rewardCreated");
       setNewReward({ name: "", points_required: 0, reward_value: 0, reward_type: "discount" });
       await loadData();
     } catch (error: any) {
@@ -189,17 +189,17 @@ export default function Loyalty() {
 
   const adjustPoints = async () => {
     if (!pointsAdjustment.user_id) {
-      toast.error("Selecciona un usuario");
+      i18nToast.error("error.selectUser");
       return;
     }
 
     if (pointsAdjustment.points_change === 0) {
-      toast.error("El ajuste no puede ser 0");
+      i18nToast.error("error.adjustmentCannotBeZero");
       return;
     }
 
     if (!pointsAdjustment.reason.trim()) {
-      toast.error("Especifica una razón");
+      i18nToast.error("error.specifyReason");
       return;
     }
 

@@ -77,7 +77,7 @@ export default function HomepageFeatures() {
 
   const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.description.trim()) {
-      toast.error("El título y la descripción son obligatorios");
+      i18nToast.error("error.titleAndDescriptionRequired");
       return;
     }
 
@@ -89,14 +89,14 @@ export default function HomepageFeatures() {
           .eq("id", editingFeature.id);
 
         if (error) throw error;
-        toast.success("Característica actualizada correctamente");
+        i18nToast.success("success.featureUpdated");
       } else {
         const { error } = await supabase
           .from("homepage_features")
           .insert([formData]);
 
         if (error) throw error;
-        toast.success("Característica creada correctamente");
+        i18nToast.success("success.featureCreated");
       }
 
       resetForm();
@@ -129,7 +129,7 @@ export default function HomepageFeatures() {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Característica eliminada correctamente");
+      i18nToast.success("success.featureDeleted");
     } catch (error: any) {
       console.error("Error al eliminar la característica:", error);
       toast.error(error.message || "Error al eliminar la característica");

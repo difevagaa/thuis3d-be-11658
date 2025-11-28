@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
@@ -70,7 +70,7 @@ export default function CreateOrder() {
       setProducts(productsRes.data || []);
     } catch (error) {
       logger.error("Error loading data:", error);
-      toast.error("Error al cargar datos");
+      i18nToast.error("error.loadingFailed");
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function CreateOrder() {
         if (missingFields.length > 0) {
           toast.warning(`El cliente no tiene ${missingFields.join(", ")} registrado. Por favor completa estos datos.`);
         } else {
-          toast.success("Datos del cliente cargados correctamente");
+          i18nToast.success("success.clientDataLoaded");
         }
       }
     } catch (error) {
@@ -195,31 +195,31 @@ export default function CreateOrder() {
     try {
       // Validate customer
       if (!orderData.user_id) {
-        toast.error("Por favor selecciona un cliente");
+        i18nToast.error("error.selectClient");
         return;
       }
 
       // Validate status
       if (!orderData.status_id) {
-        toast.error("Por favor selecciona un estado del pedido");
+        i18nToast.error("error.selectOrderStatus");
         return;
       }
 
       // Validate items
       if (items.length === 0) {
-        toast.error("Por favor añade al menos un producto");
+        i18nToast.error("error.addAtLeastOneProduct");
         return;
       }
 
       const invalidItems = items.filter(item => !item.product_name || !item.unit_price || item.quantity < 1);
       if (invalidItems.length > 0) {
-        toast.error("Todos los productos deben tener nombre, precio y cantidad válidos");
+        i18nToast.error("error.invalidProductData");
         return;
       }
 
       // Validate required shipping data
       if (!orderData.shipping_address) {
-        toast.error("Por favor ingresa la dirección de envío");
+        i18nToast.error("error.shippingAddressRequired");
         return;
       }
 
@@ -262,11 +262,11 @@ export default function CreateOrder() {
 
       if (itemsError) throw itemsError;
 
-      toast.success("Pedido creado exitosamente");
+      i18nToast.success("success.orderCreated");
       navigate("/admin/pedidos");
     } catch (error) {
       logger.error(error);
-      toast.error("Error al crear el pedido");
+      i18nToast.error("error.orderSaveFailed");
     }
   };
 
