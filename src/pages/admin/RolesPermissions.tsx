@@ -355,18 +355,15 @@ export default function RolesPermissions() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 h-auto p-1"
+                        <Badge 
+                          variant="secondary" 
+                          className="gap-1 cursor-pointer hover:bg-secondary/80 transition-colors"
                           onClick={() => loadUsersForRole(role.name, role.display_name)}
                         >
-                          <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary/80">
-                            <Users className="h-3 w-3" />
-                            {roleUsers[role.name] || 0}
-                            <Eye className="h-3 w-3 ml-1" />
-                          </Badge>
-                        </Button>
+                          <Users className="h-3 w-3" />
+                          {roleUsers[role.name] || 0}
+                          <Eye className="h-3 w-3 ml-1" />
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {new Date(role.created_at).toLocaleDateString('es-ES')}

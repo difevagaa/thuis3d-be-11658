@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -145,10 +145,16 @@ export default function Users() {
     }
   };
 
+  // Create a lookup map for role display names (O(1) lookup instead of O(n))
+  const roleDisplayNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    roles.forEach(r => map.set(r.value, r.label));
+    return map;
+  }, [roles]);
+
   // Helper function to get display name for a role
   const getRoleDisplayName = (roleName: string): string => {
-    const role = roles.find(r => r.value === roleName);
-    return role?.label || roleName;
+    return roleDisplayNameMap.get(roleName) || roleName;
   };
 
   const assignRole = async () => {
