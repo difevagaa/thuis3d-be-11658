@@ -1,14 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, GripVertical, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Plus, Trash2, GripVertical, Upload, X, Image as ImageIcon, AlertCircle, Info, Palette, FileImage, CheckCircle2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface SectionImage {
   id?: string;
@@ -47,6 +50,11 @@ export default function ProductCustomizationSections({
   // Use ref to avoid re-running effect when onSectionsChange changes
   const onSectionsChangeRef = useRef(onSectionsChange);
   onSectionsChangeRef.current = onSectionsChange;
+
+  // Memoize the count of incomplete sections to avoid recalculating on every render
+  const incompleteSectionsCount = useMemo(() => {
+    return sections.filter(s => !s.section_name.trim()).length;
+  }, [sections]);
 
   const loadSections = useCallback(async () => {
     if (!productId) return;
@@ -358,48 +366,121 @@ export default function ProductCustomizationSections({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Personalización por Secciones</span>
+          <div className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            <span>Personalización por Secciones</span>
+          </div>
           <Button onClick={addSection} size="sm" variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Añadir Sección
           </Button>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Define secciones donde el cliente puede seleccionar colores para diferentes partes del producto
-        </p>
+        <CardDescription>
+          Define secciones donde el cliente puede seleccionar colores o imágenes para diferentes partes del producto.
+          <span className="block mt-1 text-xs">Ejemplo: "Cabeza", "Cuerpo", "Base" con colores específicos para cada parte.</span>
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sections.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Sin secciones personalizables</p>
-            <p className="text-xs mt-2">El producto usará el selector de color tradicional</p>
-          </div>
-        ) : (
+        {/* Helpful alert for new users */}
+        {sections.length === 0 && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Sin secciones personalizables.</strong>
+              <p className="mt-1 text-sm">El producto usará el selector de color tradicional (un solo color para todo el producto). Para permitir que el cliente seleccione colores diferentes para cada parte del producto, añade secciones.</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Validation warning when color selection is not enabled */}
+        {sections.length > 0 && availableColors.length === 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>⚠️ No hay colores disponibles.</strong>
+              <p className="mt-1 text-sm">Para usar secciones de tipo "Colores", primero debes activar "Selección de Color" en el producto y seleccionar los colores disponibles.</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {sections.length > 0 && (
           <>
             {sections.map((section, index) => (
-              <Card key={index} className="border-2">
+              <Card key={index} className={`border-2 ${!section.section_name.trim() ? 'border-amber-300' : 'border-border'}`}>
                 <CardContent className="pt-4 space-y-4">
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 pt-2 cursor-move">
-                      <GripVertical className="h-5 w-5 text-muted-foreground" />
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex-shrink-0 pt-2 cursor-move">
+                            <GripVertical className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Arrastra para reordenar</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     
                     <div className="flex-1 space-y-4">
+                      {/* Section header with badges */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          Sección {index + 1}
+                        </Badge>
+                        {section.section_type === 'color' ? (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <Palette className="h-3 w-3" />
+                            Colores
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <FileImage className="h-3 w-3" />
+                            Imágenes
+                          </Badge>
+                        )}
+                        {section.is_required && (
+                          <Badge variant="default" className="text-xs">
+                            Obligatoria
+                          </Badge>
+                        )}
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Nombre de la Sección *</Label>
+                        <div className="space-y-1">
+                          <Label className="flex items-center gap-1">
+                            Nombre de la Sección
+                            <span className="text-destructive">*</span>
+                          </Label>
                           <Input
                             placeholder="Ej: Cabeza, Cuerpo, Base..."
                             value={section.section_name}
                             onChange={(e) => updateSection(index, 'section_name', e.target.value)}
+                            className={!section.section_name.trim() ? 'border-amber-300' : ''}
                           />
+                          {!section.section_name.trim() && (
+                            <p className="text-xs text-amber-600">Este campo es requerido</p>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 pt-6">
                           <Switch
+                            id={`required-${index}`}
                             checked={section.is_required}
                             onCheckedChange={(checked) => updateSection(index, 'is_required', checked)}
                           />
-                          <Label>Selección Obligatoria</Label>
+                          <Label htmlFor={`required-${index}`} className="cursor-pointer">
+                            Selección Obligatoria
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Si está activo, el cliente debe seleccionar una opción antes de añadir al carrito</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
 
@@ -465,18 +546,26 @@ export default function ProductCustomizationSections({
                           </div>
                           
                           <div>
-                            <Label>Colores Disponibles ({section.selectedColors.length} seleccionados)</Label>
+                            <Label className="flex items-center gap-2">
+                              Colores Disponibles
+                              {section.selectedColors.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  {section.selectedColors.length} seleccionados
+                                </Badge>
+                              )}
+                            </Label>
                             <div className="grid grid-cols-3 gap-2 mt-2 p-3 border rounded-md max-h-48 overflow-y-auto">
                               {availableColors.length > 0 ? (
                                 availableColors.map((color) => (
-                                  <div key={color.id} className="flex items-center space-x-2">
+                                  <div key={color.id} className="flex items-center space-x-2 hover:bg-muted/50 p-1 rounded cursor-pointer" onClick={() => toggleColor(index, color.id)}>
                                     <Checkbox
                                       checked={section.selectedColors.includes(color.id)}
                                       onCheckedChange={() => toggleColor(index, color.id)}
                                     />
                                     <div className="flex items-center gap-2">
                                       <div
-                                        className="w-4 h-4 rounded border"
+                                        className="w-4 h-4 rounded border shadow-sm"
                                         style={{ backgroundColor: color.hex_code }}
                                       />
                                       <span className="text-sm">{color.name}</span>
@@ -484,21 +573,36 @@ export default function ProductCustomizationSections({
                                   </div>
                                 ))
                               ) : (
-                                <p className="text-sm text-muted-foreground col-span-3">
-                                  Debe añadir colores al producto primero
-                                </p>
+                                <div className="col-span-3 text-center py-4">
+                                  <AlertCircle className="h-8 w-8 mx-auto text-amber-500 mb-2" />
+                                  <p className="text-sm font-medium text-amber-600">No hay colores disponibles</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Activa "Selección de Color" en la pestaña Opciones y selecciona los colores del producto
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div>
-                          <Label>Imágenes Disponibles ({section.selectedImages.length} imágenes)</Label>
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            Imágenes Disponibles
+                            {section.selectedImages.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                {section.selectedImages.length} {section.selectedImages.length === 1 ? 'imagen' : 'imágenes'}
+                              </Badge>
+                            )}
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            El cliente podrá elegir entre estas imágenes. Útil para patrones, texturas o diseños predefinidos.
+                          </p>
                           <div className="mt-2 space-y-2">
-                            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:bg-muted/50 transition-colors">
+                            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:bg-muted/50 hover:border-primary/50 transition-colors cursor-pointer">
                               <input
                                 type="file"
-                                accept="image/*,video/*"
+                                accept="image/*"
                                 multiple
                                 onChange={(e) => handleImageUpload(index, e.target.files)}
                                 className="hidden"
@@ -510,29 +614,37 @@ export default function ProductCustomizationSections({
                               >
                                 <Upload className="h-8 w-8 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">
-                                  Clic para subir imágenes o videos
+                                  Clic para subir imágenes
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Formatos: JPG, PNG, WebP
                                 </span>
                               </label>
                             </div>
                             
-                            {section.selectedImages.length > 0 && (
-                              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md max-h-48 overflow-y-auto">
+                            {section.selectedImages.length > 0 ? (
+                              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md max-h-48 overflow-y-auto bg-muted/30">
                                 {section.selectedImages.map((image, imgIndex) => (
                                   <div key={imgIndex} className="relative group">
                                     <img
                                       src={image.image_url}
                                       alt={image.image_name}
-                                      className="w-full h-20 object-cover rounded border"
+                                      className="w-full h-20 object-cover rounded border shadow-sm"
                                     />
                                     <button
                                       onClick={() => removeImage(index, imgIndex)}
-                                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       <X className="h-3 w-3" />
                                     </button>
-                                    <p className="text-xs truncate mt-1">{image.image_name}</p>
+                                    <p className="text-xs truncate mt-1 text-center">{image.image_name}</p>
                                   </div>
                                 ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4 border rounded-md bg-muted/20">
+                                <FileImage className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">Sin imágenes añadidas</p>
                               </div>
                             )}
                           </div>
@@ -540,24 +652,49 @@ export default function ProductCustomizationSections({
                       )}
                     </div>
 
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => removeSection(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => removeSection(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Eliminar sección</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </CardContent>
               </Card>
             ))}
 
           </>
-)}
+        )}
 
-        {showSaveButton && (
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button onClick={saveSections} disabled={loading || !productId}>
+        {showSaveButton && sections.length > 0 && (
+          <div className="flex items-center justify-between gap-2 pt-4 border-t">
+            <div className="text-xs text-muted-foreground">
+              {incompleteSectionsCount > 0 ? (
+                <span className="text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {incompleteSectionsCount} sección(es) sin nombre
+                </span>
+              ) : (
+                <span className="text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {sections.length} sección(es) configuradas
+                </span>
+              )}
+            </div>
+            <Button 
+              onClick={saveSections} 
+              disabled={loading || !productId || incompleteSectionsCount > 0}
+            >
               {loading ? 'Guardando...' : 'Guardar Secciones'}
             </Button>
           </div>
