@@ -76,6 +76,22 @@ export default function ProductsAdminEnhanced() {
 
   useEffect(() => {
     loadData();
+
+    // Subscribe to custom_roles changes to update role list dynamically
+    const customRolesChannel = supabase
+      .channel('products-custom-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(customRolesChannel);
+    };
   }, []);
 
   const loadData = async () => {

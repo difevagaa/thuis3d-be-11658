@@ -56,9 +56,22 @@ const Products = () => {
       })
       .subscribe();
 
+    // Subscribe to product_roles changes to update visibility immediately
+    const productRolesChannel = supabase
+      .channel('products-product-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(productRolesChannel);
     };
   }, []);
 
