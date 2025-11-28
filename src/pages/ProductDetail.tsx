@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, MessageSquare, Check } from "lucide-react";
+import { ShoppingCart, MessageSquare, Check, ZoomIn } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -85,13 +85,13 @@ const ProductDetail = () => {
     product
   );
   
-  // Auto-rotate images every 5 seconds
+  // Auto-rotate images every 20 seconds
   useEffect(() => {
     if (productImages.length <= 1) return;
     
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
-    }, 5000);
+    }, 20000); // 20 seconds
     
     return () => clearInterval(interval);
   }, [productImages.length]);
@@ -435,14 +435,34 @@ const ProductDetail = () => {
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 lg:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
         <div className="space-y-2 md:space-y-3 lg:space-y-4">
-          {/* Main Image */}
-          <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+          {/* Main Image with Zoom */}
+          <div className="aspect-square bg-muted rounded-lg overflow-hidden relative group">
             {productImages.length > 0 ? (
-              <img 
-                src={productImages[currentImageIndex]} 
-                alt={`3D printed product: ${product.name}`}
-                className="w-full h-full object-cover"
-              />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="relative w-full h-full cursor-zoom-in">
+                    <img 
+                      src={productImages[currentImageIndex]} 
+                      alt={`3D printed product: ${product.name}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 rounded-full p-3 shadow-lg">
+                        <ZoomIn className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] p-2">
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <img 
+                      src={productImages[currentImageIndex]} 
+                      alt={`3D printed product: ${product.name} - Zoom`}
+                      className="max-w-full max-h-[85vh] object-contain rounded-lg"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <p className="text-muted-foreground text-sm md:text-base">Sin imagen</p>
