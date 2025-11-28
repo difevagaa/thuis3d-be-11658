@@ -460,7 +460,7 @@ export function extractMultilingualKeywords(
 
   // Add translated equivalents of top Spanish keywords
   // This ensures any product-specific terms are also available in EN and NL
-  const topSpanishKeywords = spanishKeywords.slice(0, 5);
+  const topSpanishKeywords = result.es.slice(0, 5);
   for (const kw of topSpanishKeywords) {
     // Try to find translation for this keyword
     const translated = translateKeyword(kw.keyword, 'es');
