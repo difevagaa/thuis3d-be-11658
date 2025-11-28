@@ -139,7 +139,8 @@
     "active": "Active",
     "redeemed_on": "Redeemed on",
     "copy": "Copy",
-    "codeCopied": "Code copied to clipboard"
+    "codeCopied": "Code copied to clipboard",
+    "couponAlreadyUsed": "This coupon has already been used"
   },
   "giftcards": {
     "title": "My Gift Cards",

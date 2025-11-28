@@ -30,7 +30,8 @@
     "invalid": "Cupón inválido o expirado",
     "expired": "Este cupón ha expirado",
     "unavailable": "Este cupón ya no está disponible",
-    "minPurchase": "Compra mínima de €{amount} requerida"
+    "minPurchase": "Compra mínima de €{{amount}} requerida",
+    "productNotInCart": "Este cupón solo es válido para un producto específico que no está en tu carrito"
   },
   "giftCard": {
     "title": "Tarjeta de Regalo",
@@ -38,12 +39,12 @@
     "apply": "Aplicar",
     "remove": "Remover",
     "balance": "Saldo",
-    "applied": "Tarjeta aplicada. Saldo: €{balance}",
+    "applied": "Tarjeta aplicada. Saldo: €{{balance}}",
     "removed": "Tarjeta de regalo removida",
     "invalid": "Código de tarjeta inválido",
     "expired": "Esta tarjeta ha expirado",
     "noBalance": "Esta tarjeta no tiene saldo disponible",
-    "redeemed": "Has aplicado una tarjeta regalo por €{amount}"
+    "redeemed": "Has aplicado una tarjeta regalo por €{{amount}}"
   },
   "checkout": "Proceder al Pago",
   "itemRemoved": "Producto eliminado del carrito",

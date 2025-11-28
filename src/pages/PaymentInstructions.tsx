@@ -33,11 +33,22 @@ export default function PaymentInstructions() {
       }
 
       const pendingOrder = JSON.parse(pendingOrderStr);
-      const { cartItems, shippingInfo, total, method, subtotal: orderSubtotal, tax: orderTax, shipping: orderShipping } = pendingOrder;
+      const { 
+        cartItems, 
+        shippingInfo, 
+        total, 
+        method, 
+        subtotal: orderSubtotal, 
+        tax: orderTax, 
+        shipping: orderShipping,
+        couponDiscount: orderCouponDiscount,
+        appliedCoupon 
+      } = pendingOrder;
       
       // Asegurar valores numéricos por defecto para evitar NaN
       // Usar verificación explícita de null/undefined antes de Number()
       const safeShipping = orderShipping != null ? Number(orderShipping) : 0;
+      const safeCouponDiscount = orderCouponDiscount != null ? Number(orderCouponDiscount) : 0;
 
       // CRÍTICO: Permitir checkout sin autenticación
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,27 +60,57 @@ export default function PaymentInstructions() {
         logger.info('[PaymentInstructions] Guest checkout - creating order without authentication');
       }
 
-      // Generate order notes using utility function
-      const orderNotes = generateOrderNotes(cartItems);
+      // Generate order notes using utility function, including coupon info
+      let orderNotes = generateOrderNotes(cartItems);
+      if (appliedCoupon && safeCouponDiscount > 0) {
+        orderNotes = `Cupón aplicado: ${appliedCoupon.code} (-€${safeCouponDiscount.toFixed(2)})\n${orderNotes || ''}`;
+      }
       
       // Create order using utility function
-      // CRÍTICO: Usar el costo de envío del pendingOrder
+      // CRÍTICO: Usar el costo de envío y descuento del pendingOrder
       const order = await createOrder({
         userId: user?.id || null, // Permitir user_id = null para invitados
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
-        discount: 0,
+        discount: safeCouponDiscount,
         total: total,
         paymentMethod: method,
         paymentStatus: "pending",
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
-        notes: orderNotes
+        notes: orderNotes?.trim() || null
       });
 
       if (!order) {
         throw new Error(t('payment:messages.errorProcessingOrder'));
+      }
+
+      // Increment coupon usage counter if coupon was applied
+      if (appliedCoupon && safeCouponDiscount > 0) {
+        try {
+          const { error: couponUpdateError } = await supabase
+            .from("coupons")
+            .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+            .eq("id", appliedCoupon.id);
+          
+          if (couponUpdateError) {
+            logger.error("Error updating coupon usage:", couponUpdateError);
+          } else {
+            logger.info("Coupon usage incremented:", appliedCoupon.code);
+          }
+          
+          // If this is a redeemed loyalty coupon, update the redemption status
+          if (appliedCoupon.max_uses === 1) {
+            await supabase
+              .from("loyalty_redemptions")
+              .update({ status: 'used', used_at: new Date().toISOString() })
+              .eq("coupon_code", appliedCoupon.code);
+          }
+        } catch (couponError) {
+          logger.error("Error processing coupon:", couponError);
+        }
+        sessionStorage.removeItem("applied_coupon");
       }
 
       // Create order items using utility functions
@@ -83,7 +124,7 @@ export default function PaymentInstructions() {
       logger.info('Order items created:', insertedItems.length);
 
       // Create invoice - CRÍTICO: Número de factura = número de pedido
-      // CRÍTICO: Incluir el costo de envío correcto
+      // CRÍTICO: Incluir el costo de envío y cupón correcto
       const { error: invoiceError } = await supabase.from("invoices").insert({
         invoice_number: order.order_number, // Usar el mismo número del pedido
         user_id: user?.id || null, // Permitir user_id = null para invitados
@@ -91,6 +132,9 @@ export default function PaymentInstructions() {
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Incluir shipping correcto
+        discount: safeCouponDiscount,
+        coupon_code: appliedCoupon?.code || null,
+        coupon_discount: safeCouponDiscount > 0 ? safeCouponDiscount : null,
         total: total,
         payment_method: method,
         payment_status: "pending",

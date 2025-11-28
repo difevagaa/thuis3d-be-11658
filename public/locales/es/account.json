@@ -121,6 +121,7 @@
     "redeem": "Canjear",
     "locked": "Bloqueado",
     "active": "Activo",
+    "used": "Usado",
     "redeemed_on": "Canjeado el",
     "copy": "Copiar",
     "couponGenerated": "¡Cupón generado! Código: {{code}}",
@@ -135,7 +136,7 @@
     "fixedDiscount": "€{{value}} de descuento",
     "expires": "Expira",
     "expired": "Expirado",
-    "used": "Usado"
+    "couponAlreadyUsed": "Este cupón ya ha sido utilizado"
   },
   "giftcards": {
     "title": "Mis Tarjetas de Regalo",
