@@ -24,6 +24,7 @@ interface Product {
   price: number;
   stock: number;
   allow_direct_purchase: boolean;
+  allow_quote_request?: boolean;
   enable_material_selection: boolean;
   enable_color_selection: boolean;
   enable_custom_text: boolean;
@@ -844,16 +845,18 @@ const ProductDetail = () => {
                   </Button>
                 )}
                 
-                <Button
-                  variant={product.allow_direct_purchase ? "outline" : "default"}
-                  className="flex-1 text-xs md:text-sm"
-                  size="sm"
-                  onClick={() => navigate(`/producto/${product.id}/cotizar`)}
-                >
-                  <MessageSquare className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5" />
-                  <span className="hidden sm:inline">{t('requestQuote')}</span>
-                  <span className="sm:hidden">{t('requestQuote')}</span>
-                </Button>
+                {product.allow_quote_request !== false && (
+                  <Button
+                    variant={product.allow_direct_purchase ? "outline" : "default"}
+                    className="flex-1 text-xs md:text-sm"
+                    size="sm"
+                    onClick={requestQuote}
+                  >
+                    <MessageSquare className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5" />
+                    <span className="hidden sm:inline">{t('requestQuote')}</span>
+                    <span className="sm:hidden">{t('requestQuote')}</span>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
