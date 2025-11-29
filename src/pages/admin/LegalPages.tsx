@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { i18nToast } from "@/lib/i18nToast";
+import { i18nToast, toast } from "@/lib/i18nToast";
 import { Input } from "@/components/ui/input";
 
 export default function LegalPages() {

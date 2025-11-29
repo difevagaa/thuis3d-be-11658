@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { i18nToast } from "@/lib/i18nToast";
+import { i18nToast, toast } from "@/lib/i18nToast";
 import { Plus, Pencil, Trash2, Users, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { logger } from '@/lib/logger';

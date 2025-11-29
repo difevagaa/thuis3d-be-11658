@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { i18nToast } from "@/lib/i18nToast";
+import { i18nToast, toast } from "@/lib/i18nToast";
 import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette } from "lucide-react";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
