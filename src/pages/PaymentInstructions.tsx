@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Copy, CreditCard, Building2, Info, QrCode, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Copy, CreditCard, Building2, Info, QrCode, AlertTriangle, ShieldCheck } from "lucide-react";
 import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
@@ -257,7 +257,7 @@ export default function PaymentInstructions() {
       // Leer solo las claves de configuración de pago relevantes, igual que en el panel admin
       const settingKeys = [
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
-        'company_info', 'payment_images'
+        'company_info', 'payment_images', 'card_payment_link', 'revolut_link'
       ];
 
       const { data } = await supabase
@@ -516,16 +516,53 @@ export default function PaymentInstructions() {
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-blue-700/50 rounded-lg p-4 mt-4">
-                  <p className="text-sm text-blue-200">
-                    {t('payment:instructions.revolutOpened')}
-                  </p>
-                  <p className="text-sm text-blue-100 mt-2">
-                    {t('payment:instructions.completePaymentInRevolut')}
-                  </p>
+              {/* Important Instructions */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  {t('payment:instructions.importantInstructions')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:openPaymentLink')}"</strong>, {t('payment:instructions.step1Redirect')}</li>
+                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
+                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
+                  <li>{t('payment:instructions.step4Complete')}</li>
+                </ol>
+              </div>
+
+              {/* Security Notice - We don't store payment data */}
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-green-800 dark:text-green-200 text-sm">
+                      {t('payment:securityNotice.title')}
+                    </h4>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1 leading-relaxed">
+                      {t('payment:securityNotice.description')}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Go to Payment Button */}
+              <Button 
+                onClick={() => {
+                  const cardLink = paymentConfig.card_payment_link || paymentConfig.revolut_link;
+                  if (cardLink) {
+                    window.open(cardLink, '_blank');
+                  } else {
+                    i18nToast.error("payment:messages.cardPaymentNotConfigured");
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-6 text-lg" 
+                size="lg"
+              >
+                <CreditCard className="h-5 w-5 mr-2" />
+                {t('payment:openPaymentLink')}
+              </Button>
 
               {/* QR Codes */}
               {paymentImages.length > 0 && (
