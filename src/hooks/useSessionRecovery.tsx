@@ -261,19 +261,18 @@ export function useSessionRecovery() {
     };
   }, [validateSession, ensureDataLoading]);
 
-  // Listen for storage quota errors
+  // Listen for storage quota errors - use try-catch wrapper instead of override
   useEffect(() => {
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-    
-    localStorage.setItem = function(key: string, value: string) {
+    // Create a safe storage wrapper that handles quota errors
+    const safeSetItem = (key: string, value: string) => {
       try {
-        originalSetItem(key, value);
+        localStorage.setItem(key, value);
       } catch (e) {
         if (e instanceof Error && (e.name === 'QuotaExceededError' || e.message.includes('quota'))) {
           handleStorageError();
           // Retry after cleanup
           try {
-            originalSetItem(key, value);
+            localStorage.setItem(key, value);
           } catch {
             // Give up on this item
             logger.warn('[SessionRecovery] Could not save item after cleanup:', key);
@@ -284,8 +283,23 @@ export function useSessionRecovery() {
       }
     };
 
+    // Listen for storage errors via global error event
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.error?.name === 'QuotaExceededError' || 
+          event.message?.includes('QuotaExceededError') ||
+          event.message?.includes('quota')) {
+        handleStorageError();
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+
+    // Expose safe storage wrapper for components that need it
+    (window as unknown as { safeSetItem: typeof safeSetItem }).safeSetItem = safeSetItem;
+
     return () => {
-      localStorage.setItem = originalSetItem;
+      window.removeEventListener('error', handleGlobalError);
+      delete (window as unknown as { safeSetItem?: typeof safeSetItem }).safeSetItem;
     };
   }, [handleStorageError]);
 

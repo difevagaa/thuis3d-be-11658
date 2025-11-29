@@ -132,7 +132,7 @@ const queryClient = new QueryClient({
 
 // Loading fallback component with responsive sizing
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen min-h-dvh">
+  <div className="flex items-center justify-center min-h-dvh">
     <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-primary"></div>
   </div>
 );

@@ -958,7 +958,23 @@ html.grayscale * {
 /* ============================================
    COMPREHENSIVE RESPONSIVE DESIGN SYSTEM
    Supports all device sizes from 280px to 2560px+
+   Uses CSS custom properties for maintainability
    ============================================ */
+
+/* CSS Custom Properties for fluid typography */
+:root {
+  --fluid-h1: clamp(1.25rem, 5vw, 2.25rem);
+  --fluid-h2: clamp(1.125rem, 4vw, 1.875rem);
+  --fluid-h3: clamp(1rem, 3.5vw, 1.5rem);
+  --fluid-h4: clamp(0.9375rem, 3vw, 1.25rem);
+  --fluid-h5: clamp(0.875rem, 2.5vw, 1.125rem);
+  --fluid-h6: clamp(0.8125rem, 2vw, 1rem);
+  --fluid-container-padding: clamp(0.5rem, 2vw, 2rem);
+  --fluid-card-padding: clamp(0.75rem, 3vw, 1.5rem);
+  --fluid-button-padding-y: clamp(0.375rem, 1.5vw, 0.5rem);
+  --fluid-button-padding-x: clamp(0.5rem, 2vw, 1rem);
+  --fluid-icon-size: clamp(1rem, 4vw, 1.5rem);
+}
 
 /* ============================================
    FLUID TYPOGRAPHY SYSTEM
@@ -970,34 +986,34 @@ html {
   font-size: clamp(14px, calc(14px + (16 - 14) * ((100vw - 320px) / (1920 - 320))), 16px);
 }
 
-/* Heading fluid sizes */
-h1 {
-  font-size: clamp(1.25rem, 5vw, 2.25rem) !important;
+/* Heading fluid sizes - using CSS custom properties */
+h1:not([class*="text-"]) {
+  font-size: var(--fluid-h1);
   line-height: 1.2;
 }
 
-h2 {
-  font-size: clamp(1.125rem, 4vw, 1.875rem) !important;
+h2:not([class*="text-"]) {
+  font-size: var(--fluid-h2);
   line-height: 1.25;
 }
 
-h3 {
-  font-size: clamp(1rem, 3.5vw, 1.5rem) !important;
+h3:not([class*="text-"]) {
+  font-size: var(--fluid-h3);
   line-height: 1.3;
 }
 
-h4 {
-  font-size: clamp(0.9375rem, 3vw, 1.25rem) !important;
+h4:not([class*="text-"]) {
+  font-size: var(--fluid-h4);
   line-height: 1.35;
 }
 
-h5 {
-  font-size: clamp(0.875rem, 2.5vw, 1.125rem) !important;
+h5:not([class*="text-"]) {
+  font-size: var(--fluid-h5);
   line-height: 1.4;
 }
 
-h6 {
-  font-size: clamp(0.8125rem, 2vw, 1rem) !important;
+h6:not([class*="text-"]) {
+  font-size: var(--fluid-h6);
   line-height: 1.45;
 }
 
@@ -1010,9 +1026,9 @@ p, span, div, li, td, th, label {
    FLUID SPACING SYSTEM
    ============================================ */
 
-.container {
-  padding-left: clamp(0.5rem, 2vw, 2rem) !important;
-  padding-right: clamp(0.5rem, 2vw, 2rem) !important;
+.container:not([class*="px-"]):not([class*="p-"]) {
+  padding-left: var(--fluid-container-padding);
+  padding-right: var(--fluid-container-padding);
 }
 
 /* ============================================
@@ -1025,27 +1041,27 @@ p, span, div, li, td, th, label {
   transition: all 0.2s ease;
 }
 
-/* Card padding responsive system */
-[class*="CardHeader"] {
-  padding: clamp(0.75rem, 3vw, 1.5rem) !important;
+/* Card padding responsive system - using CSS custom properties */
+[class*="CardHeader"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
 }
 
-[class*="CardContent"] {
-  padding: clamp(0.75rem, 3vw, 1.5rem) !important;
-  padding-top: 0 !important;
+[class*="CardContent"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
+  padding-top: 0;
 }
 
-[class*="CardFooter"] {
-  padding: clamp(0.75rem, 3vw, 1.5rem) !important;
-  padding-top: 0 !important;
+[class*="CardFooter"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
+  padding-top: 0;
 }
 
-[class*="CardTitle"] {
-  font-size: clamp(0.9375rem, 3.5vw, 1.5rem) !important;
+[class*="CardTitle"]:not([class*="text-"]) {
+  font-size: clamp(0.9375rem, 3.5vw, 1.5rem);
 }
 
-[class*="CardDescription"] {
-  font-size: clamp(0.75rem, 2.5vw, 0.875rem) !important;
+[class*="CardDescription"]:not([class*="text-"]) {
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
 }
 
 /* ============================================
@@ -1187,27 +1203,22 @@ img {
    ============================================ */
 
 @media screen and (max-width: 640px) {
-  /* Reduce base font size slightly */
-  html {
-    font-size: 14px;
+  /* Update CSS custom properties for mobile */
+  :root {
+    --fluid-container-padding: 0.75rem;
+    --fluid-card-padding: 0.75rem;
   }
   
-  /* Single column grids for most layouts */
-  .grid:not(.grid-no-stack) {
-    grid-template-columns: 1fr !important;
+  /* Single column grids for most layouts - avoid !important by being more specific */
+  .grid:not(.grid-no-stack):not([class*="grid-cols-2"]):not([class*="grid-cols-3"]):not([class*="grid-cols-4"]) {
+    grid-template-columns: 1fr;
   }
   
   /* Product grids stay 2 columns */
   .grid[class*="grid-cols-2"],
   .grid[class*="grid-cols-3"],
   .grid[class*="grid-cols-4"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  /* Tighter spacing */
-  .container {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+    grid-template-columns: repeat(2, 1fr);
   }
   
   /* Sidebar adjustments */
@@ -1222,27 +1233,18 @@ img {
    ============================================ */
 
 @media screen and (max-width: 400px) {
-  html {
-    font-size: 13px;
-  }
-  
-  /* Tightest container padding */
-  .container {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-  
-  /* Minimal card padding */
-  [class*="CardHeader"],
-  [class*="CardContent"],
-  [class*="CardFooter"] {
-    padding: 0.5rem !important;
+  /* Update CSS custom properties for very small screens */
+  :root {
+    --fluid-container-padding: 0.5rem;
+    --fluid-card-padding: 0.5rem;
+    --fluid-button-padding-y: 0.25rem;
+    --fluid-button-padding-x: 0.5rem;
   }
   
   /* Smaller buttons */
-  button, [role="button"] {
+  button:not([class*="h-"]):not([class*="w-"]), 
+  [role="button"]:not([class*="h-"]):not([class*="w-"]) {
     min-height: 32px;
-    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
   }
   
@@ -1252,12 +1254,12 @@ img {
     font-size: 0.6875rem;
   }
   
-  /* Stack product grids */
+  /* Stack product grids - 2 columns with tighter gap */
   .grid[class*="grid-cols-2"],
   .grid[class*="grid-cols-3"],
   .grid[class*="grid-cols-4"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.375rem !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.375rem;
   }
 }
 
@@ -1267,26 +1269,16 @@ img {
    ============================================ */
 
 @media screen and (max-width: 320px) {
-  html {
-    font-size: 12px;
+  /* Update CSS custom properties for extra small screens */
+  :root {
+    --fluid-container-padding: 0.375rem;
+    --fluid-card-padding: 0.375rem;
   }
   
   /* Stack all grids to single column */
-  .grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.25rem !important;
-  }
-  
-  /* Minimal padding everywhere */
-  .container {
-    padding-left: 0.375rem !important;
-    padding-right: 0.375rem !important;
-  }
-  
-  [class*="CardHeader"],
-  [class*="CardContent"],
-  [class*="CardFooter"] {
-    padding: 0.375rem !important;
+  .grid:not(.grid-no-stack) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 }
 
@@ -1295,8 +1287,10 @@ img {
    ============================================ */
 
 @media screen and (min-width: 768px) {
-  html {
-    font-size: 15px;
+  /* Update CSS custom properties for tablet */
+  :root {
+    --fluid-container-padding: 1rem;
+    --fluid-card-padding: 1rem;
   }
   
   /* Restore table display */
@@ -1328,8 +1322,10 @@ img {
    ============================================ */
 
 @media screen and (min-width: 1024px) {
-  html {
-    font-size: 16px;
+  /* Update CSS custom properties for desktop */
+  :root {
+    --fluid-container-padding: 1.5rem;
+    --fluid-card-padding: 1.5rem;
   }
 }
 
@@ -1338,14 +1334,13 @@ img {
    ============================================ */
 
 @media screen and (min-width: 1400px) {
-  html {
-    font-size: 16px;
+  /* Update CSS custom properties for large desktop */
+  :root {
+    --fluid-container-padding: 2rem;
   }
   
-  .container {
+  .container:not([class*="max-w-"]) {
     max-width: 1400px;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
   }
 }
 
