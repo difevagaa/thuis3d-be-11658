@@ -483,7 +483,7 @@ export default function PaymentInstructions() {
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                          <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}
@@ -628,7 +628,7 @@ export default function PaymentInstructions() {
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                          <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}

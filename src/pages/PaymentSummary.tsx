@@ -287,18 +287,18 @@ export default function PaymentSummary() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-[10px] xs:text-xs md:text-base truncate">{item.name}</p>
                       {item.materialName && (
-                        <p className="text-[8px] xs:text-[10px] md:text-sm text-muted-foreground">Material: {item.materialName}</p>
+                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Material: {item.materialName}</p>
                       )}
                       {item.colorName && (
-                        <p className="text-[8px] xs:text-[10px] md:text-sm text-muted-foreground">Color: {item.colorName}</p>
+                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Color: {item.colorName}</p>
                       )}
                       {item.customText && (
-                        <p className="text-[8px] xs:text-[10px] md:text-sm text-muted-foreground">Texto: {item.customText}</p>
+                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Texto: {item.customText}</p>
                       )}
                       {item.isGiftCard && (
-                        <Badge variant="secondary" className="mt-0.5 xs:mt-1 text-[8px] xs:text-[10px]">Tarjeta Regalo</Badge>
+                        <Badge variant="secondary" className="mt-0.5 xs:mt-1 text-[9px] xs:text-[10px]">Tarjeta Regalo</Badge>
                       )}
-                      <p className="text-[8px] xs:text-[10px] md:text-sm text-muted-foreground mt-0.5">
+                      <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground mt-0.5">
                         Cantidad: {item.quantity} × €{Number(item.price).toFixed(2)}
                       </p>
                     </div>

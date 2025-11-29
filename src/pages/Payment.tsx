@@ -796,7 +796,7 @@ export default function Payment() {
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                          <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}
@@ -893,7 +893,7 @@ export default function Payment() {
                            index === 1 ? t('payment:instructions.qrRevolut') : 
                            `${t('payment:instructions.qrCode')} ${index + 1}`}
                         </p>
-                        <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                        <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                           {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                            index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                            t('payment:instructions.alternativePayment')}
@@ -945,11 +945,11 @@ export default function Payment() {
                         💳 {t('payment:methods.creditCardDesc')}
                       </div>
                       <div className="flex flex-wrap gap-0.5 xs:gap-1 md:gap-2 mt-1 xs:mt-1.5 md:mt-2">
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Visa</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Mastercard</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Bancontact</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Google Pay</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Apple Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Visa</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Mastercard</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Bancontact</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Google Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Apple Pay</span>
                       </div>
                     </div>
                   </div>
@@ -1017,10 +1017,10 @@ export default function Payment() {
                         💳 {t('payment:methods.revolutDesc')}
                       </div>
                       <div className="flex flex-wrap gap-0.5 xs:gap-1 md:gap-2 mt-1 xs:mt-1.5 md:mt-2">
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Visa</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Mastercard</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Google Pay</span>
-                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Apple Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Visa</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Mastercard</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Google Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[9px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Apple Pay</span>
                       </div>
                     </div>
                   </div>
