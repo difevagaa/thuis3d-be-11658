@@ -301,11 +301,12 @@ export default function Payment() {
           return;
         }
 
-        // Update invoice payment status and method
+        // CRITICAL: Payment status should ALWAYS be "pending" until payment is confirmed externally
+        // The order/invoice should NOT be marked as "paid" until the payment is actually received
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: method === "card" ? "paid" : "pending",
+            payment_status: "pending", // ALWAYS pending - payment confirmation happens externally
             payment_method: method
           })
           .eq("id", invoiceData.invoiceId)
@@ -313,13 +314,11 @@ export default function Payment() {
 
         if (updateError) throw updateError;
 
-        // Clear invoice payment data
-        sessionStorage.removeItem("invoice_payment");
-
-        toast.success(method === "card" ? t('payment:messages.invoicePaid') : t('payment:messages.paymentRegistered'));
-
-        // Navigate based on payment method
+        // Navigate based on payment method - show payment instructions
         if (method === "bank_transfer") {
+          // Clear invoice payment data after navigation is initiated
+          sessionStorage.removeItem("invoice_payment");
+          toast.success(t('payment:messages.paymentRegistered'));
           navigate("/pago-instrucciones", { 
             state: { 
               orderNumber: invoiceData.invoiceNumber,
@@ -329,6 +328,20 @@ export default function Payment() {
               isInvoicePayment: true
             } 
           });
+        } else if (method === "card") {
+          // For card payment on invoices, show payment info page before redirecting to bank
+          // DO NOT clear invoice payment data yet - keep it for the payment instructions page
+          toast.success(t('payment:messages.cardPaymentSelected'));
+          navigate("/pago-instrucciones", { 
+            state: { 
+              orderNumber: invoiceData.invoiceNumber,
+              method: "card",
+              total: invoiceData.total,
+              isPending: false,
+              isInvoicePayment: true
+            } 
+          });
+          sessionStorage.removeItem("invoice_payment");
         } else if (method === "paypal") {
           // Get PayPal configuration and open payment
           const { data: paypalConfig } = await supabase
@@ -341,6 +354,8 @@ export default function Payment() {
             // Use invoice total (already includes subtotal + tax + shipping - discounts)
             const paypalUrl = `https://www.paypal.com/paypalme/${paypalConfig.setting_value.replace('@', '')}/${Number(invoiceData.total).toFixed(2)}EUR`;
             window.open(paypalUrl, '_blank');
+            sessionStorage.removeItem("invoice_payment");
+            toast.success(t('payment:messages.paymentRegistered'));
             navigate("/pago-instrucciones", { 
               state: { 
                 orderNumber: invoiceData.invoiceNumber,
@@ -364,6 +379,8 @@ export default function Payment() {
           
           if (revolutConfig?.setting_value) {
             window.open(revolutConfig.setting_value, '_blank');
+            sessionStorage.removeItem("invoice_payment");
+            toast.success(t('payment:messages.paymentRegistered'));
             navigate("/pago-instrucciones", { 
               state: { 
                 orderNumber: invoiceData.invoiceNumber,
@@ -378,6 +395,7 @@ export default function Payment() {
             navigate("/mi-cuenta?tab=invoices");
           }
         } else {
+          sessionStorage.removeItem("invoice_payment");
           navigate("/mi-cuenta?tab=invoices");
         }
 
@@ -435,9 +453,10 @@ export default function Payment() {
         return;
       }
 
-      // For card payment, show payment info first before redirecting to bank
+      // For card payment, navigate to payment instructions page which will create the order
+      // The order will be created with "pending" status
       if (method === "card") {
-        // Save temporary info
+        // Save pending order info to sessionStorage
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
           shippingInfo,
@@ -450,14 +469,21 @@ export default function Payment() {
           method: "card"
         }));
 
-        // Generar número de pedido temporal
-        const tempOrderNumber = `TEMP-${Date.now()}`;
+        // Generate temporary order number for display until real one is created
+        const tempOrderNumber = `CARD-${Date.now()}`;
         
-        // Mostrar información de pago (NO abrir enlace automáticamente)
-        setSelectedPaymentMethod("card");
-        setOrderCreated({ orderNumber: tempOrderNumber, total });
-        
+        // Navigate to payment instructions page which will create the order
+        // The page will show payment info and a button to go to the bank
         toast.success(t('payment:messages.cardPaymentSelected'));
+        navigate("/pago-instrucciones", { 
+          state: { 
+            orderNumber: tempOrderNumber,
+            method: "card",
+            total: total,
+            isPending: true
+          } 
+        });
+        
         setProcessing(false);
         return;
       }
@@ -1030,171 +1056,6 @@ export default function Payment() {
           </Card>
         )}
 
-        {/* Card Payment Info - Show when card is selected */}
-        {selectedPaymentMethod === "card" && orderCreated && (
-          <Card className="md:col-span-2 shadow-lg border-2 border-blue-200 dark:border-blue-800">
-            <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-t-lg">
-              <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <CardTitle className="text-2xl text-blue-800 dark:text-blue-200">
-                {t('payment:instructions.cardPaymentTitle')}
-              </CardTitle>
-              <CardDescription className="text-blue-700 dark:text-blue-300">
-                {t('payment:instructions.orderNumber')}: <strong className="text-blue-800 dark:text-blue-200">{orderCreated.orderNumber}</strong>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 p-6">
-              {/* Amount to Pay */}
-              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
-                <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
-                <p className="text-4xl font-bold text-blue-600">€{orderCreated.total.toFixed(2)}</p>
-                <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
-              </div>
-
-              {/* Payment Information - Similar to Bank Transfer */}
-              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
-                  <CreditCard className="h-5 w-5" />
-                  {t('payment:instructions.cardPaymentTitle')}
-                </h3>
-                
-                <div className="grid gap-4">
-                  <div className="bg-blue-700/50 rounded-lg p-4">
-                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
-                        {orderCreated.orderNumber}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(orderCreated.orderNumber)}
-                        className="h-12 px-4"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-700/50 rounded-lg p-4">
-                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
-                        €{orderCreated.total.toFixed(2)}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(`€${orderCreated.total.toFixed(2)}`)}
-                        className="h-12 px-4"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Important Instructions - Will be redirected to Revolut */}
-              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
-                <h4 className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  {t('payment:instructions.importantInstructions')}
-                </h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
-                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:openPaymentLink')}"</strong>, {t('payment:instructions.step1Redirect')}</li>
-                  <li>{t('payment:instructions.step2Amount')} <strong>€{orderCreated.total.toFixed(2)}</strong></li>
-                  <li>{t('payment:instructions.step3Reference')} <strong>{orderCreated.orderNumber}</strong></li>
-                  <li>{t('payment:instructions.step4Complete')}</li>
-                </ol>
-              </div>
-
-              {/* Warning */}
-              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    {t('payment:instructions.redirectToBankWarning')}
-                  </p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    {t('payment:instructions.payWithAmount')} <strong>€{orderCreated.total.toFixed(2)}</strong> {t('payment:instructions.andOrderNumber')} <strong>{orderCreated.orderNumber}</strong>
-                  </p>
-                </div>
-              </div>
-
-              {/* QR Codes */}
-              {paymentImages.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-primary" />
-                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {t('payment:instructions.scanQrForCard')}
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {paymentImages.map((img, index) => (
-                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
-                        <img 
-                          src={img} 
-                          alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                <Button 
-                  onClick={() => {
-                    const cardLink = paymentConfig.card_payment_link || paymentConfig.revolut_link;
-                    if (cardLink) {
-                      window.open(cardLink, '_blank');
-                    } else {
-                      toast.error(t('payment:messages.cardPaymentNotConfigured'));
-                    }
-                  }}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
-                  size="lg"
-                >
-                  {t('payment:openPaymentLink')}
-                </Button>
-                <Button 
-                  onClick={() => {
-                    navigate("/pago-instrucciones", { 
-                      state: { 
-                        orderNumber: orderCreated.orderNumber,
-                        method: "card",
-                        total: orderCreated.total,
-                        isPending: true
-                      } 
-                    });
-                  }}
-                  variant="outline" 
-                  className="flex-1" 
-                  size="lg"
-                >
-                  {t('payment:confirmPayment')}
-                </Button>
-              </div>
-              <Button 
-                onClick={() => {
-                  setSelectedPaymentMethod(null);
-                  setOrderCreated(null);
-                }}
-                variant="ghost" 
-                className="w-full" 
-              >
-                {t('payment:changePaymentMethod')}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Payment Methods - Only show if no payment method is selected */}
         {!selectedPaymentMethod && (
         <div className="space-y-4">
@@ -1330,7 +1191,35 @@ export default function Payment() {
                 </Button>
               )}
 
-              {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && (
+              {/* REVOLUT */}
+              {paymentConfig.revolut_enabled && paymentConfig.revolut_link && (
+                <Button
+                  onClick={() => handlePayment("revolut")}
+                  disabled={processing}
+                  className="w-full h-auto py-4 text-lg border-2 hover:bg-purple-50 dark:hover:bg-purple-950"
+                  variant="outline"
+                >
+                  <div className="flex items-center w-full">
+                    <svg className="h-10 w-10 mr-4 text-[#0075EB]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                    </svg>
+                    <div className="text-left flex-grow">
+                      <div className="font-bold text-foreground">{t('payment:methods.revolut')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        💳 {t('payment:methods.revolutDesc')}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Visa</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Mastercard</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Google Pay</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Apple Pay</span>
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              )}
+
+              {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && !paymentConfig.revolut_enabled && (
                 <div className="text-center text-muted-foreground py-8 bg-muted/30 rounded-lg">
                   <p>{t('payment:noPaymentMethods')}</p>
                 </div>
