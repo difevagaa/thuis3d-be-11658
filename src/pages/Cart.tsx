@@ -279,15 +279,15 @@ const Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 md:py-12 pb-24 md:pb-12">
+      <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-6 xs:py-8 md:py-12 pb-24 md:pb-12">
         <Card className="max-w-2xl mx-auto">
-          <CardContent className="p-6 md:p-12 text-center">
-            <ShoppingBag className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 text-muted-foreground" />
-            <h2 className="text-xl md:text-2xl font-bold mb-2">{t('cart:empty.title')}</h2>
-            <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
+          <CardContent className="p-4 xs:p-6 md:p-12 text-center">
+            <ShoppingBag className="h-10 w-10 xs:h-12 xs:w-12 md:h-16 md:w-16 mx-auto mb-2 xs:mb-3 md:mb-4 text-muted-foreground" />
+            <h2 className="text-lg xs:text-xl md:text-2xl font-bold mb-1.5 xs:mb-2">{t('cart:empty.title')}</h2>
+            <p className="text-xs xs:text-sm md:text-base text-muted-foreground mb-3 xs:mb-4 md:mb-6">
               {t('cart:empty.description')}
             </p>
-            <Button onClick={() => navigate("/productos")} size="sm" className="md:h-10">
+            <Button onClick={() => navigate("/productos")} size="sm" className="h-8 xs:h-9 md:h-10 text-xs xs:text-sm">
               {t('cart:empty.button')}
             </Button>
           </CardContent>
@@ -473,20 +473,20 @@ const Cart = () => {
                   )}
                 </div>
                 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
+                <div className="space-y-1 xs:space-y-1.5 md:space-y-2">
+                  <Label className="flex items-center gap-1 xs:gap-1.5 md:gap-2 text-[10px] xs:text-xs md:text-sm">
                     <Gift className="h-3 w-3 md:h-4 md:w-4" />
                     {t('cart:giftCard.title')}
                   </Label>
                   {appliedGiftCard ? (
-                    <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                    <div className="flex items-center justify-between p-1.5 xs:p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{appliedGiftCard.code}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs xs:text-sm font-medium truncate">{appliedGiftCard.code}</p>
+                        <p className="text-[10px] xs:text-xs text-muted-foreground">
                           {t('cart:giftCard.balance')}: €{appliedGiftCard.current_balance}
                         </p>
                       </div>
-                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="h-7 text-xs ml-2">
+                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="h-6 xs:h-7 text-[10px] xs:text-xs ml-1 xs:ml-2 shrink-0">
                         {t('cart:giftCard.remove')}
                       </Button>
                     </div>
@@ -494,12 +494,12 @@ const Cart = () => {
                     <div className="flex gap-1.5 md:gap-2">
                       <Input
                         placeholder={t('cart:giftCard.placeholder')}
-                        className="text-sm h-9 min-w-0 flex-1"
+                        className="text-xs xs:text-sm h-8 xs:h-9 min-w-0 flex-1"
                         value={giftCardCode}
                         onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
                         disabled={loading}
                       />
-                      <Button onClick={applyGiftCard} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-2 xs:px-3 whitespace-nowrap shrink-0">
+                      <Button onClick={applyGiftCard} variant="outline" disabled={loading} size="sm" className="h-8 xs:h-9 text-[10px] xs:text-xs md:text-sm px-2 xs:px-3 whitespace-nowrap shrink-0">
                         {t('cart:giftCard.apply')}
                       </Button>
                     </div>
@@ -508,7 +508,7 @@ const Cart = () => {
               </div>
               
               <Button 
-                className="w-full" 
+                className="w-full text-xs xs:text-sm" 
                 size="default"
                 onClick={async () => {
                   const { data: { user } } = await supabase.auth.getUser();
@@ -525,7 +525,7 @@ const Cart = () => {
               
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full text-xs xs:text-sm"
                 size="default"
                 onClick={() => navigate("/productos")}
               >
