@@ -297,100 +297,100 @@ const Cart = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12">
-      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-8">{t('cart:title')}</h1>
+    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-4 xs:py-6 md:py-12 pb-24 md:pb-12">
+      <h1 className="text-xl xs:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 xs:mb-4 md:mb-8">{t('cart:title')}</h1>
       
-      <div className="grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-        <div className="lg:col-span-2 space-y-3 md:space-y-4">
+      <div className="grid lg:grid-cols-3 gap-3 xs:gap-4 md:gap-6 lg:gap-8">
+        <div className="lg:col-span-2 space-y-2 xs:space-y-3 md:space-y-4">
           {cartItems.map((item) => (
             <Card key={item.id}>
-              <CardContent className="p-3 md:p-6">
-                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-base md:text-lg">{item.name}</h3>
+              <CardContent className="p-2.5 xs:p-3 md:p-6">
+                <div className="flex flex-col sm:flex-row gap-2 xs:gap-3 md:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1.5 xs:mb-2 gap-2">
+                      <h3 className="font-semibold text-sm xs:text-base md:text-lg truncate">{item.name}</h3>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="sm:hidden h-8 w-8"
+                        className="sm:hidden h-7 w-7 xs:h-8 xs:w-8 shrink-0"
                         onClick={() => removeItem(item.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                       </Button>
                     </div>
                     {item.materialName && (
-                      <p className="text-xs md:text-sm text-muted-foreground">Material: {item.materialName}</p>
+                      <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">Material: {item.materialName}</p>
                     )}
                     {item.colorName && (
-                      <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.color')}: {item.colorName}</p>
+                      <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">{t('cart:item.color')}: {item.colorName}</p>
                     )}
                     {item.customText && (
-                      <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.text')}: {item.customText}</p>
+                      <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground truncate">{t('cart:item.text')}: {item.customText}</p>
                     )}
                     {item.colorSelections && item.colorSelections.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold text-muted-foreground">Personalización:</p>
+                      <div className="mt-1.5 xs:mt-2 space-y-0.5 xs:space-y-1">
+                        <p className="text-[10px] xs:text-xs font-semibold text-muted-foreground">Personalización:</p>
                         {item.colorSelections.map((sel, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-xs">
-                            <span className="font-medium">{sel.section_name}:</span>
+                          <div key={idx} className="flex items-center gap-1.5 xs:gap-2 text-[10px] xs:text-xs">
+                            <span className="font-medium truncate">{sel.section_name}:</span>
                             {sel.selection_type === 'color' ? (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1 xs:gap-1.5 min-w-0">
                                 {sel.color_hex && (
                                   <div
-                                    className="w-3 h-3 rounded border"
+                                    className="w-2.5 h-2.5 xs:w-3 xs:h-3 rounded border shrink-0"
                                     style={{ backgroundColor: sel.color_hex }}
                                   />
                                 )}
-                                <span className="text-muted-foreground">{sel.color_name}</span>
+                                <span className="text-muted-foreground truncate">{sel.color_name}</span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1 xs:gap-1.5 min-w-0">
                                 <img 
                                   src={sel.image_url} 
                                   alt={sel.image_name}
-                                  className="w-6 h-6 object-cover rounded border"
+                                  className="w-5 h-5 xs:w-6 xs:h-6 object-cover rounded border shrink-0"
                                 />
-                                <span className="text-muted-foreground">{sel.image_name}</span>
+                                <span className="text-muted-foreground truncate">{sel.image_name}</span>
                               </div>
                             )}
                           </div>
                         ))}
                       </div>
                     )}
-                    <p className="text-base md:text-lg font-bold text-primary mt-2">€{item.price}</p>
+                    <p className="text-sm xs:text-base md:text-lg font-bold text-primary mt-1.5 xs:mt-2">€{item.price}</p>
                   </div>
                   
-                  <div className="flex sm:flex-col items-center sm:items-end gap-3 md:gap-4">
+                  <div className="flex sm:flex-col items-center sm:items-end gap-2 xs:gap-3 md:gap-4">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hidden sm:flex"
+                      className="hidden sm:flex h-8 w-8"
                       onClick={() => removeItem(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                     
-                    <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="flex items-center gap-1 xs:gap-1.5 md:gap-2">
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 md:h-10 md:w-10"
+                        className="h-7 w-7 xs:h-8 xs:w-8 md:h-10 md:w-10"
                         onClick={() => updateQuantity(item.id, -1)}
                       >
                         <Minus className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
-                      <span className="w-10 md:w-12 text-center font-semibold text-sm md:text-base">{item.quantity}</span>
+                      <span className="w-8 xs:w-10 md:w-12 text-center font-semibold text-xs xs:text-sm md:text-base">{item.quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 md:h-10 md:w-10"
+                        className="h-7 w-7 xs:h-8 xs:w-8 md:h-10 md:w-10"
                         onClick={() => updateQuantity(item.id, 1)}
                       >
                         <Plus className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
                     </div>
                     
-                    <p className="font-semibold text-sm md:text-base whitespace-nowrap">
+                    <p className="font-semibold text-xs xs:text-sm md:text-base whitespace-nowrap">
                       {t('cart:item.subtotal')}: €{(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
@@ -402,58 +402,58 @@ const Cart = () => {
         
         <div className="lg:col-span-1">
           <Card className="lg:sticky lg:top-4">
-            <CardHeader>
-              <CardTitle className="text-lg md:text-xl">{t('cart:summary.title')}</CardTitle>
+            <CardHeader className="p-3 xs:p-4 md:p-6">
+              <CardTitle className="text-base xs:text-lg md:text-xl">{t('cart:summary.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 md:space-y-4">
-              <div className="space-y-1.5 md:space-y-2">
-                <div className="flex justify-between text-sm md:text-base">
+            <CardContent className="space-y-2 xs:space-y-3 md:space-y-4 p-3 xs:p-4 md:p-6 pt-0">
+              <div className="space-y-1 xs:space-y-1.5 md:space-y-2">
+                <div className="flex justify-between text-xs xs:text-sm md:text-base">
                   <span className="text-muted-foreground">{t('common:subtotal')}</span>
                   <span className="font-semibold">€{subtotal.toFixed(2)}</span>
                 </div>
                 
                 {appliedCoupon && (
-                  <div className="flex justify-between text-green-600 text-sm md:text-base">
-                    <span className="flex items-center gap-1">
-                      <Tag className="h-3 w-3 md:h-4 md:w-4" />
+                  <div className="flex justify-between text-green-600 text-xs xs:text-sm md:text-base">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <Tag className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
                       <span className="truncate">{t('cart:summary.discount')} ({appliedCoupon.code})</span>
                     </span>
-                    <span className="font-semibold whitespace-nowrap">-€{discount.toFixed(2)}</span>
+                    <span className="font-semibold whitespace-nowrap ml-1">-€{discount.toFixed(2)}</span>
                   </div>
                 )}
                 
                 {appliedGiftCard && (
-                  <div className="flex justify-between text-blue-600 text-sm md:text-base">
-                    <span className="flex items-center gap-1">
-                      <Gift className="h-3 w-3 md:h-4 md:w-4" />
+                  <div className="flex justify-between text-blue-600 text-xs xs:text-sm md:text-base">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <Gift className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
                       <span className="truncate">{t('cart:summary.giftCard')}</span>
                     </span>
-                    <span className="font-semibold whitespace-nowrap">-€{giftCardApplied.toFixed(2)}</span>
+                    <span className="font-semibold whitespace-nowrap ml-1">-€{giftCardApplied.toFixed(2)}</span>
                   </div>
                 )}
                 
                 {taxableAmount > 0 && (
-                  <div className="flex justify-between text-sm md:text-base">
+                  <div className="flex justify-between text-xs xs:text-sm md:text-base">
                     <span className="text-muted-foreground">{t('cart:summary.tax')}</span>
                     <span className="font-semibold">€{tax.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="border-t pt-2 flex justify-between text-base md:text-lg font-bold">
+                <div className="border-t pt-1.5 xs:pt-2 flex justify-between text-sm xs:text-base md:text-lg font-bold">
                   <span>{t('common:total')}</span>
                   <span className="text-primary">€{total.toFixed(2)}</span>
                 </div>
               </div>
               
-              <div className="space-y-2.5 md:space-y-3 border-t pt-3 md:pt-4">
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
+              <div className="space-y-2 xs:space-y-2.5 md:space-y-3 border-t pt-2 xs:pt-3 md:pt-4">
+                <div className="space-y-1 xs:space-y-1.5 md:space-y-2">
+                  <Label className="flex items-center gap-1 xs:gap-1.5 md:gap-2 text-[10px] xs:text-xs md:text-sm">
                     <Tag className="h-3 w-3 md:h-4 md:w-4" />
                     {t('cart:coupon.title')}
                   </Label>
                   {appliedCoupon ? (
-                    <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded text-sm">
+                    <div className="flex items-center justify-between p-1.5 xs:p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs xs:text-sm">
                       <span className="font-medium truncate">{appliedCoupon.code}</span>
-                      <Button size="sm" variant="ghost" onClick={removeCoupon} className="h-7 text-xs">
+                      <Button size="sm" variant="ghost" onClick={removeCoupon} className="h-6 xs:h-7 text-[10px] xs:text-xs shrink-0 ml-1">
                         {t('cart:coupon.remove')}
                       </Button>
                     </div>
@@ -461,12 +461,12 @@ const Cart = () => {
                     <div className="flex gap-1.5 md:gap-2">
                       <Input
                         placeholder={t('cart:coupon.placeholder')}
-                        className="text-sm h-9"
+                        className="text-xs xs:text-sm h-8 xs:h-9 min-w-0 flex-1"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                         disabled={loading}
                       />
-                      <Button onClick={applyCoupon} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-3 whitespace-nowrap">
+                      <Button onClick={applyCoupon} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-2 xs:px-3 whitespace-nowrap shrink-0">
                         {t('cart:coupon.apply')}
                       </Button>
                     </div>
@@ -494,12 +494,12 @@ const Cart = () => {
                     <div className="flex gap-1.5 md:gap-2">
                       <Input
                         placeholder={t('cart:giftCard.placeholder')}
-                        className="text-sm h-9"
+                        className="text-sm h-9 min-w-0 flex-1"
                         value={giftCardCode}
                         onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
                         disabled={loading}
                       />
-                      <Button onClick={applyGiftCard} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-3 whitespace-nowrap">
+                      <Button onClick={applyGiftCard} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-2 xs:px-3 whitespace-nowrap shrink-0">
                         {t('cart:giftCard.apply')}
                       </Button>
                     </div>
