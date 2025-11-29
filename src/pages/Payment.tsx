@@ -344,62 +344,33 @@ export default function Payment() {
           });
           sessionStorage.removeItem("invoice_payment");
         } else if (method === "paypal") {
-          // Get PayPal configuration and open payment
-          const { data: paypalConfig } = await supabase
-            .from("site_settings")
-            .select("setting_value")
-            .eq("setting_key", "paypal_email")
-            .single();
-          
-          if (paypalConfig?.setting_value) {
-            // Extract username from email (if email) or use as-is (if username)
-            // PayPal.me uses username, not email. If admin entered email, extract username part
-            const paypalUsername = paypalConfig.setting_value.includes('@') 
-              ? paypalConfig.setting_value.split('@')[0] 
-              : paypalConfig.setting_value;
-            // Use invoice total (already includes subtotal + tax + shipping - discounts)
-            const paypalUrl = `https://www.paypal.com/paypalme/${paypalUsername}/${Number(invoiceData.total).toFixed(2)}EUR`;
-            window.open(paypalUrl, '_blank');
-            sessionStorage.removeItem("invoice_payment");
-            toast.success(t('payment:messages.paymentRegistered'));
-            navigate("/pago-instrucciones", { 
-              state: { 
-                orderNumber: invoiceData.invoiceNumber,
-                method: "paypal",
-                total: invoiceData.total,
-                isPending: false,
-                isInvoicePayment: true
-              } 
-            });
-          } else {
-            toast.error(t('payment:messages.paypalNotConfigured'));
-            navigate("/mi-cuenta?tab=invoices");
-          }
+          // For PayPal payment on invoices, show payment info page FIRST before redirecting to PayPal
+          // DO NOT open PayPal link directly - let the payment instructions page handle it
+          toast.success(t('payment:messages.paypalSelected'));
+          navigate("/pago-instrucciones", { 
+            state: { 
+              orderNumber: invoiceData.invoiceNumber,
+              method: "paypal",
+              total: invoiceData.total,
+              isPending: false,
+              isInvoicePayment: true
+            } 
+          });
+          sessionStorage.removeItem("invoice_payment");
         } else if (method === "revolut") {
-          // Get Revolut configuration and open payment
-          const { data: revolutConfig } = await supabase
-            .from("site_settings")
-            .select("setting_value")
-            .eq("setting_key", "revolut_link")
-            .single();
-          
-          if (revolutConfig?.setting_value) {
-            window.open(revolutConfig.setting_value, '_blank');
-            sessionStorage.removeItem("invoice_payment");
-            toast.success(t('payment:messages.paymentRegistered'));
-            navigate("/pago-instrucciones", { 
-              state: { 
-                orderNumber: invoiceData.invoiceNumber,
-                method: "revolut",
-                total: invoiceData.total,
-                isPending: false,
-                isInvoicePayment: true
-              } 
-            });
-          } else {
-            toast.error(t('payment:messages.revolutNotConfigured'));
-            navigate("/mi-cuenta?tab=invoices");
-          }
+          // For Revolut payment on invoices, show payment info page FIRST before redirecting to Revolut
+          // DO NOT open Revolut link directly - let the payment instructions page handle it
+          toast.success(t('payment:messages.revolutSelected'));
+          navigate("/pago-instrucciones", { 
+            state: { 
+              orderNumber: invoiceData.invoiceNumber,
+              method: "revolut",
+              total: invoiceData.total,
+              isPending: false,
+              isInvoicePayment: true
+            } 
+          });
+          sessionStorage.removeItem("invoice_payment");
         } else {
           sessionStorage.removeItem("invoice_payment");
           navigate("/mi-cuenta?tab=invoices");
