@@ -351,8 +351,13 @@ export default function Payment() {
             .single();
           
           if (paypalConfig?.setting_value) {
+            // Extract username from email (if email) or use as-is (if username)
+            // PayPal.me uses username, not email. If admin entered email, extract username part
+            const paypalUsername = paypalConfig.setting_value.includes('@') 
+              ? paypalConfig.setting_value.split('@')[0] 
+              : paypalConfig.setting_value;
             // Use invoice total (already includes subtotal + tax + shipping - discounts)
-            const paypalUrl = `https://www.paypal.com/paypalme/${paypalConfig.setting_value.replace('@', '')}/${Number(invoiceData.total).toFixed(2)}EUR`;
+            const paypalUrl = `https://www.paypal.com/paypalme/${paypalUsername}/${Number(invoiceData.total).toFixed(2)}EUR`;
             window.open(paypalUrl, '_blank');
             sessionStorage.removeItem("invoice_payment");
             toast.success(t('payment:messages.paymentRegistered'));
@@ -454,7 +459,7 @@ export default function Payment() {
       }
 
       // For card payment, navigate to payment instructions page which will create the order
-      // The order will be created with "pending" status
+      // The order will be created with "pending" status when user clicks "Go to bank"
       if (method === "card") {
         // Save pending order info to sessionStorage
         sessionStorage.setItem("pending_order", JSON.stringify({
@@ -470,7 +475,7 @@ export default function Payment() {
         }));
 
         // Generate temporary order number for display until real one is created
-        const tempOrderNumber = `CARD-${Date.now()}`;
+        const tempOrderNumber = `PAGO-${Date.now()}`;
         
         // Navigate to payment instructions page which will create the order
         // The page will show payment info and a button to go to the bank
@@ -488,261 +493,78 @@ export default function Payment() {
         return;
       }
 
-      // Get saved gift card from cart if applied
-      const savedGiftCard = sessionStorage.getItem("applied_gift_card");
-      let giftCardDiscount = 0;
-      let giftCardData = null;
-      
-      if (savedGiftCard) {
-        giftCardData = JSON.parse(savedGiftCard);
-        giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
-      }
-
-      // CRÍTICO: El total final = total (ya incluye IVA y descuento de cupón) - descuento de tarjeta regalo
-      const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
-      const totalDiscount = Number((couponDiscount + giftCardDiscount).toFixed(2));
-
-      // Preparar notas del pedido
-      let orderNotes = "";
-      if (appliedCoupon) {
-        orderNotes += `Cupón aplicado: ${appliedCoupon.code} (-€${couponDiscount.toFixed(2)})\n`;
-      }
-      if (giftCardData) {
-        orderNotes += `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})\n`;
-      }
-      
-      // Si es compra de tarjeta regalo, agregar info a las notas
-      if (isGiftCardPurchase) {
-        const giftCardItem = cartItems.find(item => item.isGiftCard);
-        if (giftCardItem) {
-          orderNotes += `Tarjeta Regalo: ${giftCardItem.giftCardCode}\nPara: ${giftCardItem.giftCardRecipient}\nDe: ${giftCardItem.giftCardSender}`;
-        }
-      }
-
-      // Create order (user is guaranteed to be authenticated at this point)
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
+      // For PayPal payment, navigate to payment instructions page which will create the order
+      // The order will be created with "pending" status when user clicks "Go to PayPal"
+      if (method === "paypal") {
+        // Save pending order info to sessionStorage
+        sessionStorage.setItem("pending_order", JSON.stringify({
+          cartItems,
+          shippingInfo,
+          total,
           subtotal,
           tax,
           shipping: effectiveShipping,
-          discount: totalDiscount,
-          total: finalTotal,
-          payment_method: method,
-          payment_status: "pending",
-          shipping_address: JSON.stringify(shippingInfo),
-          billing_address: JSON.stringify(shippingInfo),
-          notes: orderNotes.trim() || null
-        })
-        .select()
-        .single();
+          couponDiscount,
+          appliedCoupon,
+          method: "paypal"
+        }));
 
-      if (orderError) throw orderError;
-
-      // Update gift card balance if used
-      if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
-          giftCardData.id,
-          giftCardData.current_balance - giftCardDiscount
-        );
-        sessionStorage.removeItem("applied_gift_card");
-      }
-
-      // Increment coupon usage counter if coupon was applied
-      if (appliedCoupon && couponDiscount > 0) {
-        try {
-          const { error: couponUpdateError } = await supabase
-            .from("coupons")
-            .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
-            .eq("id", appliedCoupon.id);
-          
-          if (couponUpdateError) {
-            logger.error("Error updating coupon usage:", couponUpdateError);
-          } else {
-            logger.info("Coupon usage incremented:", appliedCoupon.code);
-          }
-          
-          // If this is a redeemed loyalty coupon, update the redemption status
-          if (appliedCoupon.max_uses === 1) {
-            await supabase
-              .from("loyalty_redemptions")
-              .update({ status: 'used', used_at: new Date().toISOString() })
-              .eq("coupon_code", appliedCoupon.code);
-          }
-        } catch (couponError) {
-          logger.error("Error processing coupon:", couponError);
-        }
-        sessionStorage.removeItem("applied_coupon");
-      }
-
-      // Create order items using utility function
-      const orderItemsData = convertCartToOrderItems(cartItems, order.id);
-      
-      logger.debug('Order items prepared', { count: orderItemsData.length });
-
-      if (!cartItems || cartItems.length === 0) {
-        logger.error('CRITICAL: cartItems is empty');
-        throw new Error('El carrito está vacío. No se pueden crear items del pedido.');
-      }
-
-      if (orderItemsData.length === 0) {
-        logger.error('CRITICAL: orderItemsData is empty');
-        throw new Error('Error preparando items del pedido.');
-      }
-
-      const insertedItems = await createOrderItems(orderItemsData);
-      
-      if (!insertedItems || insertedItems.length === 0) {
-        logger.error('Failed to create order items');
-        toast.error(t('payment:messages.errorCreatingOrderItems'));
-        throw new Error(t('payment:messages.errorCreatingOrderItems'));
-      }
-
-      logger.info('Order items created successfully', { 
-        orderId: order.id, 
-        itemCount: insertedItems.length 
-      });
-
-      // Create invoice automatically (el trigger se encarga de la notificación)
-      try {
-        // CRÍTICO: El número de factura debe ser igual al número de pedido
-        await supabase.from("invoices").insert({
-          invoice_number: order.order_number, // Usar el mismo número del pedido
-          user_id: user?.id || null,
-          order_id: order.id,
-          subtotal: subtotal,
-          tax: tax,
-          shipping: effectiveShipping, // CRÍTICO: Incluir el costo de envío efectivo
-          discount: totalDiscount, // Incluir total de descuentos (cupón + tarjeta regalo)
-          coupon_code: appliedCoupon?.code || null,
-          coupon_discount: couponDiscount > 0 ? couponDiscount : null,
-          gift_card_code: giftCardData?.code || null,
-          gift_card_amount: giftCardDiscount > 0 ? giftCardDiscount : null,
-          total: finalTotal,
-          payment_method: method,
-          payment_status: "pending",
-          issue_date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          notes: `Factura generada automáticamente para el pedido ${order.order_number}`
-        });
-      } catch (invoiceError) {
-        logger.error('Error creating invoice:', invoiceError);
-      }
-
-      // Enviar correo de confirmación al cliente
-      if (user?.id) {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', user.id)
-            .single();
-
-          if (profile?.email) {
-            await supabase.functions.invoke('send-order-confirmation', {
-              body: {
-                to: profile.email,
-                customer_name: profile.full_name || 'Cliente',
-                order_number: order.order_number,
-                subtotal: subtotal,
-                tax: tax,
-                shipping: effectiveShipping,
-                discount: totalDiscount,
-                total: finalTotal,
-                items: cartItems.map(item => ({
-                  product_name: item.name,
-                  quantity: item.quantity,
-                  unit_price: item.price
-                }))
-              }
-            });
-          }
-        } catch (emailError) {
-          logger.error('Error sending order confirmation email:', emailError);
-        }
-      }
-
-      // Notificar a administradores
-      try {
-        await supabase.functions.invoke('send-admin-notification', {
-          body: {
-            to: 'admin@thuis3d.be',
-            type: 'order',
-            subject: `Nuevo Pedido: ${order.order_number}`,
-            message: `Pedido por €${finalTotal.toFixed(2)} de ${shippingInfo.fullName || shippingInfo.full_name}`,
-            link: `/admin/pedidos/${order.id}`,
-            order_number: order.order_number,
-            customer_name: shippingInfo.fullName || shippingInfo.full_name,
-            customer_email: shippingInfo.email
-          }
-        });
-      } catch (notifError) {
-        logger.error('Error sending admin notification:', notifError);
-      }
-
-      // Clear cart and session
-      localStorage.removeItem("cart");
-      const sessionId = sessionStorage.getItem("checkout_session_id");
-      if (sessionId) {
-        await supabase.from('checkout_sessions').delete().eq('id', sessionId);
-        sessionStorage.removeItem("checkout_session_id");
-      }
-
-      toast.success(t('payment:messages.orderCreated'));
-
-      // Navigate based on payment method
-      if (method === "paypal") {
-        const { data: paypalConfig } = await supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "paypal_email")
-          .single();
+        // Generate temporary order number for display until real one is created
+        const tempOrderNumber = `PAGO-${Date.now()}`;
         
-        if (paypalConfig?.setting_value) {
-          // CRÍTICO: Usar finalTotal que ya incluye: subtotal + tax + shipping - descuentos
-          const paypalUrl = `https://www.paypal.com/paypalme/${paypalConfig.setting_value.replace('@', '')}/${finalTotal.toFixed(2)}EUR`;
-          window.open(paypalUrl, '_blank');
-          navigate("/pago-instrucciones", { 
-            state: { 
-              orderNumber: order.order_number, 
-              method: "paypal",
-              total: finalTotal,
-              subtotal: subtotal,
-              tax: tax,
-              shipping: effectiveShipping
-            }
-          });
-        } else {
-          toast.error(t('payment:messages.paypalNotConfigured'));
-          navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
-        }
-      } else if (method === "revolut") {
-        const { data: revolutConfig } = await supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "revolut_link")
-          .single();
+        // Navigate to payment instructions page
+        toast.success(t('payment:messages.paypalSelected'));
+        navigate("/pago-instrucciones", { 
+          state: { 
+            orderNumber: tempOrderNumber,
+            method: "paypal",
+            total: total,
+            isPending: true
+          } 
+        });
         
-        if (revolutConfig?.setting_value) {
-          window.open(revolutConfig.setting_value, '_blank');
-          navigate("/pago-instrucciones", { 
-            state: { 
-              orderNumber: order.order_number, 
-              method: "revolut",
-              total: finalTotal,
-              subtotal: subtotal,
-              tax: tax,
-              shipping: effectiveShipping
-            } 
-          });
-        } else {
-          toast.error(t('payment:messages.revolutNotConfigured'));
-          navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
-        }
-      } else {
-        navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
+        setProcessing(false);
+        return;
       }
+
+      // For Revolut payment, navigate to payment instructions page which will create the order
+      // The order will be created with "pending" status when user clicks "Go to Revolut"
+      if (method === "revolut") {
+        // Save pending order info to sessionStorage
+        sessionStorage.setItem("pending_order", JSON.stringify({
+          cartItems,
+          shippingInfo,
+          total,
+          subtotal,
+          tax,
+          shipping: effectiveShipping,
+          couponDiscount,
+          appliedCoupon,
+          method: "revolut"
+        }));
+
+        // Generate temporary order number for display until real one is created
+        const tempOrderNumber = `PAGO-${Date.now()}`;
+        
+        // Navigate to payment instructions page
+        toast.success(t('payment:messages.revolutSelected'));
+        navigate("/pago-instrucciones", { 
+          state: { 
+            orderNumber: tempOrderNumber,
+            method: "revolut",
+            total: total,
+            isPending: true
+          } 
+        });
+        
+        setProcessing(false);
+        return;
+      }
+
+      // This code should not be reached for normal payment methods
+      // But keep it as fallback for any edge cases
+      toast.error(t('payment:messages.invalidPaymentMethod'));
+      setProcessing(false);
     } catch (error) {
       logger.error("Error creating order:", error);
       toast.error(t('payment:messages.errorProcessingOrder'));
@@ -1122,26 +944,27 @@ export default function Payment() {
               <CardDescription className="text-foreground/70">{t('payment:paymentMethod')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
-              {/* TARJETA - Opción principal (usa Revolut internamente) */}
+              {/* TARJETA - Pago con tarjeta */}
               {paymentConfig.card_enabled && (
                 <Button
                   onClick={() => handlePayment("card")}
                   disabled={processing}
-                  className="w-full h-auto py-4 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                  className="w-full h-auto py-4 text-lg border-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  variant="outline"
                 >
                   <div className="flex items-center w-full">
-                    <CreditCard className="h-10 w-10 mr-4" />
+                    <CreditCard className="h-10 w-10 mr-4 text-blue-600" />
                     <div className="text-left flex-grow">
-                      <div className="font-bold text-lg">{t('payment:methods.creditCard')}</div>
-                      <div className="text-xs text-white/90 mt-1">
+                      <div className="font-bold text-foreground">{t('payment:methods.creditCard')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
                         💳 {t('payment:methods.creditCardDesc')}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Visa</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Mastercard</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Bancontact</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Google Pay</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/20">Apple Pay</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Visa</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Mastercard</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Bancontact</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Google Pay</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Apple Pay</span>
                       </div>
                     </div>
                   </div>
