@@ -429,6 +429,10 @@ export default function Payment() {
       const tax = calculateTax(); // Tax calculated according to settings (after discount)
       const total = calculateTotal(); // subtotal - discount + tax + shipping
 
+      // Get the payment reference from shipping info (generated in PaymentSummary)
+      // This ensures the same reference is used across all payment methods
+      const paymentReference = shippingInfo?.payment_reference || `REF${Date.now().toString().slice(-6)}`;
+
       // For bank transfer, show payment info on the same page
       if (method === "bank_transfer") {
         
@@ -446,12 +450,12 @@ export default function Payment() {
           method: "bank_transfer"
         }));
 
-        // Generate temporary order number to display
-        const tempOrderNumber = `TEMP-${Date.now()}`;
+        // Use the consistent payment reference
+        const orderNumber = paymentReference;
         
         // Show payment info on the same page
         setSelectedPaymentMethod("bank_transfer");
-        setOrderCreated({ orderNumber: tempOrderNumber, total });
+        setOrderCreated({ orderNumber, total });
         
         toast.success(t('payment:messages.bankTransferSelected'));
         setProcessing(false);
@@ -474,15 +478,15 @@ export default function Payment() {
           method: "card"
         }));
 
-        // Generate temporary order number for display until real one is created
-        const tempOrderNumber = `PAGO-${Date.now()}`;
+        // Use the consistent payment reference
+        const orderNumber = paymentReference;
         
         // Navigate to payment instructions page which will create the order
         // The page will show payment info and a button to go to the bank
         toast.success(t('payment:messages.cardPaymentSelected'));
         navigate("/pago-instrucciones", { 
           state: { 
-            orderNumber: tempOrderNumber,
+            orderNumber,
             method: "card",
             total: total,
             isPending: true
@@ -509,14 +513,14 @@ export default function Payment() {
           method: "paypal"
         }));
 
-        // Generate temporary order number for display until real one is created
-        const tempOrderNumber = `PAGO-${Date.now()}`;
+        // Use the consistent payment reference
+        const orderNumber = paymentReference;
         
         // Navigate to payment instructions page
         toast.success(t('payment:messages.paypalSelected'));
         navigate("/pago-instrucciones", { 
           state: { 
-            orderNumber: tempOrderNumber,
+            orderNumber,
             method: "paypal",
             total: total,
             isPending: true
@@ -543,14 +547,14 @@ export default function Payment() {
           method: "revolut"
         }));
 
-        // Generate temporary order number for display until real one is created
-        const tempOrderNumber = `PAGO-${Date.now()}`;
+        // Use the consistent payment reference
+        const orderNumber = paymentReference;
         
         // Navigate to payment instructions page
         toast.success(t('payment:messages.revolutSelected'));
         navigate("/pago-instrucciones", { 
           state: { 
-            orderNumber: tempOrderNumber,
+            orderNumber,
             method: "revolut",
             total: total,
             isPending: true

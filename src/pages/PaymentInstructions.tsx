@@ -59,6 +59,10 @@ export default function PaymentInstructions() {
       const safeShipping = orderShipping != null ? Number(orderShipping) : 0;
       const safeCouponDiscount = orderCouponDiscount != null ? Number(orderCouponDiscount) : 0;
 
+      // Get the payment reference from shipping info - this was generated in PaymentSummary
+      // This ensures the order number matches the payment reference shown to the customer
+      const paymentReference = shippingInfo?.payment_reference || orderNumber;
+
       // CRÍTICO: Permitir checkout sin autenticación
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -77,8 +81,10 @@ export default function PaymentInstructions() {
       
       // Create order using utility function
       // CRÍTICO: Usar el costo de envío y descuento del pendingOrder
+      // Use the pre-generated payment reference as the order number
       const order = await createOrder({
         userId: user?.id || null, // Permitir user_id = null para invitados
+        orderNumber: paymentReference, // Use the same reference for order number
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order

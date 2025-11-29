@@ -14,6 +14,18 @@ import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 
+/**
+ * Generates a payment reference in the format: 3 numbers + 3 letters (e.g., "123ABC")
+ * This reference is used consistently across all payment methods
+ */
+const generatePaymentReference = (): string => {
+  const numbers = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
+  const letters = Array.from({ length: 3 }, () => 
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join('');
+  return `${numbers}${letters}`;
+};
+
 interface CartItem {
   id: string;
   productId: string;
@@ -77,9 +89,28 @@ export default function PaymentSummary() {
         return;
       }
 
-      const shippingData = typeof session.shipping_info === 'string' 
+      let shippingData = typeof session.shipping_info === 'string' 
         ? JSON.parse(session.shipping_info) 
         : session.shipping_info;
+      
+      // Generate and store payment reference if not already exists
+      // This ensures the reference stays consistent throughout the checkout process
+      if (!shippingData.payment_reference) {
+        const paymentReference = generatePaymentReference();
+        shippingData = { ...shippingData, payment_reference: paymentReference };
+        
+        // Update the checkout session with the payment reference
+        const { error: updateError } = await supabase
+          .from("checkout_sessions")
+          .update({ shipping_info: shippingData })
+          .eq("id", sessionId);
+        
+        if (updateError) {
+          logger.error("Error updating payment reference:", updateError);
+        } else {
+          logger.info("Payment reference generated and stored:", paymentReference);
+        }
+      }
       
       setShippingInfo(shippingData);
 

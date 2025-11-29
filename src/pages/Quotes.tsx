@@ -82,8 +82,10 @@ const Quotes = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
   // Control de pestañas - lee el parámetro 'tab' de la URL para determinar la pestaña activa inicial
-  const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<'3d' | 'service'>(tabParam === 'service' ? 'service' : '3d');
+  const [activeTab, setActiveTab] = useState<'3d' | 'service'>(() => {
+    const tabParam = searchParams.get('tab');
+    return tabParam === 'service' ? 'service' : '3d';
+  });
 
   // Cargar países disponibles
   useEffect(() => {
