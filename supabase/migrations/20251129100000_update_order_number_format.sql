@@ -16,18 +16,18 @@ DECLARE
   num2 INT;
   num3 INT;
 BEGIN
-  -- Generar 3 letras aleatorias (A-Z)
+  -- Generate 3 random letters (A-Z)
   letter1 := chr(65 + floor(random() * 26)::int);
   letter2 := chr(65 + floor(random() * 26)::int);
   letter3 := chr(65 + floor(random() * 26)::int);
   
-  -- Generar 3 números aleatorios (0-9)
+  -- Generate 3 random numbers (0-9)
   num1 := floor(random() * 10)::int;
   num2 := floor(random() * 10)::int;
   num3 := floor(random() * 10)::int;
   
-  -- Formato entremezclado: L1N1L2N2L3N3
-  -- Ejemplo: A1B2C3
+  -- Mixed format: L1N1L2N2L3N3
+  -- Example: A1B2C3
   new_number := letter1 || num1 || letter2 || num2 || letter3 || num3;
   
   RETURN new_number;

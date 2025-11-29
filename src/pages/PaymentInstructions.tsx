@@ -255,7 +255,7 @@ export default function PaymentInstructions() {
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer todas las claves de configuración de pago relevantes
+      // Load all relevant payment configuration keys
       const settingKeys = [
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
         'company_info', 'payment_images', 'card_payment_link', 'revolut_link', 'paypal_email'
@@ -312,7 +312,12 @@ export default function PaymentInstructions() {
     } else if (method === "paypal") {
       const paypalEmail = paymentConfig?.paypal_email;
       if (paypalEmail) {
-        const paypalUrl = `https://www.paypal.com/paypalme/${paypalEmail.replace('@', '')}/${Number(total).toFixed(2)}EUR`;
+        // Extract username from email (if email) or use as-is (if username)
+        // PayPal.me uses username, not email. If admin entered email, extract username part
+        const paypalUsername = paypalEmail.includes('@') 
+          ? paypalEmail.split('@')[0] 
+          : paypalEmail;
+        const paypalUrl = `https://www.paypal.com/paypalme/${paypalUsername}/${Number(total).toFixed(2)}EUR`;
         window.open(paypalUrl, '_blank');
       } else {
         i18nToast.error("payment:messages.paypalNotConfigured");

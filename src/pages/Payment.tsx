@@ -351,8 +351,13 @@ export default function Payment() {
             .single();
           
           if (paypalConfig?.setting_value) {
+            // Extract username from email (if email) or use as-is (if username)
+            // PayPal.me uses username, not email. If admin entered email, extract username part
+            const paypalUsername = paypalConfig.setting_value.includes('@') 
+              ? paypalConfig.setting_value.split('@')[0] 
+              : paypalConfig.setting_value;
             // Use invoice total (already includes subtotal + tax + shipping - discounts)
-            const paypalUrl = `https://www.paypal.com/paypalme/${paypalConfig.setting_value.replace('@', '')}/${Number(invoiceData.total).toFixed(2)}EUR`;
+            const paypalUrl = `https://www.paypal.com/paypalme/${paypalUsername}/${Number(invoiceData.total).toFixed(2)}EUR`;
             window.open(paypalUrl, '_blank');
             sessionStorage.removeItem("invoice_payment");
             toast.success(t('payment:messages.paymentRegistered'));
