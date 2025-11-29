@@ -509,38 +509,38 @@ export default function MyAccount() {
 
         <TabsContent value="orders">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:orders.title')}</CardTitle>
-              <CardDescription>{t('account:orders.description')}</CardDescription>
+            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:orders.title')}</CardTitle>
+              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:orders.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
               {orders.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
                   {orders.map((order) => (
                     <div 
                       key={order.id} 
-                      className="border p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                      className="border p-2 xs:p-3 sm:p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => navigate(`/pedido/${order.id}`)}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-semibold text-lg">{order.order_number}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString('es-ES', {
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs xs:text-sm sm:text-lg truncate">{order.order_number}</p>
+                          <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString(i18n.language, {
                               day: '2-digit',
-                              month: 'long',
+                              month: 'short',
                               year: 'numeric'
                             })}
                           </p>
-                          <div className="mt-2">
-                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                          <div className="mt-1.5 xs:mt-2">
+                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="text-[10px] xs:text-xs">
                               {order.payment_status === 'paid' ? t('account:orders.paid') : t('account:orders.pending')}
                             </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xl">€{Number(order.total).toFixed(2)}</p>
-                          <Button variant="outline" size="sm" className="mt-2">
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-sm xs:text-base sm:text-xl">€{Number(order.total).toFixed(2)}</p>
+                          <Button variant="outline" size="sm" className="mt-1.5 xs:mt-2 h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs">
                             {t('account:orders.viewDetails')}
                           </Button>
                         </div>
@@ -549,7 +549,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">{t('account:orders.noOrders')}</p>
+                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:orders.noOrders')}</p>
               )}
             </CardContent>
           </Card>
@@ -557,44 +557,44 @@ export default function MyAccount() {
 
         <TabsContent value="quotes">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:quotes.title')}</CardTitle>
-              <CardDescription>{t('account:quotes.description')}</CardDescription>
+            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:quotes.title')}</CardTitle>
+              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:quotes.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
               {quotes.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
                   {quotes.map((quote) => (
                     <div 
                       key={quote.id} 
-                      className="border p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                      className="border p-2 xs:p-3 sm:p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => navigate(`/cotizacion/${quote.id}`)}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-semibold">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs xs:text-sm">
                             {quote.quote_type === 'file_upload' ? t('account:quotes.file3d') : 
                              quote.quote_type === 'service' ? t('account:quotes.service') : 
                              quote.quote_type}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(quote.created_at).toLocaleDateString('es-ES', { 
+                          <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
+                            {new Date(quote.created_at).toLocaleDateString(i18n.language, { 
                               year: 'numeric', 
                               month: 'short', 
                               day: 'numeric' 
                             })}
                           </p>
                           {(quote.service_description || quote.additional_notes || quote.description) && (
-                            <div className="text-sm text-muted-foreground mt-1 line-clamp-3">
+                            <div className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
                               <RichTextDisplay content={(quote.service_description || quote.additional_notes || quote.description) as string} />
                             </div>
                           )}
                         </div>
-                        <div className="text-right flex flex-col items-end gap-2">
+                        <div className="text-right flex flex-col items-end gap-1.5 xs:gap-2 flex-shrink-0">
                           {quote.estimated_price && (
-                            <p className="font-bold text-primary">€{parseFloat(quote.estimated_price).toFixed(2)}</p>
+                            <p className="font-bold text-primary text-xs xs:text-sm sm:text-base">€{parseFloat(quote.estimated_price).toFixed(2)}</p>
                           )}
-                          <Button variant="outline" size="sm" onClick={(e) => {
+                          <Button variant="outline" size="sm" className="h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs" onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/cotizacion/${quote.id}`);
                           }}>
@@ -606,7 +606,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">{t('account:quotes.noQuotes')}</p>
+                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:quotes.noQuotes')}</p>
               )}
             </CardContent>
           </Card>
@@ -614,20 +614,20 @@ export default function MyAccount() {
 
         <TabsContent value="giftcards">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:giftcards.title')}</CardTitle>
-              <CardDescription>{t('account:giftcards.description')}</CardDescription>
+            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:giftcards.title')}</CardTitle>
+              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:giftcards.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
               {giftCards.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <div className="grid gap-3 xs:gap-4 sm:gap-6 md:grid-cols-1 lg:grid-cols-2">
                   {giftCards.map((card) => (
                     <div 
                       key={card.id} 
                       className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                       onClick={() => navigate(`/mis-tarjetas-regalo`, { state: { selectedCardId: card.id } })}
                     >
-                      <div className="p-4 space-y-3">
+                      <div className="p-2 xs:p-3 sm:p-4 space-y-2 xs:space-y-3">
                         {/* Tarjeta visual mejorada */}
                         <div className="w-full flex justify-center">
                           <GiftCardPrintable
@@ -641,17 +641,17 @@ export default function MyAccount() {
                         </div>
                         
                         {/* Estado y acciones */}
-                        <div className="flex justify-between items-center pt-3 border-t">
+                        <div className="flex justify-between items-center pt-2 xs:pt-3 border-t">
                           <Badge variant={
                             !card.is_active ? 'secondary' : 
                             card.current_balance > 0 ? 'default' : 
                             'outline'
-                          }>
+                          } className="text-[10px] xs:text-xs">
                             {!card.is_active ? t('account:giftcards.notActivated') : 
                              card.current_balance > 0 ? t('account:giftcards.active') : 
                              t('account:giftcards.depleted')}
                           </Badge>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs">
                             {t('account:giftcards.viewCard')}
                           </Button>
                         </div>
@@ -660,7 +660,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">{t('account:giftcards.noGiftCards')}</p>
+                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:giftcards.noGiftCards')}</p>
               )}
             </CardContent>
           </Card>
@@ -668,32 +668,32 @@ export default function MyAccount() {
 
         <TabsContent value="messages">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:messages.title')}</CardTitle>
-              <CardDescription>{t('account:messages.description')}</CardDescription>
+            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:messages.title')}</CardTitle>
+              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:messages.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0 space-y-2 xs:space-y-3 sm:space-y-4">
               <SendAdminMessage />
               {messages.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
                   {messages.map((message) => {
                     const replyState = replyStates[message.id] || { show: false, text: "", attachments: [] };
                     
                     return (
-                      <div key={message.id} className="border p-4 rounded-lg">
-                        <div className="flex justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{message.subject}</p>
+                      <div key={message.id} className="border p-2 xs:p-3 sm:p-4 rounded-lg">
+                        <div className="flex justify-between mb-1.5 xs:mb-2 gap-2">
+                          <div className="flex items-center gap-1.5 xs:gap-2 min-w-0 flex-1">
+                            <p className="font-semibold text-xs xs:text-sm truncate">{message.subject}</p>
                             {message.is_admin_message && (
-                              <Badge variant="outline">{t('account:messages.fromAdmin')}</Badge>
+                              <Badge variant="outline" className="text-[10px] xs:text-xs flex-shrink-0">{t('account:messages.fromAdmin')}</Badge>
                             )}
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded ${message.is_read ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                          <span className={`text-[10px] xs:text-xs px-1.5 xs:px-2 py-0.5 xs:py-1 rounded flex-shrink-0 ${message.is_read ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
                             {message.is_read ? t('account:messages.read') : t('account:messages.new')}
                           </span>
                         </div>
-                        <p className="text-sm whitespace-pre-line">{message.message}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-[10px] xs:text-xs sm:text-sm whitespace-pre-line">{message.message}</p>
+                        <p className="text-[10px] xs:text-xs text-muted-foreground mt-1.5 xs:mt-2">
                           {new Date(message.created_at).toLocaleString(i18n.language)}
                         </p>
                         
