@@ -380,8 +380,8 @@ export const AdminLayout = ({
           </header>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-x-hidden overflow-y-auto">
-            <div className="w-full max-w-7xl mx-auto p-2 xs:p-3 sm:p-4 md:p-6">
+          <main className="flex-1 overflow-x-auto overflow-y-auto min-w-0">
+            <div className="w-full max-w-7xl mx-auto p-2 xs:p-3 sm:p-4 md:p-6 min-w-0">
               {children}
             </div>
           </main>
