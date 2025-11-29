@@ -799,51 +799,75 @@ const Home = () => {
     }
   };
   const loadFeaturedProducts = async () => {
-    // First, ensure session is valid by calling getSession() 
-    // This will auto-refresh the token if needed
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    // Get user from the session (already validated)
-    const user = session?.user ?? null;
-    
-    let userRoles: string[] = [];
-    if (user && !sessionError) {
-      const {
-        data: rolesData
-      } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      userRoles = (rolesData || []).map(r => String(r.role || '').trim().toLowerCase()).filter(role => role.length > 0);
-      logger.debug('[Home] User roles:', userRoles);
+    try {
+      // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
+      const { data, error: productsError } = await supabase
+        .from("products")
+        .select(`
+          *,
+          images:product_images(image_url, display_order),
+          product_roles(role)
+        `)
+        .is("deleted_at", null)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (productsError) {
+        logger.error('[Home] Error loading products:', productsError);
+      }
+      
+      logger.debug('[Home] Raw products data:', data);
+
+      // SEGUNDO: Intentar obtener la sesión del usuario (no bloquea si falla)
+      let user = null;
+      let userRoles: string[] = [];
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+        
+        if (user) {
+          const { data: rolesData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id);
+          userRoles = (rolesData || [])
+            .map(r => String(r.role || '').trim().toLowerCase())
+            .filter(role => role.length > 0);
+          logger.debug('[Home] User roles:', userRoles);
+        }
+      } catch (authError) {
+        // Si hay error de autenticación, continuar sin usuario
+        logger.warn('[Home] Auth error (continuing without user):', authError);
+      }
+
+      // TERCERO: Filtrar productos basado en roles
+      const visibleProducts = (data || []).filter((product: any) => {
+        const productRolesList = product.product_roles || [];
+        const productRolesNormalized = productRolesList
+          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
+          .filter((role: string) => role.length > 0);
+
+        // Si NO tiene roles asignados → visible para TODOS
+        if (productRolesNormalized.length === 0) {
+          return true;
+        }
+
+        // Si tiene roles asignados → solo visible para usuarios con esos roles
+        if (!user || userRoles.length === 0) {
+          return false;
+        }
+        return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
+      });
+      
+      const productsWithSortedImages = visibleProducts.map(product => ({
+        ...product,
+        images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
+      }));
+      setFeaturedProducts(productsWithSortedImages);
+    } catch (error) {
+      logger.error('[Home] Error in loadFeaturedProducts:', error);
     }
-    const {
-      data
-    } = await supabase.from("products").select(`
-        *,
-        images:product_images(image_url, display_order),
-        product_roles(role)
-      `).is("deleted_at", null).order('created_at', {
-      ascending: false
-    }).limit(5);
-    logger.debug('[Home] Raw products data:', data);
-    const visibleProducts = (data || []).filter((product: any) => {
-      const productRolesList = product.product_roles || [];
-      const productRolesNormalized = productRolesList.map((pr: any) => String(pr?.role || '').trim().toLowerCase()).filter((role: string) => role.length > 0);
-
-      // Si NO tiene roles asignados → visible para TODOS
-      if (productRolesNormalized.length === 0) {
-        return true;
-      }
-
-      // Si tiene roles asignados → solo visible para usuarios con esos roles
-      if (!user || userRoles.length === 0) {
-        return false;
-      }
-      return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
-    });
-    const productsWithSortedImages = visibleProducts.map(product => ({
-      ...product,
-      images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
-    }));
-    setFeaturedProducts(productsWithSortedImages);
   };
   // Renderizar sección de banners dinámicamente
   const renderBannersSection = (section: string, className: string = "") => {

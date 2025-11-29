@@ -89,36 +89,52 @@ const Products = () => {
 
   const loadData = async () => {
     try {
-      // First, ensure session is valid by calling getSession() 
-      // This will auto-refresh the token if needed
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      // Get user from the session (already validated)
-      const user = session?.user ?? null;
-      
-      // Get user roles if logged in (only if session is valid)
-      let userRoles: string[] = [];
-      if (user && !sessionError) {
-        const { data: rolesData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id);
-        
-        userRoles = (rolesData || [])
-          .map(r => String(r.role || '').trim().toLowerCase())
-          .filter(role => role.length > 0);
-      }
-
-      // Fetch products - this should always succeed regardless of auth state
+      // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
         .is("deleted_at", null);
       
-      if (productsError) throw productsError;
+      if (productsError) {
+        console.error("[Products] Error loading products:", productsError);
+        throw productsError;
+      }
 
-      // NUEVA LÓGICA: Productos SIN roles → visibles para TODOS
-      //               Productos CON roles → solo para usuarios con esos roles
+      // Cargar categorías y materiales en paralelo
+      const [categoriesRes, materialsRes] = await Promise.all([
+        supabase.from("categories").select("*").is("deleted_at", null),
+        supabase.from("materials").select("*").is("deleted_at", null)
+      ]);
+      
+      setCategories(categoriesRes.data || []);
+      setMaterials(materialsRes.data || []);
+
+      // SEGUNDO: Intentar obtener la sesión del usuario (no bloquea si falla)
+      let user = null;
+      let userRoles: string[] = [];
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+        
+        if (user) {
+          const { data: rolesData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id);
+          
+          userRoles = (rolesData || [])
+            .map(r => String(r.role || '').trim().toLowerCase())
+            .filter(role => role.length > 0);
+        }
+      } catch (authError) {
+        // Si hay error de autenticación, continuar sin usuario
+        console.warn("[Products] Auth error (continuing without user):", authError);
+      }
+
+      // TERCERO: Filtrar productos basado en roles
+      // Productos SIN roles → visibles para TODOS
+      // Productos CON roles → solo para usuarios con esos roles
       const visibleProducts = (productsData || []).filter((product: any) => {
         const productRolesList = product.product_roles || [];
         const productRolesNormalized = productRolesList
@@ -141,16 +157,10 @@ const Products = () => {
         
         return hasMatchingRole;
       });
-
-      const [categoriesRes, materialsRes] = await Promise.all([
-        supabase.from("categories").select("*").is("deleted_at", null),
-        supabase.from("materials").select("*").is("deleted_at", null)
-      ]);
       
       setProducts(visibleProducts);
-      setCategories(categoriesRes.data || []);
-      setMaterials(materialsRes.data || []);
     } catch (error) {
+      console.error("[Products] Error in loadData:", error);
       i18nToast.error("error.loadingFailed");
     }
   };

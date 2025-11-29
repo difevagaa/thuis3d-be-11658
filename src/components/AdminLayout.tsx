@@ -167,16 +167,26 @@ export const AdminLayout = ({
   
   const checkAdminAccess = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Use getSession() first - reads from localStorage (fast, no network initially)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        logger.error("Session error:", { error: sessionError });
         i18nToast.error("error.mustLogin");
         navigate("/auth");
         return;
       }
+      
+      if (!session?.user) {
+        i18nToast.error("error.mustLogin");
+        navigate("/auth");
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .eq("role", "admin")
         .maybeSingle();
       if (error) throw error;
