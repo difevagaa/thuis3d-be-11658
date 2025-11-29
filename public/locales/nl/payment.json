@@ -20,8 +20,8 @@
     "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
     "paypalDesc": "Veilig betalen met uw PayPal-account",
-    "revolut": "Kaart- en Digitale Betalingen",
-    "revolutDesc": "Betaal met creditcard, betaalpas of digitale portemonnee",
+    "revolut": "Revolut",
+    "revolutDesc": "Snelle en veilige betaling met Revolut",
     "revolutBadges": {
       "visa": "Visa",
       "mastercard": "Mastercard", 

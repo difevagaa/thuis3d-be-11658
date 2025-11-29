@@ -430,12 +430,12 @@ export default function PaymentInstructions() {
                     <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.transferReference')}:</p>
                     <div className="flex items-center gap-2 mt-2">
                       <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
-                        {t('payment:instructions.order')} {realOrderNumber}
+                        {realOrderNumber}
                       </code>
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => copyToClipboard(`${t('payment:instructions.order')} ${realOrderNumber}`)}
+                        onClick={() => copyToClipboard(realOrderNumber)}
                         className="h-12 px-4"
                       >
                         <Copy className="h-4 w-4" />
