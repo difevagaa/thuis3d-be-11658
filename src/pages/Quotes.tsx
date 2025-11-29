@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { STLUploader } from "@/components/STLUploader";
 import { AnalysisResult } from "@/lib/stlAnalyzer";
@@ -43,6 +43,7 @@ interface Color {
 const Quotes = () => {
   const { t } = useTranslation('quotes');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   // Ref to prevent multiple submissions (updates synchronously, unlike state)
   const isSubmittingRef = useRef(false);
@@ -80,8 +81,9 @@ const Quotes = () => {
   const [shippingZone, setShippingZone] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
-  // Control de pestañas para evitar suspensión en eventos de entrada
-  const [activeTab, setActiveTab] = useState<'3d' | 'service'>('3d');
+  // Control de pestañas - lee el parámetro 'tab' de la URL para determinar la pestaña activa inicial
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'3d' | 'service'>(tabParam === 'service' ? 'service' : '3d');
 
   // Cargar países disponibles
   useEffect(() => {
