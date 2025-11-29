@@ -3,6 +3,19 @@ import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+/**
+ * Generates a payment reference in the format: 3 numbers + 3 letters (e.g., "123ABC")
+ * This reference is used consistently as order number, invoice number, and payment reference
+ * across all payment methods (bank transfer, card, Revolut, PayPal)
+ */
+export const generatePaymentReference = (): string => {
+  const numbers = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
+  const letters = Array.from({ length: 3 }, () => 
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join('');
+  return `${numbers}${letters}`;
+};
+
 export interface Address {
   street: string;
   city: string;
@@ -14,6 +27,7 @@ export interface Address {
 
 export interface OrderData {
   userId?: string | null;
+  orderNumber?: string; // Pre-generated order number (payment reference)
   subtotal: number;
   tax: number;
   shipping: number;
@@ -45,21 +59,30 @@ export interface OrderItemData {
  */
 export const createOrder = async (orderData: OrderData) => {
   try {
+    // Build the insert data object
+    const insertData: Record<string, unknown> = {
+      user_id: orderData.userId || null,
+      subtotal: orderData.subtotal,
+      tax: orderData.tax,
+      shipping: orderData.shipping,
+      discount: orderData.discount,
+      total: orderData.total,
+      payment_method: orderData.paymentMethod,
+      payment_status: orderData.paymentStatus,
+      shipping_address: JSON.stringify(orderData.shippingAddress),
+      billing_address: orderData.billingAddress ? JSON.stringify(orderData.billingAddress) : JSON.stringify(orderData.shippingAddress),
+      notes: orderData.notes || null
+    };
+    
+    // If a pre-generated order number (payment reference) is provided, use it
+    // This ensures the order number matches the payment reference shown to the customer
+    if (orderData.orderNumber) {
+      insertData.order_number = orderData.orderNumber;
+    }
+    
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .insert({
-        user_id: orderData.userId || null,
-        subtotal: orderData.subtotal,
-        tax: orderData.tax,
-        shipping: orderData.shipping,
-        discount: orderData.discount,
-        total: orderData.total,
-        payment_method: orderData.paymentMethod,
-        payment_status: orderData.paymentStatus,
-        shipping_address: JSON.stringify(orderData.shippingAddress),
-        billing_address: orderData.billingAddress ? JSON.stringify(orderData.billingAddress) : JSON.stringify(orderData.shippingAddress),
-        notes: orderData.notes || null
-      })
+      .insert(insertData)
       .select()
       .single();
 

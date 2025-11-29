@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,8 +101,6 @@ const ProductDetail = () => {
   const [customizationSections, setCustomizationSections] = useState<CustomizationSection[]>([]);
   const [sectionColorSelections, setSectionColorSelections] = useState<Record<string, string>>({});
   const [sectionImageSelections, setSectionImageSelections] = useState<Record<string, string>>({});
-  // Ref to prevent multiple submissions (updates synchronously, unlike state)
-  const isSubmittingRef = useRef(false);
   
   // Hook para contenido traducido del producto
   const { content: translatedProduct, loading: translatingProduct } = useTranslatedContent(
@@ -356,97 +354,12 @@ const ProductDetail = () => {
     navigate("/carrito");
   };
 
-  const requestQuote = async () => {
+  const requestQuote = () => {
     if (!product) return;
 
-    // Prevent multiple submissions using ref (synchronous check)
-    if (isSubmittingRef.current) {
-      return;
-    }
-    
-    // Mark as submitting immediately (synchronous)
-    isSubmittingRef.current = true;
-
-    // Verificar autenticación primero
-    let user;
-    try {
-      const { data } = await supabase.auth.getUser();
-      user = data?.user;
-    } catch (authError) {
-      isSubmittingRef.current = false;
-      toast.error(t('error', { ns: 'errors' }));
-      return;
-    }
-    
-    if (!user) {
-      isSubmittingRef.current = false;
-      toast.error(t('mustLoginQuote'));
-      navigate("/auth");
-      return;
-    }
-
-    try {
-
-      const materialName = selectedMaterial ? materials.find(m => m.id === selectedMaterial)?.name : "";
-      const colorName = selectedColor ? availableColors.find(c => c.id === selectedColor)?.name : "";
-      
-      let description = `Producto: ${product.name}`;
-      if (materialName) description += `\nMaterial: ${materialName}`;
-      if (colorName) description += `\nColor: ${colorName}`;
-      if (customText) description += `\nTexto personalizado: ${customText}`;
-      description += `\nCantidad: ${quantity}`;
-
-      const { error } = await supabase.from("quotes").insert({
-        user_id: user?.id,
-        customer_name: user?.email || "",
-        customer_email: user?.email || "",
-        quote_type: "product",
-        product_id: product.id,
-        material_id: selectedMaterial || null,
-        color_id: selectedColor || null,
-        custom_text: customText || null,
-        description,
-      });
-
-      if (error) throw error;
-
-      // Send email to customer
-      if (user?.email) {
-        try {
-          await supabase.functions.invoke('send-quote-email', {
-            body: {
-              to: user.email,
-              customer_name: user.email,
-              quote_type: 'producto',
-              description: description
-            }
-          });
-        } catch (emailError) {
-          // Email error handled silently
-        }
-      }
-
-      // Send notification to admins
-      try {
-        await supabase.functions.invoke('send-admin-notification', {
-          body: {
-            type: 'quote',
-            title: 'Nueva Cotización de Producto',
-            message: `Nueva cotización para ${product.name}`,
-            link: '/admin/quotes'
-          }
-        });
-      } catch (notifError) {
-        // Notification error handled silently
-      }
-
-      toast.success(t('quoteRequested'));
-      navigate("/");
-    } catch (error: any) {
-      toast.error(t('error', { ns: 'errors' }));
-    } finally {
-      isSubmittingRef.current = false;
-    }
+    // Redirigir a la página de cotizaciones con la pestaña de servicio activa
+    // Esto permite al usuario describir lo que necesita y subir archivos
+    navigate("/cotizaciones?tab=service");
   };
 
   if (loading) {
