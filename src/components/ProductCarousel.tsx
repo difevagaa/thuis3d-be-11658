@@ -78,7 +78,7 @@ export default function ProductCarousel({
       </Button>
 
       {/* Hide indicator dots on small screens to avoid covering product images */}
-      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 gap-1 hidden sm:flex">
+      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 hidden sm:flex sm:gap-1">
         {images.map((_, index) => <button key={index} onClick={e => {
         e.preventDefault();
         setCurrentIndex(index);
