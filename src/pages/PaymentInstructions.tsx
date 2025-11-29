@@ -246,18 +246,19 @@ export default function PaymentInstructions() {
     }
     loadPaymentConfig();
     
-    // Only create pending order for NEW purchases (bank_transfer or card), NOT for invoice payments
-    if (isPending && (method === "bank_transfer" || method === "card") && !isInvoicePayment) {
+    // For bank_transfer, create order immediately when showing bank info
+    // For card payment, order will be created when user clicks "Go to bank" button
+    if (isPending && method === "bank_transfer" && !isInvoicePayment) {
       createPendingOrder();
     }
   }, [orderNumber, method, navigate, isPending, isInvoicePayment]);
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer solo las claves de configuración de pago relevantes, igual que en el panel admin
+      // Leer todas las claves de configuración de pago relevantes
       const settingKeys = [
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
-        'company_info', 'payment_images', 'card_payment_link', 'revolut_link'
+        'company_info', 'payment_images', 'card_payment_link', 'revolut_link', 'paypal_email'
       ];
 
       const { data } = await supabase
@@ -290,6 +291,40 @@ export default function PaymentInstructions() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     i18nToast.success("success.copiedToClipboard");
+  };
+
+  // Handler for "Go to bank/card" button
+  // Creates the order first (if pending), then opens the payment link
+  const handleGoToPayment = async () => {
+    // If order is pending and not yet created, create it first
+    if (isPending && !orderCreated && !isInvoicePayment) {
+      await createPendingOrder();
+    }
+
+    // Open the appropriate payment link based on method
+    if (method === "card") {
+      const cardLink = paymentConfig?.card_payment_link || paymentConfig?.revolut_link;
+      if (cardLink) {
+        window.open(cardLink, '_blank');
+      } else {
+        i18nToast.error("payment:messages.cardPaymentNotConfigured");
+      }
+    } else if (method === "paypal") {
+      const paypalEmail = paymentConfig?.paypal_email;
+      if (paypalEmail) {
+        const paypalUrl = `https://www.paypal.com/paypalme/${paypalEmail.replace('@', '')}/${Number(total).toFixed(2)}EUR`;
+        window.open(paypalUrl, '_blank');
+      } else {
+        i18nToast.error("payment:messages.paypalNotConfigured");
+      }
+    } else if (method === "revolut") {
+      const revolutLink = paymentConfig?.revolut_link;
+      if (revolutLink) {
+        window.open(revolutLink, '_blank');
+      } else {
+        i18nToast.error("payment:messages.revolutNotConfigured");
+      }
+    }
   };
 
   if (!orderNumber) {
@@ -549,19 +584,13 @@ export default function PaymentInstructions() {
 
               {/* Go to Payment Button */}
               <Button 
-                onClick={() => {
-                  const cardLink = paymentConfig.card_payment_link || paymentConfig.revolut_link;
-                  if (cardLink) {
-                    window.open(cardLink, '_blank');
-                  } else {
-                    i18nToast.error("payment:messages.cardPaymentNotConfigured");
-                  }
-                }}
+                onClick={handleGoToPayment}
+                disabled={creatingOrder}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-6 text-lg" 
                 size="lg"
               >
                 <CreditCard className="h-5 w-5 mr-2" />
-                {t('payment:openPaymentLink')}
+                {creatingOrder ? t('payment:creatingOrder') : t('payment:openPaymentLink')}
               </Button>
 
               {/* QR Codes */}
@@ -615,50 +644,202 @@ export default function PaymentInstructions() {
             </div>
           )}
 
-          {method === "paypal" && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                  <CreditCard className="h-5 w-5" />
-                  PayPal
+          {method === "paypal" && paymentConfig && (
+            <div className="space-y-6">
+              {/* Amount to Pay - Highlighted */}
+              {total && (
+                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
+                  <p className="text-4xl font-bold text-blue-600">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+                </div>
+              )}
+
+              {/* PayPal Payment Information */}
+              <div className="bg-[#003087] text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-400 pb-3">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
+                    <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
+                  </svg>
+                  {t('payment:instructions.paypalPaymentTitle')}
                 </h3>
-                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
-                  {t('payment:instructions.paypalProcessing')}
-                </p>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
-                </p>
+                
+                <div className="grid gap-4">
+                  <div className="bg-blue-800/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {realOrderNumber}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(realOrderNumber)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-800/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        €{Number(total).toFixed(2)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
+
+              {/* Important Instructions */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  {t('payment:instructions.importantInstructions')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:goToPaypal')}"</strong></li>
+                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
+                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
+                  <li>{t('payment:instructions.step4Complete')}</li>
+                </ol>
+              </div>
+
+              {/* Go to PayPal Button */}
+              <Button 
+                onClick={handleGoToPayment}
+                disabled={creatingOrder}
+                className="w-full bg-[#003087] hover:bg-[#002570] text-white py-6 text-lg" 
+                size="lg"
+              >
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
+                  <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
+                </svg>
+                {creatingOrder ? t('payment:creatingOrder') : t('payment:goToPaypal')}
+              </Button>
+
+              {/* Warning */}
               <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  {t('payment:instructions.paymentPendingWarning')}
-                </p>
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.paymentPendingWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inPaypalNote')}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {method === "revolut" && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                  <CreditCard className="h-5 w-5" />
-                  Revolut
+          {method === "revolut" && paymentConfig && (
+            <div className="space-y-6">
+              {/* Amount to Pay - Highlighted */}
+              {total && (
+                <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/5 border-2 border-purple-500 rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
+                  <p className="text-4xl font-bold text-purple-600">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+                </div>
+              )}
+
+              {/* Revolut Payment Information */}
+              <div className="bg-[#0075EB] text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-300 pb-3">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                  </svg>
+                  {t('payment:instructions.revolutPaymentTitle')}
                 </h3>
-                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
-                  {t('payment:instructions.revolutProcessing')}
-                </p>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
-                </p>
+                
+                <div className="grid gap-4">
+                  <div className="bg-blue-600/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-100 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {realOrderNumber}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(realOrderNumber)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-600/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-100 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        €{Number(total).toFixed(2)}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
+                        className="h-12 px-4"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
+
+              {/* Important Instructions */}
+              <div className="bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  {t('payment:instructions.importantInstructions')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:goToRevolut')}"</strong></li>
+                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
+                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
+                  <li>{t('payment:instructions.step4Complete')}</li>
+                </ol>
+              </div>
+
+              {/* Go to Revolut Button */}
+              <Button 
+                onClick={handleGoToPayment}
+                disabled={creatingOrder}
+                className="w-full bg-[#0075EB] hover:bg-[#0066CC] text-white py-6 text-lg" 
+                size="lg"
+              >
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
+                </svg>
+                {creatingOrder ? t('payment:creatingOrder') : t('payment:goToRevolut')}
+              </Button>
+
+              {/* Warning */}
               <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  {t('payment:instructions.paymentPendingWarning')}
-                </p>
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t('payment:instructions.paymentPendingWarning')}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inRevolutNote')}
+                  </p>
+                </div>
               </div>
             </div>
           )}
