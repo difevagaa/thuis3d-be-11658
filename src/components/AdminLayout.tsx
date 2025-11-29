@@ -223,29 +223,29 @@ export const AdminLayout = ({
         <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
           {/* Modern Header with safe area support for notched devices */}
           <header 
-            className="sticky top-0 z-40 h-14 md:h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-2 sm:px-4 flex items-center justify-between shadow-sm"
+            className="sticky top-0 z-40 h-12 xs:h-14 md:h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 px-1 xs:px-2 sm:px-4 flex items-center justify-between shadow-sm"
             style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}
           >
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <SidebarTrigger className="hover:bg-accent/50 transition-colors rounded-lg flex-shrink-0" />
+            <div className="flex items-center gap-1 xs:gap-2 sm:gap-4 min-w-0">
+              <SidebarTrigger className="hover:bg-accent/50 transition-colors rounded-lg flex-shrink-0 h-8 w-8 xs:h-9 xs:w-9" />
               
               {/* Page Title with Gradient */}
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${pageInfo.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
-                  <span className="text-sm sm:text-lg">{pageInfo.emoji}</span>
+              <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 min-w-0">
+                <div className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-lg xs:rounded-xl bg-gradient-to-br ${pageInfo.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
+                  <span className="text-xs xs:text-sm sm:text-lg">{pageInfo.emoji}</span>
                 </div>
-                <div className="hidden sm:block min-w-0">
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
+                <div className="hidden xs:block min-w-0">
+                  <h1 className="text-sm xs:text-base sm:text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate max-w-[100px] xs:max-w-[140px] sm:max-w-none">
                     {pageInfo.title}
                   </h1>
-                  <p className="text-xs text-muted-foreground">Panel de Administración</p>
+                  <p className="text-[10px] xs:text-xs text-muted-foreground hidden sm:block">Panel de Administración</p>
                 </div>
               </div>
             </div>
 
             {/* Header Actions */}
             <TooltipProvider delayDuration={300}>
-              <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+              <div className="flex items-center gap-0 xs:gap-0.5 sm:gap-1 flex-shrink-0">
                 {/* Home Button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -253,9 +253,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={() => navigate("/")}
-                      className="h-9 w-9 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-colors"
+                      className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-colors"
                     >
-                      <Home className="h-4 w-4" />
+                      <Home className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -263,16 +263,16 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Refresh Page */}
+                {/* Refresh Page - Hidden on very small screens */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshPage}
-                      className="h-9 w-9 rounded-lg hover:bg-orange-500/10 hover:text-orange-600 transition-colors"
+                      className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-orange-500/10 hover:text-orange-600 transition-colors hidden xs:flex"
                     >
-                      <RotateCcw className="h-4 w-4" />
+                      <RotateCcw className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -280,17 +280,17 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Refresh Data */}
+                {/* Refresh Data - Hidden on very small screens */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshData}
-                      className="h-9 w-9 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-colors"
+                      className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-colors hidden xs:flex"
                       disabled={isRefreshing}
                     >
-                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <RefreshCw className={`h-3.5 w-3.5 xs:h-4 xs:w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -305,12 +305,12 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleTheme}
-                      className="h-9 w-9 rounded-lg hover:bg-purple-500/10 hover:text-purple-600 transition-colors"
+                      className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-purple-500/10 hover:text-purple-600 transition-colors"
                     >
                       {theme === "dark" ? (
-                        <Sun className="h-4 w-4" />
+                        <Sun className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                       ) : (
-                        <Moon className="h-4 w-4" />
+                        <Moon className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -319,20 +319,20 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Grayscale Mode */}
+                {/* Grayscale Mode - Hidden on small screens */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleGrayscale}
-                      className={`h-9 w-9 rounded-lg transition-colors ${
+                      className={`h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg transition-colors hidden sm:flex ${
                         isGrayscale 
                           ? "bg-accent text-accent-foreground" 
                           : "hover:bg-slate-500/10 hover:text-slate-600"
                       }`}
                     >
-                      <Contrast className="h-4 w-4" />
+                      <Contrast className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -340,19 +340,19 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Fullscreen */}
+                {/* Fullscreen - Hidden on small screens */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleFullscreen}
-                      className="h-9 w-9 rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 transition-colors"
+                      className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 transition-colors hidden sm:flex"
                     >
                       {isFullscreen ? (
-                        <Minimize className="h-4 w-4" />
+                        <Minimize className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                       ) : (
-                        <Maximize className="h-4 w-4" />
+                        <Maximize className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -362,7 +362,7 @@ export const AdminLayout = ({
                 </Tooltip>
 
                 {/* Notification Bell */}
-                <div className="ml-1 sm:ml-2 border-l border-border/50 pl-1 sm:pl-2">
+                <div className="ml-0.5 xs:ml-1 sm:ml-2 border-l border-border/50 pl-0.5 xs:pl-1 sm:pl-2">
                   <AdminNotificationBell />
                 </div>
               </div>
@@ -371,7 +371,7 @@ export const AdminLayout = ({
 
           {/* Main Content Area */}
           <main className="flex-1 overflow-x-hidden overflow-y-auto">
-            <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
+            <div className="w-full max-w-7xl mx-auto p-2 xs:p-3 sm:p-4 md:p-6">
               {children}
             </div>
           </main>
