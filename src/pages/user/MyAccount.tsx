@@ -1041,16 +1041,16 @@ export default function MyAccount() {
               {invoices.length > 0 ? (
                 <div className="space-y-4">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="border p-4 rounded-lg">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <p className="font-semibold font-mono">{invoice.invoice_number}</p>
+                    <div key={invoice.id} className="border p-3 sm:p-4 rounded-lg">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <p className="font-semibold font-mono text-sm sm:text-base break-all">{invoice.invoice_number}</p>
                             <Badge variant={
                               invoice.payment_status === 'paid' ? 'default' :
                               invoice.payment_status === 'pending' ? 'secondary' :
                               'destructive'
-                            }>
+                            } className="text-xs">
                               {invoice.payment_status === 'paid' ? t('account:invoices.paidStatus') :
                                invoice.payment_status === 'pending' ? t('account:invoices.pendingStatus') :
                                invoice.payment_status === 'cancelled' ? t('account:invoices.cancelledStatus') :
@@ -1059,33 +1059,34 @@ export default function MyAccount() {
                           </div>
                           
                           {invoice.order?.order_number && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {t('account:invoices.order')}: {invoice.order.order_number}
                             </p>
                           )}
                           
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {t('account:invoices.date')}: {new Date(invoice.issue_date).toLocaleDateString(i18n.language)}
                           </p>
                           
                           {invoice.notes && (
-                            <div className="text-sm mt-2 text-muted-foreground">
+                            <div className="text-xs sm:text-sm mt-2 text-muted-foreground">
                               <RichTextDisplay content={invoice.notes} />
                             </div>
                           )}
                         </div>
                         
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground">{t('account:orders.total')}</p>
-                          <p className="font-bold text-2xl">€{Number(invoice.total).toFixed(2)}</p>
+                        <div className="text-left sm:text-right">
+                          <p className="text-xs sm:text-sm text-muted-foreground">{t('account:orders.total')}</p>
+                          <p className="font-bold text-lg sm:text-xl lg:text-2xl">€{Number(invoice.total).toFixed(2)}</p>
                           
-                          <div className="flex gap-2 mt-3">
+                          <div className="flex flex-wrap gap-2 mt-3">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => navigate(`/factura/${invoice.id}`)}
+                              className="text-xs sm:text-sm"
                             >
-                              <FileText className="h-4 w-4 mr-1" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                               {t('account:invoices.view')}
                             </Button>
                             
@@ -1105,6 +1106,7 @@ export default function MyAccount() {
                                   }));
                                   navigate('/pago');
                                 }}
+                                className="text-xs sm:text-sm"
                               >
                                 💳 {t('account:invoices.payNow')}
                               </Button>

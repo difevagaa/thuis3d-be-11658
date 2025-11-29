@@ -312,18 +312,19 @@ export default function Messages() {
 
   const unreadCount = messages.filter(m => !m.is_read && !m.is_admin_message).length;
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <div className="p-4">Cargando...</div>;
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Bandeja de Entrada</h1>
-        <div className="flex items-center gap-4">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Bandeja de Entrada</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
             <DialogTrigger asChild>
-              <Button>
-                <PenSquare className="h-4 w-4 mr-2" />
-                Componer Mensaje
+              <Button size="sm" className="text-xs sm:text-sm">
+                <PenSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Componer</span>
+                <span className="xs:hidden">Nuevo</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -417,20 +418,20 @@ export default function Messages() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Badge variant="default" className="text-lg px-4 py-2">
+          <Badge variant="default" className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2">
             {unreadCount} no leídos
           </Badge>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Mensajes</CardTitle>
-            <CardDescription>Todos los mensajes recibidos</CardDescription>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg">Mensajes</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Todos los mensajes recibidos</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="space-y-2 max-h-[50vh] lg:max-h-[60vh] overflow-y-auto">
               {messages.filter(m => !m.is_admin_message).map((message) => (
                 <div
                   key={message.id}
@@ -438,70 +439,70 @@ export default function Messages() {
                     setSelectedMessage(message);
                     if (!message.is_read) markAsRead(message.id);
                   }}
-                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                  className={`p-2 sm:p-3 md:p-4 rounded-lg border cursor-pointer transition-colors ${
                     selectedMessage?.id === message.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
                         {message.is_read ? (
-                          <MailOpen className="h-4 w-4 text-muted-foreground" />
+                          <MailOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                         ) : (
-                          <Mail className="h-4 w-4 text-primary" />
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                         )}
-                        <span className="font-semibold">{message.sender_name}</span>
+                        <span className="font-semibold text-sm sm:text-base truncate">{message.sender_name}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{message.sender_email}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{message.sender_email}</p>
                       {message.subject && (
-                        <p className="text-sm font-medium mt-1">{message.subject}</p>
+                        <p className="text-xs sm:text-sm font-medium mt-1 truncate">{message.subject}</p>
                       )}
-                      <p className="text-sm mt-1 line-clamp-2">{message.message}</p>
+                      <p className="text-xs sm:text-sm mt-1 line-clamp-2">{message.message}</p>
                     </div>
                     {!message.is_read && (
-                      <Badge variant="default" className="ml-2">Nuevo</Badge>
+                      <Badge variant="default" className="ml-1 text-xs flex-shrink-0">Nuevo</Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
                     {new Date(message.created_at).toLocaleString()}
                   </p>
                 </div>
               ))}
               {messages.filter(m => !m.is_admin_message).length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No hay mensajes</p>
+                <p className="text-center text-muted-foreground py-8 text-sm">No hay mensajes</p>
               )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Detalles del Mensaje</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg">Detalles del Mensaje</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {selectedMessage ? 'Responder al mensaje' : 'Selecciona un mensaje'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
             {selectedMessage ? (
-              <div className="space-y-4">
-                <div className="border-b pb-4">
-                  <p className="font-semibold">{selectedMessage.sender_name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedMessage.sender_email}</p>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="border-b pb-3 sm:pb-4">
+                  <p className="font-semibold text-sm sm:text-base truncate">{selectedMessage.sender_name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{selectedMessage.sender_email}</p>
                   {selectedMessage.subject && (
-                    <p className="text-sm font-medium mt-2">Asunto: {selectedMessage.subject}</p>
+                    <p className="text-xs sm:text-sm font-medium mt-2 break-words">Asunto: {selectedMessage.subject}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
                     {new Date(selectedMessage.created_at).toLocaleString()}
                   </p>
                 </div>
                 
-                <div>
-                  <p className="whitespace-pre-wrap">{selectedMessage.message}</p>
+                <div className="max-h-32 sm:max-h-48 overflow-y-auto">
+                  <p className="whitespace-pre-wrap text-xs sm:text-sm break-words">{selectedMessage.message}</p>
                 </div>
 
                 {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
-                  <div className="border-t pt-4">
-                    <p className="text-sm font-medium mb-3">📎 Archivos Adjuntos ({selectedMessage.attachments.length})</p>
+                  <div className="border-t pt-3 sm:pt-4">
+                    <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">📎 Archivos Adjuntos ({selectedMessage.attachments.length})</p>
                     <div className="space-y-2">
                       {selectedMessage.attachments.map((attachment: any, index: number) => (
                         <div key={index}>
@@ -512,27 +513,30 @@ export default function Messages() {
                   </div>
                 )}
                 
-                <div className="border-t pt-4 flex gap-2">
+                <div className="border-t pt-3 sm:pt-4 flex gap-2">
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteMessage(selectedMessage.id)}
+                    className="text-xs sm:text-sm"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar Mensaje
+                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Eliminar Mensaje</span>
+                    <span className="xs:hidden">Eliminar</span>
                   </Button>
                 </div>
 
-                <div className="border-t pt-4">
-                  <label className="text-sm font-medium mb-2 block">Responder:</label>
+                <div className="border-t pt-3 sm:pt-4">
+                  <label className="text-xs sm:text-sm font-medium mb-2 block">Responder:</label>
                   <Textarea
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     placeholder="Escribe tu respuesta..."
-                    rows={6}
+                    rows={4}
+                    className="text-sm"
                   />
                   
-                  <div className="mt-3">
+                  <div className="mt-2 sm:mt-3">
                     <Input
                       type="file"
                       multiple
@@ -546,31 +550,33 @@ export default function Messages() {
                       variant="outline"
                       size="sm"
                       onClick={() => document.getElementById('reply-file-input')?.click()}
+                      className="text-xs sm:text-sm"
                     >
-                      <Paperclip className="h-4 w-4 mr-2" />
-                      Adjuntar Archivos
+                      <Paperclip className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      Adjuntar
                     </Button>
                     
                     {replyAttachments.length > 0 && (
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-2 sm:mt-3 space-y-2">
                         {replyAttachments.map((file, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                          <div key={index} className="flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 border rounded">
                             {file.type.startsWith('image/') ? (
-                              <ImageIcon className="h-4 w-4" />
+                              <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                             ) : (
-                              <FileText className="h-4 w-4" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                             )}
-                            <span className="flex-1 text-sm truncate">{file.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {(file.size / 1024).toFixed(2)} KB
+                            <span className="flex-1 text-xs sm:text-sm truncate min-w-0">{file.name}</span>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
+                              {(file.size / 1024).toFixed(0)}KB
                             </span>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => removeAttachment(index, true)}
+                              className="h-6 w-6 p-0 flex-shrink-0"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3 w-3" />
                             </Button>
                           </div>
                         ))}
