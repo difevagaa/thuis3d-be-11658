@@ -1429,6 +1429,10 @@ img {
 /* ============================================
    MOBILE-FIRST COMPREHENSIVE IMPROVEMENTS
    For all pages including admin and client areas
+   
+   Note: Some !important declarations are necessary here 
+   to override Tailwind utility classes that have high 
+   specificity. This ensures consistent mobile experience.
    ============================================ */
 
 /* Force readable text on small screens */
@@ -1439,7 +1443,7 @@ img {
     line-height: 1.5;
   }
   
-  /* Card text improvements */
+  /* Card text improvements - using !important to override Tailwind utilities */
   [class*="CardTitle"] {
     font-size: 1rem !important;
     line-height: 1.3 !important;
@@ -1468,9 +1472,9 @@ img {
   }
   
   /* Make buttons more compact but still tappable */
-  button, [role="button"] {
-    font-size: 0.75rem !important;
-    padding: 0.5rem 0.75rem !important;
+  button:not([class*="h-"]), [role="button"]:not([class*="h-"]) {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
   }
   
   /* Icon button minimum sizing */
