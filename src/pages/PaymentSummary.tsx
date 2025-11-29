@@ -241,10 +241,10 @@ export default function PaymentSummary() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 md:py-12 max-w-2xl">
         <Card>
-          <CardContent className="p-8 text-center">
-            <p>{t('common:loading')}</p>
+          <CardContent className="p-6 md:p-8 text-center">
+            <p className="text-sm md:text-base">{t('common:loading')}</p>
           </CardContent>
         </Card>
       </div>
@@ -252,15 +252,15 @@ export default function PaymentSummary() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-8">{t('payment:orderSummary')}</h1>
+    <div className="container mx-auto px-3 sm:px-4 py-6 md:py-8 lg:py-12 max-w-3xl">
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6 lg:mb-8">{t('payment:orderSummary')}</h1>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>{t('payment:shippingInfo')}</CardTitle>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">{t('payment:shippingInfo')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 p-4 md:p-6 pt-0 text-sm md:text-base">
             <p><strong>{t('payment:fullName')}:</strong> {shippingInfo?.full_name}</p>
             <p><strong>{t('payment:email')}:</strong> {shippingInfo?.email}</p>
             <p><strong>{t('payment:phone')}:</strong> {shippingInfo?.phone}</p>
@@ -272,37 +272,37 @@ export default function PaymentSummary() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>{t('payment:items')} ({cartItems.length})</CardTitle>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">{t('payment:items')} ({cartItems.length})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 md:p-6 pt-0">
             {cartItems.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
+              <p className="text-muted-foreground text-center py-4 text-sm md:text-base">
                 {t('cart:empty')}
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start gap-4 pb-4 border-b last:border-0">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
+                  <div key={item.id} className="flex justify-between items-start gap-3 md:gap-4 pb-3 md:pb-4 border-b last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm md:text-base truncate">{item.name}</p>
                       {item.materialName && (
-                        <p className="text-sm text-muted-foreground">Material: {item.materialName}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Material: {item.materialName}</p>
                       )}
                       {item.colorName && (
-                        <p className="text-sm text-muted-foreground">Color: {item.colorName}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Color: {item.colorName}</p>
                       )}
                       {item.customText && (
-                        <p className="text-sm text-muted-foreground">Texto: {item.customText}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Texto: {item.customText}</p>
                       )}
                       {item.isGiftCard && (
-                        <Badge variant="secondary" className="mt-1">Tarjeta Regalo</Badge>
+                        <Badge variant="secondary" className="mt-1 text-xs">Tarjeta Regalo</Badge>
                       )}
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs md:text-sm text-muted-foreground mt-1">
                         Cantidad: {item.quantity} × €{Number(item.price).toFixed(2)}
                       </p>
                     </div>
-                    <p className="font-medium">
+                    <p className="font-medium text-sm md:text-base whitespace-nowrap">
                       €{(Number(item.price) * item.quantity).toFixed(2)}
                     </p>
                   </div>
@@ -313,44 +313,44 @@ export default function PaymentSummary() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>{t('cart:summary.title')}</CardTitle>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">{t('cart:summary.title')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 md:space-y-3 p-4 md:p-6 pt-0 text-sm md:text-base">
             <div className="flex justify-between">
               <span>{t('cart:summary.subtotal')}:</span>
               <span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span>
             </div>
             
             {appliedCoupon && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-success">
                 <span className="flex items-center gap-1">
-                  <Tag className="h-4 w-4" />
-                  {t('cart:summary.discount')} ({appliedCoupon.code})
+                  <Tag className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="truncate">{t('cart:summary.discount')} ({appliedCoupon.code})</span>
                 </span>
-                <span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span>
+                <span className="font-semibold whitespace-nowrap">-€{calculateDiscount().toFixed(2)}</span>
               </div>
             )}
 
             {appliedGiftCard && (
-              <div className="flex justify-between text-blue-600">
+              <div className="flex justify-between text-primary">
                 <span className="flex items-center gap-1">
-                  <Gift className="h-4 w-4" />
-                  {t('cart:summary.giftCard')} ({appliedGiftCard.code})
+                  <Gift className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="truncate">{t('cart:summary.giftCard')} ({appliedGiftCard.code})</span>
                 </span>
-                <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
+                <span className="font-semibold whitespace-nowrap">-€{calculateGiftCardAmount().toFixed(2)}</span>
               </div>
             )}
             
             {shippingCost > 0 && (
               <div className="flex justify-between">
-                <span>{t('cart:summary.shipping')} ({shippingInfo?.country_name || shippingInfo?.country}):</span>
-                <span className="font-semibold">€{shippingCost.toFixed(2)}</span>
+                <span className="truncate">{t('cart:summary.shipping')} ({shippingInfo?.country_name || shippingInfo?.country}):</span>
+                <span className="font-semibold whitespace-nowrap">€{shippingCost.toFixed(2)}</span>
               </div>
             )}
 
             {shippingCost === 0 && calculateSubtotal() > 0 && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-success">
                 <span>{t('cart:summary.shipping')}:</span>
                 <span className="font-semibold">{t('cart:freeShipping')}</span>
               </div>
@@ -365,18 +365,18 @@ export default function PaymentSummary() {
 
             <Separator className="my-2" />
 
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex justify-between text-base md:text-lg font-bold">
               <span>{t('cart:summary.total')}:</span>
               <span className="text-primary">€{calculateTotal().toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1 text-sm md:text-base">
             {t('common:back')}
           </Button>
-          <Button onClick={handleConfirmOrder} className="flex-1" size="lg">
+          <Button onClick={handleConfirmOrder} className="flex-1 text-sm md:text-base" size="lg">
             {t('cart:checkout')}
           </Button>
         </div>

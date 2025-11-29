@@ -59,6 +59,7 @@
   },
   "creatingOrder": "Creating your order...",
   "confirmAndCreateOrder": "Confirm and Create Order",
+  "importantCreateOrderMessage": "Important: After making the transfer, you must click the button below to create your order. Without this step, we will not receive your order.",
   "changePaymentMethod": "Change Payment Method",
   "openPaymentLink": "Go to Payment Page",
   "goToPaypal": "Go to PayPal",

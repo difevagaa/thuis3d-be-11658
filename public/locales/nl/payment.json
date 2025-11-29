@@ -59,6 +59,7 @@
   },
   "creatingOrder": "Uw bestelling wordt aangemaakt...",
   "confirmAndCreateOrder": "Bevestigen en Bestelling Aanmaken",
+  "importantCreateOrderMessage": "Belangrijk: Na het uitvoeren van de overschrijving moet u op de onderstaande knop klikken om uw bestelling aan te maken. Zonder deze stap ontvangen wij uw bestelling niet.",
   "changePaymentMethod": "Betaalmethode Wijzigen",
   "openPaymentLink": "Ga naar Betaalpagina",
   "goToPaypal": "Ga naar PayPal",
