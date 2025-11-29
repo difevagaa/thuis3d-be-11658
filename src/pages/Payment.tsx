@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Banknote, Building2, ShieldCheck, Copy, QrCode, AlertTriangle, Info } from "lucide-react";
+import { CreditCard, Banknote, Building2, ShieldCheck, Copy, QrCode, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
@@ -854,8 +854,9 @@ export default function Payment() {
               <div className="flex flex-col gap-4 pt-6 border-t-2 border-primary/30">
                 {/* Primary action - Create Order - VERY LARGE AND VISIBLE */}
                 <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-4 md:p-6">
-                  <p className="text-center text-sm md:text-base font-medium text-foreground/80 mb-4">
-                    ⚠️ {t('payment:importantCreateOrderMessage')}
+                  <p className="text-center text-sm md:text-base font-medium text-foreground/80 mb-4 flex items-center justify-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
+                    {t('payment:importantCreateOrderMessage')}
                   </p>
                   <Button 
                     onClick={() => {
@@ -871,7 +872,8 @@ export default function Payment() {
                     className="w-full py-6 md:py-8 text-lg md:text-xl font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200" 
                     size="lg"
                   >
-                    ✅ {t('payment:confirmAndCreateOrder')}
+                    <CheckCircle2 className="h-6 w-6 mr-2" />
+                    {t('payment:confirmAndCreateOrder')}
                   </Button>
                 </div>
                 <Button 
