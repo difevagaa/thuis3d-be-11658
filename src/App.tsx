@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { useViewportReset } from "@/hooks/useViewportReset";
+import { useSessionRecovery } from "@/hooks/useSessionRecovery";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -94,21 +95,45 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
 
+// Optimized QueryClient with best practices for e-commerce
+// Based on TanStack Query 2024 recommendations
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      // Data is fresh for 2 minutes - reduces unnecessary refetches
+      staleTime: 2 * 60 * 1000,
+      // Keep unused data in cache for 10 minutes
+      gcTime: 10 * 60 * 1000,
+      // Don't refetch on window focus - prevents jarring updates
       refetchOnWindowFocus: false,
+      // Only refetch on mount if data is stale
+      refetchOnMount: "always",
+      // Retry failed requests with exponential backoff
+      retry: (failureCount, error) => {
+        // Don't retry on authentication errors
+        if (error && typeof error === 'object' && 'status' in error) {
+          const status = (error as { status: number }).status;
+          if (status === 401 || status === 403) return false;
+        }
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Network mode - always try to fetch
+      networkMode: 'offlineFirst',
+    },
+    mutations: {
+      // Retry mutations once on failure
       retry: 1,
+      // Network mode for mutations
+      networkMode: 'offlineFirst',
     },
   },
 });
 
-// Loading fallback component
+// Loading fallback component with responsive sizing
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  <div className="flex items-center justify-center min-h-screen min-h-dvh">
+    <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-primary"></div>
   </div>
 );
 
@@ -120,6 +145,8 @@ const AppContent = () => {
   useVisitorTracking();
   // Reset viewport on navigation for mobile devices
   useViewportReset();
+  // Handle session recovery for cache/cookie issues
+  useSessionRecovery();
 
   return (
     <>
