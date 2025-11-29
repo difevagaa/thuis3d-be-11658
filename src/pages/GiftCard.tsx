@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
 import { Gift, CreditCard, Mail, Search, Sparkles, Send, CheckCircle2, ShoppingCart, Heart } from "lucide-react";

@@ -10,6 +10,7 @@ import { Calendar, User, ArrowLeft, Clock, Share2, BookOpen } from "lucide-react
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime } from "@/utils/textUtils";
 

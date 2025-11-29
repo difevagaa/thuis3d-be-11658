@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Printer, Filter, Layers, Box, Euro, ArrowUpDown, ShoppingCart, Package, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { ProductCard } from "@/components/ProductCard";
 

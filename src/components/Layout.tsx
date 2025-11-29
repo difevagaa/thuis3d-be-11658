@@ -26,6 +26,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 
 interface LayoutProps {
   children: ReactNode;
