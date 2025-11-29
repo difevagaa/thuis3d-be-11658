@@ -20,8 +20,8 @@
     "creditCardDesc": "Visa, Mastercard, American Express",
     "paypal": "PayPal",
     "paypalDesc": "Paga de forma segura con tu cuenta PayPal",
-    "revolut": "Tarjetas y Pagos Digitales",
-    "revolutDesc": "Paga con tarjeta de crédito, débito o billetera digital",
+    "revolut": "Revolut",
+    "revolutDesc": "Pago rápido y seguro con Revolut",
     "revolutBadges": {
       "visa": "Visa",
       "mastercard": "Mastercard",
