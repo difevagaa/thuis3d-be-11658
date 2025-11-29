@@ -558,49 +558,49 @@ export default function Payment() {
   const isInvoicePayment = shippingInfo.isInvoicePayment;
 
   return (
-    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-4 xs:py-6 md:py-8 lg:py-12 max-w-4xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 md:gap-6">
+    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-3 xs:py-4 md:py-8 lg:py-12 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 xs:gap-3 md:gap-6">
         {/* Order Summary */}
         <Card>
-          <CardHeader className="p-3 xs:p-4 sm:p-6">
-            <CardTitle className="text-base xs:text-lg sm:text-xl">{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
+          <CardHeader className="p-2.5 xs:p-3 sm:p-6 pb-2 xs:pb-2 sm:pb-4">
+            <CardTitle className="text-sm xs:text-base sm:text-xl">{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 xs:p-4 sm:p-6 pt-0">
-            <div className="space-y-3 xs:space-y-4">
+          <CardContent className="p-2.5 xs:p-3 sm:p-6 pt-0">
+            <div className="space-y-2 xs:space-y-3">
               {isInvoicePayment ? (
                 // Invoice payment summary
                 <>
-                  <div className="flex justify-between items-center py-2">
+                  <div className="flex justify-between items-center py-1.5 xs:py-2">
                     <div>
-                      <p className="font-medium text-sm xs:text-base">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
-                      <p className="text-xs xs:text-sm text-muted-foreground">{t('payment:invoicePayment')}</p>
+                      <p className="font-medium text-xs xs:text-sm sm:text-base">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
+                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">{t('payment:invoicePayment')}</p>
                     </div>
                   </div>
                   
-                  <div className="border-t pt-3 xs:pt-4 space-y-2">
-                    <div className="flex justify-between text-sm xs:text-base">
+                  <div className="border-t pt-2 xs:pt-3 space-y-1.5 xs:space-y-2">
+                    <div className="flex justify-between text-xs xs:text-sm sm:text-base">
                       <span className="text-muted-foreground">{t('payment:subtotal')}</span>
                       <span>€{Number(shippingInfo.subtotal || 0).toFixed(2)}</span>
                     </div>
                     {shippingInfo.shipping > 0 && (
-                      <div className="flex justify-between text-sm xs:text-base">
+                      <div className="flex justify-between text-xs xs:text-sm sm:text-base">
                         <span className="text-muted-foreground">{t('payment:shipping')}</span>
                         <span>€{Number(shippingInfo.shipping).toFixed(2)}</span>
                       </div>
                     )}
                     {shippingInfo.tax > 0 && (
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-xs xs:text-sm">
                         <span className="text-muted-foreground">{t('payment:tax')} (21%)</span>
                         <span>€{Number(shippingInfo.tax).toFixed(2)}</span>
                       </div>
                     )}
                     {shippingInfo.discount > 0 && (
-                      <div className="flex justify-between text-green-600">
+                      <div className="flex justify-between text-green-600 text-xs xs:text-sm">
                         <span>{t('payment:discount')}</span>
                         <span>-€{Number(shippingInfo.discount).toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                    <div className="flex justify-between text-sm xs:text-base sm:text-lg font-bold pt-1.5 xs:pt-2 border-t">
                       <span>{t('payment:totalToPay')}</span>
                       <span>€{Number(shippingInfo.total).toFixed(2)}</span>
                     </div>
@@ -610,29 +610,29 @@ export default function Payment() {
                 // Normal cart checkout
                 <>
                   {cartItems.map((item, index) => (
-                    <div key={index} className="flex justify-between">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                    <div key={index} className="flex justify-between text-xs xs:text-sm sm:text-base">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="font-medium truncate">{item.name}</p>
+                        <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
                           {t('payment:quantity')}: {item.quantity} x €{Number(item.price).toFixed(2)}
                         </p>
                       </div>
-                      <p className="font-medium">€{(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
+                      <p className="font-medium whitespace-nowrap">€{(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
                     </div>
                   ))}
                   
-                   <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between">
+                   <div className="border-t pt-2 xs:pt-3 space-y-1.5 xs:space-y-2">
+                    <div className="flex justify-between text-xs xs:text-sm">
                       <span className="text-muted-foreground">{t('payment:subtotal')}</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
                     {appliedCoupon && calculateCouponDiscount() > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>{t('payment:coupon')} ({appliedCoupon.code})</span>
-                        <span>-€{calculateCouponDiscount().toFixed(2)}</span>
+                      <div className="flex justify-between text-green-600 text-xs xs:text-sm">
+                        <span className="truncate mr-2">{t('payment:coupon')} ({appliedCoupon.code})</span>
+                        <span className="whitespace-nowrap">-€{calculateCouponDiscount().toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-xs xs:text-sm">
                       <span className="text-muted-foreground">
                         {appliedCoupon?.discount_type === 'free_shipping' ? t('payment:shippingFree') : t('payment:shipping')}
                       </span>
@@ -645,12 +645,12 @@ export default function Payment() {
                       return (
                         <>
                           {tax > 0 && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between text-xs xs:text-sm">
                               <span className="text-muted-foreground">{t('payment:tax')} ({taxSettings.rate}%)</span>
                               <span>€{tax.toFixed(2)}</span>
                             </div>
                           )}
-                          <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                          <div className="flex justify-between text-sm xs:text-base sm:text-lg font-bold pt-1.5 xs:pt-2 border-t">
                             <span>{t('payment:total')}</span>
                             <span>€{total.toFixed(2)}</span>
                           </div>
@@ -659,9 +659,9 @@ export default function Payment() {
                     })()}
                   </div>
 
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">{t('payment:shippingAddress')}</h4>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="border-t pt-2 xs:pt-3">
+                    <h4 className="font-semibold mb-1 xs:mb-2 text-xs xs:text-sm">{t('payment:shippingAddress')}</h4>
+                    <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {shippingInfo.full_name}<br />
                       {shippingInfo.address}<br />
                       {shippingInfo.city}, {shippingInfo.postal_code}<br />
@@ -677,94 +677,94 @@ export default function Payment() {
         {/* Bank Transfer Payment Info - Show when bank transfer is selected */}
         {selectedPaymentMethod === "bank_transfer" && orderCreated && (
           <Card className="md:col-span-2 shadow-lg border-2 border-success/30">
-            <CardHeader className="text-center bg-success/5 rounded-t-lg">
-              <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-success/10 rounded-full flex items-center justify-center mb-3 md:mb-4">
-                <Building2 className="w-7 h-7 md:w-8 md:h-8 text-success" />
+            <CardHeader className="text-center bg-success/5 rounded-t-lg p-3 xs:p-4 md:p-6">
+              <div className="mx-auto w-10 h-10 xs:w-12 xs:h-12 md:w-16 md:h-16 bg-success/10 rounded-full flex items-center justify-center mb-2 xs:mb-3 md:mb-4">
+                <Building2 className="w-5 h-5 xs:w-6 xs:h-6 md:w-8 md:h-8 text-success" />
               </div>
-              <CardTitle className="text-xl md:text-2xl text-success">
+              <CardTitle className="text-base xs:text-lg md:text-2xl text-success">
                 {t('payment:instructions.bankTransferTitle')}
               </CardTitle>
-              <CardDescription className="text-success/80">
+              <CardDescription className="text-success/80 text-xs xs:text-sm">
                 {t('payment:instructions.orderNumber')}: <strong className="text-success">{orderCreated.orderNumber}</strong>
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
+            <CardContent className="space-y-3 xs:space-y-4 md:space-y-6 p-2.5 xs:p-3 md:p-6">
               {/* Amount to Transfer */}
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-6 text-center">
-                <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToTransfer')}:</p>
-                <p className="text-4xl font-bold text-primary">€{orderCreated.total.toFixed(2)}</p>
-                <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-3 xs:p-4 md:p-6 text-center">
+                <p className="text-xs xs:text-sm font-medium text-foreground/70 mb-1 xs:mb-2">{t('payment:instructions.amountToTransfer')}:</p>
+                <p className="text-2xl xs:text-3xl md:text-4xl font-bold text-primary">€{orderCreated.total.toFixed(2)}</p>
+                <p className="text-[10px] xs:text-xs text-foreground/60 mt-1 xs:mt-2">{t('payment:instructions.vatIncluded')}</p>
               </div>
 
               {/* Bank Information - Using theme-consistent colors */}
-              <div className="bg-card dark:bg-card border-2 border-border rounded-xl p-4 md:p-6 space-y-4">
-                <h3 className="font-semibold text-base md:text-lg flex items-center gap-2 text-foreground border-b border-border pb-3">
-                  <Building2 className="h-5 w-5" />
+              <div className="bg-card dark:bg-card border-2 border-border rounded-xl p-2.5 xs:p-3 md:p-6 space-y-2 xs:space-y-3 md:space-y-4">
+                <h3 className="font-semibold text-sm xs:text-base md:text-lg flex items-center gap-2 text-foreground border-b border-border pb-2 xs:pb-3">
+                  <Building2 className="h-4 w-4 xs:h-5 xs:w-5" />
                   {t('payment:instructions.bankDetails')}
                 </h3>
                 
-                <div className="grid gap-4">
+                <div className="grid gap-2 xs:gap-3 md:gap-4">
                   {paymentConfig.company_info && (
-                    <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.companyInfo')}:</p>
-                      <p className="whitespace-pre-line text-foreground">{paymentConfig.company_info}</p>
+                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.companyInfo')}:</p>
+                      <p className="whitespace-pre-line text-foreground text-xs xs:text-sm">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
-                    <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.bankName')}:</p>
-                      <p className="text-foreground font-medium">{paymentConfig.bank_name}</p>
+                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.bankName')}:</p>
+                      <p className="text-foreground font-medium text-xs xs:text-sm">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
-                    <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.accountHolder')}:</p>
-                      <p className="text-foreground font-medium">{paymentConfig.bank_account_name}</p>
+                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.accountHolder')}:</p>
+                      <p className="text-foreground font-medium text-xs xs:text-sm">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
-                    <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.iban')}:</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <code className="bg-primary/10 text-primary px-3 py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-sm md:text-lg font-bold break-all">
+                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.iban')}:</p>
+                      <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
+                        <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold break-all">
                           {paymentConfig.bank_account_number}
                         </code>
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => copyToClipboard(paymentConfig.bank_account_number)}
-                          className="h-10 md:h-12 px-3 md:px-4 shrink-0"
+                          className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.transferReference')}:</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <code className="bg-primary/10 text-primary px-3 py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-sm md:text-lg font-bold">
+                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.transferReference')}:</p>
+                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
+                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
                         {orderCreated.orderNumber}
                       </code>
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => copyToClipboard(orderCreated.orderNumber)}
-                        className="h-10 md:h-12 px-3 md:px-4 shrink-0"
+                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
                       >
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
                       </Button>
                     </div>
                   </div>
 
                   {paymentConfig.bank_instructions && (
-                    <div className="bg-muted/50 rounded-lg p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-sm mb-1">{t('payment:instructions.additionalInstructions')}:</p>
-                      <p className="whitespace-pre-line text-foreground/80 text-sm">
+                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
+                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.additionalInstructions')}:</p>
+                      <p className="whitespace-pre-line text-foreground/80 text-[10px] xs:text-xs md:text-sm">
                         {paymentConfig.bank_instructions}
                       </p>
                     </div>
@@ -774,29 +774,29 @@ export default function Payment() {
 
               {/* QR Codes - Theme consistent */}
               {paymentImages.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-primary" />
-                    <h4 className="font-semibold text-base md:text-lg text-foreground">{t('payment:instructions.qrCodes')}</h4>
+                <div className="space-y-2 xs:space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-1.5 xs:gap-2">
+                    <QrCode className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
+                    <h4 className="font-semibold text-sm xs:text-base md:text-lg text-foreground">{t('payment:instructions.qrCodes')}</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">
                     {t('payment:instructions.scanQr')}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-4">
                     {paymentImages.map((img, index) => (
-                      <div key={index} className="border-2 border-border rounded-xl p-3 md:p-4 space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
+                      <div key={index} className="border-2 border-border rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
                         <img 
                           src={img} 
                           alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                          className="w-full h-40 md:h-56 object-contain rounded-lg bg-white p-2"
+                          className="w-full h-24 xs:h-32 md:h-56 object-contain rounded-lg bg-white p-1 xs:p-2"
                         />
-                        <div className="text-center space-y-1">
-                          <p className="font-semibold text-foreground text-sm md:text-base">
+                        <div className="text-center space-y-0.5 xs:space-y-1">
+                          <p className="font-semibold text-foreground text-[10px] xs:text-xs md:text-base">
                             {index === 0 ? t('payment:instructions.qrBankTransfer') : 
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}
@@ -809,25 +809,25 @@ export default function Payment() {
               )}
 
               {/* Warning - Theme consistent */}
-              <div className="bg-warning/10 border-2 border-warning/30 rounded-xl p-3 md:p-4 flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+              <div className="bg-warning/10 border-2 border-warning/30 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 flex items-start gap-2 xs:gap-3">
+                <AlertTriangle className="h-4 w-4 xs:h-5 xs:w-5 text-warning flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-warning">
+                  <p className="text-[10px] xs:text-xs md:text-sm font-medium text-warning">
                     {t('payment:instructions.pendingWarning')}
                   </p>
-                  <p className="text-sm text-warning/80 mt-1">
+                  <p className="text-[10px] xs:text-xs md:text-sm text-warning/80 mt-0.5 xs:mt-1">
                     {t('payment:instructions.includeOrderNumber')} <strong>{orderCreated.orderNumber}</strong> {t('payment:instructions.inTransferReference')}
                   </p>
                 </div>
               </div>
 
               {/* Confirm Order Button - VERY PROMINENT */}
-              <div className="flex flex-col gap-4 pt-6 border-t-2 border-primary/30">
+              <div className="flex flex-col gap-2 xs:gap-3 md:gap-4 pt-3 xs:pt-4 md:pt-6 border-t-2 border-primary/30">
                 {/* Primary action - Create Order - VERY LARGE AND VISIBLE */}
-                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-4 md:p-6">
-                  <p className="text-center text-sm md:text-base font-medium text-foreground/80 mb-4 flex items-center justify-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
-                    {t('payment:importantCreateOrderMessage')}
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-lg xs:rounded-xl p-2.5 xs:p-3 md:p-6">
+                  <p className="text-center text-[10px] xs:text-xs md:text-base font-medium text-foreground/80 mb-2 xs:mb-3 md:mb-4 flex items-center justify-center gap-1.5 xs:gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5 text-warning shrink-0" />
+                    <span className="leading-tight">{t('payment:importantCreateOrderMessage')}</span>
                   </p>
                   <Button 
                     onClick={() => {
@@ -840,10 +840,10 @@ export default function Payment() {
                         } 
                       });
                     }}
-                    className="w-full py-6 md:py-8 text-lg md:text-xl font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200" 
+                    className="w-full py-3 xs:py-4 md:py-8 text-sm xs:text-base md:text-xl font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200" 
                     size="lg"
                   >
-                    <CheckCircle2 className="h-6 w-6 mr-2" />
+                    <CheckCircle2 className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6 mr-1.5 xs:mr-2" />
                     {t('payment:confirmAndCreateOrder')}
                   </Button>
                 </div>
@@ -853,8 +853,8 @@ export default function Payment() {
                     setOrderCreated(null);
                   }}
                   variant="outline" 
-                  className="w-full" 
-                  size="lg"
+                  className="w-full text-xs xs:text-sm" 
+                  size="default"
                 >
                   {t('payment:changePaymentMethod')}
                 </Button>
@@ -865,35 +865,35 @@ export default function Payment() {
 
         {/* Payment Methods - Only show if no payment method is selected */}
         {!selectedPaymentMethod && (
-        <div className="space-y-4">
+        <div className="space-y-2 xs:space-y-3 md:space-y-4">
           {/* QR Codes Section - Show FIRST before payment methods */}
           {paymentImages.length > 0 && (
             <Card className="shadow-lg border-2 border-primary/30 bg-primary/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg md:text-xl flex items-center gap-2 text-primary">
-                  <QrCode className="h-5 w-5 md:h-6 md:w-6" />
+              <CardHeader className="p-2.5 xs:p-3 md:p-6 pb-2 xs:pb-2 md:pb-3">
+                <CardTitle className="text-sm xs:text-base md:text-xl flex items-center gap-1.5 xs:gap-2 text-primary">
+                  <QrCode className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6" />
                   {t('payment:instructions.qrCodes')}
                 </CardTitle>
-                <CardDescription className="text-sm md:text-base">
+                <CardDescription className="text-[10px] xs:text-xs md:text-base">
                   {t('payment:instructions.scanQr')}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <CardContent className="p-2.5 xs:p-3 md:p-6 pt-0">
+                <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-4">
                   {paymentImages.map((img, index) => (
-                    <div key={index} className="border-2 border-border rounded-xl p-3 md:p-4 space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
+                    <div key={index} className="border-2 border-border rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
                       <img 
                         src={img} 
                         alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                        className="w-full h-40 md:h-56 object-contain rounded-lg bg-white p-2"
+                        className="w-full h-24 xs:h-32 md:h-56 object-contain rounded-lg bg-white p-1 xs:p-2"
                       />
-                      <div className="text-center space-y-1">
-                        <p className="font-semibold text-foreground text-sm md:text-base">
+                      <div className="text-center space-y-0.5 xs:space-y-1">
+                        <p className="font-semibold text-foreground text-[10px] xs:text-xs md:text-base">
                           {index === 0 ? t('payment:instructions.qrBankTransfer') : 
                            index === 1 ? t('payment:instructions.qrRevolut') : 
                            `${t('payment:instructions.qrCode')} ${index + 1}`}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[8px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
                           {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                            index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                            t('payment:instructions.alternativePayment')}
@@ -908,48 +908,48 @@ export default function Payment() {
 
           {paymentConfig.company_info && (
             <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Building2 className="h-4 w-4 md:h-5 md:w-5" />
+              <CardHeader className="p-2.5 xs:p-3 md:p-6 pb-1 xs:pb-2">
+                <CardTitle className="text-xs xs:text-sm md:text-lg flex items-center gap-1.5 xs:gap-2">
+                  <Building2 className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5" />
                   {t('payment:companyInfo')}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-line">{paymentConfig.company_info}</p>
+              <CardContent className="p-2.5 xs:p-3 md:p-6 pt-0">
+                <p className="text-[10px] xs:text-xs md:text-sm text-foreground whitespace-pre-line">{paymentConfig.company_info}</p>
               </CardContent>
             </Card>
           )}
           
           <Card className="shadow-lg">
-            <CardHeader className="bg-primary/5 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                <ShieldCheck className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <CardHeader className="bg-primary/5 rounded-t-lg p-2.5 xs:p-3 md:p-6">
+              <CardTitle className="flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm md:text-lg">
+                <ShieldCheck className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5 text-primary" />
                 {t('payment:paymentMethodTitle')}
               </CardTitle>
-              <CardDescription className="text-foreground/70 text-sm">{t('payment:paymentMethod')}</CardDescription>
+              <CardDescription className="text-foreground/70 text-[10px] xs:text-xs md:text-sm">{t('payment:paymentMethod')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 md:space-y-4 p-3 md:p-6">
+            <CardContent className="space-y-2 xs:space-y-3 md:space-y-4 p-2.5 xs:p-3 md:p-6">
               {/* TARJETA - Pago con tarjeta */}
               {paymentConfig.card_enabled && (
                 <Button
                   onClick={() => handlePayment("card")}
                   disabled={processing}
-                  className="w-full h-auto py-3 md:py-4 text-base md:text-lg border-2 hover:bg-accent/50"
+                  className="w-full h-auto py-2 xs:py-2.5 md:py-4 text-sm md:text-lg border-2 hover:bg-accent/50"
                   variant="outline"
                 >
                   <div className="flex items-center w-full">
-                    <CreditCard className="h-8 w-8 md:h-10 md:w-10 mr-3 md:mr-4 text-primary shrink-0" />
+                    <CreditCard className="h-6 w-6 xs:h-7 xs:w-7 md:h-10 md:w-10 mr-2 xs:mr-3 md:mr-4 text-primary shrink-0" />
                     <div className="text-left flex-grow min-w-0">
-                      <div className="font-bold text-foreground text-sm md:text-base">{t('payment:methods.creditCard')}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="font-bold text-foreground text-xs xs:text-sm md:text-base">{t('payment:methods.creditCard')}</div>
+                      <div className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
                         💳 {t('payment:methods.creditCardDesc')}
                       </div>
-                      <div className="flex flex-wrap gap-1 md:gap-2 mt-2">
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-primary/10 text-primary">Visa</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-primary/10 text-primary">Mastercard</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-primary/10 text-primary">Bancontact</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-primary/10 text-primary hidden sm:inline-flex">Google Pay</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-primary/10 text-primary hidden sm:inline-flex">Apple Pay</span>
+                      <div className="flex flex-wrap gap-0.5 xs:gap-1 md:gap-2 mt-1 xs:mt-1.5 md:mt-2">
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Visa</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Mastercard</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary">Bancontact</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Google Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-primary/10 text-primary hidden xs:inline-flex">Apple Pay</span>
                       </div>
                     </div>
                   </div>
@@ -961,14 +961,14 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("bank_transfer")}
                   disabled={processing}
-                  className="w-full h-auto py-3 md:py-4 text-base md:text-lg border-2 hover:bg-accent/50"
+                  className="w-full h-auto py-2 xs:py-2.5 md:py-4 text-sm md:text-lg border-2 hover:bg-accent/50"
                   variant="outline"
                 >
                   <div className="flex items-center w-full">
-                    <Banknote className="h-8 w-8 md:h-10 md:w-10 mr-3 md:mr-4 text-success shrink-0" />
+                    <Banknote className="h-6 w-6 xs:h-7 xs:w-7 md:h-10 md:w-10 mr-2 xs:mr-3 md:mr-4 text-success shrink-0" />
                     <div className="text-left flex-grow min-w-0">
-                      <div className="font-bold text-foreground text-sm md:text-base">{t('payment:methods.bankTransfer')}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="font-bold text-foreground text-xs xs:text-sm md:text-base">{t('payment:methods.bankTransfer')}</div>
+                      <div className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
                         🏦 {t('payment:methods.bankTransferDesc')}
                       </div>
                     </div>
@@ -981,17 +981,17 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("paypal")}
                   disabled={processing}
-                  className="w-full h-auto py-3 md:py-4 text-base md:text-lg border-2 hover:bg-accent/50"
+                  className="w-full h-auto py-2 xs:py-2.5 md:py-4 text-sm md:text-lg border-2 hover:bg-accent/50"
                   variant="outline"
                 >
                   <div className="flex items-center w-full">
-                    <svg className="h-8 w-8 md:h-10 md:w-10 mr-3 md:mr-4 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="h-6 w-6 xs:h-7 xs:w-7 md:h-10 md:w-10 mr-2 xs:mr-3 md:mr-4 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
                       <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
                     </svg>
                     <div className="text-left flex-grow min-w-0">
-                      <div className="font-bold text-foreground text-sm md:text-base">{t('payment:methods.paypal')}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="font-bold text-foreground text-xs xs:text-sm md:text-base">{t('payment:methods.paypal')}</div>
+                      <div className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
                         🔒 {t('payment:methods.paypalDesc')}
                       </div>
                     </div>
@@ -1004,23 +1004,23 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("revolut")}
                   disabled={processing}
-                  className="w-full h-auto py-3 md:py-4 text-base md:text-lg border-2 hover:bg-accent/50"
+                  className="w-full h-auto py-2 xs:py-2.5 md:py-4 text-sm md:text-lg border-2 hover:bg-accent/50"
                   variant="outline"
                 >
                   <div className="flex items-center w-full">
-                    <svg className="h-8 w-8 md:h-10 md:w-10 mr-3 md:mr-4 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="h-6 w-6 xs:h-7 xs:w-7 md:h-10 md:w-10 mr-2 xs:mr-3 md:mr-4 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
                     </svg>
                     <div className="text-left flex-grow min-w-0">
-                      <div className="font-bold text-foreground text-sm md:text-base">{t('payment:methods.revolut')}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="font-bold text-foreground text-xs xs:text-sm md:text-base">{t('payment:methods.revolut')}</div>
+                      <div className="text-[10px] xs:text-xs text-muted-foreground mt-0.5 xs:mt-1">
                         💳 {t('payment:methods.revolutDesc')}
                       </div>
-                      <div className="flex flex-wrap gap-1 md:gap-2 mt-2">
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Visa</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Mastercard</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden sm:inline-flex">Google Pay</span>
-                        <span className="inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden sm:inline-flex">Apple Pay</span>
+                      <div className="flex flex-wrap gap-0.5 xs:gap-1 md:gap-2 mt-1 xs:mt-1.5 md:mt-2">
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Visa</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground">Mastercard</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Google Pay</span>
+                        <span className="inline-flex items-center px-1 xs:px-1.5 md:px-2 py-0.5 rounded-full text-[8px] xs:text-[10px] md:text-xs bg-accent/50 text-accent-foreground hidden xs:inline-flex">Apple Pay</span>
                       </div>
                     </div>
                   </div>
@@ -1028,28 +1028,28 @@ export default function Payment() {
               )}
 
               {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && !paymentConfig.revolut_enabled && (
-                <div className="text-center text-muted-foreground py-8 bg-muted/30 rounded-lg">
-                  <p>{t('payment:noPaymentMethods')}</p>
+                <div className="text-center text-muted-foreground py-4 xs:py-6 md:py-8 bg-muted/30 rounded-lg">
+                  <p className="text-xs xs:text-sm">{t('payment:noPaymentMethods')}</p>
                 </div>
               )}
 
               {/* Security Notice - We don't store payment data */}
-              <div className="bg-success/5 border border-success/20 rounded-lg p-3 md:p-4 mt-4">
-                <div className="flex items-start gap-2 md:gap-3">
-                  <ShieldCheck className="h-5 w-5 md:h-6 md:w-6 text-success flex-shrink-0 mt-0.5" />
+              <div className="bg-success/5 border border-success/20 rounded-lg p-2 xs:p-3 md:p-4 mt-2 xs:mt-3 md:mt-4">
+                <div className="flex items-start gap-1.5 xs:gap-2 md:gap-3">
+                  <ShieldCheck className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6 text-success flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-success text-xs md:text-sm">
+                    <h4 className="font-semibold text-success text-[10px] xs:text-xs md:text-sm">
                       {t('payment:securityNotice.title')}
                     </h4>
-                    <p className="text-xs text-success/80 mt-1 leading-relaxed">
+                    <p className="text-[10px] xs:text-xs text-success/80 mt-0.5 xs:mt-1 leading-relaxed">
                       {t('payment:securityNotice.description')}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 pt-4 text-xs text-muted-foreground border-t">
-                <ShieldCheck className="h-4 w-4 text-success" />
+              <div className="flex items-center justify-center gap-1.5 xs:gap-2 pt-2 xs:pt-3 md:pt-4 text-[10px] xs:text-xs text-muted-foreground border-t">
+                <ShieldCheck className="h-3 w-3 xs:h-4 xs:w-4 text-success" />
                 <span>{t('payment:securePayment')}</span>
               </div>
             </CardContent>
@@ -1059,7 +1059,8 @@ export default function Payment() {
             <Button
               onClick={() => navigate("/informacion-envio")}
               variant="ghost"
-              className="w-full"
+              className="w-full text-xs xs:text-sm"
+              size="sm"
             >
               ← {t('payment:backToShipping')}
             </Button>
