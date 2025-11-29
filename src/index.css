@@ -967,7 +967,6 @@ html.grayscale * {
     display: block;
     width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
   
   /* Ensure tables have proper scroll wrapper */
@@ -975,7 +974,6 @@ html.grayscale * {
   [class*="overflow-x-auto"] {
     max-width: 100vw;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
   
   /* Reduce all text sizes slightly on mobile */
@@ -1046,7 +1044,6 @@ html.grayscale * {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
   }
   
   /* Ensure table cells don't squeeze content too much */
