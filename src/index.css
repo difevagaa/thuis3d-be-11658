@@ -954,3 +954,52 @@ html.grayscale * {
     max-width: 85vw;
   }
 }
+
+/* ============================================
+   ADMIN PANEL - Foldable Device Optimizations
+   Samsung Z Fold series and similar devices
+   ============================================ */
+
+/* Improve admin panel for very narrow screens (folded state) */
+@media screen and (max-width: 400px) {
+  /* Ensure tables in admin panels scroll horizontally */
+  [data-sidebar="sidebar"] ~ main table,
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Ensure table cells don't squeeze content too much */
+  [data-sidebar="sidebar"] ~ main th,
+  [data-sidebar="sidebar"] ~ main td {
+    min-width: 80px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Improve card layouts in admin on narrow screens */
+  [data-sidebar="sidebar"] ~ main .grid {
+    gap: 0.5rem;
+  }
+  
+  /* Ensure images don't stretch */
+  [data-sidebar="sidebar"] ~ main img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+  
+  /* Improve admin header text on narrow screens */
+  [data-sidebar="sidebar"] ~ div h1 {
+    font-size: clamp(0.875rem, 4vw, 1.125rem);
+    word-break: break-word;
+  }
+  
+  /* Reduce padding on admin cards for narrow screens */
+  [data-sidebar="sidebar"] ~ main [class*="CardContent"],
+  [data-sidebar="sidebar"] ~ main [class*="CardHeader"] {
+    padding: 0.5rem;
+  }
+}
