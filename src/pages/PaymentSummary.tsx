@@ -13,18 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-
-/**
- * Generates a payment reference in the format: 3 numbers + 3 letters (e.g., "123ABC")
- * This reference is used consistently across all payment methods
- */
-const generatePaymentReference = (): string => {
-  const numbers = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
-  const letters = Array.from({ length: 3 }, () => 
-    String.fromCharCode(65 + Math.floor(Math.random() * 26))
-  ).join('');
-  return `${numbers}${letters}`;
-};
+import { generatePaymentReference } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;

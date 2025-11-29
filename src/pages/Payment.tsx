@@ -14,7 +14,8 @@ import {
   calculateOrderTotals,
   generateOrderNotes,
   updateGiftCardBalance,
-  calculateCouponDiscount as calculateCouponDiscountUtil
+  calculateCouponDiscount as calculateCouponDiscountUtil,
+  generatePaymentReference
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
@@ -431,7 +432,8 @@ export default function Payment() {
 
       // Get the payment reference from shipping info (generated in PaymentSummary)
       // This ensures the same reference is used across all payment methods
-      const paymentReference = shippingInfo?.payment_reference || `REF${Date.now().toString().slice(-6)}`;
+      // Fallback to generating a new one if not found (maintains same format: 3 numbers + 3 letters)
+      const paymentReference = shippingInfo?.payment_reference || generatePaymentReference();
 
       // For bank transfer, show payment info on the same page
       if (method === "bank_transfer") {

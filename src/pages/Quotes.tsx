@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useQuantityDiscounts } from "@/hooks/useQuantityDiscounts";
 import { logger } from "@/lib/logger";
+import { generatePaymentReference } from "@/lib/paymentUtils";
 // RichTextEditor is lazy-loaded below
 import { useTranslation } from "react-i18next";
 
@@ -284,6 +285,10 @@ const Quotes = () => {
         return;
       }
 
+      // Generate a unique payment reference for this quote (format: 3 numbers + 3 letters)
+      // This reference will be used as the invoice number when the quote is approved
+      const quoteReference = generatePaymentReference();
+
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id,
         customer_name: customerName,
@@ -302,6 +307,7 @@ const Quotes = () => {
         calculation_details: analysisResult ? {
           dimensions: analysisResult.dimensions,
           preview: analysisResult.preview,
+          payment_reference: quoteReference, // Store the payment reference
           ...(discount && {
             quantity_discount: {
               original_price: discount.originalPrice,
@@ -310,7 +316,7 @@ const Quotes = () => {
               discount_description: discount.tierDescription
             }
           })
-        } : null,
+        } : { payment_reference: quoteReference },
         supports_required: supportsRequired,
         layer_height: layerHeight, // Siempre 0.2mm
         let_team_decide_supports: false,
@@ -482,6 +488,10 @@ const Quotes = () => {
         return;
       }
 
+      // Generate a unique payment reference for this quote (format: 3 numbers + 3 letters)
+      // This reference will be used as the invoice number when the quote is approved
+      const serviceQuoteReference = generatePaymentReference();
+
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id || null,
         customer_name: customerName,
@@ -491,6 +501,7 @@ const Quotes = () => {
         status_id: pendingStatusId,
         file_url: fileLink || null,
         service_attachments: uploadedFiles.length > 0 ? uploadedFiles : null,
+        calculation_details: { payment_reference: serviceQuoteReference }, // Store the payment reference
       });
 
       if (error) {

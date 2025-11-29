@@ -3,6 +3,19 @@ import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+/**
+ * Generates a payment reference in the format: 3 numbers + 3 letters (e.g., "123ABC")
+ * This reference is used consistently as order number, invoice number, and payment reference
+ * across all payment methods (bank transfer, card, Revolut, PayPal)
+ */
+export const generatePaymentReference = (): string => {
+  const numbers = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
+  const letters = Array.from({ length: 3 }, () => 
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join('');
+  return `${numbers}${letters}`;
+};
+
 export interface Address {
   street: string;
   city: string;
