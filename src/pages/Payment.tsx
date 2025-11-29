@@ -587,32 +587,32 @@ export default function Payment() {
   const isInvoicePayment = shippingInfo.isInvoicePayment;
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 py-6 md:py-8 lg:py-12 max-w-4xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-4 xs:py-6 md:py-8 lg:py-12 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 md:gap-6">
         {/* Order Summary */}
         <Card>
-          <CardHeader>
-            <CardTitle>{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
+          <CardHeader className="p-3 xs:p-4 sm:p-6">
+            <CardTitle className="text-base xs:text-lg sm:text-xl">{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="p-3 xs:p-4 sm:p-6 pt-0">
+            <div className="space-y-3 xs:space-y-4">
               {isInvoicePayment ? (
                 // Invoice payment summary
                 <>
                   <div className="flex justify-between items-center py-2">
                     <div>
-                      <p className="font-medium">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
-                      <p className="text-sm text-muted-foreground">{t('payment:invoicePayment')}</p>
+                      <p className="font-medium text-sm xs:text-base">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
+                      <p className="text-xs xs:text-sm text-muted-foreground">{t('payment:invoicePayment')}</p>
                     </div>
                   </div>
                   
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between">
+                  <div className="border-t pt-3 xs:pt-4 space-y-2">
+                    <div className="flex justify-between text-sm xs:text-base">
                       <span className="text-muted-foreground">{t('payment:subtotal')}</span>
                       <span>€{Number(shippingInfo.subtotal || 0).toFixed(2)}</span>
                     </div>
                     {shippingInfo.shipping > 0 && (
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-sm xs:text-base">
                         <span className="text-muted-foreground">{t('payment:shipping')}</span>
                         <span>€{Number(shippingInfo.shipping).toFixed(2)}</span>
                       </div>
