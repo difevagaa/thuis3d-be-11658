@@ -213,24 +213,106 @@ export default function Quotes() {
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Gestión de Cotizaciones</h1>
-          <p className="text-muted-foreground">Administra las cotizaciones de clientes</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Gestión de Cotizaciones</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Administra las cotizaciones de clientes</p>
         </div>
-        <Button onClick={() => navigate("/admin/cotizaciones/crear")}>
-          <FilePlus className="h-4 w-4 mr-2" />
-          Crear Cotización Manual
+        <Button onClick={() => navigate("/admin/cotizaciones/crear")} className="text-xs sm:text-sm h-8 sm:h-9">
+          <FilePlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="hidden xs:inline">Crear Cotización</span>
+          <span className="xs:hidden">Nueva</span>
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Cotizaciones</CardTitle>
-          <CardDescription>
+        <CardHeader className="py-3 sm:py-4">
+          <CardTitle className="text-base sm:text-lg">Lista de Cotizaciones</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Todas las cotizaciones enviadas por clientes y creadas manualmente
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-2 sm:p-4 md:p-6">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {quotes.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8 text-sm">
+                No hay cotizaciones registradas
+              </p>
+            ) : (
+              quotes.map((quote) => (
+                <div 
+                  key={quote.id} 
+                  className="border rounded-lg p-3 bg-card cursor-pointer hover:bg-muted/30"
+                  onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isSelected(quote.id)}
+                          onCheckedChange={() => toggleSelection(quote.id)}
+                        />
+                        <p className="font-medium text-sm truncate">{quote.customer_name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate ml-6">{quote.customer_email}</p>
+                    </div>
+                    <Badge 
+                      style={{ 
+                        backgroundColor: quote.quote_statuses?.color || '#3b82f6',
+                        color: 'white'
+                      }}
+                      className="text-[10px] flex-shrink-0"
+                    >
+                      {quote.quote_statuses?.name || 'Pendiente'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                    <div>
+                      <p className="text-muted-foreground">Material</p>
+                      <p className="font-medium truncate">{quote.materials?.name || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Peso</p>
+                      <p className="font-mono">{quote.calculated_weight ? `${quote.calculated_weight.toFixed(1)}g` : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Precio Est.</p>
+                      <p className="font-semibold text-green-600">
+                        {quote.estimated_price ? `€${quote.estimated_price.toFixed(2)}` : '-'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(quote.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
+                      >
+                        <FileText className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setEditingQuote(quote)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
