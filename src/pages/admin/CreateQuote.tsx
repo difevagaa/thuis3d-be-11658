@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { i18nToast } from "@/lib/i18nToast";
+import { i18nToast, toast } from "@/lib/i18nToast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, X, FileText, Receipt } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";

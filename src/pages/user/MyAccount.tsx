@@ -154,7 +154,7 @@ export default function MyAccount() {
         supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name, reward_type, reward_value), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name, reward_type, reward_value)").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
       ]);
 
@@ -174,18 +174,18 @@ export default function MyAccount() {
       // Use values from loyalty_rewards (reward_type, reward_value) when available
       // Map reward types to discount types for consistent display
       const userCoupons = redemptionsRes.data?.map(redemption => {
-        const rawDiscountType = redemption.coupons?.discount_type || redemption.loyalty_rewards?.reward_type || 'percentage';
+        const rawDiscountType = redemption.loyalty_rewards?.reward_type || 'percentage';
         return {
           id: redemption.id,
           code: redemption.coupon_code,
           discount_type: mapRewardTypeToDiscountType(rawDiscountType),
-          discount_value: redemption.coupons?.discount_value || redemption.loyalty_rewards?.reward_value || 0,
+          discount_value: redemption.loyalty_rewards?.reward_value || 0,
           created_at: redemption.created_at,
           status: redemption.status,
           reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad',
-          is_active: redemption.coupons?.is_active ?? true,
-          times_used: redemption.coupons?.times_used || 0,
-          max_uses: redemption.coupons?.max_uses || 1
+          is_active: true,
+          times_used: 0,
+          max_uses: 1
         };
       }) || [];
       

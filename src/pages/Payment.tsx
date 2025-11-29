@@ -37,6 +37,7 @@ export default function Payment() {
     revolut_enabled: false,
     paypal_email: "",
     revolut_link: "",
+    card_payment_link: "",
     company_info: "",
     bank_account_number: "",
     bank_account_name: "",
@@ -56,7 +57,7 @@ export default function Payment() {
       // Read all payment configuration keys including bank account details
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
-        'paypal_email', 'revolut_link', 'company_info',
+        'paypal_email', 'revolut_link', 'card_payment_link', 'company_info',
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
         'payment_images'
       ];
@@ -89,6 +90,7 @@ export default function Payment() {
           revolut_enabled: settings.revolut_enabled ?? false,
           paypal_email: settings.paypal_email || "",
           revolut_link: settings.revolut_link || "",
+          card_payment_link: settings.card_payment_link || "",
           company_info: settings.company_info || "",
           bank_account_number: settings.bank_account_number || "",
           bank_account_name: settings.bank_account_name || "",
@@ -435,35 +437,29 @@ export default function Payment() {
 
       // For card payment, show payment info first before redirecting to bank
       if (method === "card") {
-        if (paymentConfig.revolut_link) {
-          // Save temporary info
-          sessionStorage.setItem("pending_order", JSON.stringify({
-            cartItems,
-            shippingInfo,
-            total,
-            subtotal,
-            tax,
-            shipping: effectiveShipping,
-            couponDiscount,
-            appliedCoupon,
-            method: "card"
-          }));
+        // Save temporary info
+        sessionStorage.setItem("pending_order", JSON.stringify({
+          cartItems,
+          shippingInfo,
+          total,
+          subtotal,
+          tax,
+          shipping: effectiveShipping,
+          couponDiscount,
+          appliedCoupon,
+          method: "card"
+        }));
 
-          // Generar número de pedido temporal
-          const tempOrderNumber = `TEMP-${Date.now()}`;
-          
-          // Mostrar información de pago (NO abrir enlace automáticamente)
-          setSelectedPaymentMethod("card");
-          setOrderCreated({ orderNumber: tempOrderNumber, total });
-          
-          toast.success(t('payment:messages.cardPaymentSelected'));
-          setProcessing(false);
-          return;
-        } else {
-          toast.error(t('payment:messages.cardPaymentNotConfigured'));
-          setProcessing(false);
-          return;
-        }
+        // Generar número de pedido temporal
+        const tempOrderNumber = `TEMP-${Date.now()}`;
+        
+        // Mostrar información de pago (NO abrir enlace automáticamente)
+        setSelectedPaymentMethod("card");
+        setOrderCreated({ orderNumber: tempOrderNumber, total });
+        
+        toast.success(t('payment:messages.cardPaymentSelected'));
+        setProcessing(false);
+        return;
       }
 
       // Get saved gift card from cart if applied
@@ -1155,8 +1151,11 @@ export default function Payment() {
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
                 <Button 
                   onClick={() => {
-                    if (paymentConfig.revolut_link) {
-                      window.open(paymentConfig.revolut_link, '_blank');
+                    const cardLink = paymentConfig.card_payment_link || paymentConfig.revolut_link;
+                    if (cardLink) {
+                      window.open(cardLink, '_blank');
+                    } else {
+                      toast.error(t('payment:messages.cardPaymentNotConfigured'));
                     }
                   }}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
