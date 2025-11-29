@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { Separator } from "@/components/ui/separator";

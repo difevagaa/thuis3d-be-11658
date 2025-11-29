@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { Mail, Paperclip, X, Image as ImageIcon, FileText } from "lucide-react";
 
 export function SendAdminMessage() {

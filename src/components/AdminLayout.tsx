@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import AdminNotificationBell from "./AdminNotificationBell";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

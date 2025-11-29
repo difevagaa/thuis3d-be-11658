@@ -19,6 +19,7 @@ import {
   Shield
 } from "lucide-react";
 import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 
 const Admin = () => {
   const navigate = useNavigate();

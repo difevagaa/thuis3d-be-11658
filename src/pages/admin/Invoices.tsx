@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { FileText, Plus, Eye, Trash2, X, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useBulkSelection } from "@/hooks/useBulkSelection";

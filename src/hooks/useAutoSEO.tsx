@@ -185,7 +185,6 @@ export function useAutoSEO() {
         // Upsert keywords - first try to find existing, then insert or update
         for (const keyword of keywordsToSave) {
           // Check if keyword with same language and source already exists
-          // @ts-expect-error - Avoid deep type instantiation error
           const existingQuery = supabase
             .from('seo_keywords')
             .select('id')

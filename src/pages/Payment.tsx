@@ -508,7 +508,7 @@ export default function Payment() {
           discount: totalDiscount,
           total: finalTotal,
           payment_method: method,
-          payment_status: method === "card" ? "paid" : "pending",
+          payment_status: "pending",
           shipping_address: JSON.stringify(shippingInfo),
           billing_address: JSON.stringify(shippingInfo),
           notes: orderNotes.trim() || null
@@ -599,7 +599,7 @@ export default function Payment() {
           gift_card_amount: giftCardDiscount > 0 ? giftCardDiscount : null,
           total: finalTotal,
           payment_method: method,
-          payment_status: method === "card" ? "paid" : "pending",
+          payment_status: "pending",
           issue_date: new Date().toISOString(),
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           notes: `Factura generada automáticamente para el pedido ${order.order_number}`
@@ -688,8 +688,8 @@ export default function Payment() {
               total: finalTotal,
               subtotal: subtotal,
               tax: tax,
-              shipping: shipping
-            } 
+              shipping: effectiveShipping
+            }
           });
         } else {
           toast.error(t('payment:messages.paypalNotConfigured'));
@@ -711,7 +711,7 @@ export default function Payment() {
               total: finalTotal,
               subtotal: subtotal,
               tax: tax,
-              shipping: shipping
+              shipping: effectiveShipping
             } 
           });
         } else {
