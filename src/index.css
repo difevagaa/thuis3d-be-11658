@@ -956,143 +956,472 @@ html.grayscale * {
 }
 
 /* ============================================
-   ADMIN PANEL - Foldable Device Optimizations
-   Samsung Z Fold series and similar devices
+   COMPREHENSIVE RESPONSIVE DESIGN SYSTEM
+   Supports all device sizes from 280px to 2560px+
+   Uses CSS custom properties for maintainability
    ============================================ */
 
-/* Global admin table improvements for ALL mobile screens */
-@media screen and (max-width: 768px) {
-  /* Make all tables scrollable horizontally on mobile */
-  table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-  }
-  
-  /* Ensure tables have proper scroll wrapper */
-  .table-container,
-  [class*="overflow-x-auto"] {
-    max-width: 100vw;
-    overflow-x: auto;
-  }
-  
-  /* Reduce all text sizes slightly on mobile */
-  body {
-    font-size: 0.875rem;
-  }
-  
-  h1 {
-    font-size: 1.25rem !important;
-  }
-  
-  h2 {
-    font-size: 1.125rem !important;
-  }
-  
-  h3 {
-    font-size: 1rem !important;
-  }
-  
-  h4, h5, h6 {
-    font-size: 0.875rem !important;
-  }
-  
-  /* Reduce card padding on mobile */
-  [class*="CardContent"] {
-    padding: 0.75rem !important;
-  }
-  
-  [class*="CardHeader"] {
-    padding: 0.75rem !important;
-    padding-bottom: 0.5rem !important;
-  }
-  
-  /* Ensure grid items wrap properly */
-  .grid {
-    gap: 0.5rem !important;
-  }
-  
-  /* Reduce badge sizes */
-  [class*="Badge"] {
-    font-size: 0.65rem !important;
-    padding: 0.15rem 0.4rem !important;
+/* CSS Custom Properties for fluid typography */
+:root {
+  --fluid-h1: clamp(1.25rem, 5vw, 2.25rem);
+  --fluid-h2: clamp(1.125rem, 4vw, 1.875rem);
+  --fluid-h3: clamp(1rem, 3.5vw, 1.5rem);
+  --fluid-h4: clamp(0.9375rem, 3vw, 1.25rem);
+  --fluid-h5: clamp(0.875rem, 2.5vw, 1.125rem);
+  --fluid-h6: clamp(0.8125rem, 2vw, 1rem);
+  --fluid-container-padding: clamp(0.5rem, 2vw, 2rem);
+  --fluid-card-padding: clamp(0.75rem, 3vw, 1.5rem);
+  --fluid-button-padding-y: clamp(0.375rem, 1.5vw, 0.5rem);
+  --fluid-button-padding-x: clamp(0.5rem, 2vw, 1rem);
+  --fluid-icon-size: clamp(1rem, 4vw, 1.5rem);
+}
+
+/* ============================================
+   FLUID TYPOGRAPHY SYSTEM
+   Automatically scales text based on viewport
+   ============================================ */
+
+html {
+  /* Base fluid font size: scales from 14px to 16px based on viewport */
+  font-size: clamp(14px, calc(14px + (16 - 14) * ((100vw - 320px) / (1920 - 320))), 16px);
+}
+
+/* Heading fluid sizes - using CSS custom properties */
+h1:not([class*="text-"]) {
+  font-size: var(--fluid-h1);
+  line-height: 1.2;
+}
+
+h2:not([class*="text-"]) {
+  font-size: var(--fluid-h2);
+  line-height: 1.25;
+}
+
+h3:not([class*="text-"]) {
+  font-size: var(--fluid-h3);
+  line-height: 1.3;
+}
+
+h4:not([class*="text-"]) {
+  font-size: var(--fluid-h4);
+  line-height: 1.35;
+}
+
+h5:not([class*="text-"]) {
+  font-size: var(--fluid-h5);
+  line-height: 1.4;
+}
+
+h6:not([class*="text-"]) {
+  font-size: var(--fluid-h6);
+  line-height: 1.45;
+}
+
+/* Body text fluid sizes */
+p, span, div, li, td, th, label {
+  line-height: 1.5;
+}
+
+/* ============================================
+   FLUID SPACING SYSTEM
+   ============================================ */
+
+.container:not([class*="px-"]):not([class*="p-"]) {
+  padding-left: var(--fluid-container-padding);
+  padding-right: var(--fluid-container-padding);
+}
+
+/* ============================================
+   RESPONSIVE CARD SYSTEM
+   Cards automatically adapt to screen size
+   ============================================ */
+
+/* Base card improvements for all screens */
+[class*="Card"] {
+  transition: all 0.2s ease;
+}
+
+/* Card padding responsive system - using CSS custom properties */
+[class*="CardHeader"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
+}
+
+[class*="CardContent"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
+  padding-top: 0;
+}
+
+[class*="CardFooter"]:not([class*="p-"]) {
+  padding: var(--fluid-card-padding);
+  padding-top: 0;
+}
+
+[class*="CardTitle"]:not([class*="text-"]) {
+  font-size: clamp(0.9375rem, 3.5vw, 1.5rem);
+}
+
+[class*="CardDescription"]:not([class*="text-"]) {
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+}
+
+/* ============================================
+   RESPONSIVE BUTTON SYSTEM
+   Buttons scale with viewport
+   ============================================ */
+
+button:not([class*="h-"]):not([class*="w-"]), 
+[role="button"]:not([class*="h-"]):not([class*="w-"]) {
+  min-height: clamp(32px, 8vw, 40px);
+  padding: clamp(0.375rem, 1.5vw, 0.5rem) clamp(0.5rem, 2vw, 1rem);
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+}
+
+/* Icon buttons - ensure consistent sizing */
+button[class*="icon"], 
+[class*="size-icon"],
+.btn-icon {
+  width: clamp(28px, 7vw, 40px);
+  height: clamp(28px, 7vw, 40px);
+}
+
+/* ============================================
+   RESPONSIVE ICON SYSTEM
+   Icons scale proportionally
+   ============================================ */
+
+/* Default icon scaling */
+svg:not([class*="h-"]):not([class*="w-"]) {
+  width: clamp(1rem, 4vw, 1.5rem);
+  height: clamp(1rem, 4vw, 1.5rem);
+}
+
+/* Lucide icons auto-scale */
+[class*="lucide-"] {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   RESPONSIVE FORM ELEMENTS
+   Inputs, selects, and textareas
+   ============================================ */
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  min-height: clamp(36px, 10vw, 44px);
+  font-size: clamp(0.875rem, 3vw, 1rem) !important;
+  padding: clamp(0.375rem, 1.5vw, 0.625rem) clamp(0.5rem, 2vw, 0.75rem) !important;
+}
+
+/* Prevent iOS zoom on focus */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }
 
-/* Improve admin panel for very narrow screens (folded state) */
+/* ============================================
+   RESPONSIVE TABLE SYSTEM
+   Tables adapt to all screen sizes
+   ============================================ */
+
+/* Make tables scrollable on mobile */
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+thead, tbody, tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+th, td {
+  padding: clamp(0.25rem, 1.5vw, 0.75rem) clamp(0.375rem, 2vw, 1rem);
+  font-size: clamp(0.6875rem, 2.5vw, 0.875rem);
+  white-space: nowrap;
+}
+
+/* Ensure tables don't break layout */
+.table-container,
+[class*="overflow-x-auto"] {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   RESPONSIVE BADGE SYSTEM
+   ============================================ */
+
+[class*="Badge"] {
+  font-size: clamp(0.625rem, 2vw, 0.75rem) !important;
+  padding: clamp(0.125rem, 0.5vw, 0.25rem) clamp(0.25rem, 1vw, 0.5rem) !important;
+}
+
+/* ============================================
+   RESPONSIVE GRID SYSTEM
+   Grids automatically adjust columns
+   ============================================ */
+
+/* Smart grid that adapts columns based on container width */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Responsive gap for grids */
+.grid {
+  gap: clamp(0.375rem, 2vw, 1rem);
+}
+
+/* ============================================
+   RESPONSIVE IMAGE SYSTEM
+   Images scale properly on all devices
+   ============================================ */
+
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Product images responsive sizing */
+.product-image,
+[class*="product"] img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 640px)
+   Small phones
+   ============================================ */
+
+@media screen and (max-width: 640px) {
+  /* Update CSS custom properties for mobile */
+  :root {
+    --fluid-container-padding: 0.75rem;
+    --fluid-card-padding: 0.75rem;
+  }
+  
+  /* Single column grids for most layouts - avoid !important by being more specific */
+  .grid:not(.grid-no-stack):not([class*="grid-cols-2"]):not([class*="grid-cols-3"]):not([class*="grid-cols-4"]) {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Product grids stay 2 columns */
+  .grid[class*="grid-cols-2"],
+  .grid[class*="grid-cols-3"],
+  .grid[class*="grid-cols-4"] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Sidebar adjustments */
+  [data-sidebar="sidebar"] {
+    max-width: 85vw;
+  }
+}
+
+/* ============================================
+   VERY SMALL SCREENS (max-width: 400px)
+   Folded phones (Samsung Z Fold) and very narrow screens
+   ============================================ */
+
 @media screen and (max-width: 400px) {
-  /* Even smaller text for very narrow screens */
-  body {
-    font-size: 0.8125rem;
+  /* Update CSS custom properties for very small screens */
+  :root {
+    --fluid-container-padding: 0.5rem;
+    --fluid-card-padding: 0.5rem;
+    --fluid-button-padding-y: 0.25rem;
+    --fluid-button-padding-x: 0.5rem;
   }
   
-  h1 {
-    font-size: 1.125rem !important;
+  /* Smaller buttons */
+  button:not([class*="h-"]):not([class*="w-"]), 
+  [role="button"]:not([class*="h-"]):not([class*="w-"]) {
+    min-height: 32px;
+    font-size: 0.75rem;
   }
   
-  h2 {
-    font-size: 1rem !important;
-  }
-  
-  h3, h4, h5, h6 {
-    font-size: 0.875rem !important;
-  }
-  
-  /* Ensure tables in admin panels scroll horizontally */
-  [data-sidebar="sidebar"] ~ main table,
-  .admin-table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-  
-  /* Ensure table cells don't squeeze content too much */
-  [data-sidebar="sidebar"] ~ main th,
-  [data-sidebar="sidebar"] ~ main td,
+  /* Compact table cells */
   th, td {
-    min-width: 60px;
-    padding: 0.375rem 0.25rem;
+    padding: 0.25rem;
     font-size: 0.6875rem;
   }
   
-  /* Improve card layouts in admin on narrow screens */
-  [data-sidebar="sidebar"] ~ main .grid {
+  /* Stack product grids - 2 columns with tighter gap */
+  .grid[class*="grid-cols-2"],
+  .grid[class*="grid-cols-3"],
+  .grid[class*="grid-cols-4"] {
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.375rem;
   }
-  
-  /* Ensure images don't stretch */
-  [data-sidebar="sidebar"] ~ main img,
-  img {
-    max-width: 100%;
-    height: auto;
-    object-fit: contain;
+}
+
+/* ============================================
+   EXTRA SMALL SCREENS (max-width: 320px)
+   Very narrow devices
+   ============================================ */
+
+@media screen and (max-width: 320px) {
+  /* Update CSS custom properties for extra small screens */
+  :root {
+    --fluid-container-padding: 0.375rem;
+    --fluid-card-padding: 0.375rem;
   }
   
-  /* Improve admin header text on narrow screens */
-  [data-sidebar="sidebar"] ~ div h1 {
-    font-size: clamp(0.875rem, 4vw, 1.125rem);
-    word-break: break-word;
+  /* Stack all grids to single column */
+  .grid:not(.grid-no-stack) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+/* ============================================
+   TABLET BREAKPOINT (min-width: 768px)
+   ============================================ */
+
+@media screen and (min-width: 768px) {
+  /* Update CSS custom properties for tablet */
+  :root {
+    --fluid-container-padding: 1rem;
+    --fluid-card-padding: 1rem;
   }
   
-  /* Reduce padding on admin cards for narrow screens */
-  [data-sidebar="sidebar"] ~ main [class*="CardContent"],
-  [data-sidebar="sidebar"] ~ main [class*="CardHeader"],
-  [class*="CardContent"],
-  [class*="CardHeader"] {
-    padding: 0.5rem !important;
+  /* Restore table display */
+  table, thead, tbody, tr {
+    display: table;
+    width: 100%;
   }
   
-  /* Reduce button sizes */
-  button, [role="button"] {
-    font-size: 0.75rem !important;
-    padding: 0.375rem 0.5rem !important;
-    min-height: 32px;
+  thead {
+    display: table-header-group;
   }
   
-  /* Reduce input sizes but keep them touch-friendly */
-  input, select, textarea {
-    font-size: 0.875rem !important;
-    padding: 0.375rem 0.5rem !important;
-    min-height: 36px;
+  tbody {
+    display: table-row-group;
+  }
+  
+  tr {
+    display: table-row;
+  }
+  
+  th, td {
+    display: table-cell;
+    white-space: normal;
+  }
+}
+
+/* ============================================
+   DESKTOP BREAKPOINT (min-width: 1024px)
+   ============================================ */
+
+@media screen and (min-width: 1024px) {
+  /* Update CSS custom properties for desktop */
+  :root {
+    --fluid-container-padding: 1.5rem;
+    --fluid-card-padding: 1.5rem;
+  }
+}
+
+/* ============================================
+   LARGE DESKTOP (min-width: 1400px)
+   ============================================ */
+
+@media screen and (min-width: 1400px) {
+  /* Update CSS custom properties for large desktop */
+  :root {
+    --fluid-container-padding: 2rem;
+  }
+  
+  .container:not([class*="max-w-"]) {
+    max-width: 1400px;
+  }
+}
+
+/* ============================================
+   ADMIN PANEL - Specific Optimizations
+   ============================================ */
+
+/* Admin panel main content */
+[data-sidebar="sidebar"] ~ * main,
+[data-sidebar="sidebar"] ~ main {
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* Admin tables */
+[data-sidebar="sidebar"] ~ * table,
+.admin-table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Admin card grids */
+@media screen and (max-width: 768px) {
+  [data-sidebar="sidebar"] ~ * .grid {
+    gap: 0.5rem;
+  }
+}
+
+/* ============================================
+   DIALOG/MODAL RESPONSIVE IMPROVEMENTS
+   ============================================ */
+
+[role="dialog"],
+[data-state="open"][class*="DialogContent"] {
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  margin: 1rem;
+}
+
+@media screen and (max-width: 640px) {
+  [role="dialog"],
+  [data-state="open"][class*="DialogContent"] {
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+}
+
+/* ============================================
+   DROPDOWN/SELECT RESPONSIVE
+   ============================================ */
+
+[role="listbox"],
+[class*="SelectContent"],
+[class*="DropdownMenuContent"] {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* ============================================
+   TOUCH-FRIENDLY IMPROVEMENTS
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets on mobile */
+  button, 
+  [role="button"],
+  a,
+  [role="menuitem"],
+  [role="option"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Larger clickable areas for list items */
+  [role="menuitem"],
+  [role="option"] {
+    padding: 0.75rem 1rem;
   }
 }
