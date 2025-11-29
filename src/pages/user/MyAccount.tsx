@@ -392,52 +392,61 @@ export default function MyAccount() {
   if (loading) return <div>{t('account:loading')}</div>;
 
   return (
-    <div className="container mx-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-12 min-h-screen">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{t('account:title')}</h1>
+    <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 pb-20 md:px-6 md:py-6 md:pb-12 min-h-screen">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6">{t('account:title')}</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 gap-1 h-auto p-1 bg-muted/50">
-          <TabsTrigger value="profile" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <User className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.profile')}</span>
-            <span className="md:hidden">{t('account:tabs.profileShort')}</span>
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-4 md:grid-cols-7 gap-0.5 sm:gap-1 h-auto p-0.5 sm:p-1 bg-muted/50 mb-3 sm:mb-4">
+          <TabsTrigger value="profile" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.profileShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <Package className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.orders')}</span>
-            <span className="md:hidden">{t('account:tabs.ordersShort')}</span>
+          <TabsTrigger value="orders" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
+            <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.ordersShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <FileText className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.invoices')}</span>
-            <span className="md:hidden">{t('account:tabs.invoicesShort')}</span>
+          <TabsTrigger value="invoices" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
+            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.invoicesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.quotes')}</span>
-            <span className="md:hidden">{t('account:tabs.quotesShort')}</span>
+          <TabsTrigger value="quotes" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
+            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.quotesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.messages')}</span>
-            <span className="md:hidden">{t('account:tabs.messagesShort')}</span>
+          <TabsTrigger value="messages" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
+            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.messagesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="points" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <Award className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.points')}</span>
-            <span className="md:hidden">{t('account:tabs.pointsShort')}</span>
+          <TabsTrigger value="points" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
+            <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.pointsShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="giftcards" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
-            <Gift className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.giftcards')}</span>
-            <span className="md:hidden">{t('account:tabs.giftcardsShort')}</span>
+          <TabsTrigger value="giftcards" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
+            <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate max-w-full">{t('account:tabs.giftcardsShort')}</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Mobile-only second row of tabs */}
+        <TabsList className="grid w-full grid-cols-3 gap-0.5 h-auto p-0.5 bg-muted/50 mb-3 sm:hidden">
+          <TabsTrigger value="messages" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span className="truncate max-w-full">{t('account:tabs.messagesShort')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="points" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
+            <Award className="h-3.5 w-3.5" />
+            <span className="truncate max-w-full">{t('account:tabs.pointsShort')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="giftcards" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
+            <Gift className="h-3.5 w-3.5" />
+            <span className="truncate max-w-full">{t('account:tabs.giftcardsShort')}</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:profile.title')}</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-base sm:text-lg">{t('account:profile.title')}</CardTitle>
               <CardDescription>{t('account:profile.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1033,60 +1042,66 @@ export default function MyAccount() {
 
         <TabsContent value="invoices">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('account:invoices.title')}</CardTitle>
-              <CardDescription>{t('account:invoices.description')}</CardDescription>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-base sm:text-lg">{t('account:invoices.title')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('account:invoices.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-4 md:p-6 pt-0">
               {invoices.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2 sm:space-y-4">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="border p-3 sm:p-4 rounded-lg">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <p className="font-semibold font-mono text-sm sm:text-base break-all">{invoice.invoice_number}</p>
-                            <Badge variant={
-                              invoice.payment_status === 'paid' ? 'default' :
-                              invoice.payment_status === 'pending' ? 'secondary' :
-                              'destructive'
-                            } className="text-xs">
-                              {invoice.payment_status === 'paid' ? t('account:invoices.paidStatus') :
-                               invoice.payment_status === 'pending' ? t('account:invoices.pendingStatus') :
-                               invoice.payment_status === 'cancelled' ? t('account:invoices.cancelledStatus') :
-                               invoice.payment_status}
-                            </Badge>
-                          </div>
-                          
-                          {invoice.order?.order_number && (
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              {t('account:invoices.order')}: {invoice.order.order_number}
+                    <div key={invoice.id} className="border rounded-lg p-2.5 sm:p-4 bg-card">
+                      {/* Mobile-first layout */}
+                      <div className="flex flex-col gap-2 sm:gap-3">
+                        {/* Top row: Invoice number and status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-xs sm:text-sm font-semibold truncate">{invoice.invoice_number}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">
+                              {new Date(invoice.issue_date).toLocaleDateString(i18n.language)}
                             </p>
-                          )}
-                          
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {t('account:invoices.date')}: {new Date(invoice.issue_date).toLocaleDateString(i18n.language)}
-                          </p>
-                          
-                          {invoice.notes && (
-                            <div className="text-xs sm:text-sm mt-2 text-muted-foreground">
-                              <RichTextDisplay content={invoice.notes} />
-                            </div>
-                          )}
+                          </div>
+                          <Badge variant={
+                            invoice.payment_status === 'paid' ? 'default' :
+                            invoice.payment_status === 'pending' ? 'secondary' :
+                            'destructive'
+                          } className="text-[10px] sm:text-xs whitespace-nowrap flex-shrink-0">
+                            {invoice.payment_status === 'paid' ? t('account:invoices.paidStatus') :
+                             invoice.payment_status === 'pending' ? t('account:invoices.pendingStatus') :
+                             invoice.payment_status === 'cancelled' ? t('account:invoices.cancelledStatus') :
+                             invoice.payment_status}
+                          </Badge>
                         </div>
                         
-                        <div className="text-left sm:text-right">
-                          <p className="text-xs sm:text-sm text-muted-foreground">{t('account:orders.total')}</p>
-                          <p className="font-bold text-lg sm:text-xl lg:text-2xl">€{Number(invoice.total).toFixed(2)}</p>
+                        {/* Order reference */}
+                        {invoice.order?.order_number && (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">
+                            {t('account:invoices.order')}: <span className="font-mono">{invoice.order.order_number}</span>
+                          </p>
+                        )}
+                        
+                        {/* Notes if any */}
+                        {invoice.notes && (
+                          <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
+                            <RichTextDisplay content={invoice.notes} />
+                          </div>
+                        )}
+                        
+                        {/* Bottom row: Total and actions */}
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                          <div>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">{t('account:orders.total')}</p>
+                            <p className="font-bold text-base sm:text-lg text-green-600">€{Number(invoice.total).toFixed(2)}</p>
+                          </div>
                           
-                          <div className="flex flex-wrap gap-2 mt-3">
+                          <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => navigate(`/factura/${invoice.id}`)}
-                              className="text-xs sm:text-sm"
+                              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
                             >
-                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              <FileText className="h-3 w-3 mr-1" />
                               {t('account:invoices.view')}
                             </Button>
                             
@@ -1094,7 +1109,6 @@ export default function MyAccount() {
                               <Button
                                 size="sm"
                                 onClick={() => {
-                                  // Guardar datos de factura en sessionStorage para el pago
                                   sessionStorage.setItem('invoice_payment', JSON.stringify({
                                     invoiceId: invoice.id,
                                     invoiceNumber: invoice.invoice_number,
@@ -1106,7 +1120,7 @@ export default function MyAccount() {
                                   }));
                                   navigate('/pago');
                                 }}
-                                className="text-xs sm:text-sm"
+                                className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
                               >
                                 💳 {t('account:invoices.payNow')}
                               </Button>
@@ -1118,7 +1132,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">{t('account:invoices.noInvoices')}</p>
+                <p className="text-center text-muted-foreground py-6 text-sm">{t('account:invoices.noInvoices')}</p>
               )}
             </CardContent>
           </Card>

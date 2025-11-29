@@ -635,78 +635,161 @@ export default function ProductsAdminEnhanced() {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Precio</TableHead>
-                <TableHead>IVA</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Visibilidad</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No hay productos. Haz clic en "Crear Producto" para añadir uno.</TableCell></TableRow>
-              ) : products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-mono text-xs font-semibold">{product.product_code || <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>€{(product.price || 0).toFixed(2)}</TableCell>
-                  <TableCell><Badge variant={product.tax_enabled ? "default" : "secondary"}>{product.tax_enabled ? 'Sí' : 'No'}</Badge></TableCell>
-                  <TableCell><Badge variant={product.stock > 0 ? "outline" : "destructive"}>{product.stock || 0}</Badge></TableCell>
-                  <TableCell>{product.categories?.name || <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell><Badge variant={product.visible_to_all !== false ? "default" : "secondary"}>{product.visible_to_all !== false ? 'Público' : 'Restringido'}</Badge></TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                        <Button size="sm" variant="outline" onClick={async () => {
-                          const { data: productRoles } = await supabase.from("product_roles").select("role").eq("product_id", product.id);
-                          const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
-                          const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
-                          setEditingProductId(product.id);
-                          setFormData({
-                            name: product.name,
-                            description: product.description || "",
-                            price: product.price || 0,
-                            stock: product.stock || 0,
-                            category_id: product.category_id || null,
-                            allow_direct_purchase: product.allow_direct_purchase ?? true,
-                            allow_quote_request: product.allow_quote_request ?? true,
-                            enable_material_selection: product.enable_material_selection ?? false,
-                            enable_color_selection: product.enable_color_selection ?? false,
-                            enable_custom_text: product.enable_custom_text ?? false,
-                            tax_enabled: product.tax_enabled ?? true,
-                            weight: product.weight || null,
-                            length: product.length || null,
-                            width: product.width || null,
-                            height: product.height || null,
-                            video_url: product.video_url || null,
-                            shipping_type: product.shipping_type || "standard",
-                            custom_shipping_cost: product.custom_shipping_cost || null,
-                            product_code: product.product_code || ""
-                          });
-                          setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
-                          setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
-                          setSelectedColors(productColors?.map((c: any) => c.color_id) || []);
-                          setActiveTab("basic");
-                          await loadProductImages(product.id);
-                          setIsDialogOpen(true);
-                        }}><Pencil className="h-4 w-4" /></Button>
-                      </TooltipTrigger><TooltipContent>Editar producto</TooltipContent></Tooltip></TooltipProvider>
-                      <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                        <Button size="sm" variant="destructive" onClick={() => deleteProduct(product.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </TooltipTrigger><TooltipContent>Mover a papelera</TooltipContent></Tooltip></TooltipProvider>
-                    </div>
-                  </TableCell>
+        <CardContent className="p-2 sm:p-4 md:p-6">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {products.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground text-sm">No hay productos. Haz clic en "Crear Producto" para añadir uno.</p>
+            ) : products.map((product) => (
+              <div key={product.id} className="border rounded-lg p-3 bg-card space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{product.product_code || '—'}</p>
+                  </div>
+                  <Badge variant={product.visible_to_all !== false ? "default" : "secondary"} className="text-[10px] flex-shrink-0">
+                    {product.visible_to_all !== false ? 'Público' : 'Restringido'}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">Precio</p>
+                    <p className="font-semibold text-green-600">€{(product.price || 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Stock</p>
+                    <Badge variant={product.stock > 0 ? "outline" : "destructive"} className="text-[10px]">{product.stock || 0}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">IVA</p>
+                    <Badge variant={product.tax_enabled ? "default" : "secondary"} className="text-[10px]">{product.tax_enabled ? 'Sí' : 'No'}</Badge>
+                  </div>
+                </div>
+                
+                {product.categories?.name && (
+                  <p className="text-xs text-muted-foreground">Categoría: {product.categories.name}</p>
+                )}
+                
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={async () => {
+                    const { data: productRoles } = await supabase.from("product_roles").select("role").eq("product_id", product.id);
+                    const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
+                    const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
+                    setEditingProductId(product.id);
+                    setFormData({
+                      name: product.name,
+                      description: product.description || "",
+                      price: product.price || 0,
+                      stock: product.stock || 0,
+                      category_id: product.category_id || null,
+                      allow_direct_purchase: product.allow_direct_purchase ?? true,
+                      allow_quote_request: product.allow_quote_request ?? true,
+                      enable_material_selection: product.enable_material_selection ?? false,
+                      enable_color_selection: product.enable_color_selection ?? false,
+                      enable_custom_text: product.enable_custom_text ?? false,
+                      tax_enabled: product.tax_enabled ?? true,
+                      weight: product.weight || null,
+                      length: product.length || null,
+                      width: product.width || null,
+                      height: product.height || null,
+                      video_url: product.video_url || null,
+                      shipping_type: product.shipping_type || "standard",
+                      custom_shipping_cost: product.custom_shipping_cost || null,
+                      product_code: product.product_code || ""
+                    });
+                    setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
+                    setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
+                    setSelectedColors(productColors?.map((c: any) => c.color_id) || []);
+                    setActiveTab("basic");
+                    await loadProductImages(product.id);
+                    setIsDialogOpen(true);
+                  }}>
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                  <Button size="sm" variant="destructive" className="h-8 px-3" onClick={() => deleteProduct(product.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Precio</TableHead>
+                  <TableHead>IVA</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Visibilidad</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {products.length === 0 ? (
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No hay productos. Haz clic en "Crear Producto" para añadir uno.</TableCell></TableRow>
+                ) : products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-mono text-xs font-semibold">{product.product_code || <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>€{(product.price || 0).toFixed(2)}</TableCell>
+                    <TableCell><Badge variant={product.tax_enabled ? "default" : "secondary"}>{product.tax_enabled ? 'Sí' : 'No'}</Badge></TableCell>
+                    <TableCell><Badge variant={product.stock > 0 ? "outline" : "destructive"}>{product.stock || 0}</Badge></TableCell>
+                    <TableCell>{product.categories?.name || <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell><Badge variant={product.visible_to_all !== false ? "default" : "secondary"}>{product.visible_to_all !== false ? 'Público' : 'Restringido'}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            const { data: productRoles } = await supabase.from("product_roles").select("role").eq("product_id", product.id);
+                            const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
+                            const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
+                            setEditingProductId(product.id);
+                            setFormData({
+                              name: product.name,
+                              description: product.description || "",
+                              price: product.price || 0,
+                              stock: product.stock || 0,
+                              category_id: product.category_id || null,
+                              allow_direct_purchase: product.allow_direct_purchase ?? true,
+                              allow_quote_request: product.allow_quote_request ?? true,
+                              enable_material_selection: product.enable_material_selection ?? false,
+                              enable_color_selection: product.enable_color_selection ?? false,
+                              enable_custom_text: product.enable_custom_text ?? false,
+                              tax_enabled: product.tax_enabled ?? true,
+                              weight: product.weight || null,
+                              length: product.length || null,
+                              width: product.width || null,
+                              height: product.height || null,
+                              video_url: product.video_url || null,
+                              shipping_type: product.shipping_type || "standard",
+                              custom_shipping_cost: product.custom_shipping_cost || null,
+                              product_code: product.product_code || ""
+                            });
+                            setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
+                            setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
+                            setSelectedColors(productColors?.map((c: any) => c.color_id) || []);
+                            setActiveTab("basic");
+                            await loadProductImages(product.id);
+                            setIsDialogOpen(true);
+                          }}><Pencil className="h-4 w-4" /></Button>
+                        </TooltipTrigger><TooltipContent>Editar producto</TooltipContent></Tooltip></TooltipProvider>
+                        <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                          <Button size="sm" variant="destructive" onClick={() => deleteProduct(product.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </TooltipTrigger><TooltipContent>Mover a papelera</TooltipContent></Tooltip></TooltipProvider>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

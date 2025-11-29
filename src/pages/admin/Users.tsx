@@ -578,9 +578,9 @@ export default function Users() {
                 className="pl-10"
               />
             </div>
-            <Badge variant="outline" className="h-10 px-4 flex items-center gap-2">
+            <Badge variant="outline" className="h-9 sm:h-10 px-3 sm:px-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
               <span>📊</span>
-              <span>{filteredUsers.length} de {users.length} usuarios</span>
+              <span>{filteredUsers.length}/{users.length}</span>
             </Badge>
           </div>
         </CardContent>
@@ -588,17 +588,136 @@ export default function Users() {
 
       {/* Users Table */}
       <Card className="border-border/50 shadow-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/30">
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="border-b border-border/50 bg-muted/30 py-3 sm:py-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <span>📋</span>
             Lista de Usuarios
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Gestiona los usuarios y sus permisos del sistema
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
+        <CardContent className="p-2 sm:p-4 md:p-6">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredUsers.length === 0 ? (
+              <div className="text-center py-8">
+                <span className="text-4xl block mb-3">👤</span>
+                <p className="text-muted-foreground text-sm">
+                  {searchTerm ? "No se encontraron usuarios" : "No hay usuarios registrados"}
+                </p>
+              </div>
+            ) : (
+              filteredUsers.map((user) => {
+                const isOnline = user.last_activity_at && 
+                  (new Date().getTime() - new Date(user.last_activity_at).getTime()) < 5 * 60 * 1000;
+                
+                return (
+                  <div key={user.id} className="border rounded-lg p-3 bg-card space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{user.full_name || '-'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email || '-'}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <span className="text-[10px] text-muted-foreground">
+                          {isOnline ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {user.user_roles && user.user_roles.length > 0 ? (
+                          <Badge className={`text-[10px] ${
+                            user.user_roles[0].role === 'admin' 
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0' 
+                              : ''
+                          }`}>
+                            {user.user_roles[0].role === 'admin' ? '👑 ' : ''}{getRoleDisplayName(user.user_roles[0].role)}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px]">Sin rol</Badge>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : '-'}
+                      </p>
+                    </div>
+                    
+                    {user.phone && (
+                      <p className="text-xs text-muted-foreground">📞 {user.phone}</p>
+                    )}
+                    
+                    <div className="flex gap-1.5 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-7 text-xs"
+                        onClick={() => viewUserDetails(user.id)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Ver
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1 h-7 text-xs"
+                        onClick={() => openEditDialog(user)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Editar
+                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setSelectedRole(user.user_roles?.[0]?.role || '');
+                            }}
+                          >
+                            🔐
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[95vw] sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-base">Asignar Rol</DialogTitle>
+                            <DialogDescription className="text-xs">
+                              Rol para {user.full_name || user.email}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <Select value={selectedRole} onValueChange={setSelectedRole}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un rol" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roles.map((role) => (
+                                  <SelectItem key={role.value} value={role.value}>
+                                    {role.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={() => assignRole(user.id)}>Guardar</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/20 hover:bg-muted/20">
@@ -645,8 +764,6 @@ export default function Users() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {(() => {
-                            // Calcular estado en línea basándose en last_activity_at
-                            // Si la última actividad fue hace menos de 5 minutos, está en línea
                             const isOnline = user.last_activity_at && 
                               (new Date().getTime() - new Date(user.last_activity_at).getTime()) < 5 * 60 * 1000;
                             

@@ -26,38 +26,38 @@ export function AdminPageHeader({
   children
 }: AdminPageHeaderProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-4 sm:mb-8">
       {/* Main Header Card */}
       <div className={cn(
-        "rounded-2xl p-6 mb-6",
+        "rounded-xl sm:rounded-2xl p-3 sm:p-6 mb-4 sm:mb-6",
         "bg-gradient-to-br from-card via-card to-muted/30",
         "border border-border/50 shadow-sm"
       )}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Icon Container */}
             <div className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center",
+              "w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0",
               "bg-gradient-to-br shadow-lg",
               gradient
             )}>
-              <span className="text-2xl">{emoji || "📋"}</span>
+              <span className="text-lg sm:text-2xl">{emoji || "📋"}</span>
             </div>
             
             {/* Title and Description */}
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
                   {title}
                 </h1>
                 {badge && (
-                  <Badge variant={badge.variant || "secondary"} className="hidden sm:flex">
+                  <Badge variant={badge.variant || "secondary"} className="hidden sm:flex text-xs">
                     {badge.text}
                   </Badge>
                 )}
               </div>
               {description && (
-                <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                <p className="text-muted-foreground mt-0.5 sm:mt-1 text-xs sm:text-base line-clamp-2">
                   {description}
                 </p>
               )}
@@ -74,7 +74,7 @@ export function AdminPageHeader({
 
         {/* Additional Content */}
         {children && (
-          <div className="mt-4 pt-4 border-t border-border/50">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50">
             {children}
           </div>
         )}
@@ -113,7 +113,7 @@ export function AdminStatCard({
   return (
     <div
       className={cn(
-        "rounded-xl p-5 transition-all duration-300",
+        "rounded-xl p-3 sm:p-5 transition-all duration-300",
         "bg-gradient-to-br border border-border/50",
         "hover:shadow-lg hover:scale-[1.02] hover:border-primary/30",
         onClick && "cursor-pointer",
@@ -122,16 +122,16 @@ export function AdminStatCard({
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-1 sm:gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
+          <p className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground truncate">{value}</p>
           {description && (
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">{description}</p>
           )}
           {trend && (
             <div className={cn(
-              "flex items-center gap-1 mt-2 text-xs font-medium",
+              "flex items-center gap-1 mt-1 sm:mt-2 text-[10px] sm:text-xs font-medium",
               trend.isPositive ? "text-green-600" : "text-red-600"
             )}>
               <span>{trend.isPositive ? "↑" : "↓"}</span>
@@ -140,7 +140,7 @@ export function AdminStatCard({
           )}
         </div>
         {(icon || emoji) && (
-          <div className="text-3xl">
+          <div className="text-xl sm:text-2xl md:text-3xl flex-shrink-0">
             {emoji || icon}
           </div>
         )}
