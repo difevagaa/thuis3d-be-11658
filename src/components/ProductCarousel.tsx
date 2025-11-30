@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
 interface ProductCarouselProps {
   images: Array<{
     image_url: string;
@@ -8,11 +9,14 @@ interface ProductCarouselProps {
   }>;
   alt: string;
   autoRotate?: boolean;
+  autoRotateInterval?: number; // milliseconds
 }
+
 export default function ProductCarousel({
   images,
   alt,
-  autoRotate = false
+  autoRotate = false,
+  autoRotateInterval = 4000 // default 4 seconds
 }: ProductCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
@@ -34,14 +38,14 @@ export default function ProductCarousel({
     }
   }, [currentIndex, images, loadedImages, imageError]);
 
-  // Auto-rotation only if enabled (20 seconds for product images)
+  // Auto-rotation only if enabled
   useEffect(() => {
-    if (!autoRotate || images.length <= 1) return;
+    if (!autoRotate || images.length <= 1 || autoRotateInterval <= 0) return;
     const interval = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % images.length);
-    }, 20000); // 20 seconds
+    }, autoRotateInterval);
     return () => clearInterval(interval);
-  }, [images.length, autoRotate]);
+  }, [images.length, autoRotate, autoRotateInterval]);
   const goToPrevious = () => {
     setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
   };
