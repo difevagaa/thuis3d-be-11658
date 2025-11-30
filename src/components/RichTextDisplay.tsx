@@ -15,22 +15,23 @@ export const RichTextDisplay = ({ content, className = '' }: RichTextDisplayProp
     '<figure class="my-4"><img src="$2" alt="$1" class="rounded-lg shadow-md max-w-full h-auto" /></figure>'
   );
   
-  // Configuración de DOMPurify para soportar imágenes con data URIs y estilos de Quill
+  // Configuración de DOMPurify con sanitización estricta para prevenir XSS
   const sanitizedContent = DOMPurify.sanitize(processedContent, {
     ALLOWED_TAGS: [
       'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'blockquote', 'code', 'pre', 'ul', 'ol', 'li', 'a', 'img', 'video',
       'span', 'div', 'sub', 'sup', 'figure', 'figcaption', 'table', 'thead', 
-      'tbody', 'tr', 'th', 'td', 'iframe'
+      'tbody', 'tr', 'th', 'td'
+      // iframe removed for security - prevents clickjacking attacks
     ],
     ALLOWED_ATTR: [
       'href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'controls', 
-      'width', 'height', 'title', 'colspan', 'rowspan', 'frameborder', 
-      'allowfullscreen', 'data-*'
+      'width', 'height', 'title', 'colspan', 'rowspan'
+      // Removed: frameborder, allowfullscreen, data-* for security
     ],
-    // Permitir data URIs para imágenes (base64)
-    ALLOW_DATA_ATTR: true,
-    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|data):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
+    ALLOW_DATA_ATTR: false, // Disabled for security
+    // Only allow safe URI schemes - no javascript:, vbscript:, etc.
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,)/i
   });
 
   return (
