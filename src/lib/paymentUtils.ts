@@ -82,7 +82,7 @@ export const createOrder = async (orderData: OrderData) => {
     
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .insert(insertData)
+      .insert(insertData as any)
       .select()
       .single();
 
