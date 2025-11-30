@@ -705,7 +705,7 @@ export default function Users() {
                             </Select>
                           </div>
                           <DialogFooter>
-                            <Button onClick={() => assignRole(user.id)}>Guardar</Button>
+                            <Button onClick={assignRole}>Guardar</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>

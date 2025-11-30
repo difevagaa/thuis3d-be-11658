@@ -1743,3 +1743,274 @@ img {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
+
+/* ========================================
+   RESPONSIVE GLOBAL UTILITIES
+   ======================================== */
+
+/* Responsive text scaling for very small screens */
+@media screen and (max-width: 320px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .text-xs { font-size: 0.65rem; }
+  .text-sm { font-size: 0.75rem; }
+  .text-base { font-size: 0.85rem; }
+  .text-lg { font-size: 0.95rem; }
+  .text-xl { font-size: 1.1rem; }
+  .text-2xl { font-size: 1.3rem; }
+}
+
+/* Responsive tables for admin panel */
+@media screen and (max-width: 768px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  
+  thead, tbody, th, td, tr {
+    display: block;
+  }
+  
+  /* Responsive card-style tables */
+  .responsive-table thead {
+    display: none;
+  }
+  
+  .responsive-table tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0.5rem;
+  }
+  
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border: none;
+    text-align: right;
+  }
+  
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    color: hsl(var(--muted-foreground));
+    text-align: left;
+  }
+}
+
+/* Prevent text overflow on mobile */
+@media screen and (max-width: 640px) {
+  h1, h2, h3, h4, h5, h6 {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Smaller padding for cards on mobile */
+  .card-content, [class*="CardContent"] {
+    padding: 0.75rem;
+  }
+  
+  /* Better spacing for form elements */
+  input, select, textarea {
+    min-height: 2.5rem;
+  }
+  
+  /* Improve button tap targets */
+  button, [role="button"], a {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+  
+  /* Dialog improvements */
+  [role="dialog"] {
+    max-height: 90vh;
+    max-width: 95vw;
+  }
+}
+
+/* Admin panel specific responsive improvements */
+@media screen and (max-width: 480px) {
+  /* Compact admin header */
+  .admin-header {
+    padding: 0.5rem;
+  }
+  
+  /* Smaller icons in admin */
+  .admin-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  /* Stack horizontal elements vertically */
+  .flex-col-mobile {
+    flex-direction: column !important;
+  }
+  
+  /* Admin tables - card view */
+  .admin-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+  }
+  
+  .admin-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid hsl(var(--border) / 0.3);
+  }
+  
+  .admin-table tbody td:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Tablet improvements */
+@media screen and (min-width: 641px) and (max-width: 1023px) {
+  /* Two column layout for cards */
+  .grid-cols-adaptive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  /* Compact sidebar */
+  .sidebar-compact {
+    width: 4rem;
+  }
+}
+
+/* Invoice display responsive */
+@media screen and (max-width: 600px) {
+  .invoice-display {
+    padding: 0.75rem !important;
+  }
+  
+  .invoice-display table th,
+  .invoice-display table td {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  .invoice-display h1 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  .px-safe {
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+  }
+}
+
+/* Improve touch scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Fix for iOS Safari zoom on input focus */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Responsive grid utility */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media screen and (min-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .grid-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Hide elements on specific breakpoints */
+.hide-xs { display: block; }
+.hide-sm { display: block; }
+.hide-md { display: block; }
+
+@media screen and (max-width: 319px) {
+  .hide-xs { display: none !important; }
+}
+
+@media screen and (max-width: 639px) {
+  .hide-sm { display: none !important; }
+}
+
+@media screen and (max-width: 767px) {
+  .hide-md { display: none !important; }
+}
+
+/* Stack buttons on mobile */
+@media screen and (max-width: 480px) {
+  .btn-stack-mobile {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .btn-stack-mobile > * {
+    width: 100% !important;
+  }
+}
+
+/* Truncate long text with ellipsis */
+.truncate-responsive {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+@media screen and (max-width: 640px) {
+  .truncate-responsive {
+    max-width: 150px;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .truncate-responsive {
+    max-width: 100px;
+  }
+}
