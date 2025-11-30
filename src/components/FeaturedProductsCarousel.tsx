@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import ProductCarousel from "./ProductCarousel";
 import { useParallax } from "@/hooks/useParallax";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
+import { useCarouselSettings } from "@/hooks/useCarouselSettings";
 
 interface Product {
   id: string;
@@ -35,9 +36,11 @@ const getRandomProducts = (array: Product[], count: number) => {
 
 // Translated Product Card Component - properly uses the translation hook
 const TranslatedFeaturedProductCard = ({ 
-  product 
+  product,
+  imageRotationInterval
 }: { 
   product: Product;
+  imageRotationInterval: number;
 }) => {
   const { t } = useTranslation('home');
   const cardRef = useParallax({
@@ -61,7 +64,12 @@ const TranslatedFeaturedProductCard = ({
         <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer">
           {product.images && product.images.length > 0 ? (
             <div className="relative h-32 md:h-40 lg:h-48 bg-muted flex items-center justify-center">
-              <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
+              <ProductCarousel 
+                images={product.images} 
+                alt={translatedName} 
+                autoRotate={true}
+                autoRotateInterval={imageRotationInterval}
+              />
             </div>
           ) : (
             <div className="h-32 md:h-40 lg:h-48 bg-muted flex items-center justify-center">
@@ -93,10 +101,16 @@ const TranslatedFeaturedProductCard = ({
 
 export default function FeaturedProductsCarousel({
   products,
-  maxVisible = 4
+  maxVisible: maxVisibleProp
 }: FeaturedProductsCarouselProps) {
   const { t } = useTranslation('home');
   const [rotationKey, setRotationKey] = useState(0);
+  const { settings } = useCarouselSettings();
+  
+  // Use settings from admin panel, fallback to prop or default
+  const maxVisible = maxVisibleProp ?? settings.maxVisibleProducts;
+  const productRefreshInterval = settings.productRefreshInterval * 1000; // Convert to ms
+  const imageRotationInterval = settings.imageRotationInterval;
 
   // Get random products on each rotation
   const visibleProducts = useMemo(() => {
@@ -104,13 +118,25 @@ export default function FeaturedProductsCarousel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rotationKey intentionally triggers re-randomization
   }, [products, maxVisible, rotationKey]);
 
-  // Auto-rotate every 60 seconds (1 minute)
+  // Auto-rotate products based on admin settings
   useEffect(() => {
+    if (productRefreshInterval <= 0) return;
+    
     const interval = setInterval(() => {
       setRotationKey(prev => prev + 1);
-    }, 60000); // 60 seconds (1 minute)
+    }, productRefreshInterval);
 
     return () => clearInterval(interval);
+  }, [productRefreshInterval]);
+
+  // Listen for session recovery to refresh products
+  useEffect(() => {
+    const handleSessionRecovered = () => {
+      setRotationKey(prev => prev + 1);
+    };
+    
+    window.addEventListener('session-recovered', handleSessionRecovered);
+    return () => window.removeEventListener('session-recovered', handleSessionRecovered);
   }, []);
 
   const handleRotate = () => {
@@ -134,7 +160,11 @@ export default function FeaturedProductsCarousel({
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 bg-slate-100 dark:bg-slate-900">
         {visibleProducts.map((product) => (
-          <TranslatedFeaturedProductCard key={product.id} product={product} />
+          <TranslatedFeaturedProductCard 
+            key={product.id} 
+            product={product} 
+            imageRotationInterval={imageRotationInterval}
+          />
         ))}
       </div>
 

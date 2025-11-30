@@ -11,21 +11,24 @@ import { logger } from '@/lib/logger';
  * 3. Attempts to recover or gracefully degrades to unauthenticated state
  * 4. Ensures products and data load even when session is problematic
  * 5. Handles storage quota errors gracefully
+ * 6. Handles mobile background/foreground transitions
  */
 export function useSessionRecovery() {
   const recoveryAttempted = useRef(false);
   const lastCheck = useRef<number>(0);
   const isValidating = useRef(false);
-  const CHECK_INTERVAL = 60000; // 60 seconds between checks (reduced frequency)
+  const wasInBackground = useRef(false);
+  const CHECK_INTERVAL = 30000; // 30 seconds between checks
+  const BACKGROUND_CHECK_DELAY = 500; // Delay after returning from background
 
   /**
    * Validates the current session and clears if corrupted
    */
-  const validateSession = useCallback(async (): Promise<boolean> => {
+  const validateSession = useCallback(async (forceCheck = false): Promise<boolean> => {
     const now = Date.now();
     
-    // Throttle checks to avoid excessive API calls
-    if (now - lastCheck.current < CHECK_INTERVAL || isValidating.current) {
+    // Throttle checks to avoid excessive API calls (unless forced)
+    if (!forceCheck && (now - lastCheck.current < CHECK_INTERVAL || isValidating.current)) {
       return true;
     }
     
@@ -188,6 +191,29 @@ export function useSessionRecovery() {
     window.dispatchEvent(new CustomEvent('session-recovered'));
   }, []);
 
+  /**
+   * Reconnect Supabase realtime and refresh data
+   */
+  const reconnectAndRefresh = useCallback(async () => {
+    logger.info('[SessionRecovery] Reconnecting after background...');
+    
+    try {
+      // Force reconnect realtime channels
+      const channels = supabase.getChannels();
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      
+      // Dispatch event to notify components to reload data
+      ensureDataLoading();
+      
+      // Validate session
+      await validateSession(true);
+    } catch (error) {
+      logger.error('[SessionRecovery] Error reconnecting:', error);
+    }
+  }, [validateSession, ensureDataLoading]);
+
   // Set up session validation on mount and periodically
   useEffect(() => {
     // Initial validation with small delay to let app initialize
@@ -214,7 +240,7 @@ export function useSessionRecovery() {
       }
     });
 
-    // Validate session periodically (less frequently)
+    // Validate session periodically
     const intervalId = setInterval(() => {
       validateSession();
     }, CHECK_INTERVAL);
@@ -233,23 +259,55 @@ export function useSessionRecovery() {
 
     window.addEventListener('storage', handleStorageEvent);
 
-    // Listen for visibility changes to validate when user returns
+    // Listen for visibility changes to validate when user returns (critical for mobile)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // User returned to tab - validate session after a short delay
-        setTimeout(() => validateSession(), 500);
+        if (wasInBackground.current) {
+          logger.info('[SessionRecovery] App returned from background, reconnecting...');
+          // User returned from background - reconnect and refresh
+          setTimeout(() => {
+            reconnectAndRefresh();
+          }, BACKGROUND_CHECK_DELAY);
+        }
+        wasInBackground.current = false;
+      } else {
+        // Going to background
+        wasInBackground.current = true;
+        logger.debug('[SessionRecovery] App going to background');
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Listen for page show event (iOS Safari specific)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache
+        logger.info('[SessionRecovery] Page restored from cache, reconnecting...');
+        reconnectAndRefresh();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
     // Listen for online/offline events
     const handleOnline = () => {
-      logger.debug('[SessionRecovery] Network restored, validating session...');
-      validateSession();
+      logger.info('[SessionRecovery] Network restored, reconnecting...');
+      reconnectAndRefresh();
     };
 
     window.addEventListener('online', handleOnline);
+
+    // Listen for focus event (additional mobile support)
+    const handleFocus = () => {
+      if (wasInBackground.current) {
+        logger.debug('[SessionRecovery] Window focused after background');
+        setTimeout(() => reconnectAndRefresh(), BACKGROUND_CHECK_DELAY);
+        wasInBackground.current = false;
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       clearTimeout(initTimer);
@@ -257,9 +315,11 @@ export function useSessionRecovery() {
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageEvent);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [validateSession, ensureDataLoading]);
+  }, [validateSession, ensureDataLoading, reconnectAndRefresh]);
 
   // Listen for storage quota errors - use try-catch wrapper instead of override
   useEffect(() => {
