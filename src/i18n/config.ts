@@ -11,11 +11,17 @@ const detectionOptions = {
   excludeCacheFor: ['cimode'],
 };
 
+// Set default language to Dutch (nl) for Belgium on first visit
+if (!localStorage.getItem('i18nextLng')) {
+  localStorage.setItem('i18nextLng', 'nl');
+}
+
 i18n
   .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    lng: 'nl', // Default language Dutch for Belgium
     fallbackLng: 'nl',
     supportedLngs: ['es', 'en', 'nl'],
     debug: false,

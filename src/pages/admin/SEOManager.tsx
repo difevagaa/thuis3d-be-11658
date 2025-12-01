@@ -1480,14 +1480,44 @@ export default function SEOManager() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Imagen Open Graph (URL)</Label>
-                  <Input
-                    value={settings?.og_image || ""}
-                    onChange={(e) => setSettings({ ...settings, og_image: e.target.value })}
-                    placeholder="https://tudominio.com/imagen-compartir.jpg"
-                  />
+                  <Label>Imagen Open Graph para Redes Sociales</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        try {
+                          const fileExt = file.name.split('.').pop();
+                          const filePath = `og-images/${Date.now()}.${fileExt}`;
+                          
+                          const { error: uploadError } = await supabase.storage
+                            .from('product-images')
+                            .upload(filePath, file);
+                          
+                          if (uploadError) throw uploadError;
+                          
+                          const { data: { publicUrl } } = supabase.storage
+                            .from('product-images')
+                            .getPublicUrl(filePath);
+                          
+                          setSettings({ ...settings, og_image: publicUrl });
+                          toast.success('Imagen Open Graph subida correctamente');
+                        } catch (error) {
+                          logger.error('Error uploading OG image:', { error });
+                          toast.error('Error al subir la imagen');
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    {settings?.og_image && (
+                      <img src={settings.og_image} alt="Open Graph" className="h-20 w-auto border rounded object-cover" />
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Imagen que aparece al compartir en redes sociales. Tamaño recomendado: 1200x630px
+                    Imagen que aparece al compartir en redes sociales (Google, Facebook, Twitter). Tamaño recomendado: 1200x630px
                   </p>
                 </div>
               </div>
@@ -1747,13 +1777,25 @@ export default function SEOManager() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {keyword.is_active ? (
-                            <Badge className="bg-green-500">✓ Activa</Badge>
-                          ) : (
-                            <Badge variant="secondary">⊘ Inactiva</Badge>
-                          )}
+                          <Switch
+                            checked={keyword.is_active}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                const { error } = await supabase
+                                  .from('seo_keywords')
+                                  .update({ is_active: checked })
+                                  .eq('id', keyword.id);
+                                if (error) throw error;
+                                await loadData();
+                                toast.success(checked ? 'Keyword activada' : 'Keyword desactivada');
+                              } catch (error) {
+                                logger.error('Error toggling keyword:', { error });
+                                toast.error('Error al cambiar el estado');
+                              }
+                            }}
+                          />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1884,12 +1926,58 @@ export default function SEOManager() {
         <TabsContent value="redirects">
           <Card>
             <CardHeader>
-              <CardTitle>Redirecciones SEO</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Redirecciones SEO</span>
+                <Button 
+                  onClick={async () => {
+                    const fromPath = prompt('Ruta de origen (ej: /old-page):');
+                    if (!fromPath) return;
+                    
+                    const toPath = prompt('Ruta de destino (ej: /new-page):');
+                    if (!toPath) return;
+                    
+                    try {
+                      const { error } = await supabase
+                        .from('seo_redirects')
+                        .insert({
+                          from_path: fromPath.trim(),
+                          to_path: toPath.trim(),
+                          redirect_type: 301,
+                          is_active: true
+                        });
+                      
+                      if (error) throw error;
+                      await loadData();
+                      toast.success('Redirección creada correctamente');
+                    } catch (error) {
+                      logger.error('Error creating redirect:', { error });
+                      toast.error('Error al crear la redirección');
+                    }
+                  }}
+                  size="sm"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Nueva Redirección
+                </Button>
+              </CardTitle>
               <CardDescription>
-                Gestiona redirecciones 301 para mantener el ranking
+                Gestiona redirecciones 301 para mantener el ranking cuando cambias URLs
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  ¿Qué son las redirecciones 301?
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Las redirecciones 301 transfieren el ranking SEO de una URL antigua a una nueva. Úsalas cuando cambies la estructura de URLs o elimines páginas para evitar errores 404 y mantener tu posicionamiento en buscadores.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Ejemplo:</strong> Si cambias "/productos-antiguos" a "/productos", crea una redirección de la primera a la segunda.
+                </p>
+              </div>
+              
               <div className="border rounded-lg">
                 <Table>
                   <TableHeader>
@@ -1898,13 +1986,18 @@ export default function SEOManager() {
                       <TableHead>Hacia</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {redirects.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No hay redirecciones configuradas
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <div className="flex flex-col items-center gap-2">
+                            <Link2 className="h-8 w-8 text-muted-foreground/50" />
+                            <p>No hay redirecciones configuradas</p>
+                            <p className="text-xs">Haz clic en "Nueva Redirección" para crear una</p>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -1920,11 +2013,46 @@ export default function SEOManager() {
                             <Badge>{redirect.redirect_type}</Badge>
                           </TableCell>
                           <TableCell>
-                            {redirect.is_active ? (
-                              <Badge className="bg-green-500">Activa</Badge>
-                            ) : (
-                              <Badge variant="secondary">Inactiva</Badge>
-                            )}
+                            <Switch
+                              checked={redirect.is_active}
+                              onCheckedChange={async (checked) => {
+                                try {
+                                  const { error } = await supabase
+                                    .from('seo_redirects')
+                                    .update({ is_active: checked })
+                                    .eq('id', redirect.id);
+                                  if (error) throw error;
+                                  await loadData();
+                                  toast.success(checked ? 'Redirección activada' : 'Redirección desactivada');
+                                } catch (error) {
+                                  logger.error('Error toggling redirect:', { error });
+                                  toast.error('Error al cambiar el estado');
+                                }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (!confirm('¿Eliminar esta redirección?')) return;
+                                try {
+                                  const { error } = await supabase
+                                    .from('seo_redirects')
+                                    .delete()
+                                    .eq('id', redirect.id);
+                                  if (error) throw error;
+                                  await loadData();
+                                  toast.success('Redirección eliminada');
+                                } catch (error) {
+                                  logger.error('Error deleting redirect:', { error });
+                                  toast.error('Error al eliminar');
+                                }
+                              }}
+                            >
+                              Eliminar
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
