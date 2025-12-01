@@ -204,13 +204,26 @@ export function useSessionRecovery() {
         supabase.removeChannel(channel);
       });
       
-      // Dispatch event to notify components to reload data
-      ensureDataLoading();
+      // Test connection with a simple query to wake up the client
+      try {
+        await supabase.from('products').select('id').limit(1);
+        logger.debug('[SessionRecovery] Connection test successful');
+      } catch (testError) {
+        logger.warn('[SessionRecovery] Connection test failed, will retry on next event:', testError);
+      }
       
-      // Validate session
+      // Validate session first
       await validateSession(true);
+      
+      // Dispatch event to notify components to reload data
+      // Small delay to ensure connection is established
+      setTimeout(() => {
+        ensureDataLoading();
+      }, 100);
     } catch (error) {
       logger.error('[SessionRecovery] Error reconnecting:', error);
+      // Still try to dispatch the reload event
+      ensureDataLoading();
     }
   }, [validateSession, ensureDataLoading]);
 
