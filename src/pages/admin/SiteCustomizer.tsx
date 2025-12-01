@@ -82,21 +82,31 @@ function CarouselSettingsTab() {
   const handleSaveCarouselSettings = async () => {
     setSaving(true);
     try {
-      const productRefresh = parseInt(localSettings.productRefreshInterval, 10);
-      const imageRotation = parseInt(localSettings.imageRotationInterval, 10);
-      const maxVisible = parseInt(localSettings.maxVisibleProducts, 10);
+      // Parse values, handling empty strings
+      const productRefresh = localSettings.productRefreshInterval === '' 
+        ? settings.productRefreshInterval 
+        : parseInt(localSettings.productRefreshInterval, 10);
+      const imageRotation = localSettings.imageRotationInterval === '' 
+        ? settings.imageRotationInterval / 1000 
+        : parseInt(localSettings.imageRotationInterval, 10);
+      const maxVisible = localSettings.maxVisibleProducts === '' 
+        ? settings.maxVisibleProducts 
+        : parseInt(localSettings.maxVisibleProducts, 10);
 
       // Validate values
       if (isNaN(productRefresh) || productRefresh < 5) {
         toast.error('El tiempo de actualización de productos debe ser al menos 5 segundos');
+        setSaving(false);
         return;
       }
       if (isNaN(imageRotation) || imageRotation < 1) {
         toast.error('El tiempo de rotación de imágenes debe ser al menos 1 segundo');
+        setSaving(false);
         return;
       }
       if (isNaN(maxVisible) || maxVisible < 1 || maxVisible > 12) {
         toast.error('El número de productos debe estar entre 1 y 12');
+        setSaving(false);
         return;
       }
 
@@ -108,9 +118,14 @@ function CarouselSettingsTab() {
 
       if (success) {
         toast.success('Configuración del carrusel guardada correctamente');
+        // Trigger reload event for carousels
+        window.dispatchEvent(new CustomEvent('carousel-settings-updated'));
       } else {
         toast.error('Error al guardar la configuración');
       }
+    } catch (error) {
+      console.error('Error saving carousel settings:', error);
+      toast.error('Error al guardar la configuración');
     } finally {
       setSaving(false);
     }
