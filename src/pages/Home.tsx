@@ -625,13 +625,49 @@ const Home = () => {
     return () => observer.disconnect();
   }, []); // Empty dependency array since we use functional state update
   
-  useEffect(() => {
+  // Function to reload all homepage data
+  const reloadAllData = useCallback(() => {
+    logger.info('[Home] Reloading all homepage data...');
     loadFeaturedProducts();
     loadBanners();
     loadSections();
     loadQuickAccessCards();
     loadFeatures();
     loadOrderConfig();
+  }, [loadOrderConfig]);
+
+  // Initial data load with retry logic for stale connections
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 1000;
+
+    const loadWithRetry = async () => {
+      try {
+        // Test connection first with a simple query
+        const { error: testError } = await supabase.from('products').select('id').limit(1);
+        
+        if (testError) {
+          logger.warn('[Home] Initial connection test failed, retrying...', testError);
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(loadWithRetry, retryDelay * retryCount);
+            return;
+          }
+        }
+        
+        // Connection is good, load all data
+        reloadAllData();
+      } catch (error) {
+        logger.error('[Home] Error during initial load:', error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(loadWithRetry, retryDelay * retryCount);
+        }
+      }
+    };
+
+    loadWithRetry();
 
     // Subscribe to auth state changes to reload featured products with correct filtering
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
@@ -687,7 +723,50 @@ const Home = () => {
       supabase.removeChannel(sectionsChannel);
       supabase.removeChannel(orderChannel);
     };
-  }, [loadOrderConfig]);
+  }, [loadOrderConfig, reloadAllData]);
+
+  // Listen for session recovery events to reload data when coming back from background
+  useEffect(() => {
+    const handleSessionRecovered = () => {
+      logger.info('[Home] Session recovered event received, reloading data...');
+      reloadAllData();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Give Supabase a moment to reconnect, then reload
+        setTimeout(() => {
+          logger.info('[Home] Page became visible, checking and reloading data...');
+          reloadAllData();
+        }, 300);
+      }
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache - must reload data
+        logger.info('[Home] Page restored from bfcache, reloading data...');
+        setTimeout(reloadAllData, 100);
+      }
+    };
+
+    const handleOnline = () => {
+      logger.info('[Home] Network restored, reloading data...');
+      setTimeout(reloadAllData, 500);
+    };
+
+    window.addEventListener('session-recovered', handleSessionRecovered);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('session-recovered', handleSessionRecovered);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [reloadAllData]);
   const loadBanners = async () => {
     try {
       // Cargar banners activos (neq false includes null and true values)
