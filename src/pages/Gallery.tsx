@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Play } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
+import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
+import { Button } from "@/components/ui/button";
 
 interface GalleryItem {
   id: string;
@@ -20,13 +22,13 @@ export default function Gallery() {
   const { t } = useTranslation('gallery');
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadGalleryItems();
-  }, []);
-
   const loadGalleryItems = async () => {
+    setLoading(true);
+    setError(false);
+    
     try {
       const { data, error } = await supabase
         .from('gallery_items')
@@ -40,11 +42,22 @@ export default function Gallery() {
       setItems((data || []) as GalleryItem[]);
     } catch (error) {
       console.error('Error loading gallery:', error);
+      setError(true);
       toast.error(t('errorLoading', { defaultValue: 'Error al cargar la galería' }));
     } finally {
       setLoading(false);
     }
   };
+
+  // Use data recovery hook
+  useDataWithRecovery(
+    loadGalleryItems,
+    {
+      timeout: 15000,
+      maxRetries: 3,
+      onError: () => setError(true)
+    }
+  );
 
   const handleVideoPlay = (itemId: string) => {
     setPlayingVideos(prev => new Set(prev).add(itemId));
@@ -83,6 +96,14 @@ export default function Gallery() {
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">{t('loading')}</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 space-y-4">
+            <p className="text-destructive font-semibold">{t('errorLoading', { defaultValue: 'Error al cargar la galería' })}</p>
+            <Button onClick={loadGalleryItems} variant="outline" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              {t('retry', { defaultValue: 'Reintentar', ns: 'common' })}
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-12">

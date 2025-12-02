@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime } from "@/utils/textUtils";
+import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -28,10 +29,6 @@ export default function BlogPost() {
     ['title', 'excerpt', 'content'],
     post
   );
-
-  useEffect(() => {
-    loadPost();
-  }, [slug]);
 
   const loadPost = async () => {
     try {
@@ -93,6 +90,13 @@ export default function BlogPost() {
       setLoading(false);
     }
   };
+
+  // Use data recovery hook
+  useDataWithRecovery(loadPost, {
+    timeout: 15000,
+    maxRetries: 3,
+    deps: [slug]
+  });
 
   const handleShare = async () => {
     const url = window.location.href;

@@ -30,6 +30,8 @@
   "next": "Next",
   "previous": "Previous",
   "home": "Home",
+  "loading": "Loading...",
+  "retry": "Retry",
   "contact": "Contact",
   "about": "About",
   "terms": "Terms and Conditions",

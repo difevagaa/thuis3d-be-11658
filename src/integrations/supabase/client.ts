@@ -36,6 +36,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     params: {
       eventsPerSecond: 10,
     },
+    // Add heartbeat to keep connection alive
+    heartbeatIntervalMs: 30000, // 30 seconds
+    // Shorter timeout for faster reconnection
+    timeout: 10000,
   },
   // Database configuration for better query performance
   db: {
