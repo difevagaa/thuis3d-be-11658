@@ -9,6 +9,7 @@ import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { useViewportReset } from "@/hooks/useViewportReset";
 import { useSessionRecovery } from "@/hooks/useSessionRecovery";
+import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -100,13 +101,15 @@ import Gallery from "./pages/Gallery";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data is fresh for 2 minutes - reduces unnecessary refetches
-      staleTime: 2 * 60 * 1000,
-      // Keep unused data in cache for 10 minutes
-      gcTime: 10 * 60 * 1000,
-      // Don't refetch on window focus - prevents jarring updates
-      refetchOnWindowFocus: false,
-      // Only refetch on mount if data is stale
+      // Data is fresh for 1 minute - allows quicker recovery
+      staleTime: 1 * 60 * 1000,
+      // Keep unused data in cache for 5 minutes
+      gcTime: 5 * 60 * 1000,
+      // Refetch on window focus for better recovery
+      refetchOnWindowFocus: true,
+      // Refetch on reconnect
+      refetchOnReconnect: true,
+      // Always refetch on mount
       refetchOnMount: "always",
       // Retry failed requests with exponential backoff
       retry: (failureCount, error) => {
@@ -139,6 +142,8 @@ const PageLoader = () => (
 
 // AppContent component - handles hooks that require router context
 const AppContent = () => {
+  // Global connection recovery (highest priority)
+  useConnectionRecovery();
   // Load and apply global colors on app start
   useGlobalColors();
   // Track visitor activity

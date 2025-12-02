@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { ProductCard } from "@/components/ProductCard";
+import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
@@ -26,66 +27,6 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
-
-  useEffect(() => {
-    loadData();
-
-    // Subscribe to auth state changes to reload products with correct filtering
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Reload products when user logs in/out to show correct role-based products
-      loadData();
-    });
-
-    // Subscribe to product changes for real-time updates
-    const productsChannel = supabase
-      .channel('products-list-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'products'
-      }, loadData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_images'
-      }, loadData)
-      .subscribe();
-
-    // Subscribe to user_roles changes to reload products with correct filtering
-    const rolesChannel = supabase
-      .channel('products-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
-    // Subscribe to product_roles changes to update visibility immediately
-    const productRolesChannel = supabase
-      .channel('products-product-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
-    return () => {
-      authSubscription.unsubscribe();
-      supabase.removeChannel(productsChannel);
-      supabase.removeChannel(rolesChannel);
-      supabase.removeChannel(productRolesChannel);
-    };
-  }, []);
-
-  useEffect(() => {
-    filterAndSortProducts();
-  }, [products, selectedCategory, selectedMaterial, priceRange, sortBy, searchedByCode]);
 
   const loadData = async () => {
     try {
@@ -164,6 +105,66 @@ const Products = () => {
       i18nToast.error("error.loadingFailed");
     }
   };
+
+  // Use data recovery hook
+  useDataWithRecovery(loadData, {
+    timeout: 15000,
+    maxRetries: 3
+  });
+
+  useEffect(() => {
+    // Subscribe to auth state changes to reload products with correct filtering
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Reload products when user logs in/out to show correct role-based products
+      loadData();
+    });
+
+    // Subscribe to product changes for real-time updates
+    const productsChannel = supabase
+      .channel('products-list-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'products'
+      }, loadData)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_images'
+      }, loadData)
+      .subscribe();
+
+    // Subscribe to user_roles changes to reload products with correct filtering
+    const rolesChannel = supabase
+      .channel('products-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    // Subscribe to product_roles changes to update visibility immediately
+    const productRolesChannel = supabase
+      .channel('products-product-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      authSubscription.unsubscribe();
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(productRolesChannel);
+    };
+  }, []);
 
   const searchByProductCode = async () => {
     const code = productCodeSearch.trim().toUpperCase();

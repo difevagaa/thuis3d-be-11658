@@ -17,6 +17,7 @@ import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import type { ColorSelection } from "@/hooks/useCart";
+import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 
 interface Product {
   id: string;
@@ -156,6 +157,13 @@ const ProductDetail = () => {
       setLoading(false);
     }
   }, [id, navigate]);
+
+  // Use data recovery hook
+  useDataWithRecovery(fetchProductData, {
+    timeout: 15000,
+    maxRetries: 3,
+    deps: [id]
+  });
 
   const loadCustomizationSections = useCallback(async () => {
     if (!id) return;

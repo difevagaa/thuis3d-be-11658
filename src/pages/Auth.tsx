@@ -88,10 +88,21 @@ const Auth = () => {
     try {
       const validated = authSchema.pick({ email: true, password: true }).parse(formData);
       
-      const { error } = await supabase.auth.signInWithPassword({
+      // Create timeout promise (15 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection timeout')), 15000);
+      });
+
+      // Race between sign in and timeout
+      const signInPromise = supabase.auth.signInWithPassword({
         email: validated.email,
         password: validated.password,
       });
+
+      const { error } = await Promise.race([
+        signInPromise,
+        timeoutPromise
+      ]) as any;
 
       if (error) throw error;
       
@@ -100,6 +111,8 @@ const Auth = () => {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else if (error.message === 'Connection timeout') {
+        toast.error(t('connectionTimeout', { defaultValue: 'Tiempo de espera agotado. Por favor, verifica tu conexión e intenta de nuevo.' }));
       } else {
         toast.error(error.message || t('errorSigningIn'));
       }

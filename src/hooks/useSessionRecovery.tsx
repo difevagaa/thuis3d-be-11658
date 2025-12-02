@@ -193,36 +193,51 @@ export function useSessionRecovery() {
 
   /**
    * Reconnect Supabase realtime and refresh data
+   * IMPROVED: Don't remove channels, just reconnect them
    */
   const reconnectAndRefresh = useCallback(async () => {
     logger.info('[SessionRecovery] Reconnecting after background...');
     
     try {
-      // Force reconnect realtime channels
+      // DON'T remove channels - just reconnect existing ones
       const channels = supabase.getChannels();
-      channels.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
+      logger.info(`[SessionRecovery] Found ${channels.length} existing channels`);
       
-      // Test connection with a simple query to wake up the client
-      try {
-        await supabase.from('products').select('id').limit(1);
-        logger.debug('[SessionRecovery] Connection test successful');
-      } catch (testError) {
-        logger.warn('[SessionRecovery] Connection test failed, will retry on next event:', testError);
+      // Test connection with multiple attempts
+      let connectionOk = false;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (!connectionOk && attempts < maxAttempts) {
+        attempts++;
+        try {
+          await supabase.from('products').select('id').limit(1);
+          connectionOk = true;
+          logger.info('[SessionRecovery] Connection test successful');
+        } catch (testError) {
+          logger.warn(`[SessionRecovery] Connection test failed (attempt ${attempts}/${maxAttempts}):`, testError);
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          }
+        }
       }
       
-      // Validate session first
+      if (!connectionOk) {
+        logger.error('[SessionRecovery] All connection attempts failed');
+        // Still try to validate and reload
+      }
+      
+      // Validate session
       await validateSession(true);
       
       // Dispatch event to notify components to reload data
-      // Small delay to ensure connection is established
       setTimeout(() => {
         ensureDataLoading();
-      }, 100);
+      }, 200);
+      
     } catch (error) {
       logger.error('[SessionRecovery] Error reconnecting:', error);
-      // Still try to dispatch the reload event
+      // Still dispatch the reload event
       ensureDataLoading();
     }
   }, [validateSession, ensureDataLoading]);
