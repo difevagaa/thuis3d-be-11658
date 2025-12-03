@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, RefreshCw } from "lucide-react";
@@ -25,7 +25,7 @@ export default function Gallery() {
   const [error, setError] = useState(false);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
 
-  const loadGalleryItems = async () => {
+  const loadGalleryItems = useCallback(async () => {
     setLoading(true);
     setError(false);
     
@@ -47,7 +47,7 @@ export default function Gallery() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   // Use data recovery hook
   useDataWithRecovery(
