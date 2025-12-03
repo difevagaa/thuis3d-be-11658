@@ -867,22 +867,22 @@ const Home = () => {
         logger.error('[Home] Connection failed, showing error state');
         setLoadError(true);
         setConnectionState('failed');
-        return;
+        // Don't return early - let finally block handle cleanup
+      } else {
+        // Run all loads in parallel only if connected
+        await Promise.all([
+          loadFeaturedProducts(),
+          loadBanners(),
+          loadSections(),
+          loadQuickAccessCards(),
+          loadFeatures(),
+          loadOrderConfig()
+        ]);
+        
+        dataLoadedRef.current = true;
+        setLoadError(false);
+        setConnectionState('connected');
       }
-      
-      // Run all loads in parallel
-      await Promise.all([
-        loadFeaturedProducts(),
-        loadBanners(),
-        loadSections(),
-        loadQuickAccessCards(),
-        loadFeatures(),
-        loadOrderConfig()
-      ]);
-      
-      dataLoadedRef.current = true;
-      setLoadError(false);
-      setConnectionState('connected');
     } catch (error) {
       logger.error('[Home] Error loading homepage data:', error);
       setLoadError(true);
@@ -983,8 +983,10 @@ const Home = () => {
     const debouncedReload = (delay: number = 300) => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
       }
       debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null;
         reloadAllData();
       }, delay);
     };
@@ -1023,6 +1025,7 @@ const Home = () => {
       // Clear debounce timer on cleanup
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
       }
       
       window.removeEventListener('session-recovered', handleRecovery);
