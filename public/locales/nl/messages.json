@@ -61,7 +61,8 @@
     "calibrationProfileDeactivated": "Profiel gedeactiveerd",
     "statusUpdated": "Status succesvol bijgewerkt",
     "clientDataLoaded": "Klantgegevens succesvol geladen",
-    "productSelected": "Product \"{{name}}\" geselecteerd"
+    "productSelected": "Product \"{{name}}\" geselecteerd",
+    "productFound": "Product gevonden"
   },
   "error": {
     "profileUpdateFailed": "Fout bij bijwerken profiel",
@@ -157,7 +158,13 @@
     "selectAtLeastOneZone": "Selecteer minimaal één zone",
     "enterAtLeastOneValue": "Vul minimaal één waarde in om bij te werken",
     "completeRequiredFields": "Vul alle verplichte velden in",
-    "clientMissingData": "Klant mist {{fields}}. Vul deze gegevens in."
+    "clientMissingData": "Klant mist {{fields}}. Vul deze gegevens in.",
+    "connectionTimeout": "Verbinding duurde te lang. Controleer je internetverbinding.",
+    "serverUnavailable": "De server is momenteel niet beschikbaar. Probeer het later opnieuw.",
+    "networkError": "Netwerkfout. Controleer je internetverbinding en probeer opnieuw.",
+    "productNotFound": "Product niet gevonden",
+    "productSearchFailed": "Fout bij zoeken naar product",
+    "enterProductCode": "Voer een productcode in"
   },
   "warning": {
     "clientMissingData": "Klant heeft geen {{fields}} geregistreerd. Vul deze gegevens in."
@@ -168,6 +175,7 @@
     "loading": "Laden...",
     "pleaseWait": "Even geduld...",
     "generatingInvoice": "Factuur genereren...",
-    "saveToPdf": "Gebruik 'Opslaan als PDF' in het afdrukdialoogvenster"
+    "saveToPdf": "Gebruik 'Opslaan als PDF' in het afdrukdialoogvenster",
+    "codeSearchCleared": "Code zoekopdracht gewist. Alle producten worden weergegeven."
   }
 }

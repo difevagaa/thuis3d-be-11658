@@ -61,7 +61,8 @@
     "calibrationProfileDeactivated": "Profile deactivated",
     "statusUpdated": "Status updated successfully",
     "clientDataLoaded": "Client data loaded successfully",
-    "productSelected": "Product \"{{name}}\" selected"
+    "productSelected": "Product \"{{name}}\" selected",
+    "productFound": "Product found"
   },
   "error": {
     "profileUpdateFailed": "Error updating profile",
@@ -157,7 +158,13 @@
     "selectAtLeastOneZone": "Select at least one zone",
     "enterAtLeastOneValue": "Enter at least one value to update",
     "completeRequiredFields": "Please complete all required fields",
-    "clientMissingData": "Client is missing {{fields}}. Please complete this data."
+    "clientMissingData": "Client is missing {{fields}}. Please complete this data.",
+    "connectionTimeout": "Connection timed out. Please check your internet connection.",
+    "serverUnavailable": "The server is currently unavailable. Please try again later.",
+    "networkError": "Network error. Check your internet connection and try again.",
+    "productNotFound": "Product not found",
+    "productSearchFailed": "Error searching for product",
+    "enterProductCode": "Please enter a product code"
   },
   "warning": {
     "clientMissingData": "Client does not have {{fields}} registered. Please complete this data."
@@ -168,6 +175,7 @@
     "loading": "Loading...",
     "pleaseWait": "Please wait...",
     "generatingInvoice": "Generating invoice...",
-    "saveToPdf": "Use 'Save as PDF' in the print dialog"
+    "saveToPdf": "Use 'Save as PDF' in the print dialog",
+    "codeSearchCleared": "Code search cleared. Showing all products."
   }
 }

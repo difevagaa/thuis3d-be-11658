@@ -67,6 +67,13 @@
   "errorDownloadingCard": "Error downloading",
   "noPermissionInvoice": "You don't have permission to view this invoice",
   "errorLoadingInvoice": "Error loading invoice",
+  "connection": {
+    "connecting": "Connecting...",
+    "loading": "Loading content...",
+    "error": "Connection error",
+    "errorMessage": "Could not connect to the server. Please check your internet connection and try again.",
+    "retry": "Retry"
+  },
   "viewer3d": {
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",

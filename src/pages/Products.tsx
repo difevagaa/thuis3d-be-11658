@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Printer, Filter, Layers, Box, Euro, ArrowUpDown, ShoppingCart, Package, Search, X } from "lucide-react";
+import { Filter, Layers, Box, Euro, ArrowUpDown, Package, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
-import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { ProductCard } from "@/components/ProductCard";
 import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
+import { logger } from "@/lib/logger";
+import { LANGUAGE_CHANGED_EVENT } from "@/lib/events";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
@@ -28,7 +27,7 @@ const Products = () => {
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
       const { data: productsData, error: productsError } = await supabase
@@ -37,7 +36,7 @@ const Products = () => {
         .is("deleted_at", null);
       
       if (productsError) {
-        console.error("[Products] Error loading products:", productsError);
+        logger.error("[Products] Error loading products:", productsError);
         throw productsError;
       }
 
@@ -70,7 +69,7 @@ const Products = () => {
         }
       } catch (authError) {
         // Si hay error de autenticación, continuar sin usuario
-        console.warn("[Products] Auth error (continuing without user):", authError);
+        logger.warn("[Products] Auth error (continuing without user):", authError);
       }
 
       // TERCERO: Filtrar productos basado en roles
@@ -101,10 +100,10 @@ const Products = () => {
       
       setProducts(visibleProducts);
     } catch (error) {
-      console.error("[Products] Error in loadData:", error);
+      logger.error("[Products] Error in loadData:", error);
       i18nToast.error("error.loadingFailed");
     }
-  };
+  }, []);
 
   // Use data recovery hook
   useDataWithRecovery(loadData, {
@@ -164,7 +163,7 @@ const Products = () => {
       supabase.removeChannel(rolesChannel);
       supabase.removeChannel(productRolesChannel);
     };
-  }, []);
+  }, [loadData]);
 
   const searchByProductCode = async () => {
     const code = productCodeSearch.trim().toUpperCase();
@@ -191,7 +190,7 @@ const Products = () => {
       // Establecer SOLO este producto como resultado
       setProducts([productData]);
       setSearchedByCode(true);
-      toast.success(`Producto encontrado: ${productData.name}`);
+      i18nToast.success("success.productFound");
     } catch (error) {
       i18nToast.error("error.productSearchFailed");
     }
@@ -204,7 +203,7 @@ const Products = () => {
     i18nToast.info("info.codeSearchCleared");
   };
 
-  const filterAndSortProducts = () => {
+  const filterAndSortProducts = useCallback(() => {
     let filtered = [...products];
 
     if (selectedCategory !== "all") {
@@ -226,7 +225,25 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered);
-  };
+  }, [products, selectedCategory, priceRange, sortBy]);
+
+  // Apply filters and sorting when dependencies change
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [filterAndSortProducts]);
+
+  // Reload data when language changes to get updated translations
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      loadData();
+    };
+
+    window.addEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
+    };
+  }, [loadData]);
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 lg:py-8">

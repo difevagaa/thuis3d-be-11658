@@ -61,7 +61,8 @@
     "calibrationProfileDeactivated": "Perfil desactivado",
     "statusUpdated": "Estado actualizado correctamente",
     "clientDataLoaded": "Datos del cliente cargados correctamente",
-    "productSelected": "Producto \"{{name}}\" seleccionado"
+    "productSelected": "Producto \"{{name}}\" seleccionado",
+    "productFound": "Producto encontrado"
   },
   "error": {
     "profileUpdateFailed": "Error al actualizar perfil",
@@ -157,7 +158,13 @@
     "selectAtLeastOneZone": "Selecciona al menos una zona",
     "enterAtLeastOneValue": "Ingresa al menos un valor para actualizar",
     "completeRequiredFields": "Por favor completa todos los campos requeridos",
-    "clientMissingData": "El cliente no tiene {{fields}}. Por favor completa estos datos."
+    "clientMissingData": "El cliente no tiene {{fields}}. Por favor completa estos datos.",
+    "connectionTimeout": "La conexión tardó demasiado. Por favor verifica tu conexión a internet.",
+    "serverUnavailable": "El servidor no está disponible en este momento. Por favor intenta más tarde.",
+    "networkError": "Error de red. Verifica tu conexión a internet e intenta de nuevo.",
+    "productNotFound": "Producto no encontrado",
+    "productSearchFailed": "Error al buscar producto",
+    "enterProductCode": "Por favor ingresa un código de producto"
   },
   "warning": {
     "clientMissingData": "El cliente no tiene {{fields}} registrado. Por favor completa estos datos."
@@ -168,6 +175,7 @@
     "loading": "Cargando...",
     "pleaseWait": "Por favor espera...",
     "generatingInvoice": "Generando factura...",
-    "saveToPdf": "Usa 'Guardar como PDF' en el diálogo de impresión"
+    "saveToPdf": "Usa 'Guardar como PDF' en el diálogo de impresión",
+    "codeSearchCleared": "Búsqueda por código limpiada. Mostrando todos los productos."
   }
 }

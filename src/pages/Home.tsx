@@ -16,6 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
+import { CONNECTION_TIMEOUT } from "@/hooks/useConnectionRecovery";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -601,7 +602,7 @@ const Home = () => {
         logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT);
         
         const { error } = await supabase
           .from('products')
