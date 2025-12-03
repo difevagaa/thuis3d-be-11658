@@ -867,7 +867,7 @@ const Home = () => {
         logger.error('[Home] Connection failed, showing error state');
         setLoadError(true);
         setConnectionState('failed');
-        // Don't return early - let finally block handle cleanup
+        // Ensure finally block executes to reset loading state and reload flag
       } else {
         // Run all loads in parallel only if connected
         await Promise.all([
