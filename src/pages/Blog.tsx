@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ export default function Blog() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     try {
       // Get current user and their roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -94,7 +94,7 @@ export default function Blog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Use data recovery hook
   useDataWithRecovery(loadPosts, {
@@ -147,7 +147,7 @@ export default function Blog() {
       supabase.removeChannel(blogPostRolesChannel);
       supabase.removeChannel(blogPostsChannel);
     };
-  }, []);
+  }, [loadPosts]);
 
   // Loading skeleton
   if (loading) {

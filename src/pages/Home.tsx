@@ -851,27 +851,39 @@ const Home = () => {
     setLoadError(false);
     setLoadingMessage(t('common:connection.loading', { defaultValue: 'Cargando...' }));
     
-    // First verify connection is awake
-    const isConnected = await wakeUpConnection();
-    if (!isConnected) {
+    try {
+      // First verify connection is awake
+      const isConnected = await wakeUpConnection();
+      if (!isConnected) {
+        logger.error('[Home] Connection failed, showing error state');
+        setLoadError(true);
+        setIsLoading(false);
+        setConnectionState('failed');
+        return;
+      }
+      
+      // Run all loads in parallel
+      await Promise.all([
+        loadFeaturedProducts(),
+        loadBanners(),
+        loadSections(),
+        loadQuickAccessCards(),
+        loadFeatures(),
+        loadOrderConfig()
+      ]);
+      
+      dataLoadedRef.current = true;
+      setLoadError(false);
+      setConnectionState('connected');
+    } catch (error) {
+      logger.error('[Home] Error loading homepage data:', error);
       setLoadError(true);
+      setConnectionState('failed');
+    } finally {
+      // CRITICAL: Always clear loading state
       setIsLoading(false);
-      return;
+      setLoadingMessage('');
     }
-    
-    // Run all loads in parallel
-    await Promise.all([
-      loadFeaturedProducts(),
-      loadBanners(),
-      loadSections(),
-      loadQuickAccessCards(),
-      loadFeatures(),
-      loadOrderConfig()
-    ]);
-    
-    dataLoadedRef.current = true;
-    setLoadError(false);
-    setIsLoading(false);
   }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig, wakeUpConnection, t]);
 
   // Listen for theme mode changes to update section background colors
