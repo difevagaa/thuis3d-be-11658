@@ -566,28 +566,55 @@ const Home = () => {
   const [orderedSections, setOrderedSections] = useState<any[]>([]);
   const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   // Component ordering configuration from site_settings
   const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
   // Track dark mode state to trigger re-render when mode changes
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
   
+  // Timeout wrapper for queries - 10 second timeout
+  const withTimeout = useCallback(async <T,>(
+    queryBuilder: { then: (onfulfilled: (value: T) => void, onrejected: (reason: any) => void) => any },
+    timeoutMs: number = 10000
+  ): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Query timeout - connection may be stale'));
+      }, timeoutMs);
+      
+      queryBuilder.then(
+        (result: T) => {
+          clearTimeout(timer);
+          resolve(result);
+        },
+        (error: any) => {
+          clearTimeout(timer);
+          reject(error);
+        }
+      );
+    });
+  }, []);
+
   // Load component order configuration
   const loadOrderConfig = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("setting_value")
-        .eq("setting_key", "homepage_component_order")
-        .maybeSingle();
+      const result = await withTimeout(
+        supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "homepage_component_order")
+          .maybeSingle()
+      );
 
-      if (error) {
-        logger.error('[Home] Error loading order config:', error);
+      if (result.error) {
+        logger.error('[Home] Error loading order config:', result.error);
         return;
       }
 
-      if (data?.setting_value) {
+      if (result.data?.setting_value) {
         try {
-          const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
+          const parsed = JSON.parse(result.data.setting_value) as HomepageOrderConfig;
           setOrderConfig(parsed);
           logger.log('[Home] Loaded component order config:', parsed.components?.length, 'components');
         } catch (parseError) {
@@ -600,15 +627,233 @@ const Home = () => {
     } catch (err) {
       logger.error('[Home] Exception loading order config:', err);
     }
-  }, []);
-  
+  }, [withTimeout]);
+
+  // Load banners with timeout
+  const loadBanners = useCallback(async () => {
+    try {
+      const { data: bannersData, error: bannersError } = await withTimeout(
+        supabase
+          .from("homepage_banners")
+          .select("*")
+          .neq("is_active", false)
+          .order("position_order", { ascending: true, nullsFirst: false })
+      );
+      
+      if (bannersError) {
+        logger.error('[Home] Error loading banners:', bannersError);
+        setBanners([]);
+        return;
+      }
+
+      if (!bannersData || bannersData.length === 0) {
+        setBanners([]);
+        return;
+      }
+      
+      // Load images for banners
+      const bannerIds = bannersData.map(b => b.id);
+      const { data: imagesData, error: imagesError } = await withTimeout(
+        supabase
+          .from("banner_images")
+          .select("id, banner_id, image_url, display_order, alt_text, is_active")
+          .in("banner_id", bannerIds)
+          .neq("is_active", false)
+          .order("display_order", { ascending: true, nullsFirst: false })
+      );
+      
+      if (imagesError) {
+        logger.error('[Home] Error loading banner images:', imagesError);
+      }
+
+      const bannersWithImages = bannersData.map(banner => ({
+        ...banner,
+        banner_images: (imagesData || []).filter(img => img.banner_id === banner.id)
+      }));
+      
+      setBanners(bannersWithImages as Banner[]);
+    } catch (error) {
+      logger.error('[Home] Exception loading banners:', error);
+      setBanners([]);
+    }
+  }, [withTimeout]);
+
+  // Load sections with timeout
+  const loadSections = useCallback(async () => {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from("homepage_sections")
+          .select("*")
+          .neq("is_active", false)
+          .order("display_order", { ascending: true, nullsFirst: false })
+      );
+      
+      if (error) {
+        logger.error('[Home] Error loading sections:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const sectionsMap: any = {};
+        data.forEach(section => {
+          sectionsMap[section.section_key] = section;
+        });
+        setSections(sectionsMap);
+        setOrderedSections(data);
+      }
+    } catch (error) {
+      logger.error('[Home] Exception loading sections:', error);
+    }
+  }, [withTimeout]);
+
+  // Load quick access cards with timeout
+  const loadQuickAccessCards = useCallback(async () => {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from("homepage_quick_access_cards")
+          .select("*")
+          .neq("is_active", false)
+          .order("display_order", { ascending: true, nullsFirst: false })
+      );
+      
+      if (error) {
+        logger.error('[Home] Error loading quick access cards:', error);
+        return;
+      }
+      setQuickAccessCards(data || []);
+    } catch (error) {
+      logger.error('[Home] Exception loading quick access cards:', error);
+    }
+  }, [withTimeout]);
+
+  // Load features with timeout
+  const loadFeatures = useCallback(async () => {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from("homepage_features")
+          .select("*")
+          .neq("is_active", false)
+          .order("display_order", { ascending: true, nullsFirst: false })
+      );
+      
+      if (error) {
+        logger.error('[Home] Error loading features:', error);
+        return;
+      }
+      setFeatures(data || []);
+    } catch (error) {
+      logger.error('[Home] Exception loading features:', error);
+    }
+  }, [withTimeout]);
+
+  // Load featured products with timeout
+  const loadFeaturedProducts = useCallback(async () => {
+    try {
+      const { data, error: productsError } = await withTimeout(
+        supabase
+          .from("products")
+          .select(`
+            *,
+            images:product_images(image_url, display_order),
+            product_roles(role)
+          `)
+          .is("deleted_at", null)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      );
+      
+      if (productsError) {
+        logger.error('[Home] Error loading products:', productsError);
+        return;
+      }
+      
+      logger.debug('[Home] Raw products data:', data);
+
+      // Get user session (don't block if fails)
+      let user = null;
+      let userRoles: string[] = [];
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+        
+        if (user) {
+          const { data: rolesData } = await withTimeout(
+            supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", user.id)
+          );
+          userRoles = (rolesData || [])
+            .map(r => String(r.role || '').trim().toLowerCase())
+            .filter(role => role.length > 0);
+          logger.debug('[Home] User roles:', userRoles);
+        }
+      } catch (authError) {
+        logger.warn('[Home] Auth error (continuing without user):', authError);
+      }
+
+      // Filter products based on roles
+      const visibleProducts = (data || []).filter((product: any) => {
+        const productRolesList = product.product_roles || [];
+        const productRolesNormalized = productRolesList
+          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
+          .filter((role: string) => role.length > 0);
+
+        if (productRolesNormalized.length === 0) {
+          return true;
+        }
+
+        if (!user || userRoles.length === 0) {
+          return false;
+        }
+        return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
+      });
+      
+      const productsWithSortedImages = visibleProducts.map(product => ({
+        ...product,
+        images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
+      }));
+      setFeaturedProducts(productsWithSortedImages);
+    } catch (error) {
+      logger.error('[Home] Error in loadFeaturedProducts:', error);
+    }
+  }, [withTimeout]);
+
+  // Function to reload all homepage data
+  const reloadAllData = useCallback(async () => {
+    logger.info('[Home] Reloading all homepage data...');
+    setIsLoading(true);
+    setLoadError(false);
+    
+    try {
+      // Run all loads in parallel with timeout protection
+      await Promise.all([
+        loadFeaturedProducts(),
+        loadBanners(),
+        loadSections(),
+        loadQuickAccessCards(),
+        loadFeatures(),
+        loadOrderConfig()
+      ]);
+      setLoadError(false);
+    } catch (error) {
+      logger.error('[Home] Error reloading data:', error);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
+
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
           const newDarkMode = isDarkMode();
-          // Always compare with fresh check rather than stale closure
           setCurrentDarkMode(prevMode => {
             if (newDarkMode !== prevMode) {
               logger.log(`🎨 [Home] Theme mode changed: ${newDarkMode ? 'dark' : 'light'}`);
@@ -623,18 +868,7 @@ const Home = () => {
     observer.observe(document.documentElement, { attributes: true });
     
     return () => observer.disconnect();
-  }, []); // Empty dependency array since we use functional state update
-  
-  // Function to reload all homepage data
-  const reloadAllData = useCallback(() => {
-    logger.info('[Home] Reloading all homepage data...');
-    loadFeaturedProducts();
-    loadBanners();
-    loadSections();
-    loadQuickAccessCards();
-    loadFeatures();
-    loadOrderConfig();
-  }, [loadOrderConfig]);
+  }, []);
 
   // Initial data load with retry logic for stale connections
   useEffect(() => {
@@ -644,34 +878,46 @@ const Home = () => {
 
     const loadWithRetry = async () => {
       try {
-        // Test connection first with a simple query
-        const { error: testError } = await supabase.from('products').select('id').limit(1);
+        // Test connection first with timeout
+        const testPromise = new Promise<boolean>((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Connection test timeout')), 5000);
+          supabase.from('products').select('id').limit(1).then(
+            (result) => {
+              clearTimeout(timer);
+              resolve(!result.error);
+            },
+            (error) => {
+              clearTimeout(timer);
+              reject(error);
+            }
+          );
+        });
+
+        const isConnected = await testPromise;
         
-        if (testError) {
-          logger.warn('[Home] Initial connection test failed, retrying...', testError);
-          if (retryCount < maxRetries) {
-            retryCount++;
-            setTimeout(loadWithRetry, retryDelay * retryCount);
-            return;
-          }
+        if (!isConnected) {
+          throw new Error('Connection test failed');
         }
         
         // Connection is good, load all data
-        reloadAllData();
+        await reloadAllData();
       } catch (error) {
         logger.error('[Home] Error during initial load:', error);
         if (retryCount < maxRetries) {
           retryCount++;
+          logger.info(`[Home] Retrying in ${retryDelay * retryCount}ms (attempt ${retryCount}/${maxRetries})`);
           setTimeout(loadWithRetry, retryDelay * retryCount);
+        } else {
+          setLoadError(true);
+          setIsLoading(false);
         }
       }
     };
 
     loadWithRetry();
 
-    // Subscribe to auth state changes to reload featured products with correct filtering
+    // Subscribe to auth state changes
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Reload featured products when user logs in/out to show correct role-based products
       loadFeaturedProducts();
     });
 
@@ -693,7 +939,7 @@ const Home = () => {
       table: 'homepage_banners'
     }, loadBanners).subscribe();
 
-    // Subscribe to sections changes for real-time updates
+    // Subscribe to sections changes
     const sectionsChannel = supabase.channel('homepage-sections-changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -723,18 +969,17 @@ const Home = () => {
       supabase.removeChannel(sectionsChannel);
       supabase.removeChannel(orderChannel);
     };
-  }, [loadOrderConfig, reloadAllData]);
+  }, [loadOrderConfig, reloadAllData, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures]);
 
-  // Listen for session recovery events to reload data when coming back from background
+  // Listen for session/connection recovery events
   useEffect(() => {
-    const handleSessionRecovered = () => {
-      logger.info('[Home] Session recovered event received, reloading data...');
+    const handleRecovery = () => {
+      logger.info('[Home] Recovery event received, reloading data...');
       reloadAllData();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Give Supabase a moment to reconnect, then reload
         setTimeout(() => {
           logger.info('[Home] Page became visible, checking and reloading data...');
           reloadAllData();
@@ -744,7 +989,6 @@ const Home = () => {
 
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
-        // Page was restored from bfcache - must reload data
         logger.info('[Home] Page restored from bfcache, reloading data...');
         setTimeout(reloadAllData, 100);
       }
@@ -755,198 +999,23 @@ const Home = () => {
       setTimeout(reloadAllData, 500);
     };
 
-    window.addEventListener('session-recovered', handleSessionRecovered);
+    window.addEventListener('session-recovered', handleRecovery);
+    window.addEventListener('connection-recovered', handleRecovery);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('online', handleOnline);
 
     return () => {
-      window.removeEventListener('session-recovered', handleSessionRecovered);
+      window.removeEventListener('session-recovered', handleRecovery);
+      window.removeEventListener('connection-recovered', handleRecovery);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('online', handleOnline);
     };
   }, [reloadAllData]);
-  const loadBanners = async () => {
-    try {
-      // Cargar banners activos (neq false includes null and true values)
-      const { data: bannersData, error: bannersError } = await supabase
-        .from("homepage_banners")
-        .select("*")
-        .neq("is_active", false)
-        .order("position_order", { ascending: true, nullsFirst: false });
-      
-      if (bannersError) {
-        logger.error('[Home] Error loading banners:', bannersError);
-        setBanners([]);
-        return;
-      }
-
-      if (!bannersData || bannersData.length === 0) {
-        setBanners([]);
-        return;
-      }
-      
-      // Cargar imágenes para estos banners
-      const bannerIds = bannersData.map(b => b.id);
-      const { data: imagesData, error: imagesError } = await supabase
-        .from("banner_images")
-        .select("id, banner_id, image_url, display_order, alt_text, is_active")
-        .in("banner_id", bannerIds)
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false });
-      
-      if (imagesError) {
-        logger.error('[Home] Error loading banner images:', imagesError);
-      }
-
-      // Combinar banners con sus imágenes
-      const bannersWithImages = bannersData.map(banner => ({
-        ...banner,
-        banner_images: (imagesData || []).filter(img => img.banner_id === banner.id)
-      }));
-      
-      setBanners(bannersWithImages);
-    } catch (error) {
-      logger.error('[Home] Exception loading banners:', error);
-      setBanners([]);
-    }
-  };
-
-  // Función para obtener banners por sección
+  // Helper function to get banners by section
   const getBannersBySection = (section: string) => {
     return banners.filter(b => b.page_section === section);
-  };
-  const loadSections = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("homepage_sections")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false });
-      
-      if (error) {
-        logger.error('[Home] Error loading sections:', error);
-        return;
-      }
-      
-      // Store sections as ordered array for dynamic rendering
-      setOrderedSections(data || []);
-      
-      // Also store as object for backward compatibility with specific section lookups
-      const sectionsObj = (data || []).reduce((acc: any, section: any) => {
-        acc[section.section_key] = section;
-        return acc;
-      }, {});
-      setSections(sectionsObj);
-    } catch (error) {
-      logger.error('[Home] Exception loading sections:', error);
-    }
-  };
-  const loadQuickAccessCards = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("homepage_quick_access_cards")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false });
-      
-      if (error) {
-        logger.error('[Home] Error loading quick access cards:', error);
-        return;
-      }
-      setQuickAccessCards(data || []);
-    } catch (error) {
-      logger.error('[Home] Exception loading quick access cards:', error);
-    }
-  };
-  const loadFeatures = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("homepage_features")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false });
-      
-      if (error) {
-        logger.error('[Home] Error loading features:', error);
-        return;
-      }
-      setFeatures(data || []);
-    } catch (error) {
-      logger.error('[Home] Exception loading features:', error);
-    }
-  };
-  const loadFeaturedProducts = async () => {
-    try {
-      // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
-      const { data, error: productsError } = await supabase
-        .from("products")
-        .select(`
-          *,
-          images:product_images(image_url, display_order),
-          product_roles(role)
-        `)
-        .is("deleted_at", null)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (productsError) {
-        logger.error('[Home] Error loading products:', productsError);
-      }
-      
-      logger.debug('[Home] Raw products data:', data);
-
-      // SEGUNDO: Intentar obtener la sesión del usuario (no bloquea si falla)
-      let user = null;
-      let userRoles: string[] = [];
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        user = session?.user ?? null;
-        
-        if (user) {
-          const { data: rolesData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", user.id);
-          userRoles = (rolesData || [])
-            .map(r => String(r.role || '').trim().toLowerCase())
-            .filter(role => role.length > 0);
-          logger.debug('[Home] User roles:', userRoles);
-        }
-      } catch (authError) {
-        // Si hay error de autenticación, continuar sin usuario
-        logger.warn('[Home] Auth error (continuing without user):', authError);
-      }
-
-      // TERCERO: Filtrar productos basado en roles
-      const visibleProducts = (data || []).filter((product: any) => {
-        const productRolesList = product.product_roles || [];
-        const productRolesNormalized = productRolesList
-          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
-          .filter((role: string) => role.length > 0);
-
-        // Si NO tiene roles asignados → visible para TODOS
-        if (productRolesNormalized.length === 0) {
-          return true;
-        }
-
-        // Si tiene roles asignados → solo visible para usuarios con esos roles
-        if (!user || userRoles.length === 0) {
-          return false;
-        }
-        return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
-      });
-      
-      const productsWithSortedImages = visibleProducts.map(product => ({
-        ...product,
-        images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
-      }));
-      setFeaturedProducts(productsWithSortedImages);
-    } catch (error) {
-      logger.error('[Home] Error in loadFeaturedProducts:', error);
-    }
   };
   // Renderizar sección de banners dinámicamente
   const renderBannersSection = (section: string, className: string = "") => {
