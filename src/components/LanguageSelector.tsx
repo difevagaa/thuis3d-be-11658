@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +37,7 @@ export function LanguageSelector() {
         //   .eq('id', user.id);
       }
     } catch (error) {
-      console.error('Error guardando preferencia de idioma:', error);
+      logger.error('Error guardando preferencia de idioma:', error);
     }
   };
 
