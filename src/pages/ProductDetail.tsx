@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -102,6 +102,8 @@ const ProductDetail = () => {
   const [customizationSections, setCustomizationSections] = useState<CustomizationSection[]>([]);
   const [sectionColorSelections, setSectionColorSelections] = useState<Record<string, string>>({});
   const [sectionImageSelections, setSectionImageSelections] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const hasProductRef = useRef(false);
   
   // Hook para contenido traducido del producto
   const { content: translatedProduct, loading: translatingProduct } = useTranslatedContent(
@@ -121,7 +123,6 @@ const ProductDetail = () => {
     
     return () => clearInterval(interval);
   }, [productImages.length]);
-  const [loading, setLoading] = useState(true);
   
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -129,6 +130,11 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
 
   const fetchProductData = useCallback(async () => {
+    // Only show loading state if we don't have a product yet (prevents flickering on background reloads)
+    if (!hasProductRef.current) {
+      setLoading(true);
+    }
+    
     try {
       const { data: productData, error: productError } = await supabase
         .from("products")
@@ -139,6 +145,9 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData);
       setProductVideo((productData as any)?.video_url || null);
+      if (productData) {
+        hasProductRef.current = true;
+      }
 
       // Fetch product images
       const { data: imagesData } = await supabase
