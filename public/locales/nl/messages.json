@@ -61,7 +61,8 @@
     "calibrationProfileDeactivated": "Profiel gedeactiveerd",
     "statusUpdated": "Status succesvol bijgewerkt",
     "clientDataLoaded": "Klantgegevens succesvol geladen",
-    "productSelected": "Product \"{{name}}\" geselecteerd"
+    "productSelected": "Product \"{{name}}\" geselecteerd",
+    "productFound": "Product gevonden"
   },
   "error": {
     "profileUpdateFailed": "Fout bij bijwerken profiel",

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { LANGUAGE_CHANGED_EVENT } from '@/lib/events';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +25,7 @@ export function LanguageSelector() {
     localStorage.setItem('i18nextLng', lng);
     
     // Dispatch global event to notify components about language change
-    window.dispatchEvent(new CustomEvent('language-changed', { detail: { language: lng } }));
+    window.dispatchEvent(new CustomEvent(LANGUAGE_CHANGED_EVENT, { detail: { language: lng } }));
     
     // Si el usuario está autenticado, guardar preferencia en BD
     try {

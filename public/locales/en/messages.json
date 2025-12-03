@@ -61,7 +61,8 @@
     "calibrationProfileDeactivated": "Profile deactivated",
     "statusUpdated": "Status updated successfully",
     "clientDataLoaded": "Client data loaded successfully",
-    "productSelected": "Product \"{{name}}\" selected"
+    "productSelected": "Product \"{{name}}\" selected",
+    "productFound": "Product found"
   },
   "error": {
     "profileUpdateFailed": "Error updating profile",

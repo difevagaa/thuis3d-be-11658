@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Filter, Layers, Box, Euro, ArrowUpDown, Package, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
 import { ProductCard } from "@/components/ProductCard";
 import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 import { logger } from "@/lib/logger";
+import { LANGUAGE_CHANGED_EVENT } from "@/lib/events";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
@@ -190,7 +190,7 @@ const Products = () => {
       // Establecer SOLO este producto como resultado
       setProducts([productData]);
       setSearchedByCode(true);
-      toast.success(`Producto encontrado: ${productData.name}`);
+      i18nToast.success("success.productFound");
     } catch (error) {
       i18nToast.error("error.productSearchFailed");
     }
@@ -238,10 +238,10 @@ const Products = () => {
       loadData();
     };
 
-    window.addEventListener('language-changed', handleLanguageChange);
+    window.addEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
     
     return () => {
-      window.removeEventListener('language-changed', handleLanguageChange);
+      window.removeEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
     };
   }, [loadData]);
 
