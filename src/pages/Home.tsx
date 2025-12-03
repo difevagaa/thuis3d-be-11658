@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Zap, Shield, Printer, FileText, Gift, ArrowRight } from "lucide-react";
 import * as Icons from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import HeroBanner from "@/components/HeroBanner";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
@@ -555,298 +555,323 @@ interface Banner {
   title_color?: string;
   text_color?: string;
 }
+// Connection states
+type ConnectionState = 'connecting' | 'connected' | 'failed';
+
 const Home = () => {
-  const {
-    t
-  } = useTranslation('home');
+  const { t } = useTranslation(['home', 'common']);
   const navigate = useNavigate();
+  
+  // Data states
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [sections, setSections] = useState<any>({});
   const [orderedSections, setOrderedSections] = useState<any[]>([]);
   const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
+  const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
+  
+  // Loading states
+  const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  // Component ordering configuration from site_settings
-  const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
-  // Track dark mode state to trigger re-render when mode changes
+  const [loadingMessage, setLoadingMessage] = useState('');
+  
+  // Track dark mode state
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
   
-  // Timeout wrapper for queries - 10 second timeout
-  const withTimeout = useCallback(async <T,>(
-    queryBuilder: { then: (onfulfilled: (value: T) => void, onrejected: (reason: any) => void) => any },
-    timeoutMs: number = 10000
-  ): Promise<T> => {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error('Query timeout - connection may be stale'));
-      }, timeoutMs);
-      
-      queryBuilder.then(
-        (result: T) => {
-          clearTimeout(timer);
-          resolve(result);
-        },
-        (error: any) => {
-          clearTimeout(timer);
-          reject(error);
+  // Refs for managing load state
+  const dataLoadedRef = useRef(false);
+  const connectionCheckInProgressRef = useRef(false);
+
+  /**
+   * Wake up Supabase connection with retries
+   */
+  const wakeUpConnection = useCallback(async (): Promise<boolean> => {
+    if (connectionCheckInProgressRef.current) {
+      return false;
+    }
+    
+    connectionCheckInProgressRef.current = true;
+    const maxAttempts = 5;
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        setLoadingMessage(t('common:connection.connecting', { defaultValue: 'Conectando...' }) + ` (${attempt}/${maxAttempts})`);
+        logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        
+        const { error } = await supabase
+          .from('products')
+          .select('id')
+          .limit(1)
+          .abortSignal(controller.signal);
+        
+        clearTimeout(timeoutId);
+        
+        if (!error) {
+          logger.info(`[Home] Connection established on attempt ${attempt}`);
+          setConnectionState('connected');
+          connectionCheckInProgressRef.current = false;
+          return true;
         }
-      );
-    });
+        
+        logger.warn(`[Home] Attempt ${attempt} failed:`, error.message);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          logger.warn(`[Home] Attempt ${attempt} timed out`);
+        } else {
+          logger.warn(`[Home] Attempt ${attempt} error:`, err.message);
+        }
+      }
+      
+      if (attempt < maxAttempts) {
+        const delay = 500 * attempt;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    logger.error('[Home] All connection attempts failed');
+    setConnectionState('failed');
+    connectionCheckInProgressRef.current = false;
+    return false;
+  }, [t]);
+
+  /**
+   * Execute Supabase query with retry
+   */
+  const executeWithRetry = useCallback(async <T,>(
+    queryFn: () => PromiseLike<{ data: T | null; error: any }>
+  ): Promise<{ data: T | null; error: any }> => {
+    const maxRetries = 2;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await Promise.race([
+          queryFn(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Query timeout')), 8000)
+          )
+        ]) as { data: T | null; error: any };
+        
+        if (!result.error) {
+          return result;
+        }
+        
+        logger.warn(`[Home] Query attempt ${attempt + 1} failed:`, result.error.message);
+      } catch (err: any) {
+        logger.warn(`[Home] Query attempt ${attempt + 1} exception:`, err.message);
+      }
+      
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      }
+    }
+    
+    return { data: null, error: new Error('Query failed after retries') };
   }, []);
 
   // Load component order configuration
   const loadOrderConfig = useCallback(async () => {
-    try {
-      const result = await withTimeout(
-        supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "homepage_component_order")
-          .maybeSingle()
-      );
+    const { data, error } = await executeWithRetry<{ setting_value: string } | null>(() =>
+      supabase
+        .from("site_settings")
+        .select("setting_value")
+        .eq("setting_key", "homepage_component_order")
+        .maybeSingle()
+    );
 
-      if (result.error) {
-        logger.error('[Home] Error loading order config:', result.error);
-        return;
-      }
+    if (error || !data) return;
 
-      if (result.data?.setting_value) {
-        try {
-          const parsed = JSON.parse(result.data.setting_value) as HomepageOrderConfig;
-          setOrderConfig(parsed);
-          logger.log('[Home] Loaded component order config:', parsed.components?.length, 'components');
-        } catch (parseError) {
-          logger.error('[Home] Error parsing order config:', parseError);
-          setOrderConfig(null);
-        }
-      } else {
-        setOrderConfig(null);
-      }
-    } catch (err) {
-      logger.error('[Home] Exception loading order config:', err);
-    }
-  }, [withTimeout]);
-
-  // Load banners with timeout
-  const loadBanners = useCallback(async () => {
-    try {
-      const { data: bannersData, error: bannersError } = await withTimeout(
-        supabase
-          .from("homepage_banners")
-          .select("*")
-          .neq("is_active", false)
-          .order("position_order", { ascending: true, nullsFirst: false })
-      );
-      
-      if (bannersError) {
-        logger.error('[Home] Error loading banners:', bannersError);
-        setBanners([]);
-        return;
-      }
-
-      if (!bannersData || bannersData.length === 0) {
-        setBanners([]);
-        return;
-      }
-      
-      // Load images for banners
-      const bannerIds = bannersData.map(b => b.id);
-      const { data: imagesData, error: imagesError } = await withTimeout(
-        supabase
-          .from("banner_images")
-          .select("id, banner_id, image_url, display_order, alt_text, is_active")
-          .in("banner_id", bannerIds)
-          .neq("is_active", false)
-          .order("display_order", { ascending: true, nullsFirst: false })
-      );
-      
-      if (imagesError) {
-        logger.error('[Home] Error loading banner images:', imagesError);
-      }
-
-      const bannersWithImages = bannersData.map(banner => ({
-        ...banner,
-        banner_images: (imagesData || []).filter(img => img.banner_id === banner.id)
-      }));
-      
-      setBanners(bannersWithImages as Banner[]);
-    } catch (error) {
-      logger.error('[Home] Exception loading banners:', error);
-      setBanners([]);
-    }
-  }, [withTimeout]);
-
-  // Load sections with timeout
-  const loadSections = useCallback(async () => {
-    try {
-      const { data, error } = await withTimeout(
-        supabase
-          .from("homepage_sections")
-          .select("*")
-          .neq("is_active", false)
-          .order("display_order", { ascending: true, nullsFirst: false })
-      );
-      
-      if (error) {
-        logger.error('[Home] Error loading sections:', error);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        const sectionsMap: any = {};
-        data.forEach(section => {
-          sectionsMap[section.section_key] = section;
-        });
-        setSections(sectionsMap);
-        setOrderedSections(data);
-      }
-    } catch (error) {
-      logger.error('[Home] Exception loading sections:', error);
-    }
-  }, [withTimeout]);
-
-  // Load quick access cards with timeout
-  const loadQuickAccessCards = useCallback(async () => {
-    try {
-      const { data, error } = await withTimeout(
-        supabase
-          .from("homepage_quick_access_cards")
-          .select("*")
-          .neq("is_active", false)
-          .order("display_order", { ascending: true, nullsFirst: false })
-      );
-      
-      if (error) {
-        logger.error('[Home] Error loading quick access cards:', error);
-        return;
-      }
-      setQuickAccessCards(data || []);
-    } catch (error) {
-      logger.error('[Home] Exception loading quick access cards:', error);
-    }
-  }, [withTimeout]);
-
-  // Load features with timeout
-  const loadFeatures = useCallback(async () => {
-    try {
-      const { data, error } = await withTimeout(
-        supabase
-          .from("homepage_features")
-          .select("*")
-          .neq("is_active", false)
-          .order("display_order", { ascending: true, nullsFirst: false })
-      );
-      
-      if (error) {
-        logger.error('[Home] Error loading features:', error);
-        return;
-      }
-      setFeatures(data || []);
-    } catch (error) {
-      logger.error('[Home] Exception loading features:', error);
-    }
-  }, [withTimeout]);
-
-  // Load featured products with timeout
-  const loadFeaturedProducts = useCallback(async () => {
-    try {
-      const { data, error: productsError } = await withTimeout(
-        supabase
-          .from("products")
-          .select(`
-            *,
-            images:product_images(image_url, display_order),
-            product_roles(role)
-          `)
-          .is("deleted_at", null)
-          .order('created_at', { ascending: false })
-          .limit(5)
-      );
-      
-      if (productsError) {
-        logger.error('[Home] Error loading products:', productsError);
-        return;
-      }
-      
-      logger.debug('[Home] Raw products data:', data);
-
-      // Get user session (don't block if fails)
-      let user = null;
-      let userRoles: string[] = [];
-      
+    if (data.setting_value) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        user = session?.user ?? null;
-        
-        if (user) {
-          const { data: rolesData } = await withTimeout(
-            supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", user.id)
-          );
-          userRoles = (rolesData || [])
-            .map(r => String(r.role || '').trim().toLowerCase())
-            .filter(role => role.length > 0);
-          logger.debug('[Home] User roles:', userRoles);
-        }
-      } catch (authError) {
-        logger.warn('[Home] Auth error (continuing without user):', authError);
+        const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
+        setOrderConfig(parsed);
+      } catch (parseError) {
+        logger.error('[Home] Error parsing order config:', parseError);
+      }
+    }
+  }, [executeWithRetry]);
+
+  // Load banners
+  const loadBanners = useCallback(async () => {
+    const { data: bannersData, error: bannersError } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("homepage_banners")
+        .select("*")
+        .neq("is_active", false)
+        .order("position_order", { ascending: true, nullsFirst: false })
+    );
+    
+    if (bannersError || !bannersData || bannersData.length === 0) {
+      setBanners([]);
+      return;
+    }
+    
+    // Load images for banners
+    const bannerIds = bannersData.map((b: any) => b.id);
+    const { data: imagesData } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("banner_images")
+        .select("id, banner_id, image_url, display_order, alt_text, is_active")
+        .in("banner_id", bannerIds)
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false })
+    );
+
+    const bannersWithImages = bannersData.map((banner: any) => ({
+      ...banner,
+      banner_images: (imagesData || []).filter((img: any) => img.banner_id === banner.id)
+    }));
+    
+    setBanners(bannersWithImages as Banner[]);
+  }, [executeWithRetry]);
+
+  // Load sections
+  const loadSections = useCallback(async () => {
+    const { data, error } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("homepage_sections")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false })
+    );
+    
+    if (error || !data || data.length === 0) return;
+    
+    const sectionsMap: any = {};
+    data.forEach((section: any) => {
+      sectionsMap[section.section_key] = section;
+    });
+    setSections(sectionsMap);
+    setOrderedSections(data);
+  }, [executeWithRetry]);
+
+  // Load quick access cards
+  const loadQuickAccessCards = useCallback(async () => {
+    const { data, error } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("homepage_quick_access_cards")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false })
+    );
+    
+    if (!error && data) {
+      setQuickAccessCards(data);
+    }
+  }, [executeWithRetry]);
+
+  // Load features
+  const loadFeatures = useCallback(async () => {
+    const { data, error } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("homepage_features")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false })
+    );
+    
+    if (!error && data) {
+      setFeatures(data);
+    }
+  }, [executeWithRetry]);
+
+  // Load featured products
+  const loadFeaturedProducts = useCallback(async () => {
+    const { data, error: productsError } = await executeWithRetry<any[]>(() =>
+      supabase
+        .from("products")
+        .select(`
+          *,
+          images:product_images(image_url, display_order),
+          product_roles(role)
+        `)
+        .is("deleted_at", null)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    );
+    
+    if (productsError || !data) return;
+
+    // Get user session (don't block if fails)
+    let user = null;
+    let userRoles: string[] = [];
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      user = session?.user ?? null;
+      
+      if (user) {
+        const { data: rolesData } = await executeWithRetry<any[]>(() =>
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+        );
+        userRoles = (rolesData || [])
+          .map((r: any) => String(r.role || '').trim().toLowerCase())
+          .filter((role: string) => role.length > 0);
+      }
+    } catch (authError) {
+      logger.warn('[Home] Auth error (continuing without user):', authError);
+    }
+
+    // Filter products based on roles
+    const visibleProducts = data.filter((product: any) => {
+      const productRolesList = product.product_roles || [];
+      const productRolesNormalized = productRolesList
+        .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
+        .filter((role: string) => role.length > 0);
+
+      if (productRolesNormalized.length === 0) {
+        return true;
       }
 
-      // Filter products based on roles
-      const visibleProducts = (data || []).filter((product: any) => {
-        const productRolesList = product.product_roles || [];
-        const productRolesNormalized = productRolesList
-          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
-          .filter((role: string) => role.length > 0);
-
-        if (productRolesNormalized.length === 0) {
-          return true;
-        }
-
-        if (!user || userRoles.length === 0) {
-          return false;
-        }
-        return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
-      });
-      
-      const productsWithSortedImages = visibleProducts.map(product => ({
-        ...product,
-        images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
-      }));
-      setFeaturedProducts(productsWithSortedImages);
-    } catch (error) {
-      logger.error('[Home] Error in loadFeaturedProducts:', error);
-    }
-  }, [withTimeout]);
+      if (!user || userRoles.length === 0) {
+        return false;
+      }
+      return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
+    });
+    
+    const productsWithSortedImages = visibleProducts.map((product: any) => ({
+      ...product,
+      images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
+    }));
+    setFeaturedProducts(productsWithSortedImages);
+  }, [executeWithRetry]);
 
   // Function to reload all homepage data
   const reloadAllData = useCallback(async () => {
     logger.info('[Home] Reloading all homepage data...');
     setIsLoading(true);
     setLoadError(false);
+    setLoadingMessage(t('common:connection.loading', { defaultValue: 'Cargando...' }));
     
-    try {
-      // Run all loads in parallel with timeout protection
-      await Promise.all([
-        loadFeaturedProducts(),
-        loadBanners(),
-        loadSections(),
-        loadQuickAccessCards(),
-        loadFeatures(),
-        loadOrderConfig()
-      ]);
-      setLoadError(false);
-    } catch (error) {
-      logger.error('[Home] Error reloading data:', error);
+    // First verify connection is awake
+    const isConnected = await wakeUpConnection();
+    if (!isConnected) {
       setLoadError(true);
-    } finally {
       setIsLoading(false);
+      return;
     }
-  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
+    
+    // Run all loads in parallel
+    await Promise.all([
+      loadFeaturedProducts(),
+      loadBanners(),
+      loadSections(),
+      loadQuickAccessCards(),
+      loadFeatures(),
+      loadOrderConfig()
+    ]);
+    
+    dataLoadedRef.current = true;
+    setLoadError(false);
+    setIsLoading(false);
+  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig, wakeUpConnection, t]);
 
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
@@ -870,51 +895,10 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Initial data load with retry logic for stale connections
+  // Initial data load - simple and direct
   useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 3;
-    const retryDelay = 1000;
-
-    const loadWithRetry = async () => {
-      try {
-        // Test connection first with timeout
-        const testPromise = new Promise<boolean>((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('Connection test timeout')), 5000);
-          supabase.from('products').select('id').limit(1).then(
-            (result) => {
-              clearTimeout(timer);
-              resolve(!result.error);
-            },
-            (error) => {
-              clearTimeout(timer);
-              reject(error);
-            }
-          );
-        });
-
-        const isConnected = await testPromise;
-        
-        if (!isConnected) {
-          throw new Error('Connection test failed');
-        }
-        
-        // Connection is good, load all data
-        await reloadAllData();
-      } catch (error) {
-        logger.error('[Home] Error during initial load:', error);
-        if (retryCount < maxRetries) {
-          retryCount++;
-          logger.info(`[Home] Retrying in ${retryDelay * retryCount}ms (attempt ${retryCount}/${maxRetries})`);
-          setTimeout(loadWithRetry, retryDelay * retryCount);
-        } else {
-          setLoadError(true);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadWithRetry();
+    // Load data immediately
+    reloadAllData();
 
     // Subscribe to auth state changes
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
@@ -1327,6 +1311,49 @@ const Home = () => {
 
     return defaultComponents;
   };
+
+  // Show connection/loading state
+  if (connectionState === 'connecting' && isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">{loadingMessage || t('common:connection.connecting', { defaultValue: 'Conectando...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry button
+  if (connectionState === 'failed' || loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 p-8">
+          <div className="text-destructive mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">
+            {t('common:connection.error', { defaultValue: 'Error de conexión' })}
+          </h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {t('common:connection.errorMessage', { defaultValue: 'No se pudo conectar al servidor. Por favor, verifica tu conexión a internet e intenta de nuevo.' })}
+          </p>
+          <Button 
+            onClick={() => {
+              setConnectionState('connecting');
+              setLoadError(false);
+              reloadAllData();
+            }}
+            className="mt-4"
+          >
+            {t('common:connection.retry', { defaultValue: 'Reintentar' })}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return <div className="min-h-screen">
       {/* Hero Banner with Gradient - Banners de tipo "hero" */}
