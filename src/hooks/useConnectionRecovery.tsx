@@ -10,10 +10,10 @@ import { logger } from '@/lib/logger';
  * Components should wait for this event before loading data on initial mount
  */
 
-// Standardized timeout configuration
-const CONNECTION_TIMEOUT = 5000; // 5 seconds for connection test
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds heartbeat
-const MAX_RECONNECT_ATTEMPTS = 5;
+// Standardized timeout configuration - exported for consistent use across app
+export const CONNECTION_TIMEOUT = 5000; // 5 seconds for connection test
+export const HEARTBEAT_INTERVAL = 30000; // 30 seconds heartbeat
+export const MAX_RECONNECT_ATTEMPTS = 5;
 
 export function useConnectionRecovery() {
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
