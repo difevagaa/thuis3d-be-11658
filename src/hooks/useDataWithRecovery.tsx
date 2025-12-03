@@ -78,11 +78,11 @@ export function useDataWithRecovery(
         
         logger.info(`[DataWithRecovery] Retrying in ${delay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
         
-        // CRITICAL: Reset loading ref BEFORE scheduling retry
-        loadingRef.current = false;
-        
+        // Schedule retry - keep loading state true during delay to prevent race conditions
+        // Note: Recursive call is safe here as maxRetries is typically 3, preventing stack overflow
         retryTimeoutRef.current = setTimeout(() => {
           retryTimeoutRef.current = null;
+          loadingRef.current = false; // Reset just before retry
           loadWithTimeout();
         }, delay);
         
