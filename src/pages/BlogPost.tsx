@@ -91,11 +91,10 @@ export default function BlogPost() {
     }
   }, [slug]);
 
-  // Use data recovery hook
+  // Use data recovery hook - loadPost already includes slug in useCallback deps
   useDataWithRecovery(loadPost, {
     timeout: 15000,
-    maxRetries: 3,
-    deps: [slug]
+    maxRetries: 3
   });
 
   const handleShare = async () => {

@@ -584,6 +584,8 @@ const Home = () => {
   // Refs for managing load state
   const dataLoadedRef = useRef(false);
   const connectionCheckInProgressRef = useRef(false);
+  const reloadInProgressRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Wake up Supabase connection with retries
@@ -846,7 +848,14 @@ const Home = () => {
 
   // Function to reload all homepage data
   const reloadAllData = useCallback(async () => {
+    // Prevent simultaneous reload attempts
+    if (reloadInProgressRef.current) {
+      logger.info('[Home] Reload already in progress, skipping duplicate request');
+      return;
+    }
+    
     logger.info('[Home] Reloading all homepage data...');
+    reloadInProgressRef.current = true;
     setIsLoading(true);
     setLoadError(false);
     setLoadingMessage(t('common:connection.loading', { defaultValue: 'Cargando...' }));
@@ -857,7 +866,6 @@ const Home = () => {
       if (!isConnected) {
         logger.error('[Home] Connection failed, showing error state');
         setLoadError(true);
-        setIsLoading(false);
         setConnectionState('failed');
         return;
       }
@@ -880,9 +888,10 @@ const Home = () => {
       setLoadError(true);
       setConnectionState('failed');
     } finally {
-      // CRITICAL: Always clear loading state
+      // CRITICAL: Always clear loading state in finally block
       setIsLoading(false);
       setLoadingMessage('');
+      reloadInProgressRef.current = false;
     }
   }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig, wakeUpConnection, t]);
 
@@ -970,30 +979,38 @@ const Home = () => {
 
   // Listen for session/connection recovery events
   useEffect(() => {
+    // Debounced reload function to prevent rapid-fire calls
+    const debouncedReload = (delay: number = 300) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        reloadAllData();
+      }, delay);
+    };
+    
     const handleRecovery = () => {
-      logger.info('[Home] Recovery event received, reloading data...');
-      reloadAllData();
+      logger.info('[Home] Recovery event received, scheduling reload...');
+      debouncedReload(500);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        setTimeout(() => {
-          logger.info('[Home] Page became visible, checking and reloading data...');
-          reloadAllData();
-        }, 300);
+        logger.info('[Home] Page became visible, scheduling reload...');
+        debouncedReload(300);
       }
     };
 
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
-        logger.info('[Home] Page restored from bfcache, reloading data...');
-        setTimeout(reloadAllData, 100);
+        logger.info('[Home] Page restored from bfcache, scheduling reload...');
+        debouncedReload(100);
       }
     };
 
     const handleOnline = () => {
-      logger.info('[Home] Network restored, reloading data...');
-      setTimeout(reloadAllData, 500);
+      logger.info('[Home] Network restored, scheduling reload...');
+      debouncedReload(500);
     };
 
     window.addEventListener('session-recovered', handleRecovery);
@@ -1003,6 +1020,11 @@ const Home = () => {
     window.addEventListener('online', handleOnline);
 
     return () => {
+      // Clear debounce timer on cleanup
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       window.removeEventListener('session-recovered', handleRecovery);
       window.removeEventListener('connection-recovered', handleRecovery);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

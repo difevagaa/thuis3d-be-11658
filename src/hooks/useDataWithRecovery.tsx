@@ -20,14 +20,12 @@ export function useDataWithRecovery(
     timeout?: number;
     maxRetries?: number;
     onError?: (error: unknown) => void;
-    deps?: React.DependencyList;
   } = {}
 ) {
   const {
     timeout = 15000,
     maxRetries = 3,
-    onError,
-    deps = []
+    onError
   } = options;
 
   const retryCountRef = useRef(0);
@@ -138,7 +136,7 @@ export function useDataWithRecovery(
       // Reset loading state
       loadingRef.current = false;
     };
-  }, [loadWithTimeout, handleConnectionRecovered, ...deps]);
+  }, [loadWithTimeout, handleConnectionRecovered]);
 
   return {
     reload: loadWithTimeout
