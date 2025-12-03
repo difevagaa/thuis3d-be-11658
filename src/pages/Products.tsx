@@ -28,7 +28,7 @@ const Products = () => {
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
       const { data: productsData, error: productsError } = await supabase
@@ -104,7 +104,7 @@ const Products = () => {
       console.error("[Products] Error in loadData:", error);
       i18nToast.error("error.loadingFailed");
     }
-  };
+  }, []);
 
   // Use data recovery hook
   useDataWithRecovery(loadData, {
@@ -244,7 +244,7 @@ const Products = () => {
     return () => {
       window.removeEventListener('language-changed', handleLanguageChange);
     };
-  }, []);
+  }, [loadData]);
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 lg:py-8">
