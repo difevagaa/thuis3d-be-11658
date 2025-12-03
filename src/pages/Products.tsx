@@ -204,7 +204,7 @@ const Products = () => {
     i18nToast.info("info.codeSearchCleared");
   };
 
-  const filterAndSortProducts = () => {
+  const filterAndSortProducts = useCallback(() => {
     let filtered = [...products];
 
     if (selectedCategory !== "all") {
@@ -226,7 +226,25 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered);
-  };
+  }, [products, selectedCategory, priceRange, sortBy]);
+
+  // Apply filters and sorting when dependencies change
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [filterAndSortProducts]);
+
+  // Reload data when language changes to get updated translations
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      loadData();
+    };
+
+    window.addEventListener('language-changed', handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener('language-changed', handleLanguageChange);
+    };
+  }, []);
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 lg:py-8">

@@ -9,10 +9,15 @@ import { logger } from '@/lib/logger';
  * CRITICAL: This hook dispatches 'connection-ready' when connection is confirmed
  * Components should wait for this event before loading data on initial mount
  */
+
+// Standardized timeout configuration
+const CONNECTION_TIMEOUT = 5000; // 5 seconds for connection test
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds heartbeat
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 export function useConnectionRecovery() {
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
   const wasInBackground = useRef(false);
   const connectionReadyRef = useRef(false);
   const initialCheckDoneRef = useRef(false);
@@ -23,7 +28,7 @@ export function useConnectionRecovery() {
   const testConnection = useCallback(async (): Promise<boolean> => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT);
       
       const { error } = await supabase
         .from('products')
@@ -72,9 +77,9 @@ export function useConnectionRecovery() {
       if (!isConnected) {
         reconnectAttemptsRef.current++;
         
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           const delay = Math.min(500 * Math.pow(2, reconnectAttemptsRef.current), 8000);
-          logger.info(`[ConnectionRecovery] Retrying in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+          logger.info(`[ConnectionRecovery] Retrying in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
           
           setTimeout(() => {
             forceReconnect();
@@ -98,7 +103,7 @@ export function useConnectionRecovery() {
     } catch (error) {
       logger.error('[ConnectionRecovery] Reconnection error:', error);
       
-      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+      if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttemptsRef.current++;
         const delay = Math.min(500 * Math.pow(2, reconnectAttemptsRef.current), 8000);
         setTimeout(() => forceReconnect(), delay);
@@ -152,7 +157,7 @@ export function useConnectionRecovery() {
         connectionReadyRef.current = false;
         forceReconnect();
       }
-    }, 30000);
+    }, HEARTBEAT_INTERVAL);
     
     logger.info('[ConnectionRecovery] Heartbeat started');
   }, [testConnection, forceReconnect]);

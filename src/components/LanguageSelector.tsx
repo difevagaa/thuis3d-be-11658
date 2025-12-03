@@ -22,6 +22,9 @@ export function LanguageSelector() {
     i18n.changeLanguage(lng);
     localStorage.setItem('i18nextLng', lng);
     
+    // Dispatch global event to notify components about language change
+    window.dispatchEvent(new CustomEvent('language-changed', { detail: { language: lng } }));
+    
     // Si el usuario está autenticado, guardar preferencia en BD
     try {
       const { data: { user } } = await supabase.auth.getUser();

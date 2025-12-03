@@ -601,7 +601,7 @@ const Home = () => {
         logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const { error } = await supabase
           .from('products')
