@@ -6,29 +6,56 @@ import { logger } from '@/lib/logger';
  * Global Connection Recovery Hook
  * Manages app-wide reconnection, heartbeat, and event dispatching
  * 
- * This hook ensures that when the app returns from background or network issues,
- * all data is properly reloaded and the Supabase connection is restored.
+ * CRITICAL: This hook dispatches 'connection-ready' when connection is confirmed
+ * Components should wait for this event before loading data on initial mount
  */
 export function useConnectionRecovery() {
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const wasInBackground = useRef(false);
+  const connectionReadyRef = useRef(false);
+  const initialCheckDoneRef = useRef(false);
 
   /**
-   * Test if Supabase connection is alive
+   * Test if Supabase connection is alive with timeout
    */
   const testConnection = useCallback(async (): Promise<boolean> => {
     try {
-      const { error } = await supabase.from('products').select('id').limit(1);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const { error } = await supabase
+        .from('products')
+        .select('id')
+        .limit(1)
+        .abortSignal(controller.signal);
+      
+      clearTimeout(timeoutId);
+      
       if (error) {
         logger.warn('[ConnectionRecovery] Connection test failed:', error);
         return false;
       }
       return true;
-    } catch (error) {
-      logger.error('[ConnectionRecovery] Connection test error:', error);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        logger.warn('[ConnectionRecovery] Connection test timed out');
+      } else {
+        logger.error('[ConnectionRecovery] Connection test error:', error);
+      }
       return false;
+    }
+  }, []);
+
+  /**
+   * Dispatch connection ready event
+   */
+  const dispatchConnectionReady = useCallback(() => {
+    if (!connectionReadyRef.current) {
+      connectionReadyRef.current = true;
+      logger.info('[ConnectionRecovery] Dispatching connection-ready event');
+      window.dispatchEvent(new CustomEvent('connection-ready'));
     }
   }, []);
 
@@ -37,17 +64,16 @@ export function useConnectionRecovery() {
    */
   const forceReconnect = useCallback(async () => {
     logger.info('[ConnectionRecovery] Forcing reconnection...');
+    connectionReadyRef.current = false;
     
     try {
-      // Test connection first
       const isConnected = await testConnection();
       
       if (!isConnected) {
         reconnectAttemptsRef.current++;
         
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+          const delay = Math.min(500 * Math.pow(2, reconnectAttemptsRef.current), 8000);
           logger.info(`[ConnectionRecovery] Retrying in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           setTimeout(() => {
@@ -56,45 +82,74 @@ export function useConnectionRecovery() {
           return;
         } else {
           logger.error('[ConnectionRecovery] Max reconnection attempts reached');
-          // Dispatch failed event
           window.dispatchEvent(new CustomEvent('connection-recovery-failed'));
           return;
         }
       }
       
-      // Connection successful - reset attempts
+      // Connection successful
       reconnectAttemptsRef.current = 0;
+      dispatchConnectionReady();
       
-      // Dispatch reload event for all components
+      // Also dispatch recovery event for data reload
       window.dispatchEvent(new CustomEvent('connection-recovered'));
       logger.info('[ConnectionRecovery] Connection recovered successfully');
       
     } catch (error) {
       logger.error('[ConnectionRecovery] Reconnection error:', error);
       
-      // Retry with backoff
       if (reconnectAttemptsRef.current < maxReconnectAttempts) {
         reconnectAttemptsRef.current++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        const delay = Math.min(500 * Math.pow(2, reconnectAttemptsRef.current), 8000);
         setTimeout(() => forceReconnect(), delay);
       }
     }
-  }, [testConnection]);
+  }, [testConnection, dispatchConnectionReady]);
+
+  /**
+   * Initial connection check - critical for first load
+   */
+  const initialConnectionCheck = useCallback(async () => {
+    if (initialCheckDoneRef.current) return;
+    initialCheckDoneRef.current = true;
+    
+    logger.info('[ConnectionRecovery] Starting initial connection check...');
+    
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const isConnected = await testConnection();
+      
+      if (isConnected) {
+        logger.info(`[ConnectionRecovery] Initial connection OK (attempt ${attempt})`);
+        dispatchConnectionReady();
+        return;
+      }
+      
+      logger.warn(`[ConnectionRecovery] Initial connection attempt ${attempt} failed`);
+      
+      if (attempt < maxAttempts) {
+        const delay = 500 * attempt;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    logger.error('[ConnectionRecovery] All initial connection attempts failed');
+    window.dispatchEvent(new CustomEvent('connection-failed'));
+  }, [testConnection, dispatchConnectionReady]);
 
   /**
    * Heartbeat to keep connection alive
    */
   const startHeartbeat = useCallback(() => {
-    // Clear existing heartbeat
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
     }
 
-    // Ping every 30 seconds to keep connection alive
     heartbeatIntervalRef.current = setInterval(async () => {
       const isConnected = await testConnection();
       if (!isConnected) {
         logger.warn('[ConnectionRecovery] Heartbeat failed, forcing reconnect');
+        connectionReadyRef.current = false;
         forceReconnect();
       }
     }, 30000);
@@ -103,24 +158,20 @@ export function useConnectionRecovery() {
   }, [testConnection, forceReconnect]);
 
   /**
-   * Handle visibility change (app going to/from background)
+   * Handle visibility change
    */
   const handleVisibilityChange = useCallback(() => {
     if (document.visibilityState === 'visible') {
       if (wasInBackground.current) {
         logger.info('[ConnectionRecovery] App returned from background');
-        // Small delay to ensure network is ready
-        setTimeout(() => {
-          forceReconnect();
-        }, 500);
+        connectionReadyRef.current = false;
+        setTimeout(() => forceReconnect(), 300);
       }
       wasInBackground.current = false;
       startHeartbeat();
     } else {
-      // Going to background
       wasInBackground.current = true;
       logger.info('[ConnectionRecovery] App going to background');
-      // Stop heartbeat to save resources
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
         heartbeatIntervalRef.current = null;
@@ -129,11 +180,12 @@ export function useConnectionRecovery() {
   }, [forceReconnect, startHeartbeat]);
 
   /**
-   * Handle page show (bfcache restoration)
+   * Handle page show (bfcache)
    */
   const handlePageShow = useCallback((event: PageTransitionEvent) => {
     if (event.persisted) {
       logger.info('[ConnectionRecovery] Page restored from bfcache');
+      connectionReadyRef.current = false;
       forceReconnect();
     }
   }, [forceReconnect]);
@@ -143,31 +195,27 @@ export function useConnectionRecovery() {
    */
   const handleOnline = useCallback(() => {
     logger.info('[ConnectionRecovery] Network restored');
+    connectionReadyRef.current = false;
     forceReconnect();
   }, [forceReconnect]);
 
   /**
-   * Handle focus event (additional mobile support)
+   * Handle focus event
    */
   const handleFocus = useCallback(() => {
     if (wasInBackground.current) {
       logger.info('[ConnectionRecovery] Window focused after background');
-      setTimeout(() => forceReconnect(), 500);
+      connectionReadyRef.current = false;
+      setTimeout(() => forceReconnect(), 300);
       wasInBackground.current = false;
     }
   }, [forceReconnect]);
 
   // Set up all event listeners
   useEffect(() => {
-    // Initial connection test and start heartbeat
-    testConnection().then(isConnected => {
-      if (isConnected) {
-        logger.info('[ConnectionRecovery] Initial connection OK');
-        startHeartbeat();
-      } else {
-        logger.warn('[ConnectionRecovery] Initial connection failed, attempting recovery');
-        forceReconnect();
-      }
+    // Run initial connection check immediately
+    initialConnectionCheck().then(() => {
+      startHeartbeat();
     });
 
     // Set up event listeners
@@ -177,7 +225,6 @@ export function useConnectionRecovery() {
     window.addEventListener('focus', handleFocus);
 
     return () => {
-      // Cleanup
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
@@ -186,7 +233,7 @@ export function useConnectionRecovery() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [testConnection, startHeartbeat, forceReconnect, handleVisibilityChange, handlePageShow, handleOnline, handleFocus]);
+  }, [initialConnectionCheck, startHeartbeat, handleVisibilityChange, handlePageShow, handleOnline, handleFocus]);
 
   return {
     forceReconnect,
