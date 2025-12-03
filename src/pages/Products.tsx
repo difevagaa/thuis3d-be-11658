@@ -163,7 +163,7 @@ const Products = () => {
       supabase.removeChannel(rolesChannel);
       supabase.removeChannel(productRolesChannel);
     };
-  }, []);
+  }, [loadData]);
 
   const searchByProductCode = async () => {
     const code = productCodeSearch.trim().toUpperCase();
