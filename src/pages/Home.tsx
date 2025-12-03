@@ -584,61 +584,76 @@ const Home = () => {
   // Refs for managing load state
   const dataLoadedRef = useRef(false);
   const connectionCheckInProgressRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Wake up Supabase connection with retries
    */
   const wakeUpConnection = useCallback(async (): Promise<boolean> => {
+    // If already checking, wait for current check to finish instead of returning immediately
     if (connectionCheckInProgressRef.current) {
-      return false;
+      logger.info('[Home] Connection check already in progress, waiting...');
+      // Wait for the ongoing check to complete (max 30 seconds)
+      const startWait = Date.now();
+      while (connectionCheckInProgressRef.current && (Date.now() - startWait) < 30000) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      // Return current connection state
+      return connectionState === 'connected';
     }
     
     connectionCheckInProgressRef.current = true;
     const maxAttempts = 5;
     
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        setLoadingMessage(t('common:connection.connecting', { defaultValue: 'Conectando...' }) + ` (${attempt}/${maxAttempts})`);
-        logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT);
-        
-        const { error } = await supabase
-          .from('products')
-          .select('id')
-          .limit(1)
-          .abortSignal(controller.signal);
-        
-        clearTimeout(timeoutId);
-        
-        if (!error) {
-          logger.info(`[Home] Connection established on attempt ${attempt}`);
-          setConnectionState('connected');
-          connectionCheckInProgressRef.current = false;
-          return true;
+    try {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          setLoadingMessage(t('common:connection.connecting', { defaultValue: 'Conectando...' }) + ` (${attempt}/${maxAttempts})`);
+          logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT);
+          
+          const { error } = await supabase
+            .from('products')
+            .select('id')
+            .limit(1)
+            .abortSignal(controller.signal);
+          
+          clearTimeout(timeoutId);
+          
+          if (!error) {
+            logger.info(`[Home] Connection established on attempt ${attempt}`);
+            setConnectionState('connected');
+            setLoadingMessage('');
+            return true;
+          }
+          
+          logger.warn(`[Home] Attempt ${attempt} failed:`, error.message);
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            logger.warn(`[Home] Attempt ${attempt} timed out`);
+          } else {
+            logger.warn(`[Home] Attempt ${attempt} error:`, err.message);
+          }
         }
         
-        logger.warn(`[Home] Attempt ${attempt} failed:`, error.message);
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          logger.warn(`[Home] Attempt ${attempt} timed out`);
-        } else {
-          logger.warn(`[Home] Attempt ${attempt} error:`, err.message);
+        if (attempt < maxAttempts) {
+          const delay = 500 * attempt;
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
       
-      if (attempt < maxAttempts) {
-        const delay = 500 * attempt;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      logger.error('[Home] All connection attempts failed');
+      setConnectionState('failed');
+      setLoadError(true);
+      setLoadingMessage('');
+      return false;
+    } finally {
+      // Always reset the flag, even if an exception occurs
+      connectionCheckInProgressRef.current = false;
     }
-    
-    logger.error('[Home] All connection attempts failed');
-    setConnectionState('failed');
-    connectionCheckInProgressRef.current = false;
-    return false;
-  }, [t]);
+  }, [t, connectionState]);
 
   /**
    * Execute Supabase query with retry
@@ -851,27 +866,57 @@ const Home = () => {
     setLoadError(false);
     setLoadingMessage(t('common:connection.loading', { defaultValue: 'Cargando...' }));
     
-    // First verify connection is awake
-    const isConnected = await wakeUpConnection();
-    if (!isConnected) {
-      setLoadError(true);
-      setIsLoading(false);
-      return;
+    // Set a timeout to prevent infinite loading
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
     }
+    loadTimeoutRef.current = setTimeout(() => {
+      logger.error('[Home] Data loading timeout exceeded (60s)');
+      setIsLoading(false);
+      setLoadError(true);
+      setConnectionState('failed');
+      setLoadingMessage('');
+    }, 60000); // 60 second timeout
     
-    // Run all loads in parallel
-    await Promise.all([
-      loadFeaturedProducts(),
-      loadBanners(),
-      loadSections(),
-      loadQuickAccessCards(),
-      loadFeatures(),
-      loadOrderConfig()
-    ]);
-    
-    dataLoadedRef.current = true;
-    setLoadError(false);
-    setIsLoading(false);
+    try {
+      // First verify connection is awake
+      const isConnected = await wakeUpConnection();
+      if (!isConnected) {
+        if (loadTimeoutRef.current) {
+          clearTimeout(loadTimeoutRef.current);
+          loadTimeoutRef.current = null;
+        }
+        setLoadError(true);
+        setIsLoading(false);
+        setLoadingMessage('');
+        return;
+      }
+      
+      // Run all loads in parallel
+      await Promise.all([
+        loadFeaturedProducts(),
+        loadBanners(),
+        loadSections(),
+        loadQuickAccessCards(),
+        loadFeatures(),
+        loadOrderConfig()
+      ]);
+      
+      dataLoadedRef.current = true;
+      setLoadError(false);
+      setConnectionState('connected');
+    } catch (error) {
+      logger.error('[Home] Error loading data:', error);
+      setLoadError(true);
+      setConnectionState('failed');
+    } finally {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
   }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig, wakeUpConnection, t]);
 
   // Listen for theme mode changes to update section background colors
@@ -948,6 +993,9 @@ const Home = () => {
     }, loadOrderConfig).subscribe();
 
     return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
       authSubscription.unsubscribe();
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bannersChannel);
@@ -1328,29 +1376,42 @@ const Home = () => {
   // Show error state with retry button
   if (connectionState === 'failed' || loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4 p-8">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center space-y-6 max-w-md">
           <div className="text-destructive mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-2xl font-semibold text-foreground">
             {t('common:connection.error', { defaultValue: 'Error de conexión' })}
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
+          <p className="text-muted-foreground">
             {t('common:connection.errorMessage', { defaultValue: 'No se pudo conectar al servidor. Por favor, verifica tu conexión a internet e intenta de nuevo.' })}
           </p>
-          <Button 
-            onClick={() => {
-              setConnectionState('connecting');
-              setLoadError(false);
-              reloadAllData();
-            }}
-            className="mt-4"
-          >
-            {t('common:connection.retry', { defaultValue: 'Reintentar' })}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button 
+              onClick={() => {
+                setConnectionState('connecting');
+                setLoadError(false);
+                setIsLoading(true);
+                reloadAllData();
+              }}
+              className="w-full sm:w-auto"
+            >
+              {t('common:connection.retry', { defaultValue: 'Reintentar' })}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="w-full sm:w-auto"
+            >
+              {t('common:connection.reload', { defaultValue: 'Recargar página' })}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            {t('common:connection.helpText', { defaultValue: 'Si el problema persiste, intenta recargar la página o contacta con soporte.' })}
+          </p>
         </div>
       </div>
     );
