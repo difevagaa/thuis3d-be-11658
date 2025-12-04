@@ -17,6 +17,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
 import { createChannel, removeChannels } from "@/lib/channelManager";
+import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -589,6 +590,9 @@ const Home = () => {
   // Loading state - ULTRA SIMPLIFIED
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
+  
+  // CRITICAL: Protect against infinite loading - force clear after 30 seconds
+  useLoadingTimeout(isLoading, setIsLoading, 30000);
   
   // Track dark mode state
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
