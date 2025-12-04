@@ -303,7 +303,7 @@ export default function Pages() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 min-w-[100px] h-8 text-xs"
                         onClick={() => window.open(`/page/${page.slug}`, '_blank')}
                       >
                         Ver Página
@@ -314,7 +314,7 @@ export default function Pages() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1 h-8 text-xs"
+                          className="flex-1 min-w-[100px] h-8 text-xs"
                           onClick={() => handleEdit(page)}
                         >
                           <Pencil className="h-3 w-3 mr-1" />
