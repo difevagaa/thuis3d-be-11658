@@ -232,6 +232,15 @@ body {
     box-shadow: var(--shadow-glow);
   }
   
+  /* Amazon-style shadows */
+  .shadow-amazon {
+    box-shadow: 0 2px 5px 0 rgba(0,0,0,.1);
+  }
+  
+  .shadow-amazon-hover {
+    box-shadow: 0 4px 10px 0 rgba(0,0,0,.15);
+  }
+  
   /* Text gradient */
   .text-gradient-primary {
     background: var(--gradient-primary);
@@ -288,6 +297,16 @@ body {
     background-image: radial-gradient(circle, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     background-size: 20px 20px;
     background-color: hsl(var(--background));
+  }
+  
+  /* Amazon-style hover effects */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px 0 rgba(0,0,0,.15);
   }
 }
 
