@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Clock, Package, MessageCircle, Eye, TrendingUp as TrendingUpIcon, Wallet } from "lucide-react";
+import { RefreshCw, Clock, Package, MessageCircle, Eye, TrendingUp as TrendingUpIcon, Wallet, ShoppingCart, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
 import { logger } from '@/lib/logger';
 import { Badge } from "@/components/ui/badge";
@@ -225,15 +225,17 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8 p-6 bg-gradient-to-br from-background via-primary/5 to-accent/5 min-h-screen">
-      {/* Header con indicador de actualización */}
-      <div className="flex items-center justify-between p-6 rounded-2xl bg-white shadow-lg border-2 border-primary/20">
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
+      {/* Professional Header */}
+      <div className="flex items-center justify-between p-6 rounded-xl bg-white shadow-md border border-gray-200">
         <div>
-          <h1 className="text-4xl font-bold text-primary">💼 Dashboard Principal</h1>
-          <p className="text-foreground font-medium mt-2">✨ Resumen de tu negocio en tiempo real</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Dashboard Principal
+          </h1>
+          <p className="text-gray-600 font-medium mt-2">Resumen completo de tu negocio en tiempo real</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
             <Clock className="h-4 w-4" />
             <span>Actualizado: {lastUpdate.toLocaleTimeString('es-ES')}</span>
           </div>
@@ -242,7 +244,7 @@ export default function AdminDashboard() {
             size="sm"
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-primary/20 hover:border-primary hover:bg-primary/5"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Actualizando...' : 'Actualizar'}
@@ -250,278 +252,272 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Grid de estadísticas principales */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Grid de estadísticas principales con nuevo diseño */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Ingresos Totales */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200/50 hover:border-green-300"
           onClick={() => navigate('/admin/pedidos')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-emerald-700 mb-2">💰 Ingresos Totales</CardTitle>
-              <div className="text-4xl font-bold text-green-600">€{stats.totalRevenue.toFixed(2)}</div>
-              <p className="text-sm font-semibold text-green-700 mt-2">
-                📦 De {stats.totalOrders} pedidos pagados
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: 'float 18s ease-in-out infinite' }}>
-              💵
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-green-700">Ingresos Totales</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">💰</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">€{stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs font-semibold text-green-700 mt-2 flex items-center gap-1">
+              <Package className="h-3 w-3" />
+              De {stats.totalOrders} pedidos pagados
+            </p>
+          </CardContent>
         </Card>
 
-        {/* Beneficio Neto - AHORA CON ENLACE */}
+        {/* Beneficio Neto */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-blue-50 to-cyan-100 border-2 border-blue-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200/50 hover:border-blue-300"
           onClick={() => navigate('/admin/facturas')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-blue-700 mb-2">📈 Beneficio Neto</CardTitle>
-              <div className={`text-4xl font-bold ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                €{stats.netProfit.toFixed(2)}
-              </div>
-              <p className="text-sm font-semibold text-blue-700 mt-2">
-                💸 Gastos: €{stats.totalExpenses.toFixed(2)}
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: 'pulse-slow 3s ease-in-out infinite' }}>
-              {stats.netProfit >= 0 ? '🎯' : '⚠️'}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-blue-700">Beneficio Neto</CardTitle>
+            <div className={`w-10 h-10 rounded-lg ${stats.netProfit >= 0 ? 'bg-blue-500' : 'bg-red-500'} flex items-center justify-center shadow-lg`}>
+              <span className="text-2xl">{stats.netProfit >= 0 ? '📈' : '📉'}</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className={`text-3xl font-bold ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              €{stats.netProfit.toFixed(2)}
+            </div>
+            <p className="text-xs font-semibold text-blue-700 mt-2">
+              Gastos: €{stats.totalExpenses.toFixed(2)}
+            </p>
+          </CardContent>
         </Card>
 
         {/* Nuevos Clientes */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-purple-50 to-pink-100 border-2 border-purple-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200/50 hover:border-purple-300"
           onClick={() => navigate('/admin/usuarios')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-purple-700 mb-2">👥 Nuevos Clientes</CardTitle>
-              <div className="text-4xl font-bold text-purple-600">{stats.newCustomers}</div>
-              <p className="text-sm font-semibold text-purple-700 mt-2">
-                📅 Último mes
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: 'smooth-bounce 15s ease-in-out infinite' }}>
-              🎉
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-purple-700">Nuevos Clientes</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">👥</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-600">{stats.newCustomers}</div>
+            <p className="text-xs font-semibold text-purple-700 mt-2">
+              Último mes
+            </p>
+          </CardContent>
         </Card>
 
         {/* Presupuestos Pendientes */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-orange-50 to-yellow-100 border-2 border-orange-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200/50 hover:border-orange-300"
           onClick={() => navigate('/admin/cotizaciones')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-orange-700 mb-2">📋 Presupuestos</CardTitle>
-              <div className="text-4xl font-bold text-orange-600">{stats.pendingQuotes}</div>
-              <p className="text-sm font-semibold text-orange-700 mt-2">
-                ⏰ Requieren atención
-              </p>
-              {stats.pendingQuotes > 0 && (
-                <Badge className="mt-2 bg-orange-500 text-white animate-pulse">¡Urgente!</Badge>
-              )}
-            </div>
-            <div className="text-6xl" style={{ animation: 'gentle-swing 20s ease-in-out infinite' }}>
-              📄
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-orange-700">Presupuestos</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">📋</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{stats.pendingQuotes}</div>
+            <p className="text-xs font-semibold text-orange-700 mt-2">
+              Requieren atención
+            </p>
+            {stats.pendingQuotes > 0 && (
+              <Badge className="mt-2 bg-orange-500 text-white animate-pulse">¡Urgente!</Badge>
+            )}
+          </CardContent>
         </Card>
 
-        {/* Último Pedido - MEJORADO CON MÁS INFORMACIÓN */}
+        {/* Último Pedido */}
         <Card 
-          className="cursor-pointer hover:shadow-lg hover:scale-102 transition-all duration-300 col-span-2 bg-gradient-to-br from-indigo-50 to-blue-100 border-2 border-indigo-300"
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 col-span-2 bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200/50 hover:border-indigo-300"
           onClick={() => navigate('/admin/pedidos')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex-1">
-              <CardTitle className="text-sm font-bold text-indigo-700 mb-2">📆 Último Pedido</CardTitle>
+              <CardTitle className="text-sm font-bold text-indigo-700 mb-2">Último Pedido</CardTitle>
               {stats.lastOrderDate ? (
                 <>
-                  <div className="text-3xl font-bold text-indigo-600">
+                  <div className="text-2xl font-bold text-indigo-600">
                     {stats.lastOrderDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
-                  <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-3 mt-2">
                     {stats.lastOrderNumber && (
-                      <Badge variant="secondary" className="bg-indigo-200 text-indigo-800">
+                      <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
                         #{stats.lastOrderNumber}
                       </Badge>
                     )}
-                    <span className="text-lg font-bold text-green-600">
+                    <span className="text-base font-bold text-green-600">
                       €{stats.lastOrderTotal.toFixed(2)}
                     </span>
-                    <span className="text-sm text-indigo-600">
+                    <span className="text-xs text-indigo-600">
                       {stats.lastOrderDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   {stats.pendingOrders > 0 && (
-                    <div className="mt-2">
-                      <Badge className="bg-yellow-500 text-white">
-                        <Package className="h-3 w-3 mr-1" />
-                        {stats.pendingOrders} pedidos pendientes de pago
-                      </Badge>
-                    </div>
+                    <Badge className="mt-2 bg-yellow-500 text-white">
+                      <Package className="h-3 w-3 mr-1" />
+                      {stats.pendingOrders} pedidos pendientes
+                    </Badge>
                   )}
                 </>
               ) : (
-                <div className="text-2xl font-bold text-indigo-400">❌ Sin pedidos aún</div>
+                <div className="text-xl font-bold text-indigo-400">Sin pedidos aún</div>
               )}
             </div>
-            <div className="text-6xl" style={{ animation: 'smooth-bounce 16s ease-in-out infinite' }}>
-              🛍️
+            <div className="w-16 h-16 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg">
+              <span className="text-4xl">🛍️</span>
             </div>
           </CardHeader>
         </Card>
 
-        {/* Actividad en Tiempo Real - MEJORADO */}
+        {/* Actividad en Tiempo Real */}
         <Card 
-          className="col-span-2 bg-gradient-to-br from-teal-50 to-green-100 border-2 border-teal-300 cursor-pointer hover:shadow-lg transition-all"
+          className="col-span-2 bg-gradient-to-br from-teal-50 to-green-50 border-2 border-teal-200/50 hover:border-teal-300 cursor-pointer hover:shadow-lg transition-all"
           onClick={() => navigate('/admin/visitantes')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-bold text-teal-700 mb-2">⚡ Actividad en Tiempo Real</CardTitle>
-                <div 
-                  className="h-3 w-3 rounded-full bg-green-500 animate-pulse" 
-                />
+              <div className="flex items-center gap-2 mb-2">
+                <CardTitle className="text-sm font-bold text-teal-700">Actividad en Tiempo Real</CardTitle>
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               </div>
-              <div className="text-4xl font-bold text-teal-600">
+              <div className="text-2xl font-bold text-teal-600">
                 {stats.onlineVisitors > 0 
-                  ? `✅ ${stats.onlineVisitors} ${stats.onlineVisitors === 1 ? 'Visitante' : 'Visitantes'}` 
-                  : '😴 Sin visitantes activos'}
+                  ? `${stats.onlineVisitors} ${stats.onlineVisitors === 1 ? 'Visitante' : 'Visitantes'}` 
+                  : 'Sin visitantes activos'}
               </div>
-              <div className="flex flex-wrap items-center gap-4 mt-3">
-                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-                  <Eye className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-bold text-green-700">
-                    {stats.onlineVisitors} en línea
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 bg-teal-100 px-3 py-1 rounded-full">
-                  <TrendingUpIcon className="h-4 w-4 text-teal-600" />
-                  <span className="text-sm font-semibold text-teal-700">
-                    {stats.visitorsToday} visitantes hoy
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="text-6xl" style={{ animation: stats.onlineVisitors > 0 ? 'flame 8s ease-in-out infinite' : 'none' }}>
-              {stats.onlineVisitors > 0 ? '🔥' : '💤'}
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Mensajes de Chat - MEJORADO */}
-        <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-cyan-50 to-blue-100 border-2 border-cyan-300"
-          onClick={() => navigate('/admin/messages')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-cyan-700 mb-2">💬 Mensajes de Chat</CardTitle>
-              <div className="text-4xl font-bold text-cyan-600">
-                {stats.unreadMessages > 0 ? `🔔 ${stats.unreadMessages}` : '✅ 0'}
-              </div>
-              <p className="text-sm font-semibold text-cyan-700 mt-2">
-                {stats.unreadMessages > 0 
-                  ? `${stats.unreadMessages} sin leer de ${stats.totalMessages}` 
-                  : `${stats.totalMessages} mensajes totales`}
-              </p>
-              {stats.unreadMessages > 0 && (
-                <Badge className="mt-2 bg-red-500 text-white animate-pulse">
-                  <MessageCircle className="h-3 w-3 mr-1" />
-                  ¡Responder!
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge className="bg-green-100 text-green-700 border-green-300">
+                  <Eye className="h-3 w-3 mr-1" />
+                  {stats.onlineVisitors} en línea
                 </Badge>
-              )}
+                <Badge className="bg-teal-100 text-teal-700 border-teal-300">
+                  <TrendingUpIcon className="h-3 w-3 mr-1" />
+                  {stats.visitorsToday} hoy
+                </Badge>
+              </div>
             </div>
-            <div className="text-6xl" style={{ animation: stats.unreadMessages > 0 ? 'smooth-bounce 10s ease-in-out infinite' : 'none' }}>
-              {stats.unreadMessages > 0 ? '📬' : '📭'}
+            <div className="w-16 h-16 rounded-xl bg-teal-500 flex items-center justify-center shadow-lg">
+              <span className="text-4xl">{stats.onlineVisitors > 0 ? '🔥' : '💤'}</span>
             </div>
           </CardHeader>
         </Card>
 
-        {/* Chat en Vivo - MEJORADO */}
+        {/* Mensajes de Chat */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-rose-50 to-pink-100 border-2 border-rose-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-200/50 hover:border-cyan-300"
           onClick={() => navigate('/admin/messages')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-rose-700 mb-2">📨 Conversaciones</CardTitle>
-              <div className="text-2xl font-bold text-rose-600">
-                {stats.activeConversations > 0 ? `${stats.activeConversations} activas` : 'Sin actividad'}
-              </div>
-              <p className="text-sm font-semibold text-rose-700 mt-2">
-                💡 Últimas 24 horas
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: stats.activeConversations > 0 ? 'gentle-swing 18s ease-in-out infinite' : 'none' }}>
-              {stats.activeConversations > 0 ? '💌' : '📭'}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-cyan-700">Mensajes</CardTitle>
+            <div className={`w-10 h-10 rounded-lg ${stats.unreadMessages > 0 ? 'bg-cyan-500' : 'bg-gray-400'} flex items-center justify-center shadow-lg`}>
+              <span className="text-2xl">{stats.unreadMessages > 0 ? '💬' : '📭'}</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-cyan-600">
+              {stats.unreadMessages}
+            </div>
+            <p className="text-xs font-semibold text-cyan-700 mt-2">
+              {stats.unreadMessages > 0 
+                ? `Sin leer de ${stats.totalMessages}` 
+                : `${stats.totalMessages} totales`}
+            </p>
+            {stats.unreadMessages > 0 && (
+              <Badge className="mt-2 bg-red-500 text-white animate-pulse">
+                <MessageCircle className="h-3 w-3 mr-1" />
+                ¡Responder!
+              </Badge>
+            )}
+          </CardContent>
         </Card>
 
-        {/* Nueva tarjeta de Productos */}
+        {/* Conversaciones */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-slate-50 to-gray-100 border-2 border-slate-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-rose-50 to-pink-50 border-2 border-rose-200/50 hover:border-rose-300"
+          onClick={() => navigate('/admin/messages')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-rose-700">Conversaciones</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">💌</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-rose-600">
+              {stats.activeConversations}
+            </div>
+            <p className="text-xs font-semibold text-rose-700 mt-2">
+              Activas (24h)
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Productos */}
+        <Card 
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-slate-50 to-gray-50 border-2 border-slate-200/50 hover:border-slate-300"
           onClick={() => navigate('/admin/productos')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-700 mb-2">🏷️ Productos</CardTitle>
-              <div className="text-4xl font-bold text-slate-600">{stats.totalProducts}</div>
-              <p className="text-sm font-semibold text-slate-700 mt-2">
-                📦 En catálogo
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: 'float 20s ease-in-out infinite' }}>
-              🛒
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-slate-700">Productos</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-slate-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">🏷️</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-600">{stats.totalProducts}</div>
+            <p className="text-xs font-semibold text-slate-700 mt-2">
+              En catálogo
+            </p>
+          </CardContent>
         </Card>
 
-        {/* Nueva tarjeta de Gastos */}
+        {/* Gastos */}
         <Card 
-          className="cursor-pointer hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-to-br from-red-50 to-rose-100 border-2 border-red-300"
+          className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200/50 hover:border-red-300"
           onClick={() => navigate('/admin/facturas')}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-bold text-red-700 mb-2">💸 Gastos Totales</CardTitle>
-              <div className="text-4xl font-bold text-red-600">€{stats.totalExpenses.toFixed(2)}</div>
-              <p className="text-sm font-semibold text-red-700 mt-2">
-                <Wallet className="h-4 w-4 inline mr-1" />
-                Ver facturas
-              </p>
-            </div>
-            <div className="text-6xl" style={{ animation: 'gentle-swing 15s ease-in-out infinite' }}>
-              📊
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold text-red-700">Gastos Totales</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl">💸</span>
             </div>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">€{stats.totalExpenses.toFixed(2)}</div>
+            <p className="text-xs font-semibold text-red-700 mt-2">
+              <Wallet className="h-3 w-3 inline mr-1" />
+              Ver facturas
+            </p>
+          </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Pedidos Recientes - MEJORADO */}
+        {/* Pedidos Recientes */}
         <Card 
-          className="cursor-pointer hover:shadow-lg transition-all bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-pink-300"
+          className="cursor-pointer hover:shadow-lg transition-all bg-white border-2 border-gray-200 hover:border-primary/50"
           onClick={() => navigate('/admin/pedidos')}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl flex items-center gap-2 text-pink-700">
-                  🛒 Pedidos Recientes
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5 text-primary" />
+                  Pedidos Recientes
                 </CardTitle>
-                <CardDescription className="font-medium text-pink-600">📊 Últimos 5 pedidos realizados</CardDescription>
+                <CardDescription>Últimos 5 pedidos realizados</CardDescription>
               </div>
-              <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-300">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                 {recentOrders.length} pedidos
               </Badge>
             </div>
@@ -532,16 +528,16 @@ export default function AdminDashboard() {
                 {recentOrders.map((order) => (
                   <div 
                     key={order.id} 
-                    className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-pink-400 hover:shadow-md cursor-pointer transition-all duration-200 bg-white"
+                    className="flex items-center justify-between p-4 border-2 rounded-lg hover:border-primary/40 hover:bg-gray-50 cursor-pointer transition-all duration-200"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/admin/pedidos/${order.id}`);
                     }}
                   >
                     <div className="flex-1">
-                      <p className="font-bold text-base text-pink-700">📦 {order.order_number}</p>
-                      <p className="text-sm font-medium text-gray-700">
-                        👤 {order.profiles?.full_name || 'Cliente'}
+                      <p className="font-bold text-base">{order.order_number}</p>
+                      <p className="text-sm font-medium text-gray-600">
+                        {order.profiles?.full_name || 'Cliente'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(order.created_at).toLocaleString('es-ES', { 
@@ -568,7 +564,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600 font-medium">😔 No hay pedidos recientes</p>
+                <p className="text-gray-600 font-medium">No hay pedidos recientes</p>
                 <Button 
                   variant="outline" 
                   className="mt-4"
@@ -582,55 +578,57 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Gráfico de Ingresos vs Gastos */}
-        <Card className="bg-gradient-to-br from-violet-50 to-purple-100 border-2 border-violet-300">
+        <Card className="bg-white border-2 border-gray-200">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2 text-violet-700">
-              📊 Ingresos vs Gastos
+            <CardTitle className="text-xl flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Ingresos vs Gastos
             </CardTitle>
-            <CardDescription className="font-medium text-violet-600">💰 Últimos 6 meses</CardDescription>
+            <CardDescription>Últimos 6 meses</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" stroke="#6b7280" style={{ fontWeight: 600 }} />
-                <YAxis stroke="#6b7280" style={{ fontWeight: 600 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: 12, fontWeight: 600 }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: 12, fontWeight: 600 }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: '#ffffff',
-                    border: '2px solid #8b5cf6',
-                    borderRadius: '12px',
+                    border: '2px solid #f97316',
+                    borderRadius: '8px',
                     fontWeight: 600
                   }}
                   formatter={(value: number, name: string) => [`€${value.toFixed(2)}`, name]}
                 />
                 <Legend />
-                <Bar dataKey="ingresos" fill="#10b981" name="💰 Ingresos" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="gastos" fill="#ef4444" name="💸 Gastos" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="ingresos" fill="#10b981" name="Ingresos" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="gastos" fill="#ef4444" name="Gastos" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
         {/* Gráfico de Evolución de Pedidos */}
-        <Card className="md:col-span-2 bg-gradient-to-br from-amber-50 to-orange-100 border-2 border-amber-300">
+        <Card className="md:col-span-2 bg-white border-2 border-gray-200">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2 text-amber-700">
-              📈 Evolución de Pedidos
+            <CardTitle className="text-xl flex items-center gap-2">
+              <TrendingUpIcon className="h-5 w-5 text-primary" />
+              Evolución de Pedidos
             </CardTitle>
-            <CardDescription className="font-medium text-amber-600">🚀 Número de pedidos por mes</CardDescription>
+            <CardDescription>Número de pedidos por mes</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" stroke="#6b7280" style={{ fontWeight: 600 }} />
-                <YAxis stroke="#6b7280" style={{ fontWeight: 600 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: 12, fontWeight: 600 }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: 12, fontWeight: 600 }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: '#ffffff',
-                    border: '2px solid #f59e0b',
-                    borderRadius: '12px',
+                    border: '2px solid #f97316',
+                    borderRadius: '8px',
                     fontWeight: 600
                   }}
                 />
@@ -638,11 +636,11 @@ export default function AdminDashboard() {
                 <Line
                   type="monotone" 
                   dataKey="pedidos" 
-                  stroke="#f59e0b" 
-                  strokeWidth={4} 
-                  name="📦 Pedidos"
-                  dot={{ fill: '#f59e0b', r: 8, strokeWidth: 2, stroke: '#fff' }}
-                  activeDot={{ r: 10, fill: '#f59e0b', strokeWidth: 3, stroke: '#fff' }}
+                  stroke="#f97316" 
+                  strokeWidth={3} 
+                  name="Pedidos"
+                  dot={{ fill: '#f97316', r: 6, strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 8, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }}
                 />
               </LineChart>
             </ResponsiveContainer>
