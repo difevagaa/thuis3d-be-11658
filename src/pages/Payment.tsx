@@ -14,7 +14,8 @@ import {
   calculateOrderTotals,
   generateOrderNotes,
   updateGiftCardBalance,
-  getOrCreateOrderNumber
+  getOrCreateOrderNumber,
+  generateOrderNumber
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
@@ -368,6 +369,11 @@ export default function Payment() {
           orderNumber = await getOrCreateOrderNumber(sessionId);
         }
         
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
+        }
+        
         // Transferencia bancaria: Guardar info y redirigir a instrucciones (creará pedido allí)
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
@@ -384,7 +390,7 @@ export default function Payment() {
         
         navigate("/pago-instrucciones", { 
           state: { 
-            orderNumber: orderNumber || `TEMP-${Date.now()}`,
+            orderNumber: orderNumber,
             method: "bank_transfer",
             total,
             isPending: true
@@ -403,6 +409,11 @@ export default function Payment() {
         
         if (sessionId) {
           orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
         }
         
         sessionStorage.setItem("pending_card_order", JSON.stringify({
@@ -430,6 +441,11 @@ export default function Payment() {
         
         if (sessionId) {
           orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
         }
         
         sessionStorage.setItem("pending_revolut_order", JSON.stringify({

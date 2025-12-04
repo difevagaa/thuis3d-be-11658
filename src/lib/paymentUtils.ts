@@ -13,7 +13,7 @@ export interface ShippingInfoWithOrderNumber {
 
 /**
  * Generates a unique order number in the same format as the database function
- * Format: L1N1L2N2L3N3 (e.g., A1B2C3)
+ * Format: Letter-Number-Letter-Number-Letter-Number (e.g., X4H8S9, A1B2C3)
  * This ensures order numbers are consistent throughout the payment flow
  * 
  * Note: This mirrors the database function generate_order_number() defined in
