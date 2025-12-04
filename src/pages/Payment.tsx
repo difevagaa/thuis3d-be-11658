@@ -25,7 +25,6 @@ export default function Payment() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [processing, setProcessing] = useState(false);
   const [shippingCost, setShippingCost] = useState<number>(0);
-  const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [paymentConfig, setPaymentConfig] = useState({
     bank_transfer_enabled: true,
     card_enabled: true,
@@ -48,7 +47,7 @@ export default function Payment() {
       // Leer solo las claves de configuración de pago que usamos en todo el sistema
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
-        'paypal_email', 'revolut_link', 'company_info', 'payment_images'
+        'paypal_email', 'revolut_link', 'company_info'
       ];
 
       const { data } = await supabase
@@ -59,13 +58,7 @@ export default function Payment() {
       if (data && data.length > 0) {
         const settings: any = {};
         data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else if (setting.setting_key.includes('enabled')) {
+          if (setting.setting_key.includes('enabled')) {
             settings[setting.setting_key] = setting.setting_value === "true";
           } else {
             settings[setting.setting_key] = setting.setting_value;
@@ -242,11 +235,11 @@ export default function Payment() {
           return;
         }
 
-        // Update invoice payment status and method - TODOS los pagos en pending
+        // Update invoice payment status and method
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
+            payment_status: method === "card" ? "paid" : "pending",
             payment_method: method
           })
           .eq("id", invoiceData.invoiceId)
@@ -257,7 +250,7 @@ export default function Payment() {
         // Clear invoice payment data
         sessionStorage.removeItem("invoice_payment");
 
-        toast.success(t('payment:messages.paymentRegistered'));
+        toast.success(method === "card" ? t('payment:messages.invoicePaid') : t('payment:messages.paymentRegistered'));
 
         // Navigate based on payment method
         if (method === "bank_transfer") {
@@ -346,26 +339,29 @@ export default function Payment() {
       const shipping = shippingCost; // Costo de envío calculado dinámicamente
       const total = calculateTotal(); // subtotal + IVA + envío
 
-      // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut tienen comportamientos especiales
+      // Para transferencia bancaria, solo guardar info y redirigir a instrucciones
       if (method === "bank_transfer") {
-        // Transferencia bancaria: Guardar info y redirigir a instrucciones (creará pedido allí)
+        
+        // Guardar información temporal en sessionStorage
+        // CRÍTICO: Incluir shipping en el pending_order
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
           shippingInfo,
-          total,
+          total, // Ya incluye subtotal + tax + shipping
           subtotal,
           tax,
-          shipping,
+          shipping, // CRÍTICO: Guardar costo de envío
           method: "bank_transfer"
         }));
 
         toast.success(t('payment:messages.redirectingToInstructions'));
         
+        // Navegar inmediatamente
         navigate("/pago-instrucciones", { 
           state: { 
             orderNumber: `TEMP-${Date.now()}`,
             method: "bank_transfer",
-            total,
+            total, // Ya incluye subtotal + tax
             isPending: true
           } 
         });
@@ -374,186 +370,174 @@ export default function Payment() {
         return;
       }
 
-      // Tarjeta de crédito: Redirigir a página intermedia
-      if (method === "card") {
-        sessionStorage.setItem("pending_card_order", JSON.stringify({
-          cartItems,
-          shippingInfo,
-          total,
-          subtotal,
-          tax,
-          shipping
-        }));
+      // Para otros métodos de pago, crear el pedido normalmente
 
-        toast.success("Redirigiendo a página de pago...");
-        navigate("/pago-tarjeta");
-        
-        setProcessing(false);
-        return;
+      // Get saved gift card from cart if applied
+      const savedGiftCard = sessionStorage.getItem("applied_gift_card");
+      let giftCardDiscount = 0;
+      let giftCardData = null;
+      
+      if (savedGiftCard) {
+        giftCardData = JSON.parse(savedGiftCard);
+        giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
-      // Revolut: Redirigir a página intermedia
-      if (method === "revolut") {
-        sessionStorage.setItem("pending_revolut_order", JSON.stringify({
-          cartItems,
-          shippingInfo,
-          total,
-          subtotal,
-          tax,
-          shipping
-        }));
+      // CRÍTICO: El total final = total (ya incluye IVA) - descuentos
+      const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
 
-        toast.success("Redirigiendo a página de pago...");
-        navigate("/pago-revolut");
-        
-        setProcessing(false);
-        return;
+      // Preparar notas del pedido
+      let orderNotes = giftCardData ? `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})` : null;
+      
+      // Si es compra de tarjeta regalo, agregar info a las notas
+      if (isGiftCardPurchase) {
+        const giftCardItem = cartItems.find(item => item.isGiftCard);
+        if (giftCardItem) {
+          orderNotes = `Tarjeta Regalo: ${giftCardItem.giftCardCode}\nPara: ${giftCardItem.giftCardRecipient}\nDe: ${giftCardItem.giftCardSender}`;
+        }
       }
 
-      // PayPal: Crear pedido inmediatamente y redirigir (SOLO PARA PAYPAL)
-      if (method === "paypal") {
-        // Get saved gift card from cart if applied
-        const savedGiftCard = sessionStorage.getItem("applied_gift_card");
-        let giftCardDiscount = 0;
-        let giftCardData = null;
-        
-        if (savedGiftCard) {
-          giftCardData = JSON.parse(savedGiftCard);
-          giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
-        }
+      // Create order (user is guaranteed to be authenticated at this point)
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          subtotal,
+          tax,
+          shipping,
+          discount: giftCardDiscount,
+          total: finalTotal,
+          payment_method: method,
+          payment_status: method === "card" ? "paid" : "pending",
+          shipping_address: JSON.stringify(shippingInfo),
+          billing_address: JSON.stringify(shippingInfo),
+          notes: orderNotes
+        })
+        .select()
+        .single();
 
-        const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+      if (orderError) throw orderError;
 
-        // Preparar notas del pedido
-        const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
+      // Update gift card balance if used
+      if (giftCardData && giftCardDiscount > 0) {
+        await updateGiftCardBalance(
+          giftCardData.id,
+          giftCardData.current_balance - giftCardDiscount
+        );
+        sessionStorage.removeItem("applied_gift_card");
+      }
 
-        // Create order - SIEMPRE con payment_status: "pending"
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            user_id: user.id,
-            subtotal,
-            tax,
-            shipping,
-            discount: giftCardDiscount,
-            total: finalTotal,
-            payment_method: "paypal",
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
-            shipping_address: JSON.stringify(shippingInfo),
-            billing_address: JSON.stringify(shippingInfo),
-            notes: orderNotes
-          })
-          .select()
-          .single();
+      // Create order items using utility function
+      const orderItemsData = convertCartToOrderItems(cartItems, order.id);
+      
+      logger.debug('Order items prepared', { count: orderItemsData.length });
 
-        if (orderError) throw orderError;
+      if (!cartItems || cartItems.length === 0) {
+        logger.error('CRITICAL: cartItems is empty');
+        throw new Error('El carrito está vacío. No se pueden crear items del pedido.');
+      }
 
-        // Update gift card balance if used
-        if (giftCardData && giftCardDiscount > 0) {
-          await updateGiftCardBalance(
-            giftCardData.id,
-            giftCardData.current_balance - giftCardDiscount
-          );
-          sessionStorage.removeItem("applied_gift_card");
-        }
+      if (orderItemsData.length === 0) {
+        logger.error('CRITICAL: orderItemsData is empty');
+        throw new Error('Error preparando items del pedido.');
+      }
 
-        // Create order items using utility function
-        const orderItemsData = convertCartToOrderItems(cartItems, order.id);
-        const insertedItems = await createOrderItems(orderItemsData);
-        
-        if (!insertedItems || insertedItems.length === 0) {
-          logger.error('Failed to create order items');
-          toast.error(t('payment:messages.errorCreatingOrderItems'));
-          throw new Error(t('payment:messages.errorCreatingOrderItems'));
-        }
+      const insertedItems = await createOrderItems(orderItemsData);
+      
+      if (!insertedItems || insertedItems.length === 0) {
+        logger.error('Failed to create order items');
+        toast.error(t('payment:messages.errorCreatingOrderItems'));
+        throw new Error(t('payment:messages.errorCreatingOrderItems'));
+      }
 
-        logger.info('Order items created successfully', { 
-          orderId: order.id, 
-          itemCount: insertedItems.length 
+      logger.info('Order items created successfully', { 
+        orderId: order.id, 
+        itemCount: insertedItems.length 
+      });
+
+      // Create invoice automatically (el trigger se encarga de la notificación)
+      try {
+        // CRÍTICO: El número de factura debe ser igual al número de pedido
+        await supabase.from("invoices").insert({
+          invoice_number: order.order_number, // Usar el mismo número del pedido
+          user_id: user?.id || null,
+          order_id: order.id,
+          subtotal: subtotal,
+          tax: tax,
+          shipping: shipping, // CRÍTICO: Incluir el costo de envío
+          total: total,
+          payment_method: method,
+          payment_status: method === "card" ? "paid" : "pending",
+          issue_date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: `Factura generada automáticamente para el pedido ${order.order_number}`
         });
+      } catch (invoiceError) {
+        logger.error('Error creating invoice:', invoiceError);
+      }
 
-        // Create invoice automatically
+      // Enviar correo de confirmación al cliente
+      if (user?.id) {
         try {
-          await supabase.from("invoices").insert({
-            invoice_number: order.order_number,
-            user_id: user.id,
-            order_id: order.id,
-            subtotal: subtotal,
-            tax: tax,
-            shipping: shipping,
-            total: finalTotal,
-            payment_method: "paypal",
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
-            issue_date: new Date().toISOString(),
-            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            notes: `Factura generada automáticamente para el pedido ${order.order_number}`
-          });
-        } catch (invoiceError) {
-          logger.error('Error creating invoice:', invoiceError);
-        }
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', user.id)
+            .single();
 
-        // Enviar correo de confirmación al cliente
-        if (user?.id) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('email, full_name')
-              .eq('id', user.id)
-              .single();
-
-            if (profile?.email) {
-              await supabase.functions.invoke('send-order-confirmation', {
-                body: {
-                  to: profile.email,
-                  customer_name: profile.full_name || 'Cliente',
-                  order_number: order.order_number,
-                  subtotal: subtotal,
-                  tax: tax,
-                  shipping: shipping,
-                  discount: giftCardDiscount,
-                  total: finalTotal,
-                  items: cartItems.map(item => ({
-                    product_name: item.name,
-                    quantity: item.quantity,
-                    unit_price: item.price
-                  }))
-                }
-              });
-            }
-          } catch (emailError) {
-            logger.error('Error sending order confirmation email:', emailError);
+          if (profile?.email) {
+            await supabase.functions.invoke('send-order-confirmation', {
+              body: {
+                to: profile.email,
+                customer_name: profile.full_name || 'Cliente',
+                order_number: order.order_number,
+                subtotal: subtotal,
+                tax: tax,
+                shipping: shipping,
+                discount: giftCardDiscount,
+                total: finalTotal,
+                items: cartItems.map(item => ({
+                  product_name: item.name,
+                  quantity: item.quantity,
+                  unit_price: item.price
+                }))
+              }
+            });
           }
+        } catch (emailError) {
+          logger.error('Error sending order confirmation email:', emailError);
         }
+      }
 
-        // Notificar a administradores
-        try {
-          await supabase.functions.invoke('send-admin-notification', {
-            body: {
-              to: 'admin@thuis3d.be',
-              type: 'order',
-              subject: `Nuevo Pedido: ${order.order_number}`,
-              message: `Pedido por €${finalTotal.toFixed(2)} de ${shippingInfo.fullName || shippingInfo.full_name}`,
-              link: `/admin/pedidos/${order.id}`,
-              order_number: order.order_number,
-              customer_name: shippingInfo.fullName || shippingInfo.full_name,
-              customer_email: shippingInfo.email
-            }
-          });
-        } catch (notifError) {
-          logger.error('Error sending admin notification:', notifError);
-        }
+      // Notificar a administradores
+      try {
+        await supabase.functions.invoke('send-admin-notification', {
+          body: {
+            to: 'admin@thuis3d.be',
+            type: 'order',
+            subject: `Nuevo Pedido: ${order.order_number}`,
+            message: `Pedido por €${finalTotal.toFixed(2)} de ${shippingInfo.fullName || shippingInfo.full_name}`,
+            link: `/admin/pedidos/${order.id}`,
+            order_number: order.order_number,
+            customer_name: shippingInfo.fullName || shippingInfo.full_name,
+            customer_email: shippingInfo.email
+          }
+        });
+      } catch (notifError) {
+        logger.error('Error sending admin notification:', notifError);
+      }
 
-        // Clear cart and session
-        localStorage.removeItem("cart");
-        const sessionId = sessionStorage.getItem("checkout_session_id");
-        if (sessionId) {
-          await supabase.from('checkout_sessions').delete().eq('id', sessionId);
-          sessionStorage.removeItem("checkout_session_id");
-        }
+      // Clear cart and session
+      localStorage.removeItem("cart");
+      const sessionId = sessionStorage.getItem("checkout_session_id");
+      if (sessionId) {
+        await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+        sessionStorage.removeItem("checkout_session_id");
+      }
 
-        toast.success(t('payment:messages.orderCreated'));
+      toast.success(t('payment:messages.orderCreated'));
 
-        // Get PayPal config and redirect
+      // Navigate based on payment method
+      if (method === "paypal") {
         const { data: paypalConfig } = await supabase
           .from("site_settings")
           .select("setting_value")
@@ -561,6 +545,7 @@ export default function Payment() {
           .single();
         
         if (paypalConfig?.setting_value) {
+          // CRÍTICO: Usar finalTotal que ya incluye: subtotal + tax + shipping - descuentos
           const paypalUrl = `https://www.paypal.com/paypalme/${paypalConfig.setting_value.replace('@', '')}/${finalTotal.toFixed(2)}EUR`;
           window.open(paypalUrl, '_blank');
           navigate("/pago-instrucciones", { 
@@ -577,14 +562,32 @@ export default function Payment() {
           toast.error(t('payment:messages.paypalNotConfigured'));
           navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
         }
-
-        setProcessing(false);
-        return;
+      } else if (method === "revolut") {
+        const { data: revolutConfig } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "revolut_link")
+          .single();
+        
+        if (revolutConfig?.setting_value) {
+          window.open(revolutConfig.setting_value, '_blank');
+          navigate("/pago-instrucciones", { 
+            state: { 
+              orderNumber: order.order_number, 
+              method: "revolut",
+              total: finalTotal,
+              subtotal: subtotal,
+              tax: tax,
+              shipping: shipping
+            } 
+          });
+        } else {
+          toast.error(t('payment:messages.revolutNotConfigured'));
+          navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
+        }
+      } else {
+        navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
-      
-      // Si llegamos aquí, es un método no válido
-      toast.error(t('payment:messages.invalidPaymentMethod'));
-      setProcessing(false);
     } catch (error) {
       logger.error("Error creating order:", error);
       toast.error(t('payment:messages.errorProcessingOrder'));
@@ -804,41 +807,6 @@ export default function Payment() {
               </p>
             </CardContent>
           </Card>
-
-          {/* QR Codes Display */}
-          {paymentImages.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Códigos QR de Pago</CardTitle>
-                <CardDescription>Escanea con tu móvil para pagar</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {paymentImages.map((img, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3 bg-white dark:bg-slate-900">
-                      <img 
-                        src={img} 
-                        alt={`Código QR ${index + 1}`}
-                        className="w-full h-56 object-contain rounded"
-                      />
-                      <div className="text-center space-y-1">
-                        <p className="font-medium text-sm">
-                          {index === 0 ? "QR Transferencia Bancaria" : 
-                           index === 1 ? "QR Revolut" : 
-                           `Código QR ${index + 1}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {index === 0 ? "Escanea para transferencia directa" : 
-                           index === 1 ? "Pago rápido con Revolut" : 
-                           "Método de pago alternativo"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {!isInvoicePayment && (
             <Button
