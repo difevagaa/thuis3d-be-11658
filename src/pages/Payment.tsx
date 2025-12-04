@@ -270,6 +270,29 @@ export default function Payment() {
               isInvoicePayment: true
             } 
           });
+        } else if (method === "card") {
+          // Get Revolut configuration (card uses same gateway as Revolut per requirements)
+          const { data: revolutConfig } = await supabase
+            .from("site_settings")
+            .select("setting_value")
+            .eq("setting_key", "revolut_link")
+            .single();
+          
+          if (revolutConfig?.setting_value) {
+            window.open(revolutConfig.setting_value, '_blank');
+            navigate("/pago-instrucciones", { 
+              state: { 
+                orderNumber: invoiceData.invoiceNumber,
+                method: "card",
+                total: invoiceData.total,
+                isPending: false,
+                isInvoicePayment: true
+              } 
+            });
+          } else {
+            toast.error("Configuración de pago con tarjeta no disponible");
+            navigate("/mi-cuenta?tab=invoices");
+          }
         } else if (method === "paypal") {
           // Get PayPal configuration and open payment
           const { data: paypalConfig } = await supabase
