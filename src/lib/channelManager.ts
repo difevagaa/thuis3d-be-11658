@@ -102,20 +102,26 @@ export function getChannelStats() {
   };
 }
 
+// Health check configuration
+const HEALTH_CHECK_THRESHOLDS = {
+  WARNING: 20,
+  CRITICAL: 50
+};
+
 /**
  * Check if we have too many channels (potential memory leak)
  */
 export function checkChannelHealth(): { healthy: boolean; message: string } {
   const activeCount = activeChannels.size;
   
-  if (activeCount > 50) {
+  if (activeCount > HEALTH_CHECK_THRESHOLDS.CRITICAL) {
     return {
       healthy: false,
       message: `CRITICAL: ${activeCount} active channels detected. Possible memory leak!`
     };
   }
   
-  if (activeCount > 20) {
+  if (activeCount > HEALTH_CHECK_THRESHOLDS.WARNING) {
     return {
       healthy: false,
       message: `WARNING: ${activeCount} active channels. Consider cleanup.`
@@ -128,9 +134,12 @@ export function checkChannelHealth(): { healthy: boolean; message: string } {
   };
 }
 
+// Health check interval ID for cleanup
+let healthCheckInterval: NodeJS.Timeout | null = null;
+
 // Health check interval - warn if too many channels
 if (typeof window !== 'undefined') {
-  setInterval(() => {
+  healthCheckInterval = setInterval(() => {
     const health = checkChannelHealth();
     if (!health.healthy) {
       logger.warn(`[ChannelManager] ${health.message}`);
@@ -141,7 +150,24 @@ if (typeof window !== 'undefined') {
 
 // Cleanup on page unload
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  const cleanupHandler = () => {
+    if (healthCheckInterval) {
+      clearInterval(healthCheckInterval);
+      healthCheckInterval = null;
+    }
     cleanupAllChannels();
-  });
+  };
+  
+  window.addEventListener('beforeunload', cleanupHandler);
+  
+  // Export cleanup function for manual cleanup if needed
+  if (typeof window !== 'undefined') {
+    (window as any).__cleanupChannelManager = () => {
+      window.removeEventListener('beforeunload', cleanupHandler);
+      if (healthCheckInterval) {
+        clearInterval(healthCheckInterval);
+        healthCheckInterval = null;
+      }
+    };
+  }
 }
