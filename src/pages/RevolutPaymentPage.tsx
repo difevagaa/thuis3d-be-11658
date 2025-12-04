@@ -23,6 +23,7 @@ export default function RevolutPaymentPage() {
   const [orderData, setOrderData] = useState<any>(null);
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
+  const [tempOrderNumber] = useState(`TEMP-${Date.now()}`);
 
   useEffect(() => {
     loadOrderData();
@@ -268,12 +269,12 @@ export default function RevolutPaymentPage() {
                 <p className="font-medium text-slate-700 dark:text-slate-300">Número de Pedido (Temporal):</p>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
-                    {`TEMP-${Date.now()}`}
+                    {tempOrderNumber}
                   </code>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(`TEMP-${Date.now()}`)}
+                    onClick={() => copyToClipboard(tempOrderNumber)}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
