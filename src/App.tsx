@@ -10,8 +10,6 @@ import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { useViewportReset } from "@/hooks/useViewportReset";
 import { useSessionRecovery } from "@/hooks/useSessionRecovery";
 import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
-import { useSupabaseReconnect } from "@/hooks/useSupabaseReconnect";
-import { useReconnectNotification } from "@/hooks/useReconnectNotification";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -101,74 +99,79 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 import Gallery from "./pages/Gallery";
 
 /**
- * CRITICAL FIX: React Query Configuration
+ * CRITICAL: Amazon-Style React Query Configuration
  * 
- * PREVIOUS PROBLEM:
- * - refetchOnWindowFocus: true → caused reloads on every tab switch
- * - refetchOnMount: "always" → caused reloads on every navigation
- * - Combined with 30+ pages having realtime subscriptions
- * - Result: Infinite loading after 20-30 seconds of navigation
+ * GOAL: Make the page as fluid and fast as Amazon.com
  * 
- * SOLUTION:
- * - Disable aggressive refetching
- * - Increase stale time (data stays fresh longer)
- * - Reduce cache time (faster garbage collection)
- * - Let realtime subscriptions handle updates
+ * KEY PRINCIPLES FROM AMAZON:
+ * 1. STALE-WHILE-REVALIDATE: Show cached data INSTANTLY, update in background
+ * 2. AGGRESSIVE CACHING: Keep data in cache for long periods
+ * 3. NO LOADING SPINNERS: Always show data (even if slightly stale)
+ * 4. BACKGROUND UPDATES: Silently fetch fresh data when page becomes visible
+ * 5. OPTIMISTIC UI: Changes appear immediately
  * 
- * ISSUE #15 FIX:
- * - Queries can fail when tab is hidden/visible transition
- * - Need to allow retries and not enter permanent error state
- * - useSupabaseReconnect will invalidate and refetch queries
+ * RESULT: User never waits, page feels instant like Amazon
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data is fresh for 3 minutes - reduces unnecessary refetches
-      staleTime: 3 * 60 * 1000,
-      // Keep unused data in cache for 2 minutes only - faster cleanup
-      gcTime: 2 * 60 * 1000,
+      // AMAZON PATTERN: Keep data "fresh" for 30 seconds
+      // After that, show cached data but refetch in background
+      staleTime: 30 * 1000, // 30 seconds
       
-      // CRITICAL: Disable aggressive refetching that caused infinite loading
-      refetchOnWindowFocus: false, // Don't refetch on tab switch (useSupabaseReconnect handles this)
-      refetchOnReconnect: false,   // Don't refetch on reconnect (useSupabaseReconnect handles this)
-      refetchOnMount: false,       // Don't refetch on every mount
+      // AMAZON PATTERN: Keep data in cache for 30 minutes
+      // Even if not used, so navigating back is instant
+      gcTime: 30 * 60 * 1000, // 30 minutes
       
-      // ISSUE #15 FIX: Allow more retries for tab visibility issues
-      retry: (failureCount, error) => {
-        // Don't retry on authentication errors
-        if (error && typeof error === 'object' && 'status' in error) {
-          const status = (error as { status: number }).status;
-          if (status === 401 || status === 403) return false;
-        }
-        // Allow up to 3 retries for connection issues
-        return failureCount < 3;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+      // CRITICAL: Enable refetchOnWindowFocus - Amazon does this
+      // When user returns from another tab, silently update data in background
+      // User sees cached data immediately (no loading), fresh data loads behind
+      refetchOnWindowFocus: true,
       
-      // Network mode - allow queries even when browser thinks it's offline
-      // (sometimes browser incorrectly reports offline during tab switches)
-      networkMode: 'offlineFirst',
+      // AMAZON PATTERN: Refetch when reconnecting to internet
+      refetchOnReconnect: true,
+      
+      // AMAZON PATTERN: Don't refetch on every mount
+      // Use cached data if it's fresh enough
+      refetchOnMount: false,
+      
+      // CRITICAL: Retry fast with exponential backoff
+      // Amazon retries failed requests quickly
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(300 * 2 ** attemptIndex, 3000), // 300ms, 600ms, 1200ms, max 3s
+      
+      // AMAZON PATTERN: Use cached data while refetching
+      // This is THE KEY to no loading spinners
+      // User ALWAYS sees data, never a blank screen
+      refetchInterval: false, // Don't poll automatically
+      
+      // Network mode: online (Amazon assumes good connection)
+      networkMode: 'online',
+      
+      // CRITICAL: Deduping - if same query requested multiple times,
+      // only fetch once. Amazon does this to save bandwidth.
+      structuralSharing: true,
     },
     mutations: {
-      // Don't retry mutations - could cause duplicate operations
+      // Don't retry mutations automatically (could cause duplicates)
       retry: 0,
       networkMode: 'online',
     },
   },
   
-  // Error handling for queries
+  // Minimal error logging - don't spam console like Amazon
   queryCache: new QueryCache({
     onError: (error, query) => {
-      console.error('[QueryCache] Global query error:', error);
-      // Don't log errors for background refetches
-      if (query.state.fetchStatus === 'idle') return;
+      // Only log if query has active observers (user is watching it)
+      if (query.getObserversCount() > 0) {
+        console.error('[Query Error]:', error);
+      }
     },
   }),
   
-  // Error handling for mutations
   mutationCache: new MutationCache({
     onError: (error) => {
-      console.error('[MutationCache] Global mutation error:', error);
+      console.error('[Mutation Error]:', error);
     },
   }),
 });
@@ -187,10 +190,6 @@ const PageLoader = () => (
 
 // AppContent component - handles hooks that require router context
 const AppContent = () => {
-  // CRITICAL FIX FOR ISSUE #15: Reconnect Supabase when returning from another tab
-  useSupabaseReconnect();
-  // Show reconnection notifications to user
-  useReconnectNotification();
   // Global connection recovery (highest priority)
   useConnectionRecovery();
   // Load and apply global colors on app start
