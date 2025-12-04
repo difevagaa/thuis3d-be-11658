@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, RefreshCw } from "lucide-react";
@@ -24,9 +24,13 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
+  const hasItemsRef = useRef(false);
 
   const loadGalleryItems = useCallback(async () => {
-    setLoading(true);
+    // Only show loading state if we don't have items yet (prevents flickering on background reloads)
+    if (!hasItemsRef.current) {
+      setLoading(true);
+    }
     setError(false);
     
     try {
@@ -39,7 +43,10 @@ export default function Gallery() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItems((data || []) as GalleryItem[]);
+      const galleryItems = (data || []) as GalleryItem[];
+      setItems(galleryItems);
+      // Mark as loaded after successful fetch, regardless of whether we got items
+      hasItemsRef.current = true;
     } catch (error) {
       console.error('Error loading gallery:', error);
       setError(true);
@@ -100,7 +107,11 @@ export default function Gallery() {
         ) : error ? (
           <div className="text-center py-12 space-y-4">
             <p className="text-destructive font-semibold">{t('errorLoading', { defaultValue: 'Error al cargar la galería' })}</p>
-            <Button onClick={loadGalleryItems} variant="outline" className="gap-2">
+            <Button onClick={() => {
+              hasItemsRef.current = false;
+              setLoading(true);
+              loadGalleryItems();
+            }} variant="outline" className="gap-2">
               <RefreshCw className="h-4 w-4" />
               {t('retry', { defaultValue: 'Reintentar', ns: 'common' })}
             </Button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ export default function BlogPost() {
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<any>(null);
+  const hasPostRef = useRef(false);
   
   // Hook para contenido traducido del post
   const { content: translatedPost, loading: translatingPost } = useTranslatedContent(
@@ -31,6 +32,11 @@ export default function BlogPost() {
   );
 
   const loadPost = useCallback(async () => {
+    // Only show loading state if we don't have a post yet (prevents flickering on background reloads)
+    if (!hasPostRef.current) {
+      setLoading(true);
+    }
+    
     try {
       // Obtener usuario y sus roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -84,6 +90,8 @@ export default function BlogPost() {
       }
 
       setPost(postData);
+      // Mark as loaded after successful fetch, regardless of whether we got a post
+      hasPostRef.current = true;
     } catch (error) {
       logger.error("Error loading post:", error);
     } finally {
