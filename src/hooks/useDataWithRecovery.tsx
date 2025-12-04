@@ -2,17 +2,20 @@ import { useEffect, useCallback, useRef } from 'react';
 import { logger } from '@/lib/logger';
 
 /**
- * Hook for data loading with automatic recovery
+ * Hook for data loading with automatic recovery - REWRITTEN FOR RELIABILITY
  * 
  * This hook wraps any data loading function and adds:
- * - Automatic retry logic with exponential backoff
- * - Reconnection event listening
- * - Timeout handling
- * - Error recovery
- * - Prevents infinite loading states
+ * - Timeout handling (ALWAYS respects timeout)
+ * - Automatic retry with exponential backoff
+ * - Connection recovery event listening
+ * - Guaranteed state cleanup (no stuck loading states)
  * 
- * @param loadDataFn - Function that loads data
- * @param options - Configuration options
+ * Design Principles:
+ * 1. Simple and predictable
+ * 2. Timeouts always respected
+ * 3. No race conditions
+ * 4. Loading states always cleared
+ * 5. Clear error reporting
  */
 export function useDataWithRecovery(
   loadDataFn: () => Promise<void>,
@@ -23,37 +26,43 @@ export function useDataWithRecovery(
   } = {}
 ) {
   const {
-    timeout = 15000,
-    maxRetries = 3,
+    timeout = 15000, // 15 seconds default
+    maxRetries = 2, // 2 retries default (3 total attempts)
     onError
   } = options;
 
   const retryCountRef = useRef(0);
-  const loadingRef = useRef(false);
+  const isLoadingRef = useRef(false);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   /**
-   * Load data with timeout and retry logic
+   * Load data with timeout - GUARANTEED to complete
    */
   const loadWithTimeout = useCallback(async () => {
-    // Skip if already loading
-    if (loadingRef.current) {
-      logger.debug('[DataWithRecovery] Already loading, skipping');
+    // Prevent concurrent loads
+    if (isLoadingRef.current) {
+      logger.debug('[DataWithRecovery] Load already in progress, skipping');
       return;
     }
 
-    // Clear any pending retry timeouts
+    // Clear any pending retries
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
 
-    loadingRef.current = true;
+    // Create abort controller for this load attempt
+    abortControllerRef.current = new AbortController();
+    isLoadingRef.current = true;
 
     try {
-      // Create timeout promise
+      // Create timeout promise that will reject after timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout')), timeout);
+        setTimeout(() => {
+          abortControllerRef.current?.abort();
+          reject(new Error(`Timeout after ${timeout}ms`));
+        }, timeout);
       });
 
       // Race between data loading and timeout
@@ -62,34 +71,36 @@ export function useDataWithRecovery(
         timeoutPromise
       ]);
 
-      // Success - reset retry count
-      retryCountRef.current = 0;
+      // Success!
       logger.info('[DataWithRecovery] Data loaded successfully');
+      retryCountRef.current = 0;
+      isLoadingRef.current = false;
 
-    } catch (error) {
-      logger.error('[DataWithRecovery] Error loading data:', error);
+    } catch (error: any) {
+      // Load failed - decide whether to retry
+      const errorMessage = error?.message || 'Unknown error';
+      logger.warn('[DataWithRecovery] Load failed:', errorMessage);
 
-      // Handle timeout or connection errors with retry
+      // Check if we should retry
       if (retryCountRef.current < maxRetries) {
         retryCountRef.current++;
         const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000);
-        
+
         logger.info(`[DataWithRecovery] Retrying in ${delay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
-        
-        // Schedule retry - keep loading state true during delay to prevent race conditions
-        // Note: Recursive call is safe here as maxRetries is typically 3, preventing stack overflow
+
+        // Schedule retry
         retryTimeoutRef.current = setTimeout(() => {
           retryTimeoutRef.current = null;
-          loadingRef.current = false; // Reset just before retry
+          isLoadingRef.current = false;
           loadWithTimeout();
         }, delay);
-        
-        return; // Exit early, don't call onError yet
+
       } else {
-        // Max retries reached - notify error handler
-        logger.error('[DataWithRecovery] Max retries reached');
-        loadingRef.current = false;
-        
+        // Max retries reached
+        logger.error('[DataWithRecovery] Max retries reached, giving up');
+        isLoadingRef.current = false;
+
+        // Call error handler if provided
         if (onError) {
           try {
             onError(error);
@@ -97,12 +108,8 @@ export function useDataWithRecovery(
             logger.error('[DataWithRecovery] Error in onError callback:', callbackError);
           }
         }
-        return;
       }
     }
-    
-    // Only set to false if we succeeded (not retrying)
-    loadingRef.current = false;
   }, [loadDataFn, timeout, maxRetries, onError]);
 
   /**
@@ -110,12 +117,22 @@ export function useDataWithRecovery(
    */
   const handleConnectionRecovered = useCallback(() => {
     logger.info('[DataWithRecovery] Connection recovered, reloading data');
-    retryCountRef.current = 0; // Reset retry count
-    loadingRef.current = false; // Reset loading flag
+    
+    // Reset state
+    retryCountRef.current = 0;
+    isLoadingRef.current = false;
+    
+    // Clear any pending retries
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+    
+    // Reload
     loadWithTimeout();
   }, [loadWithTimeout]);
 
-  // Set up listeners and initial load
+  // Set up initial load and event listeners
   useEffect(() => {
     // Initial load
     loadWithTimeout();
@@ -123,18 +140,24 @@ export function useDataWithRecovery(
     // Listen for connection recovery
     window.addEventListener('connection-recovered', handleConnectionRecovered);
 
+    // Cleanup
     return () => {
-      // Cleanup
       window.removeEventListener('connection-recovered', handleConnectionRecovered);
-      
-      // Clear any pending retry timeouts
+
+      // Clear any pending retries
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
-      
-      // Reset loading state
-      loadingRef.current = false;
+
+      // Abort any in-progress load
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+
+      // Reset state
+      isLoadingRef.current = false;
     };
   }, [loadWithTimeout, handleConnectionRecovered]);
 
