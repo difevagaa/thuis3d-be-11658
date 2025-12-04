@@ -115,8 +115,9 @@ import Gallery from "./pages/Gallery";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // AMAZON PATTERN: Keep data "fresh" for 30 seconds
-      // After that, show cached data but refetch in background
+      // AMAZON PATTERN: Data is considered "fresh" for 30 seconds
+      // After 30 seconds, data is marked as stale and will be refetched
+      // in the background, but cached data is still served immediately
       staleTime: 30 * 1000, // 30 seconds
       
       // AMAZON PATTERN: Keep data in cache for 30 minutes
@@ -140,16 +141,14 @@ const queryClient = new QueryClient({
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(300 * 2 ** attemptIndex, 3000), // 300ms, 600ms, 1200ms, max 3s
       
-      // AMAZON PATTERN: Use cached data while refetching
-      // This is THE KEY to no loading spinners
-      // User ALWAYS sees data, never a blank screen
-      refetchInterval: false, // Don't poll automatically
+      // Don't use automatic polling intervals (saves bandwidth)
+      refetchInterval: false,
       
       // Network mode: online (Amazon assumes good connection)
       networkMode: 'online',
       
-      // CRITICAL: Deduping - if same query requested multiple times,
-      // only fetch once. Amazon does this to save bandwidth.
+      // PERFORMANCE: Structural sharing optimizes memory and prevents unnecessary re-renders
+      // by sharing unchanged parts of query results between updates
       structuralSharing: true,
     },
     mutations: {
