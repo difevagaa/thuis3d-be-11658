@@ -35,8 +35,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        body: ['Amazon Ember', 'Arial', 'sans-serif'],
+        display: ['Amazon Ember', 'Arial', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

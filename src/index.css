@@ -34,33 +34,33 @@ body {
 
 @layer base {
   :root {
-    /* Ocean Blue - Default Light Palette */
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --home-hero-bg: 210 40% 96%;
+    /* Amazon-Inspired Modern Palette */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 13%;
+    --home-hero-bg: 0 0% 97%;
 
     /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 13%;
 
-    /* Primary - Ocean Blue */
-    --primary: 210 100% 50%;
+    /* Primary - Amazon Orange */
+    --primary: 36 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 210 100% 60%;
+    --primary-glow: 36 100% 60%;
 
-    /* Secondary */
-    --secondary: 210 40% 40%;
+    /* Secondary - Dark Blue */
+    --secondary: 210 32% 25%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Accent - Turquoise */
-    --accent: 185 80% 45%;
+    /* Accent - Warm Orange */
+    --accent: 28 100% 52%;
     --accent-foreground: 0 0% 100%;
 
     /* Muted */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
 
     /* Destructive */
     --destructive: 0 84% 60%;
@@ -75,76 +75,76 @@ body {
     --warning-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 100% 50%;
-    --radius: 0.75rem;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 36 100% 50%;
+    --radius: 0.5rem;
     
     /* Fonts */
-    --font-heading: "Playfair Display", serif;
-    --font-body: "Inter", sans-serif;
+    --font-heading: "Amazon Ember", "Arial", sans-serif;
+    --font-body: "Amazon Ember", "Arial", sans-serif;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(210 100% 50%) 0%, hsl(210 100% 40%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 40%) 0%, hsl(210 40% 30%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(185 80% 45%) 0%, hsl(185 80% 35%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(210 100% 50% / 0.12) 0%, hsl(185 80% 45% / 0.12) 100%);
+    /* Gradients - Amazon Style */
+    --gradient-primary: linear-gradient(135deg, hsl(36 100% 50%) 0%, hsl(28 100% 52%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(210 32% 25%) 0%, hsl(210 32% 20%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(28 100% 52%) 0%, hsl(28 100% 45%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 97%) 0%, hsl(0 0% 100%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.08);
-    --shadow-medium: 0 4px 14px -2px hsl(0 0% 0% / 0.15), 0 2px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-strong: 0 20px 50px -12px hsl(0 0% 0% / 0.3), 0 8px 20px -4px hsl(0 0% 0% / 0.2);
-    --shadow-glow: 0 0 50px hsl(210 100% 50% / 0.35);
+    /* Shadows - Softer Amazon Style */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-medium: 0 2px 8px -1px hsl(0 0% 0% / 0.1), 0 1px 3px -1px hsl(0 0% 0% / 0.06);
+    --shadow-strong: 0 10px 25px -5px hsl(0 0% 0% / 0.15), 0 4px 10px -2px hsl(0 0% 0% / 0.08);
+    --shadow-glow: 0 0 30px hsl(36 100% 50% / 0.25);
 
     /* Sidebar */
-    --sidebar-background: 210 40% 40%;
+    --sidebar-background: 210 32% 25%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary: 36 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 50%;
+    --sidebar-accent: 210 32% 30%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 40% 35%;
-    --sidebar-ring: 210 100% 50%;
+    --sidebar-border: 210 32% 20%;
+    --sidebar-ring: 36 100% 50%;
 
-    /* Header - Default values for customization */
-    --header-bg: #FFFFFF;
-    --header-text: #1A1A1A;
+    /* Header - Amazon Style */
+    --header-bg: #131921;
+    --header-text: #FFFFFF;
 
-    /* Home Menu - Default values for customization */
-    --home-menu-bg: #FFFFFF;
-    --home-menu-text: #1A1A1A;
-    --home-menu-hover-bg: #F3F4F6;
+    /* Home Menu - Amazon Style */
+    --home-menu-bg: #232F3E;
+    --home-menu-text: #FFFFFF;
+    --home-menu-hover-bg: #374553;
 
     /* Chart Colors */
-    --chart-1: 210 100% 50%;
-    --chart-2: 185 80% 45%;
-    --chart-3: 210 40% 40%;
+    --chart-1: 36 100% 50%;
+    --chart-2: 28 100% 52%;
+    --chart-3: 210 32% 25%;
     --chart-4: 0 84% 60%;
     --chart-5: 142 76% 36%;
   }
 
   .dark {
-    /* Ocean Blue - Dark Mode */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Amazon-Inspired Dark Mode */
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --card: 0 0% 14%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 100% 55%;
+    --primary: 36 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 210 100% 65%;
+    --primary-glow: 36 100% 65%;
 
-    --secondary: 210 40% 30%;
+    --secondary: 210 32% 20%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 185 80% 50%;
+    --accent: 28 100% 57%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 60%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -155,31 +155,31 @@ body {
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 217 33% 24%;
-    --input: 217 33% 24%;
-    --ring: 210 100% 55%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 36 100% 55%;
 
-    --sidebar-background: 210 40% 30%;
+    --sidebar-background: 210 32% 15%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary: 36 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 40%;
+    --sidebar-accent: 210 32% 25%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 40% 25%;
-    --sidebar-ring: 210 100% 55%;
+    --sidebar-border: 210 32% 12%;
+    --sidebar-ring: 36 100% 55%;
 
-    /* Header - Dark mode defaults */
-    --header-bg: #1E293B;
-    --header-text: #F1F5F9;
+    /* Header - Dark mode */
+    --header-bg: #0F1111;
+    --header-text: #FFFFFF;
 
-    /* Home Menu - Dark mode defaults */
-    --home-menu-bg: #1E293B;
-    --home-menu-text: #F1F5F9;
-    --home-menu-hover-bg: #334155;
+    /* Home Menu - Dark mode */
+    --home-menu-bg: #1A1F2E;
+    --home-menu-text: #FFFFFF;
+    --home-menu-hover-bg: #2A3545;
 
-    --chart-1: 210 100% 55%;
-    --chart-2: 185 80% 50%;
-    --chart-3: 210 40% 30%;
+    --chart-1: 36 100% 55%;
+    --chart-2: 28 100% 57%;
+    --chart-3: 210 32% 20%;
     --chart-4: 0 84% 60%;
     --chart-5: 142 76% 36%;
   }
@@ -195,7 +195,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
+    font-family: "Amazon Ember", "Arial", sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     /* Font rendering óptimo */
     -webkit-font-smoothing: antialiased;
@@ -203,7 +203,8 @@ body {
     text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
+    font-family: "Amazon Ember", "Arial", sans-serif;
+    font-weight: 700;
     /* Asegurar texto nítido en encabezados */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
