@@ -79,6 +79,7 @@ function isItemCorrupted(key: string, value: string): boolean {
   }
   
   // Check for null bytes or control characters (signs of corruption)
+  // eslint-disable-next-line no-control-regex
   const hasInvalidChars = /[\x00-\x08\x0B-\x0C\x0E-\x1F]/.test(value);
   if (hasInvalidChars) {
     return true;
