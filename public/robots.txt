@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://thuis3d.com/sitemap.xml
+Sitemap: https://thuis3d.be/sitemap.xml
 
 # Disallow admin areas
 Disallow: /admin/
