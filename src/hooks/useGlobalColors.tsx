@@ -7,7 +7,8 @@ import {
   hexToHSL, 
   saveAdvancedColorsToCache, 
   applyAdvancedColorsFromCache,
-  reapplyAdvancedColorsAfterThemeChange
+  reapplyAdvancedColorsAfterThemeChange,
+  isSectionCustomized
 } from '@/utils/colorPersistence';
 
 interface ThemeCustomization {
@@ -325,17 +326,7 @@ const applyProfessionalPalette = (paletteData: PaletteData) => {
 
   // Check if sidebar colors are explicitly customized
   // If they are, we should NOT override them with the palette
-  const advancedColorsCache = localStorage.getItem('advanced_colors');
-  let sidebarIsCustomized = false;
-  
-  if (advancedColorsCache) {
-    try {
-      const advancedColors = JSON.parse(advancedColorsCache);
-      sidebarIsCustomized = Boolean(advancedColors.sidebar_customized);
-    } catch (e) {
-      logger.warn('⚠️ Error parsing advanced_colors cache in applyProfessionalPalette');
-    }
-  }
+  const sidebarIsCustomized = isSectionCustomized('sidebar');
 
   // Only apply palette sidebar colors if sidebar is NOT explicitly customized
   if (!sidebarIsCustomized) {

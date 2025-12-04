@@ -13,7 +13,7 @@ import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
 import { logger } from '@/lib/logger';
 import { saveFontsToCache } from '@/utils/fontPersistence';
-import { hexToHSL, saveAdvancedColorsToCache, DEFAULT_COLORS, DEFAULT_COLORS_DARK } from '@/utils/colorPersistence';
+import { hexToHSL, saveAdvancedColorsToCache, DEFAULT_COLORS, DEFAULT_COLORS_DARK, isSectionCustomized } from '@/utils/colorPersistence';
 import { AdvancedColorCustomization } from '@/components/admin/AdvancedColorCustomization';
 import { InteractiveContrastChecker } from '@/components/admin/ContrastChecker';
 
@@ -299,17 +299,7 @@ export default function SiteCustomizer() {
 
     // Check if sidebar colors are explicitly customized
     // If they are, we should NOT override them with the palette
-    const advancedColorsCache = localStorage.getItem('advanced_colors');
-    let sidebarIsCustomized = false;
-    
-    if (advancedColorsCache) {
-      try {
-        const advancedColors = JSON.parse(advancedColorsCache);
-        sidebarIsCustomized = Boolean(advancedColors.sidebar_customized);
-      } catch (e) {
-        logger.warn('⚠️ [SiteCustomizer] Error parsing advanced_colors cache in applyPalette');
-      }
-    }
+    const sidebarIsCustomized = isSectionCustomized('sidebar');
 
     // Only apply palette sidebar colors if sidebar is NOT explicitly customized
     if (!sidebarIsCustomized) {
