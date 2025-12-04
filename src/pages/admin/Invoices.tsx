@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast } from "@/lib/i18nToast";
 import { toast } from "sonner";
 import { FileText, Plus, Eye, Trash2, X, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -148,7 +147,7 @@ export default function Invoices() {
 
     } catch (error: any) {
       logger.error("Error loading data:", error);
-      i18nToast.error("error.invoicesLoadFailed");
+      toast.error("Error al cargar facturas");
     } finally {
       setLoading(false);
     }
@@ -250,17 +249,17 @@ export default function Invoices() {
       if (error) throw error;
       
       if (!coupon) {
-        i18nToast.error("error.couponInvalid");
+        toast.error("Cupón no válido");
         return;
       }
 
       if (coupon.max_uses && coupon.times_used >= coupon.max_uses) {
-        i18nToast.error("error.couponLimitReached");
+        toast.error("Este cupón ha alcanzado su límite de uso");
         return;
       }
 
       if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-        i18nToast.error("error.couponExpired");
+        toast.error("Este cupón ha expirado");
         return;
       }
 
@@ -286,7 +285,7 @@ export default function Invoices() {
       toast.success(`Cupón aplicado: -€${discount.toFixed(2)}`);
       calculateTotalsWithDiscounts(newInvoice.items, discount, parseFloat(newInvoice.gift_card_amount) || 0);
     } catch (error) {
-      i18nToast.error("error.couponApplyFailed");
+      toast.error("Error al aplicar cupón");
     }
   };
 
@@ -306,7 +305,7 @@ export default function Invoices() {
       if (error) throw error;
       
       if (!giftCard) {
-        i18nToast.error("error.giftCardInvalid");
+        toast.error("Tarjeta regalo no válida o sin saldo");
         return;
       }
 
@@ -319,7 +318,7 @@ export default function Invoices() {
       toast.success(`Tarjeta regalo aplicada: €${balance.toFixed(2)}`);
       calculateTotalsWithDiscounts(newInvoice.items, parseFloat(newInvoice.coupon_discount) || 0, balance);
     } catch (error) {
-      i18nToast.error("error.giftCardApplyFailed");
+      toast.error("Error al aplicar tarjeta regalo");
     }
   };
 
@@ -369,19 +368,19 @@ export default function Invoices() {
   const handleCreateInvoice = async () => {
     try {
       if (!newInvoice.user_id) {
-        i18nToast.error("error.selectClient");
+        toast.error("Debes seleccionar un cliente");
         return;
       }
 
       if (newInvoice.items.length === 0) {
-        i18nToast.error("error.mustAddProducts");
+        toast.error("Debes agregar al menos un producto");
         return;
       }
 
       // Validate all items have required fields
       const invalidItems = newInvoice.items.filter(item => !item.product_name || item.unit_price <= 0);
       if (invalidItems.length > 0) {
-        i18nToast.error("error.invalidProductData");
+        toast.error("Todos los productos deben tener nombre y precio");
         return;
       }
 
@@ -466,13 +465,13 @@ export default function Invoices() {
         }
       }
 
-      i18nToast.success("success.invoiceCreated");
+      toast.success("Factura creada exitosamente");
       setDialogOpen(false);
       resetForm();
       loadData();
     } catch (error: any) {
       logger.error("Error creating invoice:", error);
-      i18nToast.error("error.invoiceSaveFailed");
+      toast.error("Error al crear factura");
     }
   };
 
@@ -510,11 +509,11 @@ export default function Invoices() {
 
       if (error) throw error;
 
-      i18nToast.success("success.invoiceDeleted");
+      toast.success("Factura movida a la papelera");
       await loadData();
     } catch (error: any) {
       logger.error("Error deleting invoice:", error);
-      i18nToast.error("error.invoiceDeleteFailed");
+      toast.error("Error al eliminar factura");
     }
   };
 
@@ -557,7 +556,7 @@ export default function Invoices() {
       setEditDialogOpen(true);
     } catch (error) {
       logger.error("Error loading invoice for edit:", error);
-      i18nToast.error("error.invoiceLoadFailed");
+      toast.error("Error al cargar factura");
     }
   };
 
@@ -625,13 +624,13 @@ export default function Invoices() {
         if (itemsError) throw itemsError;
       }
 
-      i18nToast.success("success.invoiceUpdated");
+      toast.success("Factura actualizada exitosamente");
       setEditDialogOpen(false);
       setEditingInvoice(null);
       loadData();
     } catch (error: any) {
       logger.error("Error updating invoice:", error);
-      i18nToast.error("error.invoiceSaveFailed");
+      toast.error("Error al actualizar factura");
     }
   };
 

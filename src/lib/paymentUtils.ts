@@ -175,63 +175,6 @@ export const convertCartToOrderItems = (
 };
 
 /**
- * Maps reward type to discount type for display purposes
- * Loyalty rewards may use different naming conventions than coupons
- */
-export const mapRewardTypeToDiscountType = (rewardType: string): string => {
-  const typeMapping: Record<string, string> = {
-    'percentage': 'percentage',
-    'discount': 'percentage',
-    'fixed': 'fixed',
-    'coupon': 'fixed',
-    'free_shipping': 'free_shipping',
-    'shipping': 'free_shipping'
-  };
-  return typeMapping[rewardType?.toLowerCase()] || rewardType || 'percentage';
-};
-
-/**
- * Calculates coupon discount based on coupon type and cart items
- * Handles product-specific coupons, percentage, fixed, and free shipping types
- */
-export const calculateCouponDiscount = (
-  cartItems: CartItem[],
-  appliedCoupon: {
-    discount_type: string;
-    discount_value: number;
-    product_id?: string | null;
-  } | null
-): number => {
-  if (!appliedCoupon) return 0;
-  
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  if (appliedCoupon.discount_type === "free_shipping") {
-    // Free shipping is handled in shipping calculation, not as a discount
-    return 0;
-  } else if (appliedCoupon.product_id) {
-    // Product-specific coupon: only apply to the specified product
-    const productAmount = cartItems
-      .filter(item => item.productId === appliedCoupon.product_id)
-      .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    if (appliedCoupon.discount_type === "percentage") {
-      return Number((productAmount * (appliedCoupon.discount_value / 100)).toFixed(2));
-    } else if (appliedCoupon.discount_type === "fixed") {
-      return Number(Math.min(appliedCoupon.discount_value, productAmount).toFixed(2));
-    }
-  } else {
-    // General coupon: apply to entire subtotal
-    if (appliedCoupon.discount_type === "percentage") {
-      return Number((subtotal * (appliedCoupon.discount_value / 100)).toFixed(2));
-    } else if (appliedCoupon.discount_type === "fixed") {
-      return Number(Math.min(appliedCoupon.discount_value, subtotal).toFixed(2));
-    }
-  }
-  return 0;
-};
-
-/**
  * Calculates order totals considering tax and discounts
  */
 export const calculateOrderTotals = (

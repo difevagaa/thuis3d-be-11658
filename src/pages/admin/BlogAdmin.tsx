@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast } from "@/lib/i18nToast";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -68,19 +67,8 @@ export default function BlogAdmin() {
       }, loadData)
       .subscribe();
 
-    // Subscribe to custom_roles changes to update role list dynamically
-    const customRolesChannel = supabase
-      .channel('blog-custom-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'custom_roles'
-      }, loadData)
-      .subscribe();
-
     return () => {
       supabase.removeChannel(blogChannel);
-      supabase.removeChannel(customRolesChannel);
     };
   }, []);
 
@@ -126,7 +114,7 @@ export default function BlogAdmin() {
       setAvailableRoles([...systemRoles, ...customRolesList]);
     } catch (error) {
       logger.error("Error in loadData:", error);
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar datos");
     } finally {
       setLoading(false);
     }
@@ -178,7 +166,7 @@ export default function BlogAdmin() {
         const imgHtml = `\n<figure class="my-4"><img src="${url}" alt="Imagen del artículo" class="rounded-lg shadow-md max-w-full h-auto" /></figure>\n`;
         targetSetter({ ...targetPost, content: (targetPost.content || '') + imgHtml });
       }
-      i18nToast.success("success.imageSaved");
+      toast.success("Imagen subida exitosamente");
     }
   };
 
@@ -186,7 +174,7 @@ export default function BlogAdmin() {
     try {
       // Validaciones básicas
       if (!newPost.title.trim()) {
-        i18nToast.error("error.titleRequired");
+        toast.error("El título es obligatorio");
         return;
       }
 
@@ -198,7 +186,7 @@ export default function BlogAdmin() {
         .replace(/[^a-z0-9-]/g, '');
 
       if (!base) {
-        i18nToast.error("error.pageSlugRequired");
+        toast.error("El slug es obligatorio");
         return;
       }
 
@@ -218,7 +206,7 @@ export default function BlogAdmin() {
 
       const content = (newPost.content || '').trim();
       if (!content) {
-        i18nToast.error("error.contentRequired");
+        toast.error("El contenido es obligatorio");
         return;
       }
 
@@ -249,7 +237,7 @@ export default function BlogAdmin() {
         if (rolesError) throw rolesError;
       }
 
-      i18nToast.success("success.articleCreated");
+      toast.success("Artículo creado exitosamente");
       setNewPost({
         title: "",
         slug: "",
@@ -321,13 +309,13 @@ export default function BlogAdmin() {
         if (rolesError) throw rolesError;
       }
 
-      i18nToast.success("success.articleUpdated");
+      toast.success("Artículo actualizado exitosamente");
       setEditDialogOpen(false);
       setEditingPost(null);
       setSelectedRoles([]);
       await loadData();
     } catch (error) {
-      i18nToast.error("error.articleSaveFailed");
+      toast.error("Error al actualizar artículo");
     }
   };
 
@@ -339,10 +327,10 @@ export default function BlogAdmin() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.articleDeleted");
+      toast.success("Artículo movido a la papelera");
       await loadData();
     } catch (error) {
-      i18nToast.error("error.articleDeleteFailed");
+      toast.error("Error al eliminar artículo");
     }
   };
 
@@ -606,7 +594,7 @@ export default function BlogAdmin() {
                     const url = await uploadImage(file);
                     if (url) {
                       setPost({ ...post, featured_image: url });
-                      i18nToast.success("success.featuredImageUploaded");
+                      toast.success("Imagen destacada subida exitosamente");
                     }
                   }}
                   disabled={uploadingImage}

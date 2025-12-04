@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 
 interface Notification {
@@ -176,7 +175,7 @@ export default function AdminNotificationBell() {
       
       loadNotifications();
     } catch (error) {
-      i18nToast.error("error.notificationMarkFailed");
+      toast.error("Error al marcar notificación");
     }
   };
 
@@ -192,9 +191,9 @@ export default function AdminNotificationBell() {
         .eq("is_read", false);
       
       loadNotifications();
-      i18nToast.success("success.allNotificationsRead");
+      toast.success("Todas las notificaciones marcadas como leídas");
     } catch (error) {
-      i18nToast.error("error.notificationsMarkFailed");
+      toast.error("Error al marcar notificaciones");
     }
   };
 
@@ -215,7 +214,7 @@ export default function AdminNotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      i18nToast.success("success.readNotificationsDeleted");
+      toast.success("Notificaciones leídas eliminadas");
     } catch (error: any) {
       logger.error("Error deleting read notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || "Error desconocido"));
@@ -238,7 +237,7 @@ export default function AdminNotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      i18nToast.success("success.allNotificationsDeleted");
+      toast.success("Todas las notificaciones eliminadas");
     } catch (error: any) {
       logger.error("Error deleting all notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || "Error desconocido"));

@@ -96,7 +96,7 @@ export default function Gallery() {
                   {item.media_type === 'image' ? (
                     <img
                       src={item.media_url}
-                      alt={`3D printed design: ${item.title}`}
+                      alt={item.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />

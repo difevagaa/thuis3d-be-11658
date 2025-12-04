@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 
 export default function LegalPages() {
@@ -62,7 +62,7 @@ export default function LegalPages() {
 
       setPages(pagesObj);
     } catch (error) {
-      i18nToast.error("error.pageLoadFailed");
+      toast.error("Error al cargar las páginas");
     } finally {
       setLoading(false);
     }
@@ -73,17 +73,17 @@ export default function LegalPages() {
     
     // Verificar que la página existe
     if (!page) {
-      i18nToast.error("error.pageTypeInvalid");
+      toast.error("Tipo de página no válido");
       return;
     }
     
     if (!page.title?.trim()) {
-      i18nToast.error("error.pageTitleRequired");
+      toast.error("El título de la página es obligatorio");
       return;
     }
 
     if (!page.content?.trim()) {
-      i18nToast.error("error.pageContentRequired");
+      toast.error("El contenido de la página es obligatorio");
       return;
     }
 
@@ -98,7 +98,7 @@ export default function LegalPages() {
         });
 
       if (error) throw error;
-      i18nToast.success("success.pageSaved");
+      toast.success("Página guardada exitosamente");
     } catch (error: any) {
       console.error("Error saving legal page:", error);
       toast.error("Error al guardar la página: " + (error.message || "Error desconocido"));

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Mail, MailOpen, PenSquare, Paperclip, X, Download, Image as ImageIcon, FileText, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -139,7 +139,7 @@ export default function Messages() {
       let attachmentData: any[] = [];
       
       if (replyAttachments.length > 0) {
-        i18nToast.info("info.uploadingFiles");
+        toast.info("Subiendo archivos adjuntos...");
         attachmentData = await uploadAttachments(replyAttachments);
       }
 
@@ -157,7 +157,7 @@ export default function Messages() {
         }]);
 
       if (error) throw error;
-      i18nToast.success("success.replySentSuccess");
+      toast.success("Respuesta enviada exitosamente");
       setReply("");
       setReplyAttachments([]);
       setUploadProgress({});
@@ -170,12 +170,12 @@ export default function Messages() {
 
   const sendNewMessage = async () => {
     if (!newMessage.recipient_id || !newMessage.message.trim()) {
-      i18nToast.error("error.completeRequiredFields");
+      toast.error("Por favor completa todos los campos obligatorios");
       return;
     }
 
     if (newMessage.message.length > 1000) {
-      i18nToast.error("error.messageMaxLength");
+      toast.error("El mensaje no puede exceder 1000 caracteres");
       return;
     }
 
@@ -183,7 +183,7 @@ export default function Messages() {
       let attachmentData: any[] = [];
       
       if (attachments.length > 0) {
-        i18nToast.info("info.uploadingFiles");
+        toast.info("Subiendo archivos adjuntos...");
         attachmentData = await uploadAttachments(attachments);
       }
 
@@ -200,7 +200,7 @@ export default function Messages() {
         }]);
 
       if (error) throw error;
-      i18nToast.success("success.messageSent");
+      toast.success("Mensaje enviado exitosamente");
       setNewMessage({ recipient_id: "", subject: "", message: "" });
       setAttachments([]);
       setUploadProgress({});

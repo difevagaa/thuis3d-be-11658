@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,11 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast } from "@/lib/i18nToast";
-import { UserPlus, Pencil, Trash2, Key, Eye, Clock, MapPin, Activity, Search, Users as UsersIcon } from "lucide-react";
+import { toast } from "sonner";
+import { UserPlus, Pencil, Trash2, Lock, Unlock, Key, Eye, Clock, MapPin, Activity } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
 
 export default function Users() {
   const [users, setUsers] = useState<any[]>([]);
@@ -26,7 +25,6 @@ export default function Users() {
   const [showUserDetailsDialog, setShowUserDetailsDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [newUser, setNewUser] = useState({
     email: "",
     password: "",
@@ -65,18 +63,6 @@ export default function Users() {
       })
       .subscribe();
 
-    // Subscribe to custom_roles changes to update role list dynamically
-    const customRolesChannel = supabase
-      .channel('users-custom-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'custom_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
     // Actualizar estado de usuarios cada 30 segundos
     const statusInterval = setInterval(() => {
       loadData();
@@ -85,7 +71,6 @@ export default function Users() {
     return () => {
       supabase.removeChannel(rolesChannel);
       supabase.removeChannel(profilesChannel);
-      supabase.removeChannel(customRolesChannel);
       clearInterval(statusInterval);
     };
   }, []);
@@ -145,18 +130,6 @@ export default function Users() {
     }
   };
 
-  // Create a lookup map for role display names (O(1) lookup instead of O(n))
-  const roleDisplayNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    roles.forEach(r => map.set(r.value, r.label));
-    return map;
-  }, [roles]);
-
-  // Helper function to get display name for a role
-  const getRoleDisplayName = (roleName: string): string => {
-    return roleDisplayNameMap.get(roleName) || roleName;
-  };
-
   const assignRole = async () => {
     try {
       if (!selectedUser || !selectedRole) return;
@@ -164,43 +137,38 @@ export default function Users() {
       // Validate that selected role exists in available roles
       const roleExists = roles.some(r => r.value === selectedRole);
       if (!roleExists) {
-        i18nToast.error("error.roleInvalid");
+        toast.error("Rol inválido");
         return;
       }
 
       // Check if user already has this role
       const existingRole = selectedUser.user_roles?.find((r: any) => r.role === selectedRole);
       if (existingRole) {
-        i18nToast.info("info.userAlreadyHasRole");
+        toast.info("El usuario ya tiene este rol asignado");
         setSelectedUser(null);
         setSelectedRole("");
         return;
       }
 
-      // Check if user has any existing role record
-      const existingRoleRecord = selectedUser.user_roles?.[0];
+      // Delete ALL existing roles (user can only have one role)
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", selectedUser.id);
 
-      if (existingRoleRecord) {
-        // Update the existing role record directly instead of delete + insert
-        const { error: updateError } = await supabase
-          .from("user_roles")
-          .update({ role: selectedRole })
-          .eq("id", existingRoleRecord.id);
+      if (deleteError) throw deleteError;
 
-        if (updateError) throw updateError;
-      } else {
-        // User has no role, insert a new one
-        const { error: insertError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: selectedUser.id,
-            role: selectedRole
-          });
+      // Insert new role
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: selectedUser.id,
+          role: selectedRole
+        });
 
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
 
-      i18nToast.success("success.roleAssigned");
+      toast.success("Rol asignado exitosamente");
       setSelectedUser(null);
       setSelectedRole("");
       loadData();
@@ -212,7 +180,7 @@ export default function Users() {
   const createUser = async () => {
     try {
       if (!newUser.email || !newUser.password || !newUser.full_name) {
-        i18nToast.error("error.completeRequiredFields");
+        toast.error("Por favor completa los campos obligatorios");
         return;
       }
 
@@ -244,7 +212,7 @@ export default function Users() {
 
         if (profileError) throw profileError;
 
-        i18nToast.success("success.userCreated");
+        toast.success("Usuario creado exitosamente");
         setNewUser({
           email: "",
           password: "",
@@ -302,36 +270,31 @@ export default function Users() {
 
       // Update role if changed
       if (editingUser.current_role) {
-        // Check if user has an existing role record
-        const existingRoleRecord = editingUser.user_roles?.[0];
+        // Delete ALL existing roles
+        const { error: deleteError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", editingUser.id);
 
-        if (existingRoleRecord) {
-          // Update the existing role record directly instead of delete + insert
-          const { error: roleError } = await supabase
-            .from("user_roles")
-            .update({ role: editingUser.current_role })
-            .eq("id", existingRoleRecord.id);
+        if (deleteError) throw deleteError;
 
-          if (roleError) throw roleError;
-        } else {
-          // User has no role, insert a new one
-          const { error: roleError } = await supabase
-            .from("user_roles")
-            .insert({
-              user_id: editingUser.id,
-              role: editingUser.current_role
-            });
+        // Insert new role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: editingUser.id,
+            role: editingUser.current_role
+          });
 
-          if (roleError) throw roleError;
-        }
+        if (roleError) throw roleError;
       }
 
-      i18nToast.success("success.userUpdated");
+      toast.success("Usuario actualizado exitosamente");
       setShowEditDialog(false);
       setEditingUser(null);
       loadData();
     } catch (error: any) {
-      i18nToast.error("error.userSaveFailed");
+      toast.error("Error al actualizar usuario");
     }
   };
 
@@ -373,7 +336,7 @@ export default function Users() {
 
       if (error) throw error;
 
-      i18nToast.success("success.userDeleted");
+      toast.success("Usuario eliminado exitosamente");
       loadData();
     } catch (error: any) {
       toast.error("Error al eliminar usuario: " + (error.message || "Error desconocido"));
@@ -393,74 +356,40 @@ export default function Users() {
       setUserDetails(data);
       setShowUserDetailsDialog(true);
     } catch (error: any) {
-      i18nToast.error("error.userLoadFailed");
+      toast.error("Error al cargar detalles del usuario");
     }
   };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(user => 
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Calculate stats - optimize by calculating time once
-  const now = new Date().getTime();
-  const fiveMinutesInMs = 5 * 60 * 1000;
-  
-  const onlineUsers = users.filter(user => {
-    return user.last_activity_at && 
-      (now - new Date(user.last_activity_at).getTime()) < fiveMinutesInMs;
-  }).length;
-
-  const adminUsers = users.filter(user => 
-    user.user_roles?.some((r: any) => r.role === 'admin')
-  ).length;
-
-  // Calculate new users (last 30 days) - optimize by calculating date once
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const newUsersCount = users.filter(u => new Date(u.created_at) > thirtyDaysAgo).length;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center animate-pulse">
-            <UsersIcon className="h-6 w-6 text-white" />
-          </div>
-          <p className="text-muted-foreground">Cargando usuarios...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div>Cargando...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <AdminPageHeader
-        title="Gestión de Usuarios"
-        description="Administra los usuarios, sus roles y permisos"
-        emoji="👥"
-        gradient="from-pink-500 to-rose-600"
-        actions={
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Nuevo Usuario
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Nuevo Usuario</DialogTitle>
-                <DialogDescription>
-                  Crea una nueva cuenta de usuario manualmente
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Nombre Completo *</Label>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Gestión de Usuarios</h1>
+
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Usuarios del Sistema</CardTitle>
+              <CardDescription>Administra los usuarios y sus roles</CardDescription>
+            </div>
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Crear Usuario
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Usuario</DialogTitle>
+                  <DialogDescription>
+                    Crea una nueva cuenta de usuario manualmente
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Nombre Completo *</Label>
                     <Input
                       value={newUser.full_name}
                       onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
@@ -533,111 +462,38 @@ export default function Users() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-        }
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <AdminStatCard
-          title="Total Usuarios"
-          value={users.length}
-          emoji="👥"
-          gradient="from-pink-500/10 to-rose-500/5"
-        />
-        <AdminStatCard
-          title="En Línea"
-          value={onlineUsers}
-          emoji="🟢"
-          description="Últimos 5 minutos"
-          gradient="from-green-500/10 to-emerald-500/5"
-        />
-        <AdminStatCard
-          title="Administradores"
-          value={adminUsers}
-          emoji="👑"
-          gradient="from-amber-500/10 to-orange-500/5"
-        />
-        <AdminStatCard
-          title="Nuevos (30 días)"
-          value={newUsersCount}
-          emoji="✨"
-          gradient="from-blue-500/10 to-indigo-500/5"
-        />
-      </div>
-
-      {/* Search and Filters */}
-      <Card className="mb-6 border-border/50">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre, email o teléfono..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Badge variant="outline" className="h-10 px-4 flex items-center gap-2">
-              <span>📊</span>
-              <span>{filteredUsers.length} de {users.length} usuarios</span>
-            </Badge>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/30">
-          <CardTitle className="flex items-center gap-2">
-            <span>📋</span>
-            Lista de Usuarios
-          </CardTitle>
-          <CardDescription>
-            Gestiona los usuarios y sus permisos del sistema
-          </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/20 hover:bg-muted/20">
-                  <TableHead className="font-semibold">Nombre</TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Teléfono</TableHead>
-                  <TableHead className="font-semibold">Rol</TableHead>
-                  <TableHead className="font-semibold">Estado</TableHead>
-                  <TableHead className="font-semibold">Registro</TableHead>
-                  <TableHead className="font-semibold text-right">Acciones</TableHead>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Teléfono</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha de Registro</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length === 0 ? (
+                {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <span className="text-4xl">👤</span>
-                        <p className="text-muted-foreground">
-                          {searchTerm ? "No se encontraron usuarios con ese criterio" : "No hay usuarios registrados"}
-                        </p>
-                      </div>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      No hay usuarios registrados
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.phone || '-'}</TableCell>
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.full_name || '-'}</TableCell>
+                      <TableCell>{user.email || '-'}</TableCell>
+                      <TableCell>{user.phone || '-'}</TableCell>
                       <TableCell>
                         {user.user_roles && user.user_roles.length > 0 ? (
-                          <Badge className={
-                            user.user_roles[0].role === 'admin' 
-                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0' 
-                              : ''
-                          }>
-                            {user.user_roles[0].role === 'admin' ? '👑 ' : ''}{getRoleDisplayName(user.user_roles[0].role)}
-                          </Badge>
+                          <Badge>{user.user_roles[0].role}</Badge>
                         ) : (
                           <Badge variant="secondary">Sin rol</Badge>
                         )}
@@ -664,36 +520,35 @@ export default function Users() {
                       <TableCell>
                         {user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : '-'}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end">
+                      <TableCell>
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant="outline"
                             onClick={() => viewUserDetails(user.id)}
-                            className="h-8 w-8 p-0"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Ver</span>
                           </Button>
                           <Button 
                             size="sm" 
-                            variant="ghost"
+                            variant="outline"
                             onClick={() => openEditDialog(user)}
-                            className="h-8 w-8 p-0"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Editar</span>
                           </Button>
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
                                 size="sm" 
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => {
                                   setSelectedUser(user);
                                   setSelectedRole(user.user_roles?.[0]?.role || '');
                                 }}
-                                className="h-8 px-2"
                               >
-                                🔐
+                                Rol
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -724,19 +579,19 @@ export default function Users() {
                           </Dialog>
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant="outline"
                             onClick={() => resetPassword(user.email, user.full_name || user.email)}
-                            className="h-8 w-8 p-0"
                           >
-                            <Key className="h-4 w-4" />
+                            <Key className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Reset</span>
                           </Button>
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant="destructive"
                             onClick={() => deleteUser(user.id, user.full_name || user.email)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Eliminar</span>
                           </Button>
                         </div>
                       </TableCell>

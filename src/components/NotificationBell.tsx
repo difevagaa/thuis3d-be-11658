@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { useNavigate } from "react-router-dom";
 import { logger } from "@/lib/logger";
 
@@ -179,7 +178,7 @@ export default function NotificationBell() {
       
       loadNotifications();
     } catch (error) {
-      i18nToast.error("error.notificationMarkFailed");
+      toast.error("Error al marcar notificación");
     }
   };
 
@@ -195,9 +194,9 @@ export default function NotificationBell() {
         .eq("is_read", false);
       
       loadNotifications();
-      i18nToast.success("success.allNotificationsRead");
+      toast.success("Todas las notificaciones marcadas como leídas");
     } catch (error) {
-      i18nToast.error("error.notificationsMarkFailed");
+      toast.error("Error al marcar notificaciones");
     }
   };
 
@@ -212,7 +211,7 @@ export default function NotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      i18nToast.success("success.notificationDeleted");
+      toast.success("Notificación eliminada");
     } catch (error: any) {
       logger.error("Error deleting notification:", error);
       toast.error("Error al eliminar notificación: " + (error.message || ""));
@@ -234,7 +233,7 @@ export default function NotificationBell() {
       if (error) throw error;
       
       loadNotifications();
-      i18nToast.success("success.readNotificationsDeleted");
+      toast.success("Notificaciones leídas eliminadas");
     } catch (error: any) {
       logger.error("Error deleting read notifications:", error);
       toast.error("Error al eliminar notificaciones: " + (error.message || ""));

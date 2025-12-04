@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { ArrowLeft, Printer } from "lucide-react";
 import InvoiceDisplay from "@/components/InvoiceDisplay";
 
@@ -33,7 +33,7 @@ export default function InvoiceView() {
       setInvoice(data);
     } catch (error: any) {
       logger.error("Error loading invoice:", error);
-      i18nToast.error("error.invoiceLoadFailed");
+      toast.error("Error al cargar factura");
       navigate("/admin/facturas");
     } finally {
       setLoading(false);

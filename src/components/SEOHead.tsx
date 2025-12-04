@@ -100,8 +100,8 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   }, [location.pathname]);
 
   // Determine final values with priority: props > page-specific > site customization > global seo > defaults
-  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Thuis3D | Professional 3D Printing Service & Design";
-  const finalDescription = description || seoData?.meta_description || globalSettings?.site_description || "Expert 3D printing and CAD design service. We transform your ideas into reality with high-quality materials. Fast prototypes and series production.";
+  const finalTitle = title || seoData?.page_title || globalSettings?.site_title || "Thuis 3D";
+  const finalDescription = description || seoData?.meta_description || globalSettings?.site_description || "Servicio profesional de impresión 3D";
   
   // Combine all multilingual keywords for comprehensive SEO
   const allKeywords = useMemo(() => {
@@ -124,7 +124,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Thuis3D - Professional 3D Printing Service",
+    "name": "Thuis 3D",
     "url": baseUrl,
     "logo": finalImage,
     "description": finalDescription,
@@ -132,7 +132,6 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
       "@type": "Country",
       "name": "Belgium"
     },
-    "serviceType": ["3D Printing Service", "Prototyping", "Additive Manufacturing", "CAD Design", "Custom 3D Prints"],
     "availableLanguage": ["Spanish", "English", "Dutch"],
     "sameAs": [
       globalSettings?.twitter_handle ? `https://twitter.com/${globalSettings.twitter_handle.replace('@', '')}` : ""
@@ -198,7 +197,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
       </script>
 
       {/* Additional SEO Meta Tags */}
-      <meta name="author" content="Thuis3D" />
+      <meta name="author" content="Thuis 3D" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
       <meta name="geo.region" content="BE" />

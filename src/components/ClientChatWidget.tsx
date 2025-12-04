@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, X, Send, Loader2, Paperclip, FileText, Image as ImageIcon, Video, Download, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 
@@ -158,14 +157,14 @@ export const ClientChatWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        i18nToast.error("error.mustLoginToSendMessages");
+        toast.error("Debes iniciar sesión para enviar mensajes");
         return;
       }
 
       let attachmentData: any[] = [];
       
       if (attachments.length > 0) {
-        i18nToast.info("info.uploadingFiles");
+        toast.info("Subiendo archivos adjuntos...");
         attachmentData = await uploadAttachments(attachments);
       }
 
@@ -183,7 +182,7 @@ export const ClientChatWidget = () => {
 
       if (error) throw error;
 
-      i18nToast.success("success.messageSent");
+      toast.success("Mensaje enviado exitosamente");
       setInput("");
       setAttachments([]);
       setUploadProgress({});

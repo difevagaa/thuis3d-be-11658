@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, X, FileText, Receipt } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
@@ -70,7 +70,7 @@ export default function CreateQuote() {
       }
     } catch (error: any) {
       logger.error("Error loading data:", error);
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar datos");
     }
   };
 
@@ -83,7 +83,7 @@ export default function CreateQuote() {
         .maybeSingle();
       
       if (error || !data) {
-        i18nToast.error("error.userLoadFailed");
+        toast.error("Error al cargar datos del usuario");
         return;
       }
       
@@ -101,7 +101,7 @@ export default function CreateQuote() {
       }));
     } catch (error: any) {
       logger.error("Error loading user data:", error);
-      i18nToast.error("error.userLoadFailed");
+      toast.error("Error al cargar datos del usuario");
     }
   };
 
@@ -150,29 +150,29 @@ export default function CreateQuote() {
     
     // Validations
     if (!isNewClient && !quoteData.user_id) {
-      i18nToast.error("error.selectUserOrNewClient");
+      toast.error("Selecciona un usuario o marca como nuevo cliente");
       return;
     }
 
     if (isNewClient) {
       if (!quoteData.customer_name || !quoteData.customer_email) {
-        i18nToast.error("error.newClientFieldsRequired");
+        toast.error("Nombre y email son obligatorios para nuevos clientes");
         return;
       }
     }
 
     if (!quoteData.description) {
-      i18nToast.error("error.projectDescriptionRequired");
+      toast.error("La descripción del proyecto es obligatoria");
       return;
     }
 
     if (!quoteData.estimated_price || parseFloat(quoteData.estimated_price) <= 0) {
-      i18nToast.error("error.estimatedPriceRequired");
+      toast.error("El precio estimado debe ser mayor a 0");
       return;
     }
 
     if (!quoteData.status_id) {
-      i18nToast.error("error.selectStatus");
+      toast.error("Selecciona un estado");
       return;
     }
 
@@ -262,7 +262,7 @@ export default function CreateQuote() {
         }
       }
 
-      i18nToast.success("success.quoteCreated");
+      toast.success("Cotización creada exitosamente");
       navigate(`/admin/cotizaciones/${newQuote.id}`);
     } catch (error: any) {
       logger.error("Error creating quote:", error);

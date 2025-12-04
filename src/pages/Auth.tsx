@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { z } from "zod";
 
 const Auth = () => {
@@ -140,7 +139,7 @@ const Auth = () => {
 
     try {
       if (!newPassword || newPassword.length < 6) {
-        i18nToast.error("error.passwordMinLength");
+        toast.error("La contraseña debe tener al menos 6 caracteres");
         return;
       }
 

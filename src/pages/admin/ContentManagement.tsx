@@ -10,27 +10,18 @@ import {
   CreditCard, 
   Award,
   Home,
-  Settings2,
-  ArrowUpDown
+  Settings2
 } from "lucide-react";
 import HomepageBanners from "./content/HomepageBanners";
 import FooterLinks from "./content/FooterLinks";
 import HomepageSections from "./content/HomepageSections";
 import HomepageQuickAccessCards from "./content/HomepageQuickAccessCards";
 import HomepageFeatures from "./content/HomepageFeatures";
-import HomepageComponentOrder from "./content/HomepageComponentOrder";
 
 export default function ContentManagement() {
-  const [activeTab, setActiveTab] = useState("order");
+  const [activeTab, setActiveTab] = useState("sections");
 
   const tabItems = [
-    {
-      id: "order",
-      label: "Orden",
-      icon: ArrowUpDown,
-      description: "Reordena los componentes de la página de inicio",
-      badge: "Nuevo"
-    },
     {
       id: "sections",
       label: "Secciones",
@@ -84,7 +75,7 @@ export default function ContentManagement() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Modern Tab Navigation */}
         <div className="border rounded-lg p-1 bg-muted/30 mb-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-1 bg-transparent h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 bg-transparent h-auto">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -105,11 +96,6 @@ export default function ContentManagement() {
             })}
           </TabsList>
         </div>
-        
-        {/* Order Tab - New */}
-        <TabsContent value="order" className="space-y-4">
-          <HomepageComponentOrder />
-        </TabsContent>
         
         {/* Sections Tab */}
         <TabsContent value="sections" className="space-y-4">

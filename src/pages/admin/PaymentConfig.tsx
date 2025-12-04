@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { CreditCard, Banknote, Upload, X, Building2 } from "lucide-react";
 
 export default function PaymentConfig() {
@@ -77,7 +77,7 @@ export default function PaymentConfig() {
       }
     } catch (error) {
       logger.error("Error loading config:", error);
-      i18nToast.error("error.configLoadFailed");
+      toast.error("Error al cargar configuración");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function PaymentConfig() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     if (paymentImages.length >= 3) {
-      i18nToast.error("error.maxImagesReached", { max: 3 });
+      toast.error("Máximo 3 imágenes permitidas");
       return;
     }
 
@@ -109,10 +109,10 @@ export default function PaymentConfig() {
         .getPublicUrl(filePath);
 
       setPaymentImages([...paymentImages, publicUrl]);
-      i18nToast.success("success.imageSaved");
+      toast.success("Imagen cargada correctamente");
     } catch (error: any) {
       logger.error("Error uploading:", error);
-      i18nToast.error("error.imageUploadFailed");
+      toast.error("Error al cargar imagen");
     } finally {
       setUploading(false);
     }
@@ -217,11 +217,11 @@ export default function PaymentConfig() {
         }
       }
 
-      i18nToast.success("success.paymentConfigSaved");
+      toast.success("Configuración de pagos guardada exitosamente");
       await loadConfig();
     } catch (error: any) {
       logger.error("Error saving payment config:", error);
-      i18nToast.error("error.configSaveFailed", { error: error.message || 'Unknown error' });
+      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
     }
   };
 

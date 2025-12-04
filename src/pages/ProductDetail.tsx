@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, MessageSquare, Check, ZoomIn } from "lucide-react";
+import { ShoppingCart, MessageSquare, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import ProductReviews from "@/components/ProductReviews";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
@@ -25,7 +24,6 @@ interface Product {
   price: number;
   stock: number;
   allow_direct_purchase: boolean;
-  allow_quote_request?: boolean;
   enable_material_selection: boolean;
   enable_color_selection: boolean;
   enable_custom_text: boolean;
@@ -64,31 +62,6 @@ interface CustomizationSection {
   availableImages: SectionImage[];
 }
 
-// Helper function to check if a section is incomplete (required but not selected)
-const isSectionIncomplete = (
-  section: CustomizationSection,
-  sectionColorSelections: Record<string, string>,
-  sectionImageSelections: Record<string, string>
-): boolean => {
-  if (!section.is_required) return false;
-  if (section.section_type === 'color') {
-    return !sectionColorSelections[section.id];
-  }
-  return !sectionImageSelections[section.id];
-};
-
-// Helper function to check if a section has a selection
-const hasSectionSelection = (
-  section: CustomizationSection,
-  sectionColorSelections: Record<string, string>,
-  sectionImageSelections: Record<string, string>
-): boolean => {
-  if (section.section_type === 'color') {
-    return !!sectionColorSelections[section.id];
-  }
-  return !!sectionImageSelections[section.id];
-};
-
 const ProductDetail = () => {
   const { id } = useParams();
   const { t } = useTranslation('products');
@@ -112,13 +85,13 @@ const ProductDetail = () => {
     product
   );
   
-  // Auto-rotate images every 20 seconds
+  // Auto-rotate images every 5 seconds
   useEffect(() => {
     if (productImages.length <= 1) return;
     
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
-    }, 20000); // 20 seconds
+    }, 5000);
     
     return () => clearInterval(interval);
   }, [productImages.length]);
@@ -152,7 +125,7 @@ const ProductDetail = () => {
 
       // Los materiales y colores ya están cargados por el hook useMaterialColors
     } catch (error: unknown) {
-      i18nToast.error("error.productLoadFailed");
+      toast.error("Error al cargar el producto");
       navigate("/productos");
     } finally {
       setLoading(false);
@@ -266,30 +239,27 @@ const ProductDetail = () => {
     // Validar secciones de personalización o selección tradicional
     if (customizationSections.length > 0) {
       const missingSections = customizationSections
-        .filter(section => isSectionIncomplete(section, sectionColorSelections, sectionImageSelections));
+        .filter(section => {
+          if (!section.is_required) return false;
+          if (section.section_type === 'color') {
+            return !sectionColorSelections[section.id];
+          } else {
+            return !sectionImageSelections[section.id];
+          }
+        });
       
       if (missingSections.length > 0) {
-        const sectionNames = missingSections.map(s => s.section_name).join(', ');
-        toast.error(t('selectRequired', { sections: sectionNames }), {
-          description: t('selectRequiredDesc'),
-          duration: 5000
-        });
+        toast.error(`Debe seleccionar: ${missingSections.map(s => s.section_name).join(', ')}`);
         return;
       }
     } else {
       if (product.enable_material_selection && !selectedMaterial) {
-        toast.error(t('selectMaterial'), {
-          description: t('selectMaterialDesc'),
-          duration: 4000
-        });
+        toast.error(t('selectMaterial'));
         return;
       }
 
       if (product.enable_color_selection && !selectedColor) {
-        toast.error(t('selectColor'), {
-          description: t('selectColorDesc'),
-          duration: 4000
-        });
+        toast.error(t('selectColor'));
         return;
       }
     }
@@ -465,34 +435,14 @@ const ProductDetail = () => {
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 lg:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
         <div className="space-y-2 md:space-y-3 lg:space-y-4">
-          {/* Main Image with Zoom */}
-          <div className="aspect-square bg-muted rounded-lg overflow-hidden relative group">
+          {/* Main Image */}
+          <div className="aspect-square bg-muted rounded-lg overflow-hidden">
             {productImages.length > 0 ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div className="relative w-full h-full cursor-zoom-in">
-                    <img 
-                      src={productImages[currentImageIndex]} 
-                      alt={`3D printed product: ${product.name}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 rounded-full p-3 shadow-lg">
-                        <ZoomIn className="h-6 w-6 text-primary" />
-                      </div>
-                    </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] p-2">
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <img 
-                      src={productImages[currentImageIndex]} 
-                      alt={`3D printed product: ${product.name} - Zoom`}
-                      className="max-w-full max-h-[85vh] object-contain rounded-lg"
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <img 
+                src={productImages[currentImageIndex]} 
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <p className="text-muted-foreground text-sm md:text-base">Sin imagen</p>
@@ -513,7 +463,7 @@ const ProductDetail = () => {
                 >
                   <img 
                     src={image} 
-                    alt={`3D print view ${index + 1}: ${product.name}`}
+                    alt={`${product.name} - ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -621,28 +571,11 @@ const ProductDetail = () => {
               {/* Mostrar secciones de personalización O selector de color tradicional */}
               {customizationSections.length > 0 ? (
                 <div className="space-y-3 md:space-y-4 border-t pt-3 md:pt-4">
-                  <h3 className="font-semibold text-sm md:text-base flex items-center gap-2">
-                    {t('customization')}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      ({customizationSections.filter(s => s.is_required).length} {t('required')})
-                    </span>
-                  </h3>
+                  <h3 className="font-semibold text-sm md:text-base">Personalización</h3>
                   {customizationSections.map((section) => (
-                    <div key={section.id} className={`space-y-1 md:space-y-2 p-3 rounded-lg border ${
-                      isSectionIncomplete(section, sectionColorSelections, sectionImageSelections)
-                        ? 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
-                        : 'border-border bg-muted/20'
-                    }`}>
-                      <Label className="text-xs md:text-sm font-medium flex items-center gap-2">
-                        {section.section_name}
-                        {section.is_required ? (
-                          <span className="text-destructive">*</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">({t('optional')})</span>
-                        )}
-                        {hasSectionSelection(section, sectionColorSelections, sectionImageSelections) && (
-                          <Check className="h-4 w-4 text-green-500" />
-                        )}
+                    <div key={section.id} className="space-y-1 md:space-y-2">
+                      <Label className="text-xs md:text-sm">
+                        {section.section_name} {section.is_required && '*'}
                       </Label>
                       
                       {/* Mostrar imagen de referencia si existe */}
@@ -651,67 +584,60 @@ const ProductDetail = () => {
                           <img
                             src={section.availableImages[0].image_url}
                             alt={section.section_name}
-                            className="w-24 h-24 object-cover rounded border shadow-sm"
+                            className="w-24 h-24 object-cover rounded border"
                           />
                         </div>
                       )}
                       
                       {section.section_type === 'color' ? (
-                        section.availableColors.length > 0 ? (
-                          <Select 
-                            value={sectionColorSelections[section.id] || ""} 
-                            onValueChange={(value) => setSectionColorSelections({
-                              ...sectionColorSelections,
-                              [section.id]: value
-                            })}
-                          >
-                            <SelectTrigger className={`h-8 md:h-10 text-xs md:text-sm ${
-                              section.is_required && !sectionColorSelections[section.id] ? 'border-amber-400' : ''
-                            }`}>
-                              <SelectValue placeholder={t('selectColor')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {section.availableColors.map((color) => (
-                                <SelectItem key={color.id} value={color.id} className="text-xs md:text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="w-3 h-3 md:w-4 md:h-4 rounded-full border shadow-sm"
-                                      style={{ backgroundColor: color.hex_code }}
-                                    />
-                                    {color.name}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">{t('noColorsAvailable')}</p>
-                        )
-                      ) : (
-                        section.availableImages.length > 0 ? (
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {section.availableImages.map((image) => (
-                              <div key={image.id} className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => setSectionImageSelections({
-                                    ...sectionImageSelections,
-                                    [section.id]: image.id
-                                  })}
-                                  className={`relative border-2 rounded-lg overflow-hidden transition-all hover:border-primary w-full ${
-                                    sectionImageSelections[section.id] === image.id
-                                      ? 'border-primary ring-2 ring-primary/20'
-                                      : 'border-border'
-                                  }`}
-                                >
-                                  <img
-                                    src={image.image_url}
-                                    alt={image.image_name}
-                                    className="w-full h-16 md:h-20 object-cover"
+                        <Select 
+                          value={sectionColorSelections[section.id] || ""} 
+                          onValueChange={(value) => setSectionColorSelections({
+                            ...sectionColorSelections,
+                            [section.id]: value
+                          })}
+                        >
+                          <SelectTrigger className="h-8 md:h-10 text-xs md:text-sm">
+                            <SelectValue placeholder={`Selecciona color`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {section.availableColors.map((color) => (
+                              <SelectItem key={color.id} value={color.id} className="text-xs md:text-sm">
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 md:w-4 md:h-4 rounded-full border"
+                                    style={{ backgroundColor: color.hex_code }}
                                   />
-                                  <p className="text-xs p-1 bg-background/80 text-center truncate">
-                                    {image.image_name}
-                                  </p>
+                                  {color.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {section.availableImages.map((image) => (
+                            <div key={image.id} className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setSectionImageSelections({
+                                  ...sectionImageSelections,
+                                  [section.id]: image.id
+                                })}
+                                className={`relative border-2 rounded-lg overflow-hidden transition-all hover:border-primary w-full ${
+                                  sectionImageSelections[section.id] === image.id
+                                    ? 'border-primary ring-2 ring-primary/20'
+                                    : 'border-border'
+                                }`}
+                              >
+                                <img
+                                  src={image.image_url}
+                                  alt={image.image_name}
+                                  className="w-full h-16 md:h-20 object-cover"
+                                />
+                                <p className="text-xs p-1 bg-background/80 text-center truncate">
+                                  {image.image_name}
+                                </p>
                                 {sectionImageSelections[section.id] === image.id && (
                                   <div className="absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
                                     <Check className="w-6 h-6 text-primary" />
@@ -759,9 +685,6 @@ const ProductDetail = () => {
                             </div>
                           ))}
                         </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">{t('noOptionsAvailable')}</p>
-                        )
                       )}
                     </div>
                   ))}
@@ -846,18 +769,16 @@ const ProductDetail = () => {
                   </Button>
                 )}
                 
-                {product.allow_quote_request !== false && (
-                  <Button
-                    variant={product.allow_direct_purchase ? "outline" : "default"}
-                    className="flex-1 text-xs md:text-sm"
-                    size="sm"
-                    onClick={requestQuote}
-                  >
-                    <MessageSquare className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5" />
-                    <span className="hidden sm:inline">{t('requestQuote')}</span>
-                    <span className="sm:hidden">{t('requestQuote')}</span>
-                  </Button>
-                )}
+                <Button
+                  variant={product.allow_direct_purchase ? "outline" : "default"}
+                  className="flex-1 text-xs md:text-sm"
+                  size="sm"
+                  onClick={() => navigate(`/producto/${product.id}/cotizar`)}
+                >
+                  <MessageSquare className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5" />
+                  <span className="hidden sm:inline">{t('requestQuote')}</span>
+                  <span className="sm:hidden">{t('requestQuote')}</span>
+                </Button>
               </div>
             </CardContent>
           </Card>

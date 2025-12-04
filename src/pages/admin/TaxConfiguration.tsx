@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Percent, Save } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -38,7 +38,7 @@ export default function TaxConfiguration() {
       });
     } catch (error) {
       logger.error("Error loading tax settings:", error);
-      i18nToast.error("error.taxLoadFailed");
+      toast.error("Error al cargar configuración de IVA");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function TaxConfiguration() {
       // Validate tax rate
       const rate = parseFloat(taxRate);
       if (isNaN(rate) || rate < 0 || rate > 100) {
-        i18nToast.error("error.taxRateInvalid");
+        toast.error("La tasa de IVA debe estar entre 0 y 100");
         return;
       }
 
@@ -70,10 +70,10 @@ export default function TaxConfiguration() {
 
       if (rateError) throw rateError;
 
-      i18nToast.success("success.taxConfigSaved");
+      toast.success("Configuración de IVA guardada exitosamente");
     } catch (error) {
       logger.error("Error saving tax settings:", error);
-      i18nToast.error("error.configSaveFailed");
+      toast.error("Error al guardar configuración");
     } finally {
       setSaving(false);
     }

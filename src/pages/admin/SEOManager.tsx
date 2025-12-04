@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Search, TrendingUp, FileText, BarChart3, Link2, AlertCircle, CheckCircle, RefreshCw, CheckCircle2, HelpCircle, Sparkles, Zap, Target, Eye, Globe2, Settings2, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -55,7 +55,7 @@ export default function SEOManager() {
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const { regenerateAllProductSEO, regenerateAllCategorySEO, regenerateAllBlogSEO, validateSEO } = useAutoSEO();
+  const { regenerateAllProductSEO, validateSEO } = useAutoSEO();
 
   useEffect(() => {
     loadData();
@@ -116,7 +116,7 @@ export default function SEOManager() {
       await calculateSeoScore(settingsData, keywordsData, metaData);
     } catch (error: unknown) {
       logger.error("Error loading SEO data:", { error });
-      i18nToast.error("error.seoLoadFailed");
+      toast.error("Error al cargar datos SEO");
     } finally {
       setLoading(false);
     }
@@ -430,7 +430,7 @@ export default function SEOManager() {
         });
 
       if (error) throw error;
-      i18nToast.success("success.seoConfigSaved");
+      toast.success("Configuración SEO guardada");
       
       // Log audit
       await supabase.from("seo_audit_log").insert({
@@ -441,7 +441,7 @@ export default function SEOManager() {
       });
     } catch (error: unknown) {
       logger.error("Error saving settings:", { error });
-      i18nToast.error("error.configSaveFailed");
+      toast.error("Error al guardar configuración");
     }
   };
 
@@ -452,44 +452,32 @@ export default function SEOManager() {
       
       // Use advanced client-side SEO generation with multilingual support
       // This generates keywords in all three languages (ES, EN, NL) for the Belgian market
-      // Now includes product translations, category translations, and blog translations
+      const result = await regenerateAllProductSEO();
       
-      // Generate keywords for products (with translations)
-      const productResult = await regenerateAllProductSEO();
-      
-      // Generate keywords for categories (with translations)
-      const categoryResult = await regenerateAllCategorySEO();
-      
-      // Generate keywords for blog posts (with translations)
-      const blogResult = await regenerateAllBlogSEO();
-      
-      const totalProcessed = productResult.processed + categoryResult.processed + blogResult.processed;
-      const totalErrors = productResult.errors + categoryResult.errors + blogResult.errors;
-      
-      if (totalErrors > 0 && totalProcessed === 0) {
+      if (!result.success) {
         throw new Error('Error en generación masiva');
       }
+      
+      // Note: We no longer call generate_product_keywords_optimized as it only generates
+      // Spanish keywords and overwrites the multilingual keywords generated above
       
       // Clean up low quality keywords
       const { data: cleanupCount } = await supabase.rpc("cleanup_low_quality_keywords");
       
       await loadData();
-      toast.success(`SEO multilingüe generado (ES, EN, NL). ${productResult.processed} productos, ${categoryResult.processed} categorías, ${blogResult.processed} posts procesados. ${cleanupCount || 0} keywords obsoletas eliminadas`);
+      toast.success(`SEO multilingüe generado (ES, EN, NL). ${result.processed} productos procesados, ${cleanupCount || 0} keywords obsoletas eliminadas`);
       
       // Log audit
       await supabase.from("seo_audit_log").insert({
         audit_type: "keywords",
         status: "success",
-        message: "Palabras clave multilingües generadas (ES, EN, NL) para mercado Bélgica - Incluye traducciones de productos, categorías y blog",
+        message: "Palabras clave multilingües generadas (ES, EN, NL) para mercado Bélgica",
         details: { 
           total_keywords: keywords.length,
-          products_processed: productResult.processed,
-          categories_processed: categoryResult.processed,
-          blog_posts_processed: blogResult.processed,
+          products_processed: result.processed,
           cleanup_count: cleanupCount || 0,
-          algorithm: 'semantic_multilingual_v3',
-          languages: ['es', 'en', 'nl'],
-          sources: ['products', 'categories', 'blog']
+          algorithm: 'semantic_multilingual_v2',
+          languages: ['es', 'en', 'nl']
         }
       });
     } catch (error: unknown) {
@@ -669,7 +657,7 @@ export default function SEOManager() {
 
   const generateMetaTags = async () => {
     try {
-      i18nToast.info("info.generatingMetaTags");
+      toast.info("Generando meta tags automáticamente...");
       
       // Call database function to generate meta tags
       const { data: generatedCount, error } = await supabase.rpc("generate_meta_tags_automatically");
@@ -724,7 +712,7 @@ export default function SEOManager() {
       toast.success(`Palabra clave agregada (${newKeywordLanguage.toUpperCase()})`);
     } catch (error: unknown) {
       logger.error("Error adding keyword:", { error });
-      i18nToast.error("error.keywordAddFailed");
+      toast.error("Error al agregar palabra clave");
     }
   };
 
@@ -752,16 +740,16 @@ export default function SEOManager() {
 
       if (error) throw error;
       await loadData();
-      i18nToast.success("success.keywordDeleted");
+      toast.success("Palabra clave eliminada");
     } catch (error: unknown) {
       logger.error("Error deleting keyword:", { error });
-      i18nToast.error("error.keywordDeleteFailed");
+      toast.error("Error al eliminar palabra clave");
     }
   };
 
   const runSeoAudit = async () => {
     try {
-      i18nToast.info("info.seoAuditRunning");
+      toast.info("Ejecutando auditoría SEO avanzada...");
       
       const recommendations: string[] = [];
       let auditScore = 100;
@@ -870,20 +858,20 @@ export default function SEOManager() {
       toast.success(`Auditoría completada - Puntuación: ${finalScore}/100`);
     } catch (error: unknown) {
       logger.error("Error running audit:", { error });
-      i18nToast.error("error.seoAuditFailed");
+      toast.error("Error al ejecutar auditoría");
     }
   };
 
   const generateSitemap = async () => {
     try {
-      i18nToast.info("info.generatingSitemap");
+      toast.info("Generando sitemap...");
       
       // This would call an edge function to generate sitemap
       const { error } = await supabase.functions.invoke("generate-sitemap");
       
       if (error) throw error;
       
-      i18nToast.success("success.sitemapGenerated");
+      toast.success("Sitemap generado exitosamente");
       
       await supabase.from("seo_audit_log").insert({
         audit_type: "sitemap",
@@ -892,13 +880,13 @@ export default function SEOManager() {
       });
     } catch (error: unknown) {
       logger.error("Error generating sitemap:", { error });
-      i18nToast.error("error.seoSitemapFailed");
+      toast.error("Error al generar sitemap");
     }
   };
 
   const verifyConfiguration = async () => {
     try {
-      i18nToast.info("info.verifySeoConfig");
+      toast.info("Verificando configuración SEO y Google Analytics...");
       
       const issues: string[] = [];
       const successes: string[] = [];
@@ -1049,7 +1037,7 @@ export default function SEOManager() {
       }
     } catch (error: unknown) {
       logger.error("Error verifying configuration:", { error });
-      i18nToast.error("error.seoVerifyFailed");
+      toast.error("Error al verificar configuración");
     }
   };
 

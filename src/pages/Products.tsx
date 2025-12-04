@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Printer, Filter, Layers, Box, Euro, ArrowUpDown, ShoppingCart, Package, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { ProductCard } from "@/components/ProductCard";
 
@@ -29,12 +28,6 @@ const Products = () => {
 
   useEffect(() => {
     loadData();
-
-    // Subscribe to auth state changes to reload products with correct filtering
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Reload products when user logs in/out to show correct role-based products
-      loadData();
-    });
 
     // Subscribe to product changes for real-time updates
     const productsChannel = supabase
@@ -63,23 +56,9 @@ const Products = () => {
       })
       .subscribe();
 
-    // Subscribe to product_roles changes to update visibility immediately
-    const productRolesChannel = supabase
-      .channel('products-product-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
     return () => {
-      authSubscription.unsubscribe();
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(rolesChannel);
-      supabase.removeChannel(productRolesChannel);
     };
   }, []);
 
@@ -89,16 +68,12 @@ const Products = () => {
 
   const loadData = async () => {
     try {
-      // First, ensure session is valid by calling getSession() 
-      // This will auto-refresh the token if needed
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Get user from the session (already validated)
-      const user = session?.user ?? null;
-      
-      // Get user roles if logged in (only if session is valid)
+      // Get user roles if logged in
       let userRoles: string[] = [];
-      if (user && !sessionError) {
+      if (user) {
         const { data: rolesData } = await supabase
           .from("user_roles")
           .select("role")
@@ -109,7 +84,7 @@ const Products = () => {
           .filter(role => role.length > 0);
       }
 
-      // Fetch products - this should always succeed regardless of auth state
+      // Fetch products
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
@@ -151,7 +126,7 @@ const Products = () => {
       setCategories(categoriesRes.data || []);
       setMaterials(materialsRes.data || []);
     } catch (error) {
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar datos");
     }
   };
 
@@ -159,7 +134,7 @@ const Products = () => {
     const code = productCodeSearch.trim().toUpperCase();
     
     if (!code) {
-      i18nToast.error("error.enterProductCode");
+      toast.error("Por favor ingresa un código de producto");
       return;
     }
 
@@ -173,7 +148,7 @@ const Products = () => {
         .single();
 
       if (error || !productData) {
-        i18nToast.error("error.productNotFound");
+        toast.error("No se encontró ningún producto con ese código");
         return;
       }
       
@@ -182,7 +157,7 @@ const Products = () => {
       setSearchedByCode(true);
       toast.success(`Producto encontrado: ${productData.name}`);
     } catch (error) {
-      i18nToast.error("error.productSearchFailed");
+      toast.error("Error al buscar el producto");
     }
   };
 
@@ -190,7 +165,7 @@ const Products = () => {
     setProductCodeSearch("");
     setSearchedByCode(false);
     loadData(); // Recargar productos normales
-    i18nToast.info("info.codeSearchCleared");
+    toast.info("Búsqueda por código eliminada");
   };
 
   const filterAndSortProducts = () => {

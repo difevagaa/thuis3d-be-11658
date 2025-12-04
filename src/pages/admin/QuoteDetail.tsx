@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
@@ -51,7 +51,7 @@ export default function QuoteDetail() {
       
       if (!quoteData) {
         logger.error('No quote found with id:', id);
-        i18nToast.error("error.quoteNotFound");
+        toast.error("Cotización no encontrada");
         setLoading(false);
         return;
       }
@@ -79,7 +79,7 @@ export default function QuoteDetail() {
       setTaxEnabled((data as any).tax_enabled ?? true);
     } catch (error: any) {
       logger.error("Error loading quote detail:", error);
-      i18nToast.error("error.quoteLoadFailed");
+      toast.error("Error al cargar detalles de la cotización");
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function QuoteDetail() {
     const pathToDownload = filePath || quote?.file_storage_path;
     
     if (!pathToDownload) {
-      i18nToast.error("error.noFileAvailable");
+      toast.error("No hay archivo disponible");
       return;
     }
 
@@ -109,10 +109,10 @@ export default function QuoteDetail() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      i18nToast.success("success.fileDownloaded");
+      toast.success("Archivo descargado");
     } catch (error: any) {
       logger.error("Error downloading file:", error);
-      i18nToast.error("error.downloadFailed");
+      toast.error("Error al descargar archivo");
     }
   };
 

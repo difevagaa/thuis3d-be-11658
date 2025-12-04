@@ -8,12 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { i18nToast } from "@/lib/i18nToast";
-import { Plus, Pencil, Trash2, Users, Eye } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { logger } from '@/lib/logger';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function RolesPermissions() {
   const [customRoles, setCustomRoles] = useState<any[]>([]);
@@ -21,9 +19,6 @@ export default function RolesPermissions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [roleUsers, setRoleUsers] = useState<{ [key: string]: number }>({});
-  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
-  const [selectedRoleUsers, setSelectedRoleUsers] = useState<any[]>([]);
-  const [selectedRoleName, setSelectedRoleName] = useState<string>("");
   
   const [newRole, setNewRole] = useState({
     name: "",
@@ -91,63 +86,31 @@ export default function RolesPermissions() {
       if (error) throw error;
       setCustomRoles(rolesData || []);
 
-      // Load user counts for each role by role name (works for all roles)
+      // Load user counts for each role
       const counts: { [key: string]: number } = {};
       for (const role of rolesData || []) {
-        const { count } = await supabase
-          .from("user_roles")
-          .select("*", { count: 'exact', head: true })
-          .eq("role", role.name);
-        counts[role.name] = count || 0;
+        // Only count for valid app_role types
+        if (['admin', 'client', 'moderator'].includes(role.name)) {
+          const { count } = await supabase
+            .from("user_roles")
+            .select("*", { count: 'exact', head: true })
+            .eq("role", role.name as 'admin' | 'client' | 'moderator');
+          counts[role.name] = count || 0;
+        }
       }
       setRoleUsers(counts);
     } catch (error: any) {
       logger.error("Error loading roles:", error);
-      i18nToast.error("error.rolesLoadFailed");
+      toast.error("Error al cargar roles");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadUsersForRole = async (roleName: string, displayName: string) => {
-    try {
-      // Get all user_roles with this role
-      const { data: userRolesData, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", roleName);
-
-      if (rolesError) throw rolesError;
-
-      if (!userRolesData || userRolesData.length === 0) {
-        setSelectedRoleUsers([]);
-        setSelectedRoleName(displayName);
-        setUsersDialogOpen(true);
-        return;
-      }
-
-      // Get profile info for these users
-      const userIds = userRolesData.map(ur => ur.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
-
-      if (profilesError) throw profilesError;
-
-      setSelectedRoleUsers(profilesData || []);
-      setSelectedRoleName(displayName);
-      setUsersDialogOpen(true);
-    } catch (error: any) {
-      logger.error("Error loading users for role:", error);
-      i18nToast.error("error.userRoleLoadFailed");
     }
   };
 
   const handleCreateRole = async () => {
     try {
       if (!newRole.name || !newRole.display_name) {
-        i18nToast.error("error.roleNameRequired");
+        toast.error("Nombre y nombre visible son obligatorios");
         return;
       }
 
@@ -171,20 +134,20 @@ export default function RolesPermissions() {
 
       if (error) {
         if (error.code === '23505') {
-          i18nToast.error("error.roleNameExists");
+          toast.error("Ya existe un rol con ese nombre");
         } else {
           throw error;
         }
         return;
       }
 
-      i18nToast.success("success.roleCreated");
+      toast.success("Rol creado exitosamente");
       setDialogOpen(false);
       setNewRole({ name: "", display_name: "", description: "", allowed_pages: [] });
       loadRoles();
     } catch (error: any) {
       logger.error("Error creating role:", error);
-      i18nToast.error("error.roleSaveFailed");
+      toast.error("Error al crear rol");
     }
   };
 
@@ -203,12 +166,12 @@ export default function RolesPermissions() {
 
       if (error) throw error;
 
-      i18nToast.success("success.roleUpdated");
+      toast.success("Rol actualizado exitosamente");
       setEditingRole(null);
       loadRoles();
     } catch (error: any) {
       logger.error("Error updating role:", error);
-      i18nToast.error("error.roleSaveFailed");
+      toast.error("Error al actualizar rol");
     }
   };
 
@@ -223,11 +186,11 @@ export default function RolesPermissions() {
 
       if (error) throw error;
 
-      i18nToast.success("success.roleDeleted");
+      toast.success("Rol eliminado exitosamente");
       await loadRoles();
     } catch (error: any) {
       logger.error("Error deleting role:", error);
-      i18nToast.error("error.roleDeleteFailed");
+      toast.error("Error al eliminar rol");
     }
   };
 
@@ -355,14 +318,9 @@ export default function RolesPermissions() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="secondary" 
-                          className="gap-1 cursor-pointer hover:bg-secondary/80 transition-colors"
-                          onClick={() => loadUsersForRole(role.name, role.display_name)}
-                        >
+                        <Badge variant="secondary" className="gap-1">
                           <Users className="h-3 w-3" />
                           {roleUsers[role.name] || 0}
-                          <Eye className="h-3 w-3 ml-1" />
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -457,50 +415,6 @@ export default function RolesPermissions() {
             </Button>
             <Button onClick={handleUpdateRole}>
               Guardar Cambios
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Users with Role Dialog */}
-      <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Usuarios con rol "{selectedRoleName}"
-            </DialogTitle>
-            <DialogDescription>
-              Lista de usuarios que tienen asignado este rol
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[400px]">
-            {selectedRoleUsers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>No hay usuarios con este rol</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {selectedRoleUsers.map((user) => (
-                  <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {(user.full_name || user.email || '?').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{user.full_name || 'Sin nombre'}</p>
-                      <p className="text-sm text-muted-foreground truncate">{user.email || '-'}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-          <DialogFooter>
-            <Button onClick={() => setUsersDialogOpen(false)}>
-              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>

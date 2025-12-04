@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Trash2, Plus, Package, DollarSign, Palette, Image, Shield, Info, Truck, Video, Box, Tag, Eye, EyeOff, CheckCircle2, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, Plus, Package, DollarSign, Palette, Image, Shield, Info, Truck, Video, Box, Tag, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +19,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import ProductImageUploader from "./ProductImageUploader";
 import ProductCustomizationSections from "@/components/admin/ProductCustomizationSections";
 import { logger } from '@/lib/logger';
-
-// Default section type for customization sections
-const DEFAULT_SECTION_TYPE = 'color' as const;
 
 export default function ProductsAdminEnhanced() {
   const [products, setProducts] = useState<any[]>([]);
@@ -39,7 +36,6 @@ export default function ProductsAdminEnhanced() {
     price: 0,
     stock: 0,
     allow_direct_purchase: true,
-    allow_quote_request: true,
     enable_material_selection: false,
     enable_color_selection: false,
     enable_custom_text: false,
@@ -80,22 +76,6 @@ export default function ProductsAdminEnhanced() {
 
   useEffect(() => {
     loadData();
-
-    // Subscribe to custom_roles changes to update role list dynamically
-    const customRolesChannel = supabase
-      .channel('products-custom-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'custom_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(customRolesChannel);
-    };
   }, []);
 
   const loadData = async () => {
@@ -149,7 +129,7 @@ export default function ProductsAdminEnhanced() {
         setTaxRate(taxSettingsRes.data.tax_rate);
       }
     } catch (error) {
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar datos");
     } finally {
       setLoading(false);
     }
@@ -162,11 +142,11 @@ export default function ProductsAdminEnhanced() {
       if (error) throw error;
       if (data) {
         setFormData({ ...formData, product_code: data });
-        i18nToast.success("success.productCodeGenerated", { code: data });
+        toast.success(`Código generado: ${data}`);
       }
     } catch (error) {
       logger.error('Error generating product code:', error);
-      i18nToast.error("error.productCodeGenerationFailed");
+      toast.error('Error al generar código');
     } finally {
       setIsGeneratingCode(false);
     }
@@ -175,7 +155,7 @@ export default function ProductsAdminEnhanced() {
   const validateProductCode = async (code: string): Promise<boolean> => {
     if (!code || code.trim() === '') return true;
     if (!/^[A-Z0-9]{6}$/i.test(code)) {
-      i18nToast.error("error.productCodeInvalid");
+      toast.error('El código debe tener exactamente 6 caracteres alfanuméricos');
       return false;
     }
     try {
@@ -184,13 +164,13 @@ export default function ProductsAdminEnhanced() {
       const { data, error } = await query.maybeSingle();
       if (error) throw error;
       if (data) {
-        i18nToast.error("error.productCodeExists");
+        toast.error('Este código de producto ya existe');
         return false;
       }
       return true;
     } catch (error) {
       logger.error('Error validating product code:', error);
-      i18nToast.error("error.productCodeValidationFailed");
+      toast.error('Error al validar código');
       return false;
     }
   };
@@ -225,7 +205,7 @@ export default function ProductsAdminEnhanced() {
         if (selectedRoles.length > 0) {
           await supabase.from("product_roles").insert(selectedRoles.map(role => ({ product_id: editingProductId, role: String(role) })));
         }
-        i18nToast.success("success.productUpdated");
+        toast.success("Producto actualizado correctamente");
       } else {
         const { data: product, error: productError } = await supabase.from("products").insert([productData]).select().single();
         if (productError) throw productError;
@@ -245,32 +225,21 @@ export default function ProductsAdminEnhanced() {
             if (!section.section_name.trim()) continue;
             const { data: insertedSection, error: sectionError } = await (supabase as any)
               .from('product_customization_sections')
-              .insert({ 
-                product_id: product.id, 
-                section_name: section.section_name, 
-                display_order: section.display_order, 
-                is_required: section.is_required,
-                section_type: section.section_type || DEFAULT_SECTION_TYPE
-              })
+              .insert({ product_id: product.id, section_name: section.section_name, display_order: section.display_order, is_required: section.is_required })
               .select().single();
-            if (sectionError) {
-              logger.error('[ProductsAdmin] Error creating section:', sectionError);
-              continue;
-            }
-            if ((section.section_type || DEFAULT_SECTION_TYPE) === 'color' && section.selectedColors && section.selectedColors.length > 0) {
+            if (sectionError) continue;
+            if (section.selectedColors && section.selectedColors.length > 0) {
               await (supabase as any).from('product_section_colors').insert(section.selectedColors.map((colorId: string) => ({ section_id: insertedSection.id, color_id: colorId })));
             }
-            // Note: Images are handled by ProductCustomizationSections component when saving
           }
         }
         setEditingProductId(product.id);
-        i18nToast.success("success.productCreated");
+        toast.success("Producto creado. Ahora puedes subir imágenes.");
       }
       await loadData();
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[ProductsAdmin] Error:', error);
-      const errorMessage = error?.message || error?.details || '';
-      i18nToast.error("error.productSaveFailed", { error: errorMessage || 'Unknown error' });
+      toast.error("Error al guardar producto");
     }
   };
 
@@ -283,35 +252,15 @@ export default function ProductsAdminEnhanced() {
     if (!confirm("¿Mover este producto a la papelera?")) return;
     try {
       await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-      i18nToast.success("success.productDeleted");
+      toast.success("Producto movido a la papelera");
       loadData();
     } catch (error) {
-      i18nToast.error("error.productDeleteFailed");
+      toast.error("Error al eliminar producto");
     }
   };
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0,
-      allow_direct_purchase: true,
-      allow_quote_request: true,
-      enable_material_selection: false,
-      enable_color_selection: false,
-      enable_custom_text: false,
-      category_id: null,
-      tax_enabled: true,
-      weight: null,
-      length: null,
-      width: null,
-      height: null,
-      video_url: null,
-      shipping_type: "standard",
-      custom_shipping_cost: null,
-      product_code: ""
-    });
+    setFormData({ name: "", description: "", price: 0, stock: 0, allow_direct_purchase: true, enable_material_selection: false, enable_color_selection: false, enable_custom_text: false, category_id: null, tax_enabled: true, weight: null, length: null, width: null, height: null, video_url: null, shipping_type: "standard", custom_shipping_cost: null, product_code: "" });
     setSelectedMaterials([]);
     setSelectedColors([]);
     setSelectedRoles([]);
@@ -324,8 +273,8 @@ export default function ProductsAdminEnhanced() {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("video/")) { i18nToast.error("error.invalidVideoFormat"); return; }
-    if (file.size > 20 * 1024 * 1024) { i18nToast.error("error.videoTooLarge"); return; }
+    if (!file.type.startsWith("video/")) { toast.error("Por favor selecciona un archivo de video"); return; }
+    if (file.size > 20 * 1024 * 1024) { toast.error("El video no debe superar 20MB"); return; }
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
@@ -334,10 +283,10 @@ export default function ProductsAdminEnhanced() {
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from("product-videos").getPublicUrl(filePath);
       setFormData({ ...formData, video_url: publicUrl });
-      i18nToast.success("success.videoSaved");
+      toast.success("Video cargado exitosamente");
     } catch (error) {
       logger.error("Error uploading video:", error);
-      i18nToast.error("error.videoUploadFailed");
+      toast.error("Error al cargar el video");
     }
   };
 
@@ -502,13 +451,6 @@ export default function ProductsAdminEnhanced() {
                             </div>
                             <Switch checked={formData.allow_direct_purchase} onCheckedChange={(checked) => setFormData({ ...formData, allow_direct_purchase: checked })} />
                           </div>
-                          <div className="flex items-center justify-between p-4 rounded-lg border">
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-full ${formData.allow_quote_request ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{formData.allow_quote_request ? <MessageSquare className="h-5 w-5" /> : <Info className="h-5 w-5" />}</div>
-                              <div><Label className="font-medium">Permitir Solicitar Cotización</Label><p className="text-sm text-muted-foreground">{formData.allow_quote_request ? 'Los clientes pueden solicitar cotización' : 'Botón de cotización oculto'}</p></div>
-                            </div>
-                            <Switch checked={formData.allow_quote_request} onCheckedChange={(checked) => setFormData({ ...formData, allow_quote_request: checked })} />
-                          </div>
                           <Separator />
                           <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -573,7 +515,7 @@ export default function ProductsAdminEnhanced() {
                             <div className="text-center p-8 border-2 border-dashed rounded-lg bg-muted/30">
                               <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                               <p className="text-muted-foreground">Primero guarda el producto para subir imágenes</p>
-                              <Button variant="secondary" className="mt-4" onClick={() => { if (!formData.name) { i18nToast.error("error.productNameRequired"); setActiveTab("basic"); return; } handleSubmit(); }}>Guardar Producto Ahora</Button>
+                              <Button variant="secondary" className="mt-4" onClick={() => { if (!formData.name) { toast.error("Completa el nombre del producto"); setActiveTab("basic"); return; } handleSubmit(); }}>Guardar Producto Ahora</Button>
                             </div>
                           )}
                         </CardContent>
@@ -669,27 +611,7 @@ export default function ProductsAdminEnhanced() {
                           const { data: productMaterials } = await supabase.from("product_materials").select("material_id").eq("product_id", product.id);
                           const { data: productColors } = await supabase.from("product_colors").select("color_id").eq("product_id", product.id);
                           setEditingProductId(product.id);
-                          setFormData({
-                            name: product.name,
-                            description: product.description || "",
-                            price: product.price || 0,
-                            stock: product.stock || 0,
-                            category_id: product.category_id || null,
-                            allow_direct_purchase: product.allow_direct_purchase ?? true,
-                            allow_quote_request: product.allow_quote_request ?? true,
-                            enable_material_selection: product.enable_material_selection ?? false,
-                            enable_color_selection: product.enable_color_selection ?? false,
-                            enable_custom_text: product.enable_custom_text ?? false,
-                            tax_enabled: product.tax_enabled ?? true,
-                            weight: product.weight || null,
-                            length: product.length || null,
-                            width: product.width || null,
-                            height: product.height || null,
-                            video_url: product.video_url || null,
-                            shipping_type: product.shipping_type || "standard",
-                            custom_shipping_cost: product.custom_shipping_cost || null,
-                            product_code: product.product_code || ""
-                          });
+                          setFormData({ name: product.name, description: product.description || "", price: product.price || 0, stock: product.stock || 0, category_id: product.category_id || null, allow_direct_purchase: product.allow_direct_purchase ?? true, enable_material_selection: product.enable_material_selection ?? false, enable_color_selection: product.enable_color_selection ?? false, enable_custom_text: product.enable_custom_text ?? false, tax_enabled: product.tax_enabled ?? true, weight: product.weight || null, length: product.length || null, width: product.width || null, height: product.height || null, video_url: product.video_url || null, shipping_type: product.shipping_type || "standard", custom_shipping_cost: product.custom_shipping_cost || null, product_code: product.product_code || "" });
                           setSelectedRoles(productRoles?.map((r: any) => r.role) || []);
                           setSelectedMaterials(productMaterials?.map((m: any) => m.material_id) || []);
                           setSelectedColors(productColors?.map((c: any) => c.color_id) || []);

@@ -7,7 +7,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 
 interface UserSearchSelectorProps {
@@ -106,7 +105,7 @@ export default function UserSearchSelector({
       }
     } catch (error: unknown) {
       console.error("Error loading users:", error);
-      i18nToast.error("error.usersLoadFailed");
+      toast.error("Error al cargar usuarios");
     } finally {
       setLoading(false);
     }

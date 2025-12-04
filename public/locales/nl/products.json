@@ -38,21 +38,18 @@
   "buy": "Kopen",
   "requestQuote": "Offerte Aanvragen",
   "selectMaterial": "Selecteer een materiaal",
-  "selectMaterialDesc": "Kies een materiaal voordat u doorgaat",
   "selectColor": "Selecteer een kleur",
-  "selectColorDesc": "Kies een kleur voordat u doorgaat",
   "selectMaterialFirst": "Selecteer eerst een materiaal",
-  "selectRequired": "Ontbrekende selecties: {{sections}}",
-  "selectRequiredDesc": "Vul alle opties gemarkeerd met * in voordat u doorgaat",
   "noColorsAvailable": "Geen kleuren beschikbaar",
-  "noOptionsAvailable": "Geen opties beschikbaar",
   "videoTitle": "Productvideo",
   "videoNotSupported": "Uw browser ondersteunt de video niet.",
   "addedToCart": "Product toegevoegd aan winkelwagen",
   "quoteRequested": "Offerte aangevraagd. We nemen binnenkort contact met u op.",
-  "mustLogin": "U moet inloggen om door te gaan",
+  "mustLogin": "U moet inloggen om",
   "mustLoginQuote": "U moet inloggen om offertes aan te vragen",
-  "customization": "Aanpassing",
-  "required": "verplicht",
-  "optional": "optioneel"
+  "customization": {
+    "title": "Aanpassing",
+    "selectColorFor": "Selecteer kleur voor",
+    "selectImageFor": "Selecteer afbeelding voor"
+  }
 }

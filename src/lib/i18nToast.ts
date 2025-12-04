@@ -1,9 +1,6 @@
 import { toast } from 'sonner';
 import i18n from '@/i18n/config';
 
-// Re-export toast for convenience
-export { toast };
-
 interface I18nOptions {
   [key: string]: string | number;
 }

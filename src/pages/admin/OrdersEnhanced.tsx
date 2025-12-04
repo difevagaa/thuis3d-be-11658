@@ -4,14 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
-import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
-import { Plus, Search, ShoppingCart, Eye, Pencil } from "lucide-react";
 
 export default function OrdersEnhanced() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -19,7 +16,6 @@ export default function OrdersEnhanced() {
   const [loading, setLoading] = useState(true);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadData();
@@ -59,7 +55,7 @@ export default function OrdersEnhanced() {
       setOrders(ordersRes.data || []);
       setStatuses(statusesRes.data || []);
     } catch (error) {
-      i18nToast.error("error.ordersLoadFailed");
+      toast.error("Error al cargar pedidos");
     } finally {
       setLoading(false);
     }
@@ -98,7 +94,7 @@ export default function OrdersEnhanced() {
         await checkAndSendGiftCardEmail(editingOrder.id);
       }
 
-      i18nToast.success("success.statusUpdated");
+      toast.success("Estado actualizado exitosamente");
       setEditingOrder(null);
       setSelectedStatus("");
     } catch (error: any) {
@@ -200,7 +196,7 @@ export default function OrdersEnhanced() {
           sender_name: existingCard.sender_name
         });
 
-        i18nToast.success("success.giftCardEmailSent");
+        toast.success("Email de tarjeta regalo enviado");
       }
     } catch (error) {
       console.error("Error processing gift card:", error);
@@ -208,201 +204,79 @@ export default function OrdersEnhanced() {
     }
   };
 
-  // Filter orders based on search term
-  const filteredOrders = orders.filter(order => 
-    order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Calculate stats
-  const paidOrders = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'completed');
-  const pendingOrders = orders.filter(o => o.payment_status === 'pending');
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center animate-pulse">
-            <ShoppingCart className="h-6 w-6 text-white" />
-          </div>
-          <p className="text-muted-foreground">Cargando pedidos...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div>Cargando...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <AdminPageHeader
-        title="Gestión de Pedidos"
-        description="Administra todos los pedidos de tus clientes"
-        emoji="🛒"
-        gradient="from-orange-500 to-amber-600"
-        actions={
-          <Button 
-            onClick={() => window.location.href = "/admin/pedidos/crear"}
-            className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Pedido
-          </Button>
-        }
-      />
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Gestión de Pedidos</h1>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <AdminStatCard
-          title="Total Pedidos"
-          value={orders.length}
-          emoji="📦"
-          gradient="from-orange-500/10 to-amber-500/5"
-        />
-        <AdminStatCard
-          title="Pedidos Pagados"
-          value={paidOrders.length}
-          emoji="✅"
-          gradient="from-green-500/10 to-emerald-500/5"
-        />
-        <AdminStatCard
-          title="Pendientes de Pago"
-          value={pendingOrders.length}
-          emoji="⏳"
-          gradient="from-yellow-500/10 to-amber-500/5"
-        />
-        <AdminStatCard
-          title="Ingresos Totales"
-          value={`€${totalRevenue.toFixed(2)}`}
-          emoji="💰"
-          gradient="from-blue-500/10 to-indigo-500/5"
-        />
+      <div className="mb-6">
+        <Button onClick={() => window.location.href = "/admin/pedidos/crear"}>
+          Crear Pedido Manual
+        </Button>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="mb-6 border-border/50">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por número de pedido, cliente o email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Badge variant="outline" className="h-10 px-4 flex items-center gap-2">
-              <span>📊</span>
-              <span>{filteredOrders.length} de {orders.length} pedidos</span>
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Orders Table */}
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/30">
-          <CardTitle className="flex items-center gap-2">
-            <span>📋</span>
-            Lista de Pedidos
-          </CardTitle>
-          <CardDescription>
-            Haz clic en un pedido para ver más detalles
-          </CardDescription>
+      <Card>
+        <CardHeader>
+          <CardTitle>Pedidos Activos</CardTitle>
+          <CardDescription>Administra los pedidos de tus clientes</CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/20 hover:bg-muted/20">
-                <TableHead className="font-semibold">Nº Pedido</TableHead>
-                <TableHead className="font-semibold">Cliente</TableHead>
-                <TableHead className="font-semibold">Total</TableHead>
-                <TableHead className="font-semibold">Estado</TableHead>
-                <TableHead className="font-semibold">Fecha</TableHead>
-                <TableHead className="font-semibold text-right">Acciones</TableHead>
+              <TableRow>
+                <TableHead>Número de Pedido</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Estado de Pago</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <span className="text-4xl">📦</span>
-                      <p className="text-muted-foreground">
-                        {searchTerm ? "No se encontraron pedidos con ese criterio" : "No hay pedidos todavía"}
-                      </p>
+              {orders.map((order) => (
+                <TableRow 
+                  key={order.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
+                >
+                  <TableCell className="font-mono">{order.order_number}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div>{order.user?.full_name || 'N/A'}</div>
+                      <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
                     </div>
                   </TableCell>
+                  <TableCell className="font-bold">€{Number(order.total).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                      {order.payment_status === 'paid' ? 'Pagado' : 
+                       order.payment_status === 'pending' ? 'Pendiente' :
+                       order.payment_status === 'failed' ? 'Fallido' :
+                       order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingOrder(order);
+                        setSelectedStatus(order.status_id || "");
+                      }}
+                    >
+                      Actualizar Estado
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              ) : (
-                filteredOrders.map((order) => (
-                  <TableRow 
-                    key={order.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
-                  >
-                    <TableCell className="font-mono font-medium">{order.order_number}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{order.user?.full_name || 'N/A'}</div>
-                        <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-bold text-green-600">€{Number(order.total).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={order.payment_status === 'paid' ? 'default' : 'secondary'}
-                        className={
-                          order.payment_status === 'paid' 
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0' 
-                            : order.payment_status === 'pending'
-                            ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0'
-                            : order.payment_status === 'failed'
-                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white border-0'
-                            : ''
-                        }
-                      >
-                        {order.payment_status === 'paid' ? '✅ Pagado' : 
-                         order.payment_status === 'pending' ? '⏳ Pendiente' :
-                         order.payment_status === 'failed' ? '❌ Fallido' :
-                         order.payment_status === 'refunded' ? '↩️ Reembolsado' : '⏳ Pendiente'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1 justify-end">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.location.href = `/admin/pedidos/${order.id}`;
-                          }}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingOrder(order);
-                            setSelectedStatus(order.status_id || "");
-                          }}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
+          {orders.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">No hay pedidos todavía</p>
+          )}
         </CardContent>
       </Card>
 

@@ -1,6 +1,6 @@
 {
   "brand": {
-    "tagline": "Professional 3D Printing, Prototyping & Custom Design Services"
+    "tagline": "Professional 3D printing and custom design"
   },
   "help": {
     "title": "Help",
@@ -12,14 +12,14 @@
   },
   "quickLinks": {
     "title": "Quick Links",
-    "catalog": "3D Print Catalog",
-    "requestQuote": "Request a Quote",
+    "catalog": "Catalog",
+    "requestQuote": "Request Quote",
     "giftCards": "Gift Cards",
     "blog": "Blog"
   },
   "newsletter": {
     "title": "Newsletter",
-    "description": "Receive offers and 3D printing news",
+    "description": "Receive offers and news",
     "placeholder": "Your email",
     "subscribed": "Thanks for subscribing!"
   },

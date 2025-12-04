@@ -2118,7 +2118,6 @@ export type Database = {
       products: {
         Row: {
           allow_direct_purchase: boolean | null
-          allow_quote_request: boolean | null
           category_id: string | null
           created_at: string | null
           custom_shipping_cost: number | null
@@ -2144,7 +2143,6 @@ export type Database = {
         }
         Insert: {
           allow_direct_purchase?: boolean | null
-          allow_quote_request?: boolean | null
           category_id?: string | null
           created_at?: string | null
           custom_shipping_cost?: number | null
@@ -2170,7 +2168,6 @@ export type Database = {
         }
         Update: {
           allow_direct_purchase?: boolean | null
-          allow_quote_request?: boolean | null
           category_id?: string | null
           created_at?: string | null
           custom_shipping_cost?: number | null

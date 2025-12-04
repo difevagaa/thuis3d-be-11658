@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { Mail, Paperclip, X, Image as ImageIcon, FileText } from "lucide-react";
 
 export function SendAdminMessage() {
@@ -52,7 +51,7 @@ export function SendAdminMessage() {
 
   const handleSend = async () => {
     if (!message.trim()) {
-      i18nToast.error("error.writeMessage");
+      toast.error("Por favor escribe un mensaje");
       return;
     }
 
@@ -61,7 +60,7 @@ export function SendAdminMessage() {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        i18nToast.error("error.mustLogin");
+        toast.error("Debes iniciar sesión");
         return;
       }
 
@@ -74,7 +73,7 @@ export function SendAdminMessage() {
       let attachmentData: any[] = [];
       
       if (attachments.length > 0) {
-        i18nToast.info("info.uploadingFiles");
+        toast.info("Subiendo archivos adjuntos...");
         attachmentData = await uploadAttachments(attachments);
       }
 
@@ -85,7 +84,7 @@ export function SendAdminMessage() {
         .eq("role", "admin");
 
       if (!adminRoles || adminRoles.length === 0) {
-        i18nToast.error("error.noAdminsAvailable");
+        toast.error("No hay administradores disponibles");
         return;
       }
 
@@ -118,7 +117,7 @@ export function SendAdminMessage() {
         console.error('Error sending admin email notification:', emailError);
       }
 
-      i18nToast.success("success.adminMessageSent");
+      toast.success("✉️ Mensaje enviado a los administradores");
       setSubject("");
       setMessage("");
       setAttachments([]);

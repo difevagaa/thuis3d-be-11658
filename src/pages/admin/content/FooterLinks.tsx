@@ -37,7 +37,7 @@ export default function FooterLinks() {
         table: 'footer_links'
       }, () => {
         loadLinks();
-        i18nToast.info("info.linksUpdated");
+        toast.info("Enlaces actualizados");
       })
       .subscribe();
 
@@ -71,12 +71,12 @@ export default function FooterLinks() {
     try {
       // Validación
       if (!formData.title || formData.title.trim() === '') {
-        i18nToast.error("error.titleRequired");
+        toast.error("El título es obligatorio");
         return;
       }
 
       if (!formData.url || formData.url.trim() === '') {
-        i18nToast.error("error.urlRequired");
+        toast.error("La URL es obligatoria");
         return;
       }
 
@@ -94,7 +94,7 @@ export default function FooterLinks() {
           throw error;
         }
         console.log("✅ Enlace actualizado:", data);
-        i18nToast.success("success.linkUpdated");
+        toast.success("Enlace actualizado exitosamente");
       } else {
         const { data, error } = await supabase
           .from("footer_links")
@@ -106,7 +106,7 @@ export default function FooterLinks() {
           throw error;
         }
         console.log("✅ Enlace creado:", data);
-        i18nToast.success("success.linkCreated");
+        toast.success("Enlace creado exitosamente");
       }
       
       setIsDialogOpen(false);
@@ -140,10 +140,10 @@ export default function FooterLinks() {
         .eq("id", id);
       
       if (error) throw error;
-      i18nToast.success("success.linkDeleted");
+      toast.success("Enlace eliminado");
       loadLinks();
     } catch (error) {
-      i18nToast.error("error.linkDeleteFailed");
+      toast.error("Error al eliminar enlace");
     }
   };
 

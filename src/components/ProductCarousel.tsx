@@ -34,12 +34,12 @@ export default function ProductCarousel({
     }
   }, [currentIndex, images, loadedImages, imageError]);
 
-  // Auto-rotation only if enabled (20 seconds for product images)
+  // Auto-rotation only if enabled (10 seconds for featured products)
   useEffect(() => {
     if (!autoRotate || images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % images.length);
-    }, 20000); // 20 seconds
+    }, 10000); // 10 seconds
     return () => clearInterval(interval);
   }, [images.length, autoRotate]);
   const goToPrevious = () => {
@@ -55,13 +55,13 @@ export default function ProductCarousel({
   }
   if (images.length === 1) {
     return <div className="w-full h-full bg-muted flex items-center justify-center">
-        {!imageError.has(0) ? <img src={images[0].image_url} alt={`3D printed product: ${alt}`} className="w-full h-full object-cover" onError={() => setImageError(prev => new Set([...prev, 0]))} /> : <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" />}
+        {!imageError.has(0) ? <img src={images[0].image_url} alt={alt} className="w-full h-full object-cover" onError={() => setImageError(prev => new Set([...prev, 0]))} /> : <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" />}
       </div>;
   }
   const isCurrentImageLoaded = loadedImages.has(currentIndex);
   const hasCurrentImageError = imageError.has(currentIndex);
   return <div className="relative w-full h-full bg-muted flex items-center justify-center">
-      {!hasCurrentImageError && isCurrentImageLoaded ? <img src={images[currentIndex].image_url} alt={`3D print view ${currentIndex + 1}: ${alt}`} onError={() => setImageError(prev => new Set([...prev, currentIndex]))} className="w-full h-full object-cover rounded-none shadow-md" /> : hasCurrentImageError ? <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" /> : <div className="w-full h-full bg-muted animate-pulse" />}
+      {!hasCurrentImageError && isCurrentImageLoaded ? <img src={images[currentIndex].image_url} alt={`${alt} - imagen ${currentIndex + 1}`} onError={() => setImageError(prev => new Set([...prev, currentIndex]))} className="w-full h-full object-cover rounded-none shadow-md" /> : hasCurrentImageError ? <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" /> : <div className="w-full h-full bg-muted animate-pulse" />}
       
       <Button variant="ghost" size="icon" className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => {
       e.preventDefault();

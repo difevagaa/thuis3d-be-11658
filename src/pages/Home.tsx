@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Zap, Shield, Printer, FileText, Gift, ArrowRight } from "lucide-react";
 import * as Icons from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import HeroBanner from "@/components/HeroBanner";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
@@ -15,7 +15,6 @@ import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
-import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -266,7 +265,7 @@ const TranslatedBanner = ({
     return banner.video_url ? (
       <video src={banner.video_url} autoPlay muted loop playsInline className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
     ) : (
-      <img src={imageUrl} alt={`3D printing service: ${altText}`} className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
+      <img src={imageUrl} alt={altText} className={`w-full h-full ${getObjectFit()} group-hover:scale-110 transition-transform duration-300`} />
     );
   };
   
@@ -566,41 +565,8 @@ const Home = () => {
   const [orderedSections, setOrderedSections] = useState<any[]>([]);
   const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
-  // Component ordering configuration from site_settings
-  const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
   // Track dark mode state to trigger re-render when mode changes
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
-  
-  // Load component order configuration
-  const loadOrderConfig = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("setting_value")
-        .eq("setting_key", "homepage_component_order")
-        .maybeSingle();
-
-      if (error) {
-        logger.error('[Home] Error loading order config:', error);
-        return;
-      }
-
-      if (data?.setting_value) {
-        try {
-          const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
-          setOrderConfig(parsed);
-          logger.log('[Home] Loaded component order config:', parsed.components?.length, 'components');
-        } catch (parseError) {
-          logger.error('[Home] Error parsing order config:', parseError);
-          setOrderConfig(null);
-        }
-      } else {
-        setOrderConfig(null);
-      }
-    } catch (err) {
-      logger.error('[Home] Exception loading order config:', err);
-    }
-  }, []);
   
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
@@ -631,13 +597,6 @@ const Home = () => {
     loadSections();
     loadQuickAccessCards();
     loadFeatures();
-    loadOrderConfig();
-
-    // Subscribe to auth state changes to reload featured products with correct filtering
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Reload featured products when user logs in/out to show correct role-based products
-      loadFeaturedProducts();
-    });
 
     // Subscribe to product changes for real-time updates
     const productsChannel = supabase.channel('homepage-products-changes').on('postgres_changes', {
@@ -672,22 +631,12 @@ const Home = () => {
       table: 'homepage_features'
     }, loadFeatures).subscribe();
 
-    // Subscribe to order config changes
-    const orderChannel = supabase.channel('homepage-order-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'site_settings',
-      filter: 'setting_key=eq.homepage_component_order'
-    }, loadOrderConfig).subscribe();
-
     return () => {
-      authSubscription.unsubscribe();
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bannersChannel);
       supabase.removeChannel(sectionsChannel);
-      supabase.removeChannel(orderChannel);
     };
-  }, [loadOrderConfig]);
+  }, []);
   const loadBanners = async () => {
     try {
       // Cargar banners activos (neq false includes null and true values)
@@ -799,15 +748,13 @@ const Home = () => {
     }
   };
   const loadFeaturedProducts = async () => {
-    // First, ensure session is valid by calling getSession() 
-    // This will auto-refresh the token if needed
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    // Get user from the session (already validated)
-    const user = session?.user ?? null;
-    
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     let userRoles: string[] = [];
-    if (user && !sessionError) {
+    if (user) {
       const {
         data: rolesData
       } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
@@ -1028,134 +975,6 @@ const Home = () => {
     return <WhyUsSection />;
   };
 
-  // Render component based on order configuration
-  const renderOrderedComponent = (component: HomepageComponentOrder) => {
-    if (!component.isActive) return null;
-
-    switch (component.type) {
-      case 'featured_products': {
-        const featuredSection = orderedSections.find(s => s.id === component.id || s.section_key === 'featured_products');
-        if (featuredSection) {
-          return renderSection(featuredSection);
-        }
-        // Fallback for featured products
-        if (featuredProducts.length > 0) {
-          return (
-            <section key="featured_products_fallback" className="py-4 md:py-8 lg:py-12 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent)' }}>
-              <div className="absolute inset-0 bg-gradient-primary opacity-5 bg-red-100"></div>
-              <div className="container mx-auto px-3 md:px-4 relative z-10">
-                <div className="text-center mb-4 md:mb-6 lg:mb-8">
-                  <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-2 md:mb-4 text-center text-foreground">
-                    {t('featured.title')}
-                  </h2>
-                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
-                    {t('featured.subtitle')}
-                  </p>
-                </div>
-                <FeaturedProductsCarousel products={featuredProducts} maxVisible={4} />
-              </div>
-            </section>
-          );
-        }
-        return null;
-      }
-
-      case 'quick_access_card': {
-        const quickAccessSection = orderedSections.find(s => s.id === component.id || s.section_key === 'quick_access');
-        if (quickAccessSection) {
-          return renderSection(quickAccessSection);
-        }
-        // Fallback for quick access cards
-        if (quickAccessCards.length > 0) {
-          return <QuickAccessCardsSection key="quick_access_fallback" />;
-        }
-        return null;
-      }
-
-      case 'why_us': {
-        const whyUsSection = orderedSections.find(s => s.id === component.id || s.section_key === 'why_us');
-        if (whyUsSection) {
-          return renderSection(whyUsSection);
-        }
-        // Fallback for why us section
-        return <WhyUsSection key="why_us_fallback" />;
-      }
-
-      case 'section': {
-        const customSection = orderedSections.find(s => s.id === component.id);
-        if (customSection) {
-          return renderSection(customSection);
-        }
-        return null;
-      }
-
-      default:
-        return null;
-    }
-  };
-
-  // Generate ordered components list based on order config or defaults
-  const getOrderedComponentsList = (): HomepageComponentOrder[] => {
-    if (orderConfig?.components && orderConfig.components.length > 0) {
-      return orderConfig.components
-        .filter(c => c.isActive)
-        .sort((a, b) => a.displayOrder - b.displayOrder);
-    }
-
-    // Default order when no config is saved
-    const defaultComponents: HomepageComponentOrder[] = [];
-    let order = 0;
-
-    // Add featured products first
-    const featuredSection = orderedSections.find(s => s.section_key === 'featured_products');
-    if (featuredSection || featuredProducts.length > 0) {
-      defaultComponents.push({
-        id: featuredSection?.id || 'featured_products_default',
-        type: 'featured_products',
-        displayOrder: order++,
-        isActive: true,
-        label: featuredSection?.title || 'Productos Destacados'
-      });
-    }
-
-    // Add quick access cards
-    const quickAccessSection = orderedSections.find(s => s.section_key === 'quick_access');
-    if (quickAccessSection || quickAccessCards.length > 0) {
-      defaultComponents.push({
-        id: quickAccessSection?.id || 'quick_access_default',
-        type: 'quick_access_card',
-        displayOrder: order++,
-        isActive: true,
-        label: quickAccessSection?.title || 'Accesos Rápidos'
-      });
-    }
-
-    // Add why us section
-    const whyUsSection = orderedSections.find(s => s.section_key === 'why_us');
-    defaultComponents.push({
-      id: whyUsSection?.id || 'why_us_default',
-      type: 'why_us',
-      displayOrder: order++,
-      isActive: true,
-      label: whyUsSection?.title || '¿Por Qué Elegirnos?'
-    });
-
-    // Add other custom sections
-    orderedSections
-      .filter(s => !['featured_products', 'quick_access', 'why_us'].includes(s.section_key))
-      .forEach(section => {
-        defaultComponents.push({
-          id: section.id,
-          type: 'section',
-          displayOrder: order++,
-          isActive: section.is_active !== false,
-          label: section.title
-        });
-      });
-
-    return defaultComponents;
-  };
-
   return <div className="min-h-screen">
       {/* Hero Banner with Gradient - Banners de tipo "hero" */}
       <div className="relative overflow-hidden">
@@ -1163,8 +982,17 @@ const Home = () => {
         <HeroBanner />
       </div>
 
-      {/* Render components based on order configuration */}
-      {getOrderedComponentsList().map(component => renderOrderedComponent(component))}
+      {/* Render sections based on display_order or fallback if no sections configured */}
+      {orderedSections.length > 0 
+        ? orderedSections.map((section) => renderSection(section))
+        : renderFallbackSections()
+      }
+      
+      {/* Render Quick Access Cards if they have data but no section exists */}
+      {renderQuickAccessIfNeeded()}
+      
+      {/* Render Why Us if features exist but no section exists */}
+      {renderWhyUsIfNeeded()}
 
       {/* Banners al final de la página */}
       {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}

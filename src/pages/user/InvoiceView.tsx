@@ -107,7 +107,7 @@ export default function UserInvoiceView() {
             Volver a Mi Cuenta
           </Button>
           <div className="flex gap-2">
-            {invoice.payment_status !== 'paid' && (
+            {invoice.payment_status === 'pending' && (
               <Button onClick={handlePayNow} size="sm">
                 💳 Pagar Ahora
               </Button>

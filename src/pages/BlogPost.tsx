@@ -10,7 +10,6 @@ import { Calendar, User, ArrowLeft, Clock, Share2, BookOpen } from "lucide-react
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime } from "@/utils/textUtils";
 
@@ -108,7 +107,7 @@ export default function BlogPost() {
     } else {
       // Fallback: copy to clipboard
       await navigator.clipboard.writeText(url);
-      i18nToast.success("success.linkCopied");
+      toast.success("Enlace copiado al portapapeles");
     }
   };
 
@@ -180,7 +179,7 @@ export default function BlogPost() {
         <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
           <img
             src={post.featured_image}
-            alt={`3D printing blog article: ${translatedPost.title || post.title}`}
+            alt={translatedPost.title || post.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />

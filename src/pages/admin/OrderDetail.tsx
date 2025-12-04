@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
@@ -94,7 +94,7 @@ export default function OrderDetail() {
       setOrderItems(itemsData || []);
     } catch (error: any) {
       logger.error("Error loading order:", error);
-      i18nToast.error("error.loadingOrderFailed");
+      toast.error("Error al cargar el pedido");
     } finally {
       setLoading(false);
     }
@@ -108,11 +108,11 @@ export default function OrderDetail() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.orderStatusUpdated");
+      toast.success("Estado actualizado correctamente");
       loadOrderData();
     } catch (error: any) {
       logger.error("Error updating status:", error);
-      i18nToast.error("error.orderStatusUpdateFailed");
+      toast.error("Error al actualizar estado");
     }
   };
 
@@ -166,7 +166,7 @@ export default function OrderDetail() {
               
               if (emailError) {
                 logger.error('Error sending gift card email:', emailError);
-                i18nToast.error("error.giftCardEmailFailed");
+                toast.error("Error al enviar email de tarjeta regalo");
               } else {
                 logger.log('Gift card email sent successfully:', emailData);
               }
@@ -177,21 +177,21 @@ export default function OrderDetail() {
                 sender_name: giftCard.sender_name
               });
               
-              i18nToast.success("success.giftCardActivated");
+              toast.success("Tarjeta activada, email y notificación enviados");
             }
           } catch (gcErr) {
             logger.error('Error processing gift card:', gcErr);
-            i18nToast.error("error.giftCardSaveFailed", { error: 'Processing failed' });
+            toast.error("Error al procesar tarjeta regalo");
           }
         }
       } else {
-        i18nToast.success("success.paymentStatusUpdated");
+        toast.success("Estado de pago actualizado");
       }
       
       loadOrderData();
     } catch (error: any) {
       logger.error("Error updating payment status:", error);
-      i18nToast.error("error.paymentStatusUpdateFailed");
+      toast.error("Error al actualizar estado de pago");
     }
   };
 
@@ -203,10 +203,10 @@ export default function OrderDetail() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.notesUpdated");
+      toast.success("Notas actualizadas");
     } catch (error: any) {
       logger.error("Error updating notes:", error);
-      i18nToast.error("error.notesUpdateFailed");
+      toast.error("Error al actualizar notas");
     }
   };
 
@@ -218,11 +218,11 @@ export default function OrderDetail() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.orderDeleted");
+      toast.success("Pedido movido a la papelera");
       navigate("/admin/pedidos");
     } catch (error: any) {
       logger.error("Error deleting order:", error);
-      i18nToast.error("error.orderDeleteFailed");
+      toast.error("Error al eliminar pedido");
     }
   };
 

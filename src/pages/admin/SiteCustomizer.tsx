@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette } from "lucide-react";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
@@ -190,7 +190,7 @@ export default function SiteCustomizer() {
       }
     } catch (error) {
       logger.error("Error loading customization:", error);
-      i18nToast.error("error.customizationLoadFailed");
+      toast.error("Error al cargar la personalización");
     } finally {
       setLoading(false);
     }
@@ -256,7 +256,7 @@ export default function SiteCustomizer() {
     const url = await uploadFile(file, 'customization');
     if (url) {
       setCustomization({ ...customization, [field]: url });
-      i18nToast.success("success.fileUploaded");
+      toast.success("Archivo subido exitosamente");
     }
   };
 
@@ -351,12 +351,12 @@ export default function SiteCustomizer() {
 
   const handleSave = async () => {
     if (!customization.site_name.trim()) {
-      i18nToast.error("error.siteNameRequired");
+      toast.error("El nombre del sitio es obligatorio");
       return;
     }
 
     if (!customization.company_name.trim()) {
-      i18nToast.error("error.companyNameRequired");
+      toast.error("El nombre de la empresa es obligatorio");
       return;
     }
 
@@ -399,12 +399,12 @@ export default function SiteCustomizer() {
 
       // Aplicar cambios CSS inmediatamente
       updateCSSVariables();
-      i18nToast.success("success.configSaved");
+      toast.success("Configuración guardada exitosamente");
       loadCustomization();
       loadSettings();
     } catch (error: any) {
       logger.error("Save error:", error);
-      i18nToast.error("error.configSaveFailed", { error: error.message || 'Unknown error' });
+      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
     }
   };
 

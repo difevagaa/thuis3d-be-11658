@@ -1,18 +1,11 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Printer, ShoppingCart, Euro } from "lucide-react";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
-import ProductCarousel from "@/components/ProductCarousel";
 import type { Database } from "@/integrations/supabase/types";
 
-type Product = Database['public']['Tables']['products']['Row'] & {
-  product_images?: Array<{
-    image_url: string;
-    display_order: number;
-  }>;
-};
+type Product = Database['public']['Tables']['products']['Row'];
 
 interface ProductCardProps {
   product: Product;
@@ -28,27 +21,13 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
     product
   );
 
-  // Memoize sorted images to avoid re-sorting on every render
-  const sortedImages = useMemo(() => {
-    if (!product.product_images || product.product_images.length === 0) {
-      return [];
-    }
-    return [...product.product_images].sort((a, b) => a.display_order - b.display_order);
-  }, [product.product_images]);
-
   return (
     <Link to={`/producto/${product.id}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
         <CardContent className="p-2 md:p-3 lg:p-4">
           <div className="aspect-square bg-muted rounded-md mb-2 md:mb-3 lg:mb-4 overflow-hidden flex items-center justify-center">
-            {sortedImages.length > 0 ? (
-              <ProductCarousel 
-                images={sortedImages} 
-                alt={content.name || ''} 
-                autoRotate={true} 
-              />
-            ) : firstImage ? (
-              <img src={firstImage} alt={`3D printed product: ${content.name}`} className="w-full h-full object-cover" />
+            {firstImage ? (
+              <img src={firstImage} alt={content.name} className="w-full h-full object-cover" />
             ) : (
               <Printer className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 text-muted-foreground" />
             )}

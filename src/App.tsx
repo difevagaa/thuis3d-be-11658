@@ -3,11 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
-import { useViewportReset } from "@/hooks/useViewportReset";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -112,102 +111,12 @@ const PageLoader = () => (
   </div>
 );
 
-// AppContent component - handles hooks that require router context
-const AppContent = () => {
+const App = () => {
   // Load and apply global colors on app start
   useGlobalColors();
   // Track visitor activity
   useVisitorTracking();
-  // Reset viewport on navigation for mobile devices
-  useViewportReset();
 
-  return (
-    <>
-      <SEOHead />
-      <ScrollToTop />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* Public routes with Layout */}
-          <Route path="/" element={<Layout><Home /></Layout>} />
-          <Route path="/auth" element={<Layout><Auth /></Layout>} />
-          <Route path="/productos" element={<Layout><Products /></Layout>} />
-          <Route path="/producto/:id" element={<Layout><ProductDetail /></Layout>} />
-          <Route path="/carrito" element={<Layout><Cart /></Layout>} />
-          <Route path="/cotizaciones" element={<Layout><PublicQuotes /></Layout>} />
-          <Route path="/blog" element={<Layout><Blog /></Layout>} />
-          <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
-          <Route path="/tarjetas-regalo" element={<Layout><GiftCard /></Layout>} />
-          <Route path="/galeria" element={<Layout><Gallery /></Layout>} />
-          <Route path="/pago-instrucciones" element={<Layout><PaymentInstructions /></Layout>} />
-          <Route path="/informacion-envio" element={<Layout><ShippingInfo /></Layout>} />
-          <Route path="/resumen-pago" element={<Layout><PaymentSummary /></Layout>} />
-          <Route path="/pago" element={<Layout><Payment /></Layout>} />
-          <Route path="/page/:slug" element={<Layout><StaticPage /></Layout>} />
-          <Route path="/legal/:type" element={<Layout><LegalPage /></Layout>} />
-          <Route path="/mi-cuenta" element={<Layout><MyAccount /></Layout>} />
-          <Route path="/pedido/:id" element={<Layout><OrderDetail /></Layout>} />
-          <Route path="/factura/:id" element={<UserInvoiceView />} />
-          <Route path="/mis-tarjetas-regalo" element={<Layout><GiftCardView /></Layout>} />
-          <Route path="/cotizacion/:id" element={<Layout><UserQuoteDetail /></Layout>} />
-          <Route path="/mis-mensajes" element={<Layout><UserMessages /></Layout>} />
-          
-          {/* Admin routes */}
-          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/loyalty" element={<AdminLayout><Loyalty /></AdminLayout>} />
-          <Route path="/admin/coupons" element={<AdminLayout><Coupons /></AdminLayout>} />
-          <Route path="/admin/gift-cards" element={<AdminLayout><GiftCardsEnhanced /></AdminLayout>} />
-          <Route path="/admin/reviews" element={<AdminLayout><Reviews /></AdminLayout>} />
-          <Route path="/admin/blog" element={<AdminLayout><BlogAdmin /></AdminLayout>} />
-          <Route path="/admin/pages" element={<AdminLayout><Pages /></AdminLayout>} />
-          <Route path="/admin/pedidos" element={<AdminLayout><OrdersEnhanced /></AdminLayout>} />
-          <Route path="/admin/pedidos/:id" element={<AdminLayout><AdminOrderDetail /></AdminLayout>} />
-          <Route path="/admin/pedidos/crear" element={<AdminLayout><CreateOrder /></AdminLayout>} />
-          <Route path="/admin/cotizaciones" element={<AdminLayout><AdminQuotes /></AdminLayout>} />
-          <Route path="/admin/cotizaciones/crear" element={<AdminLayout><CreateQuote /></AdminLayout>} />
-          <Route path="/admin/cotizaciones/:id" element={<AdminLayout><QuoteDetail /></AdminLayout>} />
-          <Route path="/admin/usuarios" element={<AdminLayout><Users /></AdminLayout>} />
-          <Route path="/admin/materiales" element={<AdminLayout><Materials /></AdminLayout>} />
-          <Route path="/admin/colores" element={<AdminLayout><Colors /></AdminLayout>} />
-          <Route path="/admin/categorias" element={<AdminLayout><Categories /></AdminLayout>} />
-          <Route path="/admin/productos" element={<AdminLayout><ProductsAdminEnhanced /></AdminLayout>} />
-          <Route path="/admin/messages" element={<AdminLayout><Messages /></AdminLayout>} />
-          <Route path="/admin/trash" element={<AdminLayout><Trash /></AdminLayout>} />
-          <Route path="/admin/backup-config" element={<AdminLayout><BackupConfig /></AdminLayout>} />
-          <Route path="/admin/estados" element={<AdminLayout><Statuses /></AdminLayout>} />
-          <Route path="/admin/roles" element={<AdminLayout><RolesPermissions /></AdminLayout>} />
-          <Route path="/admin/facturas" element={<AdminLayout><Invoices /></AdminLayout>} />
-          <Route path="/admin/facturas/:id" element={<AdminLayout><InvoiceView /></AdminLayout>} />
-          <Route path="/admin/configuracion-pagos" element={<AdminLayout><PaymentConfig /></AdminLayout>} />
-          <Route path="/admin/configuracion-iva" element={<AdminLayout><TaxConfiguration /></AdminLayout>} />
-          <Route path="/admin/gestion-envios" element={<AdminLayout><ShippingManagement /></AdminLayout>} />
-          <Route path="/admin/contenido" element={<AdminLayout><ContentManagement /></AdminLayout>} />
-          <Route path="/admin/personalizador" element={<AdminLayout><SiteCustomizer /></AdminLayout>} />
-          <Route path="/admin/paginas-legales" element={<AdminLayout><LegalPages /></AdminLayout>} />
-          <Route path="/admin/pin" element={<AdminLayout><PinManagement /></AdminLayout>} />
-          <Route path="/admin/calculadora-3d" element={<AdminLayout><PrintingCalculatorSettings /></AdminLayout>} />
-          <Route path="/admin/descuentos-cantidad" element={<AdminLayout><QuantityDiscounts /></AdminLayout>} />
-          <Route path="/admin/calibracion" element={<AdminLayout><CalibrationSettings /></AdminLayout>} />
-          <Route path="/admin/perfiles-calibracion" element={<AdminLayout><CalibrationProfiles /></AdminLayout>} />
-          <Route path="/admin/precision-calculadora" element={<AdminLayout><CalculatorAccuracy /></AdminLayout>} />
-          <Route path="/admin/deteccion-soportes" element={<AdminLayout><SupportDetectionSettings /></AdminLayout>} />
-          <Route path="/admin/modelos-vista-previa" element={<AdminLayout><PreviewModels /></AdminLayout>} />
-          <Route path="/admin/galeria" element={<AdminLayout><GalleryAdmin /></AdminLayout>} />
-          <Route path="/admin/visitantes" element={<AdminLayout><VisitorAnalytics /></AdminLayout>} />
-          <Route path="/admin/seo" element={<AdminLayout><SEOManager /></AdminLayout>} />
-          <Route path="/admin/traducciones" element={<AdminLayout><TranslationManagement /></AdminLayout>} />
-          
-          {/* 404 route */}
-          <Route path="*" element={<Layout><NotFound /></Layout>} />
-        </Routes>
-      </Suspense>
-      <ClientChatWidget />
-      <CookieConsent />
-    </>
-  );
-};
-
-const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
@@ -216,12 +125,91 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <ErrorBoundary>
-              <AppContent />
+              <SEOHead />
+              <ScrollToTop />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+            {/* Public routes with Layout */}
+            <Route path="/" element={<Layout><Home /></Layout>} />
+            <Route path="/auth" element={<Layout><Auth /></Layout>} />
+            <Route path="/productos" element={<Layout><Products /></Layout>} />
+            <Route path="/producto/:id" element={<Layout><ProductDetail /></Layout>} />
+            <Route path="/carrito" element={<Layout><Cart /></Layout>} />
+            <Route path="/cotizaciones" element={<Layout><PublicQuotes /></Layout>} />
+            <Route path="/blog" element={<Layout><Blog /></Layout>} />
+            <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
+            <Route path="/tarjetas-regalo" element={<Layout><GiftCard /></Layout>} />
+            <Route path="/galeria" element={<Layout><Gallery /></Layout>} />
+            <Route path="/pago-instrucciones" element={<Layout><PaymentInstructions /></Layout>} />
+            <Route path="/informacion-envio" element={<Layout><ShippingInfo /></Layout>} />
+            <Route path="/resumen-pago" element={<Layout><PaymentSummary /></Layout>} />
+            <Route path="/pago" element={<Layout><Payment /></Layout>} />
+            <Route path="/page/:slug" element={<Layout><StaticPage /></Layout>} />
+            <Route path="/legal/:type" element={<Layout><LegalPage /></Layout>} />
+            <Route path="/mi-cuenta" element={<Layout><MyAccount /></Layout>} />
+            <Route path="/pedido/:id" element={<Layout><OrderDetail /></Layout>} />
+            <Route path="/factura/:id" element={<UserInvoiceView />} />
+            <Route path="/mis-tarjetas-regalo" element={<Layout><GiftCardView /></Layout>} />
+            <Route path="/cotizacion/:id" element={<Layout><UserQuoteDetail /></Layout>} />
+            <Route path="/mis-mensajes" element={<Layout><UserMessages /></Layout>} />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+            <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+            <Route path="/admin/loyalty" element={<AdminLayout><Loyalty /></AdminLayout>} />
+            <Route path="/admin/coupons" element={<AdminLayout><Coupons /></AdminLayout>} />
+            <Route path="/admin/gift-cards" element={<AdminLayout><GiftCardsEnhanced /></AdminLayout>} />
+            <Route path="/admin/reviews" element={<AdminLayout><Reviews /></AdminLayout>} />
+            <Route path="/admin/blog" element={<AdminLayout><BlogAdmin /></AdminLayout>} />
+            <Route path="/admin/pages" element={<AdminLayout><Pages /></AdminLayout>} />
+            <Route path="/admin/pedidos" element={<AdminLayout><OrdersEnhanced /></AdminLayout>} />
+            <Route path="/admin/pedidos/:id" element={<AdminLayout><AdminOrderDetail /></AdminLayout>} />
+            <Route path="/admin/pedidos/crear" element={<AdminLayout><CreateOrder /></AdminLayout>} />
+            <Route path="/admin/cotizaciones" element={<AdminLayout><AdminQuotes /></AdminLayout>} />
+            <Route path="/admin/cotizaciones/crear" element={<AdminLayout><CreateQuote /></AdminLayout>} />
+            <Route path="/admin/cotizaciones/:id" element={<AdminLayout><QuoteDetail /></AdminLayout>} />
+            <Route path="/admin/usuarios" element={<AdminLayout><Users /></AdminLayout>} />
+            <Route path="/admin/materiales" element={<AdminLayout><Materials /></AdminLayout>} />
+            <Route path="/admin/colores" element={<AdminLayout><Colors /></AdminLayout>} />
+            <Route path="/admin/categorias" element={<AdminLayout><Categories /></AdminLayout>} />
+            <Route path="/admin/productos" element={<AdminLayout><ProductsAdminEnhanced /></AdminLayout>} />
+            <Route path="/admin/messages" element={<AdminLayout><Messages /></AdminLayout>} />
+            <Route path="/admin/trash" element={<AdminLayout><Trash /></AdminLayout>} />
+            <Route path="/admin/backup-config" element={<AdminLayout><BackupConfig /></AdminLayout>} />
+            <Route path="/admin/estados" element={<AdminLayout><Statuses /></AdminLayout>} />
+            <Route path="/admin/roles" element={<AdminLayout><RolesPermissions /></AdminLayout>} />
+            <Route path="/admin/facturas" element={<AdminLayout><Invoices /></AdminLayout>} />
+            <Route path="/admin/facturas/:id" element={<AdminLayout><InvoiceView /></AdminLayout>} />
+            <Route path="/admin/configuracion-pagos" element={<AdminLayout><PaymentConfig /></AdminLayout>} />
+            <Route path="/admin/configuracion-iva" element={<AdminLayout><TaxConfiguration /></AdminLayout>} />
+            <Route path="/admin/gestion-envios" element={<AdminLayout><ShippingManagement /></AdminLayout>} />
+            <Route path="/admin/contenido" element={<AdminLayout><ContentManagement /></AdminLayout>} />
+            <Route path="/admin/personalizador" element={<AdminLayout><SiteCustomizer /></AdminLayout>} />
+            <Route path="/admin/paginas-legales" element={<AdminLayout><LegalPages /></AdminLayout>} />
+            <Route path="/admin/pin" element={<AdminLayout><PinManagement /></AdminLayout>} />
+            <Route path="/admin/calculadora-3d" element={<AdminLayout><PrintingCalculatorSettings /></AdminLayout>} />
+            <Route path="/admin/descuentos-cantidad" element={<AdminLayout><QuantityDiscounts /></AdminLayout>} />
+            <Route path="/admin/calibracion" element={<AdminLayout><CalibrationSettings /></AdminLayout>} />
+            <Route path="/admin/perfiles-calibracion" element={<AdminLayout><CalibrationProfiles /></AdminLayout>} />
+            <Route path="/admin/precision-calculadora" element={<AdminLayout><CalculatorAccuracy /></AdminLayout>} />
+            <Route path="/admin/deteccion-soportes" element={<AdminLayout><SupportDetectionSettings /></AdminLayout>} />
+            <Route path="/admin/modelos-vista-previa" element={<AdminLayout><PreviewModels /></AdminLayout>} />
+            <Route path="/admin/galeria" element={<AdminLayout><GalleryAdmin /></AdminLayout>} />
+            <Route path="/admin/visitantes" element={<AdminLayout><VisitorAnalytics /></AdminLayout>} />
+            <Route path="/admin/seo" element={<AdminLayout><SEOManager /></AdminLayout>} />
+            <Route path="/admin/traducciones" element={<AdminLayout><TranslationManagement /></AdminLayout>} />
+            
+            {/* 404 route */}
+            <Route path="*" element={<Layout><NotFound /></Layout>} />
+          </Routes>
+          </Suspense>
+          <ClientChatWidget />
+          <CookieConsent />
             </ErrorBoundary>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
   );
 };
 

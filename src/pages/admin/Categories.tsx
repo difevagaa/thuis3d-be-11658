@@ -2,19 +2,17 @@ import { useState, useEffect } from "react";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { i18nToast } from "@/lib/i18nToast";
-import { Pencil, Trash2, Plus, FolderTree, Search } from "lucide-react";
+import { toast } from "sonner";
+import { Pencil, Trash2, Plus } from "lucide-react";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
-import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
 
 export default function Categories() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -69,7 +67,7 @@ export default function Categories() {
       if (error) throw error;
       setCategories(data || []);
     } catch (error: any) {
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar categorías");
     } finally {
       setLoading(false);
     }
@@ -79,7 +77,7 @@ export default function Categories() {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      i18nToast.error("error.categoryNameRequired");
+      toast.error("El nombre de la categoría es obligatorio");
       return;
     }
 
@@ -92,12 +90,12 @@ export default function Categories() {
 
         if (error) {
           if (error.code === '23505') {
-            i18nToast.error("error.categoryNameExists");
+            toast.error("Ya existe una categoría con ese nombre");
             return;
           }
           throw error;
         }
-        i18nToast.success("success.categoryUpdated");
+        toast.success("Categoría actualizada exitosamente");
       } else {
         const { error } = await supabase
           .from("categories")
@@ -105,12 +103,12 @@ export default function Categories() {
 
         if (error) {
           if (error.code === '23505') {
-            i18nToast.error("error.categoryNameExists");
+            toast.error("Ya existe una categoría con ese nombre");
             return;
           }
           throw error;
         }
-        i18nToast.success("success.categoryCreated");
+        toast.success("Categoría creada exitosamente");
       }
 
       setDialogOpen(false);
@@ -118,7 +116,7 @@ export default function Categories() {
       await loadCategories();
     } catch (error: any) {
       logger.error("Error saving category:", error);
-      i18nToast.error("error.categorySaveFailed", { error: error.message || 'Unknown error' });
+      toast.error("Error al guardar categoría: " + (error.message || "Error desconocido"));
     }
   };
 
@@ -132,10 +130,10 @@ export default function Categories() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.categoryDeleted");
+      toast.success("Categoría movida a la papelera");
       await loadCategories();
     } catch (error: any) {
-      i18nToast.error("error.categoryDeleteFailed");
+      toast.error("Error al eliminar categoría");
     }
   };
 
@@ -149,11 +147,11 @@ export default function Categories() {
         .in("id", idsToDelete);
 
       if (error) throw error;
-      i18nToast.success("success.categoriesDeleted", { count: idsToDelete.length });
+      toast.success(`${idsToDelete.length} categorías movidas a la papelera`);
       clearSelection();
       loadCategories();
     } catch (error: any) {
-      i18nToast.error("error.categoryDeleteFailed");
+      toast.error("Error al eliminar categorías");
     }
   };
 
@@ -174,118 +172,63 @@ export default function Categories() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center animate-pulse">
-            <FolderTree className="h-6 w-6 text-white" />
-          </div>
-          <p className="text-muted-foreground">Cargando categorías...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div>Cargando...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <AdminPageHeader
-        title="Gestión de Categorías"
-        description="Organiza tus productos en categorías"
-        emoji="📁"
-        gradient="from-emerald-500 to-teal-600"
-        actions={
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
-                <Plus className="mr-2 h-4 w-4" />
-                Nueva Categoría
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Gestión de Categorías</h1>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Categoría
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Descripción</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                {editingCategory ? "Actualizar" : "Crear"} Categoría
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  {editingCategory ? "Actualizar" : "Crear"} Categoría
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        }
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <AdminStatCard
-          title="Total Categorías"
-          value={filteredCategories.length}
-          emoji="📁"
-          gradient="from-emerald-500/10 to-teal-500/5"
-        />
-        <AdminStatCard
-          title="Seleccionadas"
-          value={selectedCount}
-          emoji="✅"
-          gradient="from-blue-500/10 to-indigo-500/5"
-        />
-        <AdminStatCard
-          title="Última Actualización"
-          value={filteredCategories.length > 0 ? new Date(filteredCategories[0]?.created_at).toLocaleDateString('es-ES') : '-'}
-          emoji="📅"
-          gradient="from-purple-500/10 to-violet-500/5"
-        />
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedCount > 0 && (
-        <BulkDeleteActions
-          selectedCount={selectedCount}
-          onDelete={handleBulkDelete}
-          onCancel={clearSelection}
-        />
-      )}
-
-      {/* Categories Table */}
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/30">
-          <CardTitle className="flex items-center gap-2">
-            <span>📋</span>
-            Categorías de Productos
-          </CardTitle>
-          <CardDescription>
-            Gestiona las categorías para organizar tu catálogo
-          </CardDescription>
+      <Card>
+        <CardHeader>
+          <CardTitle>Categorías de Productos</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/20 hover:bg-muted/20">
+              <TableRow>
                 <TableHead className="w-12">
                   <Checkbox
                     checked={isAllSelected}
@@ -298,60 +241,54 @@ export default function Categories() {
                     }}
                   />
                 </TableHead>
-                <TableHead className="font-semibold">Nombre</TableHead>
-                <TableHead className="font-semibold">Descripción</TableHead>
-                <TableHead className="font-semibold text-right">Acciones</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCategories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <span className="text-4xl">📁</span>
-                      <p className="text-muted-foreground">No hay categorías creadas</p>
+              {filteredCategories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={isSelected(category.id)}
+                      onCheckedChange={() => toggleSelection(category.id)}
+                      aria-label={`Seleccionar ${category.name}`}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell>{category.description}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(category)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(category.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredCategories.map((category) => (
-                  <TableRow key={category.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell>
-                      <Checkbox
-                        checked={isSelected(category.id)}
-                        onCheckedChange={() => toggleSelection(category.id)}
-                        aria-label={`Seleccionar ${category.name}`}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{category.description || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(category)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(category.id)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <BulkDeleteActions
+        selectedCount={selectedCount}
+        onDelete={handleBulkDelete}
+        onCancel={clearSelection}
+        itemName="categorías"
+      />
     </div>
   );
 }

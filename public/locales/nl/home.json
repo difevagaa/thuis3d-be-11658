@@ -3,43 +3,43 @@
     "viewMore": "Meer Zien"
   },
   "featured": {
-    "title": "⭐ Uitgelichte 3D Geprinte Producten",
-    "subtitle": "Ontdek onze populairste FDM en Resin creaties",
+    "title": "⭐ Uitgelichte Producten",
+    "subtitle": "Ontdek onze populairste creaties",
     "refreshProducts": "Producten Verversen",
     "viewAllProducts": "Alle Producten Bekijken",
     "viewDetails": "Details Bekijken"
   },
   "quickAccess": {
     "catalog": {
-      "title": "3D Print Catalogus",
-      "description": "Verken onze collectie van op maat gemaakte 3D-geprinte producten met FDM en SLA technologie",
+      "title": "Productcatalogus",
+      "description": "Verken onze collectie 3D-geprinte producten met geavanceerde technologie",
       "button": "Producten Bekijken"
     },
     "quote": {
       "title": "Vraag een Offerte Aan",
-      "description": "Ontvang binnen enkele minuten een persoonlijke offerte voor uw 3D print of prototyping project",
-      "button": "Offerte Aanvragen"
+      "description": "Ontvang binnen enkele minuten een persoonlijke offerte voor uw project",
+      "button": "Aanvragen"
     },
     "giftCard": {
       "title": "Cadeaukaarten",
-      "description": "Het perfecte cadeau voor 3D-printliefhebbers en makers",
+      "description": "Het perfecte cadeau voor 3D-printliefhebbers",
       "button": "Kopen"
     }
   },
   "whyUs": {
-    "title": "Uw Partner in 3D Printen en Design",
-    "subtitle": "Kwaliteit additive manufacturing en maatwerk prototyping",
+    "title": "Waarom Voor Ons Kiezen?",
+    "subtitle": "Kwaliteit en toewijding in elk project",
     "quality": {
-      "title": "Premium Materialen",
-      "description": "We gebruiken hoogwaardig Filament, Resin en geavanceerde 3D-printtechnologie (FDM, SLA) om uitzonderlijke resultaten te garanderen"
+      "title": "Superieure Kwaliteit",
+      "description": "We gebruiken de beste materialen en 3D-printtechnologie om uitzonderlijke resultaten te garanderen"
     },
     "speed": {
-      "title": "Snelle Prototyping",
-      "description": "Geoptimaliseerde processen waarmee we uw maatwerk 3D prints en prototypes in de kortst mogelijke tijd kunnen leveren"
+      "title": "Snelle Levering",
+      "description": "Geoptimaliseerde processen waarmee we uw projecten in de kortst mogelijke tijd kunnen leveren"
     },
     "guarantee": {
       "title": "Totale Garantie",
-      "description": "We ondersteunen ons werk met een volledige tevredenheidsgarantie op al onze 3D-geprinte producten en ontwerpen"
+      "description": "We ondersteunen ons werk met een volledige tevredenheidsgarantie op al onze producten"
     }
   }
 }

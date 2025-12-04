@@ -3,43 +3,43 @@
     "viewMore": "Ver Más"
   },
   "featured": {
-    "title": "⭐ Productos Destacados en Impresión 3D",
-    "subtitle": "Descubre nuestras creaciones más populares en FDM y Resina",
+    "title": "⭐ Productos Destacados",
+    "subtitle": "Descubre nuestras creaciones más populares",
     "refreshProducts": "Actualizar Productos",
     "viewAllProducts": "Ver Todos los Productos",
     "viewDetails": "Ver Detalles"
   },
   "quickAccess": {
     "catalog": {
-      "title": "Catálogo de Impresión 3D",
-      "description": "Explora nuestra colección de productos impresos en 3D personalizados con tecnología FDM y SLA",
+      "title": "Catálogo de Productos",
+      "description": "Explora nuestra colección de productos impresos en 3D con tecnología de punta",
       "button": "Ver Productos"
     },
     "quote": {
       "title": "Solicita un Presupuesto",
-      "description": "Obtén un presupuesto personalizado para tu proyecto de impresión 3D o prototipado en minutos",
-      "button": "Solicitar Presupuesto"
+      "description": "Obtén un presupuesto personalizado para tu proyecto en minutos",
+      "button": "Solicitar"
     },
     "giftCard": {
       "title": "Tarjetas Regalo",
-      "description": "El regalo perfecto para los entusiastas de la impresión 3D y makers",
+      "description": "El regalo perfecto para los entusiastas de la impresión 3D",
       "button": "Comprar"
     }
   },
   "whyUs": {
-    "title": "Tu Partner en Impresión 3D y Diseño",
-    "subtitle": "Fabricación aditiva de calidad y prototipado personalizado",
+    "title": "¿Por Qué Elegirnos?",
+    "subtitle": "Calidad y compromiso en cada proyecto",
     "quality": {
-      "title": "Materiales Premium",
-      "description": "Utilizamos Filamento, Resina de alta calidad y tecnología de impresión 3D avanzada (FDM, SLA) para garantizar resultados excepcionales"
+      "title": "Calidad Superior",
+      "description": "Utilizamos los mejores materiales y tecnología de impresión 3D para garantizar resultados excepcionales"
     },
     "speed": {
-      "title": "Prototipado Rápido",
-      "description": "Procesos optimizados que nos permiten entregar tus impresiones 3D personalizadas y prototipos en el menor tiempo posible"
+      "title": "Entrega Rápida",
+      "description": "Procesos optimizados que nos permiten entregar tus proyectos en el menor tiempo posible"
     },
     "guarantee": {
       "title": "Garantía Total",
-      "description": "Respaldamos nuestro trabajo con una garantía completa de satisfacción en todos nuestros productos y diseños impresos en 3D"
+      "description": "Respaldamos nuestro trabajo con una garantía completa de satisfacción en todos nuestros productos"
     }
   }
 }

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { Separator } from "@/components/ui/separator";
@@ -49,7 +48,7 @@ export default function PaymentSummary() {
     try {
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (!sessionId) {
-        i18nToast.error("error.checkoutSessionMissing");
+        toast.error("No hay sesión de checkout");
         navigate("/carrito");
         return;
       }
@@ -86,14 +85,14 @@ export default function PaymentSummary() {
       // Cargar items del carrito desde localStorage
       const savedCart = localStorage.getItem("cart");
       if (!savedCart) {
-        i18nToast.error("error.cartEmpty");
+        toast.error("El carrito está vacío");
         navigate("/carrito");
         return;
       }
 
       const parsedCart: CartItem[] = JSON.parse(savedCart);
       if (parsedCart.length === 0) {
-        i18nToast.error("error.cartEmpty");
+        toast.error("El carrito está vacío");
         navigate("/carrito");
         return;
       }

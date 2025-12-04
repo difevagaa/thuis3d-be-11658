@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { i18nToast } from "@/lib/i18nToast";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -66,7 +65,7 @@ export default function Colors() {
       if (error) throw error;
       setColors(data || []);
     } catch (error) {
-      i18nToast.error("error.colorsLoadFailed");
+      toast.error("Error al cargar colores");
     } finally {
       setLoading(false);
     }
@@ -74,7 +73,7 @@ export default function Colors() {
 
   const createColor = async () => {
     if (!newColor.name.trim()) {
-      i18nToast.error("error.colorNameRequired");
+      toast.error("El nombre del color es obligatorio");
       return;
     }
 
@@ -85,12 +84,12 @@ export default function Colors() {
 
       if (error) {
         if (error.code === '23505') {
-          i18nToast.error("error.colorNameExists");
+          toast.error("Ya existe un color con ese nombre");
           return;
         }
         throw error;
       }
-      i18nToast.success("success.colorCreated");
+      toast.success("Color creado exitosamente");
       setNewColor({ name: "", hex_code: "#000000" });
       await loadColors();
     } catch (error: any) {
@@ -110,11 +109,11 @@ export default function Colors() {
         .eq("id", editingColor.id);
 
       if (error) throw error;
-      i18nToast.success("success.colorUpdated");
+      toast.success("Color actualizado exitosamente");
       setEditingColor(null);
       await loadColors();
     } catch (error) {
-      i18nToast.error("error.colorSaveFailed");
+      toast.error("Error al actualizar color");
     }
   };
 
@@ -128,10 +127,10 @@ export default function Colors() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.colorDeleted");
+      toast.success("Color movido a la papelera");
       await loadColors();
     } catch (error) {
-      i18nToast.error("error.colorDeleteFailed");
+      toast.error("Error al eliminar color");
     }
   };
 
@@ -149,7 +148,7 @@ export default function Colors() {
       clearSelection();
       loadColors();
     } catch (error: any) {
-      i18nToast.error("error.colorDeleteFailed");
+      toast.error("Error al eliminar colores");
     }
   };
 

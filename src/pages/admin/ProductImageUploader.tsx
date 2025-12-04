@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { i18nToast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { Upload, X, Image as ImageIcon, Languages } from "lucide-react";
 import { generateImageSeoMetadata, getSupportedLanguages } from "@/utils/imageSeoTranslation";
 import { logger } from "@/lib/logger";
@@ -79,7 +79,7 @@ export default function ProductImageUploader({
     const validFiles = files.filter((file) => file.type.startsWith("image/"));
     
     if (validFiles.length + existingImages.length > 7) {
-      i18nToast.error("error.maxImagesReached", { max: 7 });
+      toast.error("Máximo 7 imágenes permitidas");
       return;
     }
     
@@ -142,11 +142,11 @@ export default function ProductImageUploader({
         }
       }
 
-      i18nToast.success("success.imagesUploaded");
+      toast.success("Imágenes subidas correctamente con SEO multilingüe");
       setSelectedFiles([]);
       onImagesChange();
     } catch (error: any) {
-      i18nToast.error("error.imageUploadFailed");
+      toast.error("Error al subir imágenes");
       logger.error('Image upload error:', error);
     } finally {
       setUploading(false);
@@ -171,10 +171,10 @@ export default function ProductImageUploader({
         if (error) throw error;
       }
 
-      i18nToast.success("success.imageSetAsCover");
+      toast.success("Imagen establecida como portada");
       onImagesChange();
     } catch (error: any) {
-      i18nToast.error("error.setAsCoverFailed");
+      toast.error("Error al establecer portada");
       logger.error('Set cover error:', error);
     }
   };
@@ -203,10 +203,10 @@ export default function ProductImageUploader({
         .eq("entity_type", "product_images")
         .eq("entity_id", imageId);
 
-      i18nToast.success("success.imageDeleted");
+      toast.success("Imagen eliminada");
       onImagesChange();
     } catch (error: any) {
-      i18nToast.error("error.imageDeleteFailed");
+      toast.error("Error al eliminar imagen");
       logger.error('Delete image error:', error);
     }
   };

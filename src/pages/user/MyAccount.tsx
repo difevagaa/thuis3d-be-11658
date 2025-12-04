@@ -16,7 +16,6 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
-import { mapRewardTypeToDiscountType } from "@/lib/paymentUtils";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -154,7 +153,7 @@ export default function MyAccount() {
         supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name, reward_type, reward_value), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
       ]);
 
@@ -171,23 +170,15 @@ export default function MyAccount() {
       setAvailableCoupons(couponsRes.data || []);
       
       // Cargar cupones canjeados directamente desde loyalty_redemptions
-      // Use values from loyalty_rewards (reward_type, reward_value) when available
-      // Map reward types to discount types for consistent display
-      const userCoupons = redemptionsRes.data?.map(redemption => {
-        const rawDiscountType = redemption.coupons?.discount_type || redemption.loyalty_rewards?.reward_type || 'percentage';
-        return {
-          id: redemption.id,
-          code: redemption.coupon_code,
-          discount_type: mapRewardTypeToDiscountType(rawDiscountType),
-          discount_value: redemption.coupons?.discount_value || redemption.loyalty_rewards?.reward_value || 0,
-          created_at: redemption.created_at,
-          status: redemption.status,
-          reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad',
-          is_active: redemption.coupons?.is_active ?? true,
-          times_used: redemption.coupons?.times_used || 0,
-          max_uses: redemption.coupons?.max_uses || 1
-        };
-      }) || [];
+      const userCoupons = redemptionsRes.data?.map(redemption => ({
+        id: redemption.id,
+        code: redemption.coupon_code,
+        discount_type: 'percentage', // Default, idealmente obtenerlo del cupón original
+        discount_value: 10, // Default
+        created_at: redemption.created_at,
+        status: redemption.status,
+        reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
+      })) || [];
       
       setMyCoupons(userCoupons);
     } catch (error) {
@@ -902,28 +893,13 @@ export default function MyAccount() {
                           <div className="flex items-center gap-2 mb-2">
                             <p className="text-lg font-bold font-mono text-primary">{coupon.code}</p>
                             <Badge variant={coupon.status === 'active' ? "default" : "secondary"}>
-                              {coupon.status === 'active' ? t('account:points.active') : 
-                               coupon.status === 'used' ? t('account:points.used') : coupon.status}
-                            </Badge>
-                            <Badge variant="outline">
-                              {coupon.discount_type === 'percentage' || coupon.discount_type === 'discount' 
-                                ? `${coupon.discount_value}%` 
-                                : coupon.discount_type === 'coupon' || coupon.discount_type === 'fixed'
-                                ? `€${coupon.discount_value}` 
-                                : coupon.discount_type === 'free_shipping' 
-                                ? t('account:points.freeShipping')
-                                : `${coupon.discount_value}`}
+                              {coupon.status === 'active' ? t('account:points.active') : coupon.status}
                             </Badge>
                           </div>
                           <p className="text-sm font-medium mb-1">{coupon.reward_name}</p>
                           <p className="text-xs text-muted-foreground">
                             {t('account:points.redeemed_on')} {new Date(coupon.created_at).toLocaleDateString(i18n.language)}
                           </p>
-                          {coupon.times_used > 0 && coupon.max_uses === 1 && (
-                            <p className="text-xs text-orange-600 mt-1">
-                              ⚠️ {t('account:points.couponAlreadyUsed')}
-                            </p>
-                          )}
                         </div>
                         <Button
                           size="sm"
@@ -1089,7 +1065,7 @@ export default function MyAccount() {
                               {t('account:invoices.view')}
                             </Button>
                             
-                            {invoice.payment_status !== 'paid' && (
+                            {invoice.payment_status === 'pending' && (
                               <Button
                                 size="sm"
                                 onClick={() => {

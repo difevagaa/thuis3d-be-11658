@@ -19,7 +19,6 @@ import {
   Shield
 } from "lucide-react";
 import { toast } from "sonner";
-import { i18nToast } from "@/lib/i18nToast";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ const Admin = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        i18nToast.error("error.mustLogin");
+        toast.error("Debes iniciar sesión");
         navigate("/auth");
         return;
       }
@@ -50,14 +49,14 @@ const Admin = () => {
       if (error) throw error;
 
       if (!data) {
-        i18nToast.error("error.noPermission");
+        toast.error("No tienes permisos de administrador");
         navigate("/");
         return;
       }
 
       setIsAdmin(true);
     } catch (error: any) {
-      i18nToast.error("error.permissionVerifyFailed");
+      toast.error("Error al verificar permisos");
       navigate("/");
     } finally {
       setLoading(false);

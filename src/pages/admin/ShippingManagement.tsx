@@ -7,7 +7,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { i18nToast } from "@/lib/i18nToast";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Edit, X, MapPin, CheckSquare, Square } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -134,7 +133,7 @@ export default function ShippingManagement() {
       if (zonesRes.data) setZones(zonesRes.data);
     } catch (error) {
       logger.error("Error loading data:", error);
-      i18nToast.error("error.loadingFailed");
+      toast.error("Error al cargar datos");
     } finally {
       setLoading(false);
     }
@@ -143,7 +142,7 @@ export default function ShippingManagement() {
   const saveSettings = async () => {
     try {
       if (!settings) {
-        i18nToast.error("error.noConfigToSave");
+        toast.error("No hay configuración para guardar");
         return;
       }
 
@@ -182,10 +181,10 @@ export default function ShippingManagement() {
         }
       }
 
-      i18nToast.success("success.configSaved");
+      toast.success("Configuración guardada");
     } catch (error) {
       logger.error("Error saving settings:", error);
-      i18nToast.error("error.configSaveFailed");
+      toast.error("Error al guardar configuración");
     }
   };
 
@@ -197,11 +196,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.countryUpdated");
+      toast.success("País actualizado");
       loadData();
     } catch (error) {
       logger.error("Error updating country:", error);
-      i18nToast.error("error.countrySaveFailed");
+      toast.error("Error al actualizar país");
     }
   };
 
@@ -215,11 +214,11 @@ export default function ShippingManagement() {
         });
 
       if (error) throw error;
-      i18nToast.success("success.countryAdded");
+      toast.success("País añadido correctamente");
       loadData();
     } catch (error) {
       logger.error("Error adding country:", error);
-      i18nToast.error("error.countrySaveFailed");
+      toast.error("Error al añadir país");
     }
   };
 
@@ -233,11 +232,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.countryDeleted");
+      toast.success("País eliminado correctamente");
       loadData();
     } catch (error) {
       logger.error("Error deleting country:", error);
-      i18nToast.error("error.countryDeleteFailed");
+      toast.error("Error al eliminar país");
     }
   };
 
@@ -262,11 +261,11 @@ export default function ShippingManagement() {
         });
 
       if (error) throw error;
-      i18nToast.success("success.postalCodeAdded");
+      toast.success("Código postal añadido");
       loadData();
     } catch (error) {
       logger.error("Error adding postal code:", error);
-      i18nToast.error("error.postalCodeSaveFailed");
+      toast.error("Error al añadir código postal");
     }
   };
 
@@ -289,13 +288,13 @@ export default function ShippingManagement() {
         .eq("id", data.id);
 
       if (error) throw error;
-      i18nToast.success("success.postalCodeUpdated");
+      toast.success("Código postal actualizado");
       setEditingPostalCodeId(null);
       setEditingPostalCodeData(null);
       loadData();
     } catch (error) {
       logger.error("Error updating postal code:", error);
-      i18nToast.error("error.postalCodeSaveFailed");
+      toast.error("Error al actualizar código postal");
     }
   };
 
@@ -321,11 +320,11 @@ export default function ShippingManagement() {
         .eq("id", id);
 
       if (error) throw error;
-      i18nToast.success("success.postalCodeDeleted");
+      toast.success("Código postal eliminado");
       loadData();
     } catch (error) {
       logger.error("Error deleting postal code:", error);
-      i18nToast.error("error.postalCodeDeleteFailed");
+      toast.error("Error al eliminar código postal");
     }
   };
 
@@ -334,12 +333,12 @@ export default function ShippingManagement() {
     try {
       // Validate required fields
       if (!zoneFormData.zone_name || zoneFormData.zone_name.trim() === '') {
-        i18nToast.error("error.zoneNameRequired");
+        toast.error('El nombre de la zona es obligatorio');
         return;
       }
 
       if (!zoneFormData.country || zoneFormData.country.trim() === '') {
-        i18nToast.error("error.countryRequired");
+        toast.error('El país es obligatorio');
         return;
       }
 
@@ -349,17 +348,17 @@ export default function ShippingManagement() {
       const minimumCost = parseFloat(zoneFormData.minimum_cost);
 
       if (isNaN(baseCost) || baseCost < 0) {
-        i18nToast.error("error.baseCostInvalid");
+        toast.error('El costo base debe ser un número válido mayor o igual a 0');
         return;
       }
 
       if (isNaN(costPerKg) || costPerKg < 0) {
-        i18nToast.error("error.costPerKgInvalid");
+        toast.error('El costo por kg debe ser un número válido mayor o igual a 0');
         return;
       }
 
       if (isNaN(minimumCost) || minimumCost < 0) {
-        i18nToast.error("error.minimumCostInvalid");
+        toast.error('El costo mínimo debe ser un número válido mayor o igual a 0');
         return;
       }
 
@@ -505,7 +504,7 @@ export default function ShippingManagement() {
 
   const handleBulkEdit = async () => {
     if (selectedZones.length === 0) {
-      i18nToast.error("error.selectAtLeastOneZone");
+      toast.error('Selecciona al menos una zona');
       return;
     }
 
@@ -523,7 +522,7 @@ export default function ShippingManagement() {
       }
 
       if (Object.keys(updates).length === 0) {
-        i18nToast.error("error.enterAtLeastOneValue");
+        toast.error('Ingresa al menos un valor para actualizar');
         return;
       }
 
@@ -542,7 +541,7 @@ export default function ShippingManagement() {
         throw new Error('Error al actualizar algunas zonas');
       }
 
-      i18nToast.success("success.shippingZonesUpdated", { count: selectedZones.length });
+      toast.success(`${selectedZones.length} zona(s) actualizada(s) correctamente`);
       
       // Recargar datos y limpiar selección
       await loadData();

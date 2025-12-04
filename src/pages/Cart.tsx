@@ -13,7 +13,6 @@ import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode, validateGiftCardCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
-import { calculateCouponDiscount as calculateCouponDiscountUtil } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;
@@ -116,7 +115,6 @@ const Cart = () => {
         .select("*")
         .eq("code", couponCode.toUpperCase())
         .eq("is_active", true)
-        .is("deleted_at", null)
         .maybeSingle();
 
       if (error || !data) {
@@ -136,20 +134,8 @@ const Cart = () => {
         return;
       }
 
-      // Check if coupon is product-specific and validate the product is in cart
-      // Also calculate applicable amount for min purchase check
-      let applicableAmount = subtotal;
-      if (data.product_id) {
-        const productItems = cartItems.filter(item => item.productId === data.product_id);
-        if (productItems.length === 0) {
-          toast.error(t('cart:coupon.productNotInCart'));
-          return;
-        }
-        applicableAmount = productItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      }
-      
-      // Check minimum purchase (for product-specific coupons, uses the product's amount)
-      if (data.min_purchase && applicableAmount < data.min_purchase) {
+      // Check minimum purchase
+      if (data.min_purchase && subtotal < data.min_purchase) {
         toast.error(t('cart:coupon.minPurchase', { amount: data.min_purchase }));
         return;
       }
@@ -254,27 +240,28 @@ const Cart = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Calculate discount using shared utility - handles product-specific coupons and all types
-  const discount = calculateCouponDiscountUtil(cartItems, appliedCoupon);
+  // Calculate discount
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") {
+      discount = subtotal * (appliedCoupon.discount_value / 100);
+    } else if (appliedCoupon.discount_type === "fixed") {
+      discount = appliedCoupon.discount_value;
+    }
+  }
   
-  // Apply gift card after coupon discount
+  // Apply gift card
   let giftCardApplied = 0;
   if (appliedGiftCard) {
     const afterDiscount = subtotal - discount;
-    giftCardApplied = Math.min(appliedGiftCard.current_balance, Math.max(0, afterDiscount));
+    giftCardApplied = Math.min(appliedGiftCard.current_balance, afterDiscount);
   }
   
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
   const taxableAmount = cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Calculate proportional discount and gift card amounts for taxable products
-  const taxableRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
-  const taxableDiscount = discount * taxableRatio;
-  const taxableGiftCard = giftCardApplied * taxableRatio;
-  const taxableAfterDiscounts = Math.max(0, taxableAmount - taxableDiscount - taxableGiftCard);
-  const tax = calculateTax(taxableAfterDiscounts, true);
+  const tax = calculateTax(taxableAmount - (discount * (taxableAmount / subtotal)) - (giftCardApplied * (taxableAmount / subtotal)), true);
   const total = Math.max(0, subtotal - discount - giftCardApplied + tax);
 
   if (cartItems.length === 0) {

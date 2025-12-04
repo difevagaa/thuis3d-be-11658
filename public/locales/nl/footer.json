@@ -1,6 +1,6 @@
 {
   "brand": {
-    "tagline": "Professionele 3D Printservice, Prototyping & Maatwerk Design"
+    "tagline": "Professioneel 3D-printen en op maat gemaakt ontwerp"
   },
   "help": {
     "title": "Hulp",
@@ -12,14 +12,14 @@
   },
   "quickLinks": {
     "title": "Snelle Links",
-    "catalog": "3D Print Catalogus",
-    "requestQuote": "Vraag een Offerte Aan",
+    "catalog": "Catalogus",
+    "requestQuote": "Offerte Aanvragen",
     "giftCards": "Cadeaukaarten",
     "blog": "Blog"
   },
   "newsletter": {
     "title": "Nieuwsbrief",
-    "description": "Ontvang aanbiedingen en 3D print nieuws",
+    "description": "Ontvang aanbiedingen en nieuws",
     "placeholder": "Uw e-mail",
     "subscribed": "Bedankt voor uw inschrijving!"
   },

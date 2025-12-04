@@ -104,11 +104,11 @@ export default function FeaturedProductsCarousel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rotationKey intentionally triggers re-randomization
   }, [products, maxVisible, rotationKey]);
 
-  // Auto-rotate every 60 seconds (1 minute)
+  // Auto-rotate every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setRotationKey(prev => prev + 1);
-    }, 60000); // 60 seconds (1 minute)
+    }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
   }, []);
