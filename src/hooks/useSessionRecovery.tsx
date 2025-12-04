@@ -17,9 +17,7 @@ export function useSessionRecovery() {
   const recoveryAttempted = useRef(false);
   const lastCheck = useRef<number>(0);
   const isValidating = useRef(false);
-  const wasInBackground = useRef(false);
   const CHECK_INTERVAL = 30000; // 30 seconds between checks
-  const BACKGROUND_CHECK_DELAY = 500; // Delay after returning from background
 
   /**
    * Validates the current session and clears if corrupted
@@ -243,6 +241,8 @@ export function useSessionRecovery() {
   }, [validateSession, ensureDataLoading]);
 
   // Set up session validation on mount and periodically
+  // IMPORTANT: Visibility/focus/pageshow events are handled by useConnectionRecovery
+  // This hook only validates sessions and listens to connection-recovered events
   useEffect(() => {
     // Initial validation with small delay to let app initialize
     const initTimer = setTimeout(() => {
@@ -287,65 +287,21 @@ export function useSessionRecovery() {
 
     window.addEventListener('storage', handleStorageEvent);
 
-    // Listen for visibility changes to validate when user returns (critical for mobile)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        if (wasInBackground.current) {
-          logger.info('[SessionRecovery] App returned from background, reconnecting...');
-          // User returned from background - reconnect and refresh
-          setTimeout(() => {
-            reconnectAndRefresh();
-          }, BACKGROUND_CHECK_DELAY);
-        }
-        wasInBackground.current = false;
-      } else {
-        // Going to background
-        wasInBackground.current = true;
-        logger.debug('[SessionRecovery] App going to background');
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Listen for page show event (iOS Safari specific)
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from bfcache
-        logger.info('[SessionRecovery] Page restored from cache, reconnecting...');
-        reconnectAndRefresh();
-      }
-    };
-
-    window.addEventListener('pageshow', handlePageShow);
-
-    // Listen for online/offline events
-    const handleOnline = () => {
-      logger.info('[SessionRecovery] Network restored, reconnecting...');
+    // Listen for connection recovery events from useConnectionRecovery
+    // When connection is recovered, validate session and dispatch session-recovered
+    const handleConnectionRecovered = () => {
+      logger.info('[SessionRecovery] Connection recovered, validating session...');
       reconnectAndRefresh();
     };
 
-    window.addEventListener('online', handleOnline);
-
-    // Listen for focus event (additional mobile support)
-    const handleFocus = () => {
-      if (wasInBackground.current) {
-        logger.debug('[SessionRecovery] Window focused after background');
-        setTimeout(() => reconnectAndRefresh(), BACKGROUND_CHECK_DELAY);
-        wasInBackground.current = false;
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener('connection-recovered', handleConnectionRecovered);
 
     return () => {
       clearTimeout(initTimer);
       subscription.unsubscribe();
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageEvent);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('connection-recovered', handleConnectionRecovered);
     };
   }, [validateSession, ensureDataLoading, reconnectAndRefresh]);
 

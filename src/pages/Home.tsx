@@ -978,6 +978,10 @@ const Home = () => {
   }, [loadOrderConfig, reloadAllData, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures]);
 
   // Listen for session/connection recovery events
+  // IMPORTANT: Do NOT listen to visibilitychange/pageshow/focus here!
+  // Those are handled by useConnectionRecovery and useSessionRecovery,
+  // which dispatch 'connection-recovered' and 'session-recovered' events.
+  // Listening here would cause triple loading attempts and race conditions.
   useEffect(() => {
     // Debounced reload function to prevent rapid-fire calls
     const debouncedReload = (delay: number = 300) => {
@@ -996,30 +1000,10 @@ const Home = () => {
       debouncedReload(500);
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        logger.info('[Home] Page became visible, scheduling reload...');
-        debouncedReload(300);
-      }
-    };
-
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        logger.info('[Home] Page restored from bfcache, scheduling reload...');
-        debouncedReload(100);
-      }
-    };
-
-    const handleOnline = () => {
-      logger.info('[Home] Network restored, scheduling reload...');
-      debouncedReload(500);
-    };
-
+    // Only listen to recovery events dispatched by global hooks
+    // Do NOT add visibilitychange, pageshow, online, or focus listeners here
     window.addEventListener('session-recovered', handleRecovery);
     window.addEventListener('connection-recovered', handleRecovery);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('online', handleOnline);
 
     return () => {
       // Clear debounce timer on cleanup
@@ -1030,9 +1014,6 @@ const Home = () => {
       
       window.removeEventListener('session-recovered', handleRecovery);
       window.removeEventListener('connection-recovered', handleRecovery);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('online', handleOnline);
     };
   }, [reloadAllData]);
   // Helper function to get banners by section
