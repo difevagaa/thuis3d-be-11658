@@ -4,9 +4,21 @@ import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 /**
+ * Interface for shipping info stored in checkout sessions
+ */
+export interface ShippingInfoWithOrderNumber {
+  orderNumber?: string;
+  [key: string]: any;
+}
+
+/**
  * Generates a unique order number in the same format as the database function
  * Format: L1N1L2N2L3N3 (e.g., A1B2C3)
  * This ensures order numbers are consistent throughout the payment flow
+ * 
+ * Note: This mirrors the database function generate_order_number() defined in
+ * supabase/migrations/20251204000000_fix_order_invoice_number_format.sql
+ * Any changes to the format should be synchronized between both implementations.
  */
 export const generateOrderNumber = (): string => {
   const letter1 = String.fromCharCode(65 + Math.floor(Math.random() * 26));
@@ -39,7 +51,7 @@ export const getOrCreateOrderNumber = async (sessionId: string): Promise<string 
     }
 
     // Check if order number already exists in session
-    const shippingInfo = session.shipping_info as any;
+    const shippingInfo = session.shipping_info as ShippingInfoWithOrderNumber;
     if (shippingInfo?.orderNumber) {
       return shippingInfo.orderNumber;
     }
