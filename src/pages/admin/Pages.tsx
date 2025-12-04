@@ -274,107 +274,218 @@ export default function Pages() {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pages.map((page) => (
-                <TableRow key={page.id}>
-                  <TableCell>{page.title}</TableCell>
-                  <TableCell className="font-mono text-sm">/page/{page.slug}</TableCell>
-                  <TableCell>{page.is_published ? "Publicada" : "Borrador"}</TableCell>
-                  <TableCell>{new Date(page.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {page.is_published && (
+        <CardContent className="p-2 sm:p-6">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {pages.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No hay páginas creadas
+              </div>
+            ) : (
+              pages.map((page) => (
+                <div key={page.id} className="border rounded-lg p-3 space-y-2 bg-card">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-sm">{page.title}</p>
+                      <p className="text-xs text-muted-foreground font-mono">/page/{page.slug}</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded bg-muted">
+                      {page.is_published ? "Publicada" : "Borrador"}
+                    </span>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Creada: {new Date(page.created_at).toLocaleDateString()}
+                  </p>
+                  
+                  <div className="flex gap-2 pt-2 border-t flex-wrap">
+                    {page.is_published && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 min-w-[100px] h-8 text-xs"
+                        onClick={() => window.open(`/page/${page.slug}`, '_blank')}
+                      >
+                        Ver Página
+                      </Button>
+                    )}
+                    <Dialog>
+                      <DialogTrigger asChild>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`/page/${page.slug}`, '_blank')}
+                          className="flex-1 min-w-[100px] h-8 text-xs"
+                          onClick={() => handleEdit(page)}
                         >
-                          Ver Página
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Editar
                         </Button>
-                      )}
-                      <Dialog>
-                        <DialogTrigger asChild>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Editar Página</DialogTitle>
+                          <DialogDescription>Modifica el contenido de la página</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Título</Label>
+                            <Input
+                              value={pageForm.title}
+                              onChange={(e) => setPageForm({ ...pageForm, title: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Slug (URL)</Label>
+                            <Input
+                              value={pageForm.slug}
+                              onChange={(e) => setPageForm({ ...pageForm, slug: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Meta Descripción</Label>
+                            <Input
+                              value={pageForm.meta_description}
+                              onChange={(e) => setPageForm({ ...pageForm, meta_description: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Contenido</Label>
+                            <RichTextEditor
+                              value={pageForm.content}
+                              onChange={(value) => setPageForm({ ...pageForm, content: value })}
+                              placeholder="Escribe el contenido de la página..."
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Label>Publicada</Label>
+                            <Switch
+                              checked={pageForm.is_published}
+                              onCheckedChange={(checked) => setPageForm({ ...pageForm, is_published: checked })}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleSave}>Actualizar Página</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-8 text-xs px-2"
+                      onClick={() => deletePage(page.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>URL</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pages.map((page) => (
+                  <TableRow key={page.id}>
+                    <TableCell>{page.title}</TableCell>
+                    <TableCell className="font-mono text-sm">/page/{page.slug}</TableCell>
+                    <TableCell>{page.is_published ? "Publicada" : "Borrador"}</TableCell>
+                    <TableCell>{new Date(page.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {page.is_published && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEdit(page)}
+                            onClick={() => window.open(`/page/${page.slug}`, '_blank')}
                           >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            Editar
+                            Ver Página
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Editar Página</DialogTitle>
-                            <DialogDescription>Modifica el contenido de la página</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Título</Label>
-                              <Input
-                                value={pageForm.title}
-                                onChange={(e) => setPageForm({ ...pageForm, title: e.target.value })}
-                              />
+                        )}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(page)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Editar Página</DialogTitle>
+                              <DialogDescription>Modifica el contenido de la página</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Título</Label>
+                                <Input
+                                  value={pageForm.title}
+                                  onChange={(e) => setPageForm({ ...pageForm, title: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Slug (URL)</Label>
+                                <Input
+                                  value={pageForm.slug}
+                                  onChange={(e) => setPageForm({ ...pageForm, slug: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Meta Descripción</Label>
+                                <Input
+                                  value={pageForm.meta_description}
+                                  onChange={(e) => setPageForm({ ...pageForm, meta_description: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Contenido</Label>
+                                <RichTextEditor
+                                  value={pageForm.content}
+                                  onChange={(value) => setPageForm({ ...pageForm, content: value })}
+                                  placeholder="Escribe el contenido de la página..."
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <Label>Publicada</Label>
+                                <Switch
+                                  checked={pageForm.is_published}
+                                  onCheckedChange={(checked) => setPageForm({ ...pageForm, is_published: checked })}
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <Label>Slug (URL)</Label>
-                              <Input
-                                value={pageForm.slug}
-                                onChange={(e) => setPageForm({ ...pageForm, slug: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label>Meta Descripción</Label>
-                              <Input
-                                value={pageForm.meta_description}
-                                onChange={(e) => setPageForm({ ...pageForm, meta_description: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label>Contenido</Label>
-                              <RichTextEditor
-                                value={pageForm.content}
-                                onChange={(value) => setPageForm({ ...pageForm, content: value })}
-                                placeholder="Escribe el contenido de la página..."
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label>Publicada</Label>
-                              <Switch
-                                checked={pageForm.is_published}
-                                onCheckedChange={(checked) => setPageForm({ ...pageForm, is_published: checked })}
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button onClick={handleSave}>Actualizar Página</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deletePage(page.id)}
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                            <DialogFooter>
+                              <Button onClick={handleSave}>Actualizar Página</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deletePage(page.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

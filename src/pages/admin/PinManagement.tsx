@@ -133,8 +133,62 @@ export default function PinManagement() {
             Los PINs son necesarios para realizar acciones críticas como borrado permanente de elementos
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-2 sm:p-6">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {admins.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No hay administradores registrados
+              </div>
+            ) : (
+              admins.map((admin) => (
+                <div key={admin.id} className="border rounded-lg p-3 space-y-2 bg-card">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-sm">{admin.full_name || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{admin.email}</p>
+                    </div>
+                    {admin.admin_pin ? (
+                      <Badge variant="default" className="flex items-center gap-1">
+                        <Key className="h-3 w-3" />
+                        <span className="text-xs">Config.</span>
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <ShieldAlert className="h-3 w-3" />
+                        <span className="text-xs">Sin PIN</span>
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-8 text-xs"
+                      onClick={() => openPinDialog(admin)}
+                    >
+                      <Key className="h-3 w-3 mr-1" />
+                      {admin.admin_pin ? "Cambiar" : "Config."} PIN
+                    </Button>
+                    {admin.admin_pin && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-xs px-2"
+                        onClick={() => resetPIN(admin.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
