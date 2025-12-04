@@ -50,11 +50,17 @@ export function useSupabaseReconnect() {
         // Wait a moment for the browser to fully restore the tab
         reconnectTimeoutRef.current = window.setTimeout(async () => {
           try {
+            // Notify that reconnection is starting
+            window.dispatchEvent(new CustomEvent('supabase-reconnect-start'));
+            
             // Step 1: Verify session is still valid
             const { data: { session }, error } = await supabase.auth.getSession();
             
             if (error) {
               logger.error('[SupabaseReconnect] Session error:', error);
+              window.dispatchEvent(new CustomEvent('supabase-reconnect-error'));
+              isReconnectingRef.current = false;
+              return;
             } else if (session) {
               logger.info('[SupabaseReconnect] Session valid, reconnecting...');
             }
@@ -92,6 +98,7 @@ export function useSupabaseReconnect() {
             
           } catch (error) {
             logger.error('[SupabaseReconnect] Reconnection failed:', error);
+            window.dispatchEvent(new CustomEvent('supabase-reconnect-error'));
           } finally {
             isReconnectingRef.current = false;
           }

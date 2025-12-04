@@ -11,6 +11,7 @@ import { useViewportReset } from "@/hooks/useViewportReset";
 import { useSessionRecovery } from "@/hooks/useSessionRecovery";
 import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 import { useSupabaseReconnect } from "@/hooks/useSupabaseReconnect";
+import { useReconnectNotification } from "@/hooks/useReconnectNotification";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -113,6 +114,11 @@ import Gallery from "./pages/Gallery";
  * - Increase stale time (data stays fresh longer)
  * - Reduce cache time (faster garbage collection)
  * - Let realtime subscriptions handle updates
+ * 
+ * ISSUE #15 FIX:
+ * - Queries can fail when tab is hidden/visible transition
+ * - Need to allow retries and not enter permanent error state
+ * - useSupabaseReconnect will invalidate and refetch queries
  */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -123,24 +129,25 @@ const queryClient = new QueryClient({
       gcTime: 2 * 60 * 1000,
       
       // CRITICAL: Disable aggressive refetching that caused infinite loading
-      refetchOnWindowFocus: false, // Don't refetch on tab switch
-      refetchOnReconnect: false,   // Don't refetch on reconnect
+      refetchOnWindowFocus: false, // Don't refetch on tab switch (useSupabaseReconnect handles this)
+      refetchOnReconnect: false,   // Don't refetch on reconnect (useSupabaseReconnect handles this)
       refetchOnMount: false,       // Don't refetch on every mount
       
-      // Retry failed requests with exponential backoff
+      // ISSUE #15 FIX: Allow more retries for tab visibility issues
       retry: (failureCount, error) => {
         // Don't retry on authentication errors
         if (error && typeof error === 'object' && 'status' in error) {
           const status = (error as { status: number }).status;
           if (status === 401 || status === 403) return false;
         }
-        // Only retry once to avoid cascading failures
-        return failureCount < 1;
+        // Allow up to 3 retries for connection issues
+        return failureCount < 3;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
       
-      // Network mode
-      networkMode: 'online',
+      // Network mode - allow queries even when browser thinks it's offline
+      // (sometimes browser incorrectly reports offline during tab switches)
+      networkMode: 'offlineFirst',
     },
     mutations: {
       // Don't retry mutations - could cause duplicate operations
@@ -151,8 +158,10 @@ const queryClient = new QueryClient({
   
   // Error handling for queries
   queryCache: new QueryCache({
-    onError: (error) => {
+    onError: (error, query) => {
       console.error('[QueryCache] Global query error:', error);
+      // Don't log errors for background refetches
+      if (query.state.fetchStatus === 'idle') return;
     },
   }),
   
@@ -180,6 +189,8 @@ const PageLoader = () => (
 const AppContent = () => {
   // CRITICAL FIX FOR ISSUE #15: Reconnect Supabase when returning from another tab
   useSupabaseReconnect();
+  // Show reconnection notifications to user
+  useReconnectNotification();
   // Global connection recovery (highest priority)
   useConnectionRecovery();
   // Load and apply global colors on app start
