@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { i18nToast } from "@/lib/i18nToast";
 import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 
 interface PreviewModel {

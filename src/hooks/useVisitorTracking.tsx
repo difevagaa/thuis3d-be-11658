@@ -13,16 +13,6 @@ function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
   return 'desktop';
 }
 
-// Helper para obtener usuario de forma segura (no bloquea si falla)
-async function getSafeUser() {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.user || null;
-  } catch {
-    return null;
-  }
-}
-
 export function useVisitorTracking() {
   const sessionIdRef = useRef<string>(
     sessionStorage.getItem('visitor_session_id') || 
@@ -43,7 +33,7 @@ export function useVisitorTracking() {
       isRegistering.current = true;
       
       try {
-        const user = await getSafeUser();
+        const { data: { user } } = await supabase.auth.getUser();
         const userId = user?.id || null;
         
         const visitorData = {
@@ -90,7 +80,7 @@ export function useVisitorTracking() {
     // Heartbeat: Actualizar actividad cada 30 segundos
     const updateActivity = async () => {
       try {
-        const user = await getSafeUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
         // Actualizar visitor_sessions
         const { error: sessionError } = await supabase
@@ -133,7 +123,7 @@ export function useVisitorTracking() {
     // Marcar como inactivo al salir (beforeunload/pagehide)
     const handleBeforeUnload = async () => {
       try {
-        const user = await getSafeUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
         // Marcar usuario como offline si está autenticado
         if (user?.id) {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Filter, Layers, Box, Euro, ArrowUpDown, Package, Search, X } from "lucide-react";
+import { Printer, Filter, Layers, Box, Euro, ArrowUpDown, ShoppingCart, Package, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
+import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { ProductCard } from "@/components/ProductCard";
-import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
-import { logger } from "@/lib/logger";
-import { LANGUAGE_CHANGED_EVENT } from "@/lib/events";
-import { createChannel, removeChannels } from "@/lib/channelManager";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
@@ -28,54 +27,98 @@ const Products = () => {
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    loadData();
+
+    // Subscribe to auth state changes to reload products with correct filtering
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Reload products when user logs in/out to show correct role-based products
+      loadData();
+    });
+
+    // Subscribe to product changes for real-time updates
+    const productsChannel = supabase
+      .channel('products-list-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'products'
+      }, loadData)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_images'
+      }, loadData)
+      .subscribe();
+
+    // Subscribe to user_roles changes to reload products with correct filtering
+    const rolesChannel = supabase
+      .channel('products-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    // Subscribe to product_roles changes to update visibility immediately
+    const productRolesChannel = supabase
+      .channel('products-product-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_roles'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      authSubscription.unsubscribe();
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(productRolesChannel);
+    };
+  }, []);
+
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [products, selectedCategory, selectedMaterial, priceRange, sortBy, searchedByCode]);
+
+  const loadData = async () => {
     try {
-      // PRIMERO: Cargar productos SIEMPRE - esto no debe depender de la autenticación
+      // First, ensure session is valid by calling getSession() 
+      // This will auto-refresh the token if needed
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      // Get user from the session (already validated)
+      const user = session?.user ?? null;
+      
+      // Get user roles if logged in (only if session is valid)
+      let userRoles: string[] = [];
+      if (user && !sessionError) {
+        const { data: rolesData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        
+        userRoles = (rolesData || [])
+          .map(r => String(r.role || '').trim().toLowerCase())
+          .filter(role => role.length > 0);
+      }
+
+      // Fetch products - this should always succeed regardless of auth state
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
         .is("deleted_at", null);
       
-      if (productsError) {
-        logger.error("[Products] Error loading products:", productsError);
-        throw productsError;
-      }
+      if (productsError) throw productsError;
 
-      // Cargar categorías y materiales en paralelo
-      const [categoriesRes, materialsRes] = await Promise.all([
-        supabase.from("categories").select("*").is("deleted_at", null),
-        supabase.from("materials").select("*").is("deleted_at", null)
-      ]);
-      
-      setCategories(categoriesRes.data || []);
-      setMaterials(materialsRes.data || []);
-
-      // SEGUNDO: Intentar obtener la sesión del usuario (no bloquea si falla)
-      let user = null;
-      let userRoles: string[] = [];
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        user = session?.user ?? null;
-        
-        if (user) {
-          const { data: rolesData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", user.id);
-          
-          userRoles = (rolesData || [])
-            .map(r => String(r.role || '').trim().toLowerCase())
-            .filter(role => role.length > 0);
-        }
-      } catch (authError) {
-        // Si hay error de autenticación, continuar sin usuario
-        logger.warn("[Products] Auth error (continuing without user):", authError);
-      }
-
-      // TERCERO: Filtrar productos basado en roles
-      // Productos SIN roles → visibles para TODOS
-      // Productos CON roles → solo para usuarios con esos roles
+      // NUEVA LÓGICA: Productos SIN roles → visibles para TODOS
+      //               Productos CON roles → solo para usuarios con esos roles
       const visibleProducts = (productsData || []).filter((product: any) => {
         const productRolesList = product.product_roles || [];
         const productRolesNormalized = productRolesList
@@ -98,72 +141,19 @@ const Products = () => {
         
         return hasMatchingRole;
       });
+
+      const [categoriesRes, materialsRes] = await Promise.all([
+        supabase.from("categories").select("*").is("deleted_at", null),
+        supabase.from("materials").select("*").is("deleted_at", null)
+      ]);
       
       setProducts(visibleProducts);
+      setCategories(categoriesRes.data || []);
+      setMaterials(materialsRes.data || []);
     } catch (error) {
-      logger.error("[Products] Error in loadData:", error);
       i18nToast.error("error.loadingFailed");
     }
-  }, []);
-
-  // Use data recovery hook
-  useDataWithRecovery(loadData, {
-    timeout: 15000,
-    maxRetries: 3
-  });
-
-  useEffect(() => {
-    // Channel names for cleanup
-    const channelNames = [
-      'products-list-changes',
-      'products-roles-changes',
-      'products-product-roles-changes'
-    ];
-
-    // Subscribe to auth state changes to reload products with correct filtering
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Reload products when user logs in/out to show correct role-based products
-      loadData();
-    });
-
-    // Subscribe to product changes for real-time updates using centralized manager
-    const productsChannel = createChannel('products-list-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'products'
-      }, loadData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_images'
-      }, loadData)
-      .subscribe();
-
-    // Subscribe to user_roles changes to reload products with correct filtering
-    const rolesChannel = createChannel('products-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_roles'
-      }, loadData)
-      .subscribe();
-
-    // Subscribe to product_roles changes to update visibility immediately
-    const productRolesChannel = createChannel('products-product-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_roles'
-      }, loadData)
-      .subscribe();
-
-    // CRITICAL: Proper cleanup on unmount
-    return () => {
-      authSubscription.unsubscribe();
-      removeChannels(channelNames);
-    };
-  }, [loadData]);
+  };
 
   const searchByProductCode = async () => {
     const code = productCodeSearch.trim().toUpperCase();
@@ -190,7 +180,7 @@ const Products = () => {
       // Establecer SOLO este producto como resultado
       setProducts([productData]);
       setSearchedByCode(true);
-      i18nToast.success("success.productFound");
+      toast.success(`Producto encontrado: ${productData.name}`);
     } catch (error) {
       i18nToast.error("error.productSearchFailed");
     }
@@ -203,7 +193,7 @@ const Products = () => {
     i18nToast.info("info.codeSearchCleared");
   };
 
-  const filterAndSortProducts = useCallback(() => {
+  const filterAndSortProducts = () => {
     let filtered = [...products];
 
     if (selectedCategory !== "all") {
@@ -225,25 +215,7 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered);
-  }, [products, selectedCategory, priceRange, sortBy]);
-
-  // Apply filters and sorting when dependencies change
-  useEffect(() => {
-    filterAndSortProducts();
-  }, [filterAndSortProducts]);
-
-  // Reload data when language changes to get updated translations
-  useEffect(() => {
-    const handleLanguageChange = () => {
-      loadData();
-    };
-
-    window.addEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
-    
-    return () => {
-      window.removeEventListener(LANGUAGE_CHANGED_EVENT, handleLanguageChange);
-    };
-  }, [loadData]);
+  };
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 lg:py-8">

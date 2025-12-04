@@ -24,7 +24,6 @@ export default function PaymentConfig() {
     bank_instructions: "",
     paypal_email: "",
     revolut_link: "",
-    card_payment_link: "",
     company_info: "",
   });
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
@@ -39,7 +38,7 @@ export default function PaymentConfig() {
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
-        'paypal_email', 'revolut_link', 'card_payment_link', 'company_info', 'payment_images'
+        'paypal_email', 'revolut_link', 'company_info', 'payment_images'
       ];
 
       const { data } = await supabase
@@ -73,7 +72,6 @@ export default function PaymentConfig() {
           bank_instructions: settings.bank_instructions || "",
           paypal_email: settings.paypal_email || "",
           revolut_link: settings.revolut_link || "",
-          card_payment_link: settings.card_payment_link || "",
           company_info: settings.company_info || "",
         });
       }
@@ -175,11 +173,6 @@ export default function PaymentConfig() {
         {
           setting_key: "revolut_link",
           setting_value: config.revolut_link,
-          setting_group: "general"
-        },
-        {
-          setting_key: "card_payment_link",
-          setting_value: config.card_payment_link,
           setting_group: "general"
         },
         {
@@ -388,34 +381,6 @@ export default function PaymentConfig() {
               />
               <p className="text-xs text-muted-foreground">
                 Puedes obtener tu enlace de pago en la app de Revolut → Payments → Payment Link
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {config.card_enabled && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Configuración de Pago con Tarjeta
-            </CardTitle>
-            <CardDescription>
-              Configura el enlace de pago externo para pagos con tarjeta
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="card_payment_link">Enlace de Pago con Tarjeta</Label>
-              <Input
-                id="card_payment_link"
-                value={config.card_payment_link}
-                onChange={(e) => setConfig({ ...config, card_payment_link: e.target.value })}
-                placeholder="https://tu-banco.com/pagar"
-              />
-              <p className="text-xs text-muted-foreground">
-                Este enlace se abrirá cuando el cliente seleccione pago con tarjeta. Debe ser la URL de tu pasarela de pago o banco.
               </p>
             </div>
           </CardContent>

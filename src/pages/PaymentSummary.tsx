@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import { generatePaymentReference } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;
@@ -78,28 +77,9 @@ export default function PaymentSummary() {
         return;
       }
 
-      let shippingData = typeof session.shipping_info === 'string' 
+      const shippingData = typeof session.shipping_info === 'string' 
         ? JSON.parse(session.shipping_info) 
         : session.shipping_info;
-      
-      // Generate and store payment reference if not already exists
-      // This ensures the reference stays consistent throughout the checkout process
-      if (!shippingData.payment_reference) {
-        const paymentReference = generatePaymentReference();
-        shippingData = { ...shippingData, payment_reference: paymentReference };
-        
-        // Update the checkout session with the payment reference
-        const { error: updateError } = await supabase
-          .from("checkout_sessions")
-          .update({ shipping_info: shippingData })
-          .eq("id", sessionId);
-        
-        if (updateError) {
-          logger.error("Error updating payment reference:", updateError);
-        } else {
-          logger.info("Payment reference generated and stored:", paymentReference);
-        }
-      }
       
       setShippingInfo(shippingData);
 
@@ -241,10 +221,10 @@ export default function PaymentSummary() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-4 xs:py-6 md:py-12 max-w-2xl">
+      <div className="container mx-auto px-4 py-12 max-w-2xl">
         <Card>
-          <CardContent className="p-4 xs:p-6 md:p-8 text-center">
-            <p className="text-xs xs:text-sm md:text-base">{t('common:loading')}</p>
+          <CardContent className="p-8 text-center">
+            <p>{t('common:loading')}</p>
           </CardContent>
         </Card>
       </div>
@@ -252,15 +232,15 @@ export default function PaymentSummary() {
   }
 
   return (
-    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-3 xs:py-4 md:py-8 lg:py-12 max-w-3xl">
-      <h1 className="text-base xs:text-lg md:text-2xl lg:text-3xl font-bold mb-2 xs:mb-3 md:mb-6 lg:mb-8">{t('payment:orderSummary')}</h1>
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
+      <h1 className="text-3xl font-bold mb-8">{t('payment:orderSummary')}</h1>
 
-      <div className="grid gap-2 xs:gap-3 md:gap-6">
+      <div className="grid gap-6">
         <Card>
-          <CardHeader className="p-2.5 xs:p-3 md:p-6 pb-1.5 xs:pb-2 md:pb-4">
-            <CardTitle className="text-xs xs:text-sm md:text-lg">{t('payment:shippingInfo')}</CardTitle>
+          <CardHeader>
+            <CardTitle>{t('payment:shippingInfo')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-0.5 xs:space-y-1 md:space-y-2 p-2.5 xs:p-3 md:p-6 pt-0 text-[10px] xs:text-xs md:text-base">
+          <CardContent className="space-y-2">
             <p><strong>{t('payment:fullName')}:</strong> {shippingInfo?.full_name}</p>
             <p><strong>{t('payment:email')}:</strong> {shippingInfo?.email}</p>
             <p><strong>{t('payment:phone')}:</strong> {shippingInfo?.phone}</p>
@@ -272,37 +252,37 @@ export default function PaymentSummary() {
         </Card>
 
         <Card>
-          <CardHeader className="p-2.5 xs:p-3 md:p-6 pb-1.5 xs:pb-2 md:pb-4">
-            <CardTitle className="text-xs xs:text-sm md:text-lg">{t('payment:items')} ({cartItems.length})</CardTitle>
+          <CardHeader>
+            <CardTitle>{t('payment:items')} ({cartItems.length})</CardTitle>
           </CardHeader>
-          <CardContent className="p-2.5 xs:p-3 md:p-6 pt-0">
+          <CardContent>
             {cartItems.length === 0 ? (
-              <p className="text-muted-foreground text-center py-2 xs:py-3 md:py-4 text-[10px] xs:text-xs md:text-base">
+              <p className="text-muted-foreground text-center py-4">
                 {t('cart:empty')}
               </p>
             ) : (
-              <div className="space-y-1.5 xs:space-y-2 md:space-y-4">
+              <div className="space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start gap-1.5 xs:gap-2 md:gap-4 pb-1.5 xs:pb-2 md:pb-4 border-b last:border-0">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[10px] xs:text-xs md:text-base truncate">{item.name}</p>
+                  <div key={item.id} className="flex justify-between items-start gap-4 pb-4 border-b last:border-0">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.name}</p>
                       {item.materialName && (
-                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Material: {item.materialName}</p>
+                        <p className="text-sm text-muted-foreground">Material: {item.materialName}</p>
                       )}
                       {item.colorName && (
-                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Color: {item.colorName}</p>
+                        <p className="text-sm text-muted-foreground">Color: {item.colorName}</p>
                       )}
                       {item.customText && (
-                        <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground">Texto: {item.customText}</p>
+                        <p className="text-sm text-muted-foreground">Texto: {item.customText}</p>
                       )}
                       {item.isGiftCard && (
-                        <Badge variant="secondary" className="mt-0.5 xs:mt-1 text-[9px] xs:text-[10px]">Tarjeta Regalo</Badge>
+                        <Badge variant="secondary" className="mt-1">Tarjeta Regalo</Badge>
                       )}
-                      <p className="text-[9px] xs:text-[10px] md:text-sm text-muted-foreground mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Cantidad: {item.quantity} × €{Number(item.price).toFixed(2)}
                       </p>
                     </div>
-                    <p className="font-medium text-[10px] xs:text-xs md:text-base whitespace-nowrap">
+                    <p className="font-medium">
                       €{(Number(item.price) * item.quantity).toFixed(2)}
                     </p>
                   </div>
@@ -313,44 +293,44 @@ export default function PaymentSummary() {
         </Card>
 
         <Card>
-          <CardHeader className="p-2.5 xs:p-3 md:p-6 pb-1.5 xs:pb-2 md:pb-4">
-            <CardTitle className="text-xs xs:text-sm md:text-lg">{t('cart:summary.title')}</CardTitle>
+          <CardHeader>
+            <CardTitle>{t('cart:summary.title')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 xs:space-y-1.5 md:space-y-3 p-2.5 xs:p-3 md:p-6 pt-0 text-[10px] xs:text-xs md:text-base">
+          <CardContent className="space-y-3">
             <div className="flex justify-between">
               <span>{t('cart:summary.subtotal')}:</span>
               <span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span>
             </div>
             
             {appliedCoupon && (
-              <div className="flex justify-between text-success">
-                <span className="flex items-center gap-0.5 min-w-0">
-                  <Tag className="h-2.5 w-2.5 xs:h-3 xs:w-3 md:h-4 md:w-4 flex-shrink-0" />
-                  <span className="truncate">{t('cart:summary.discount')} ({appliedCoupon.code})</span>
+              <div className="flex justify-between text-green-600">
+                <span className="flex items-center gap-1">
+                  <Tag className="h-4 w-4" />
+                  {t('cart:summary.discount')} ({appliedCoupon.code})
                 </span>
-                <span className="font-semibold whitespace-nowrap ml-1.5 xs:ml-2">-€{calculateDiscount().toFixed(2)}</span>
+                <span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span>
               </div>
             )}
 
             {appliedGiftCard && (
-              <div className="flex justify-between text-primary">
-                <span className="flex items-center gap-0.5 min-w-0">
-                  <Gift className="h-2.5 w-2.5 xs:h-3 xs:w-3 md:h-4 md:w-4 flex-shrink-0" />
-                  <span className="truncate">{t('cart:summary.giftCard')} ({appliedGiftCard.code})</span>
+              <div className="flex justify-between text-blue-600">
+                <span className="flex items-center gap-1">
+                  <Gift className="h-4 w-4" />
+                  {t('cart:summary.giftCard')} ({appliedGiftCard.code})
                 </span>
-                <span className="font-semibold whitespace-nowrap ml-1.5 xs:ml-2">-€{calculateGiftCardAmount().toFixed(2)}</span>
+                <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
               </div>
             )}
             
             {shippingCost > 0 && (
               <div className="flex justify-between">
-                <span className="truncate">{t('cart:summary.shipping')} ({shippingInfo?.country_name || shippingInfo?.country}):</span>
-                <span className="font-semibold whitespace-nowrap ml-1.5 xs:ml-2">€{shippingCost.toFixed(2)}</span>
+                <span>{t('cart:summary.shipping')} ({shippingInfo?.country_name || shippingInfo?.country}):</span>
+                <span className="font-semibold">€{shippingCost.toFixed(2)}</span>
               </div>
             )}
 
             {shippingCost === 0 && calculateSubtotal() > 0 && (
-              <div className="flex justify-between text-success">
+              <div className="flex justify-between text-green-600">
                 <span>{t('cart:summary.shipping')}:</span>
                 <span className="font-semibold">{t('cart:freeShipping')}</span>
               </div>
@@ -363,20 +343,20 @@ export default function PaymentSummary() {
               </div>
             )}
 
-            <Separator className="my-1 xs:my-1.5 md:my-2" />
+            <Separator className="my-2" />
 
-            <div className="flex justify-between text-xs xs:text-sm md:text-lg font-bold">
+            <div className="flex justify-between text-lg font-bold">
               <span>{t('cart:summary.total')}:</span>
               <span className="text-primary">€{calculateTotal().toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex flex-col xs:flex-row gap-1.5 xs:gap-2 md:gap-4">
-          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1 text-[10px] xs:text-xs md:text-base h-8 xs:h-9 md:h-10">
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1">
             {t('common:back')}
           </Button>
-          <Button onClick={handleConfirmOrder} className="flex-1 text-[10px] xs:text-xs md:text-base h-8 xs:h-9 md:h-11">
+          <Button onClick={handleConfirmOrder} className="flex-1" size="lg">
             {t('cart:checkout')}
           </Button>
         </div>

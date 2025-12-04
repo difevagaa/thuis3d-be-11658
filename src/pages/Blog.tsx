@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,21 +7,62 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Clock, BookOpen, ArrowRight } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime, stripHtml } from "@/utils/textUtils";
-import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
-import { createChannel, removeChannels } from "@/lib/channelManager";
 
 export default function Blog() {
   const { t, i18n } = useTranslation('blog');
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasPostsRef = useRef(false);
 
-  const loadPosts = useCallback(async () => {
-    // Only show loading state if we don't have posts yet (prevents flickering on background reloads)
-    if (!hasPostsRef.current) {
-      setLoading(true);
-    }
-    
+  useEffect(() => {
+    loadPosts();
+
+    // Subscribe to user_roles changes to reload posts with correct filtering
+    const rolesChannel = supabase
+      .channel('blog-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_roles'
+      }, () => {
+        logger.log('User roles changed, reloading posts...');
+        loadPosts();
+      })
+      .subscribe();
+
+    // Subscribe to blog_post_roles changes to update visibility immediately
+    const blogPostRolesChannel = supabase
+      .channel('blog-post-roles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blog_post_roles'
+      }, () => {
+        logger.log('Blog post roles changed, reloading posts...');
+        loadPosts();
+      })
+      .subscribe();
+
+    // Subscribe to blog_posts changes
+    const blogPostsChannel = supabase
+      .channel('blog-posts-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blog_posts'
+      }, () => {
+        logger.log('Blog posts changed, reloading...');
+        loadPosts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(blogPostRolesChannel);
+      supabase.removeChannel(blogPostsChannel);
+    };
+  }, []);
+
+  const loadPosts = async () => {
     try {
       // Get current user and their roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -96,70 +137,12 @@ export default function Blog() {
         }));
       
       setPosts(filteredPosts);
-      // Mark as loaded after successful fetch, regardless of whether we got posts
-      hasPostsRef.current = true;
     } catch (error) {
       logger.error("Error loading posts:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Use data recovery hook
-  useDataWithRecovery(loadPosts, {
-    timeout: 15000,
-    maxRetries: 3
-  });
-
-  useEffect(() => {
-    // Channel names for cleanup
-    const channelNames = [
-      'blog-roles-changes',
-      'blog-post-roles-changes',
-      'blog-posts-changes'
-    ];
-
-    // Subscribe to user_roles changes to reload posts with correct filtering
-    const rolesChannel = createChannel('blog-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_roles'
-      }, () => {
-        logger.log('User roles changed, reloading posts...');
-        loadPosts();
-      })
-      .subscribe();
-
-    // Subscribe to blog_post_roles changes to update visibility immediately
-    const blogPostRolesChannel = createChannel('blog-post-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'blog_post_roles'
-      }, () => {
-        logger.log('Blog post roles changed, reloading posts...');
-        loadPosts();
-      })
-      .subscribe();
-
-    // Subscribe to blog_posts changes
-    const blogPostsChannel = createChannel('blog-posts-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'blog_posts'
-      }, () => {
-        logger.log('Blog posts changed, reloading...');
-        loadPosts();
-      })
-      .subscribe();
-
-    // CRITICAL: Proper cleanup on unmount
-    return () => {
-      removeChannels(channelNames);
-    };
-  }, [loadPosts]);
+  };
 
   // Loading skeleton
   if (loading) {

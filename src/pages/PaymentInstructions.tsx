@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Copy, CreditCard, Building2, Info, QrCode, AlertTriangle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Copy, CreditCard, Building2, Info, QrCode, AlertTriangle } from "lucide-react";
 import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
@@ -59,10 +59,6 @@ export default function PaymentInstructions() {
       const safeShipping = orderShipping != null ? Number(orderShipping) : 0;
       const safeCouponDiscount = orderCouponDiscount != null ? Number(orderCouponDiscount) : 0;
 
-      // Get the payment reference from shipping info - this was generated in PaymentSummary
-      // This ensures the order number matches the payment reference shown to the customer
-      const paymentReference = shippingInfo?.payment_reference || orderNumber;
-
       // CRÍTICO: Permitir checkout sin autenticación
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -81,10 +77,8 @@ export default function PaymentInstructions() {
       
       // Create order using utility function
       // CRÍTICO: Usar el costo de envío y descuento del pendingOrder
-      // Use the pre-generated payment reference as the order number
       const order = await createOrder({
         userId: user?.id || null, // Permitir user_id = null para invitados
-        orderNumber: paymentReference, // Use the same reference for order number
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
@@ -252,19 +246,18 @@ export default function PaymentInstructions() {
     }
     loadPaymentConfig();
     
-    // For bank_transfer, create order immediately when showing bank info
-    // For card payment, order will be created when user clicks "Go to bank" button
-    if (isPending && method === "bank_transfer" && !isInvoicePayment) {
+    // Only create pending order for NEW purchases (bank_transfer or card), NOT for invoice payments
+    if (isPending && (method === "bank_transfer" || method === "card") && !isInvoicePayment) {
       createPendingOrder();
     }
   }, [orderNumber, method, navigate, isPending, isInvoicePayment]);
 
   const loadPaymentConfig = async () => {
     try {
-      // Load all relevant payment configuration keys
+      // Leer solo las claves de configuración de pago relevantes, igual que en el panel admin
       const settingKeys = [
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
-        'company_info', 'payment_images', 'card_payment_link', 'revolut_link', 'paypal_email'
+        'company_info', 'payment_images'
       ];
 
       const { data } = await supabase
@@ -299,45 +292,6 @@ export default function PaymentInstructions() {
     i18nToast.success("success.copiedToClipboard");
   };
 
-  // Handler for "Go to bank/card" button
-  // Creates the order first (if pending), then opens the payment link
-  const handleGoToPayment = async () => {
-    // If order is pending and not yet created, create it first
-    if (isPending && !orderCreated && !isInvoicePayment) {
-      await createPendingOrder();
-    }
-
-    // Open the appropriate payment link based on method
-    if (method === "card") {
-      const cardLink = paymentConfig?.card_payment_link || paymentConfig?.revolut_link;
-      if (cardLink) {
-        window.open(cardLink, '_blank');
-      } else {
-        i18nToast.error("payment:messages.cardPaymentNotConfigured");
-      }
-    } else if (method === "paypal") {
-      const paypalEmail = paymentConfig?.paypal_email;
-      if (paypalEmail) {
-        // Extract username from email (if email) or use as-is (if username)
-        // PayPal.me uses username, not email. If admin entered email, extract username part
-        const paypalUsername = paypalEmail.includes('@') 
-          ? paypalEmail.split('@')[0] 
-          : paypalEmail;
-        const paypalUrl = `https://www.paypal.com/paypalme/${paypalUsername}/${Number(total).toFixed(2)}EUR`;
-        window.open(paypalUrl, '_blank');
-      } else {
-        i18nToast.error("payment:messages.paypalNotConfigured");
-      }
-    } else if (method === "revolut") {
-      const revolutLink = paymentConfig?.revolut_link;
-      if (revolutLink) {
-        window.open(revolutLink, '_blank');
-      } else {
-        i18nToast.error("payment:messages.revolutNotConfigured");
-      }
-    }
-  };
-
   if (!orderNumber) {
     return null;
   }
@@ -355,104 +309,104 @@ export default function PaymentInstructions() {
   }
 
   return (
-    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-3 xs:py-4 md:py-8 lg:py-12 max-w-3xl">
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
       <Card className="shadow-lg">
-        <CardHeader className="text-center bg-success/5 rounded-t-lg p-3 xs:p-4 md:p-6">
-          <div className="mx-auto w-10 h-10 xs:w-12 xs:h-12 md:w-16 md:h-16 bg-success/10 rounded-full flex items-center justify-center mb-2 xs:mb-3 md:mb-4">
-            <CheckCircle2 className="w-5 h-5 xs:w-6 xs:h-6 md:w-8 md:h-8 text-success" />
+        <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-t-lg">
+          <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <CardTitle className="text-base xs:text-lg md:text-2xl text-success">
+          <CardTitle className="text-2xl text-green-800 dark:text-green-200">
             {isInvoicePayment ? t('payment:instructions.invoicePaymentTitle') : t('payment:instructions.orderReceived')}
           </CardTitle>
-          <CardDescription className="text-success/80 text-xs xs:text-sm">
+          <CardDescription className="text-green-700 dark:text-green-300">
             {isInvoicePayment ? (
-              <>{t('payment:instructions.invoiceNumber')}: <strong className="text-success">{realOrderNumber}</strong></>
+              <>{t('payment:instructions.invoiceNumber')}: <strong className="text-green-800 dark:text-green-200">{realOrderNumber}</strong></>
             ) : (
-              <>{t('payment:instructions.orderNumber')}: <strong className="text-success">{realOrderNumber}</strong></>
+              <>{t('payment:instructions.orderNumber')}: <strong className="text-green-800 dark:text-green-200">{realOrderNumber}</strong></>
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 xs:space-y-4 md:space-y-6 p-2.5 xs:p-3 md:p-6">
+        <CardContent className="space-y-6 p-6">
           {method === "bank_transfer" && paymentConfig && (
-            <div className="space-y-3 xs:space-y-4 md:space-y-6">
+            <div className="space-y-6">
               {/* MONTO A TRANSFERIR - DESTACADO */}
               {total && (
-                <div className="bg-primary/5 border-2 border-primary rounded-lg xs:rounded-xl p-3 xs:p-4 md:p-6 text-center">
-                  <p className="text-xs xs:text-sm font-medium text-foreground/70 mb-1 xs:mb-2">{t('payment:instructions.amountToTransfer')}:</p>
-                  <p className="text-2xl xs:text-3xl md:text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                  <p className="text-[10px] xs:text-xs text-foreground/60 mt-1 xs:mt-2">{t('payment:instructions.vatIncluded')}</p>
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToTransfer')}:</p>
+                  <p className="text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
                 </div>
               )}
 
-              {/* INFORMACIÓN BANCARIA - Using theme colors */}
-              <div className="bg-card border-2 border-border rounded-lg xs:rounded-xl p-2.5 xs:p-3 md:p-6 space-y-2 xs:space-y-3 md:space-y-4">
-                <h3 className="font-semibold text-sm xs:text-base md:text-lg flex items-center gap-1.5 xs:gap-2 text-foreground border-b border-border pb-2 xs:pb-3">
-                  <Building2 className="h-4 w-4 xs:h-5 xs:w-5" />
+              {/* INFORMACIÓN BANCARIA - FONDO OSCURO PARA MEJOR CONTRASTE */}
+              <div className="bg-slate-800 dark:bg-slate-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-slate-600 pb-3">
+                  <Building2 className="h-5 w-5" />
                   {t('payment:instructions.bankTransferTitle')}
                 </h3>
                 
-                <div className="grid gap-2 xs:gap-3 md:gap-4">
+                <div className="grid gap-4">
                   {paymentConfig.company_info && (
-                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.companyInfo')}:</p>
-                      <p className="whitespace-pre-line text-foreground text-xs xs:text-sm">{paymentConfig.company_info}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.companyInfo')}:</p>
+                      <p className="whitespace-pre-line text-white">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
-                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.bankName')}:</p>
-                      <p className="text-foreground font-medium text-xs xs:text-sm">{paymentConfig.bank_name}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.bankName')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
-                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.accountHolder')}:</p>
-                      <p className="text-foreground font-medium text-xs xs:text-sm">{paymentConfig.bank_account_name}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.accountHolder')}:</p>
+                      <p className="text-white font-medium">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
-                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.iban')}:</p>
-                      <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                        <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold break-all">
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.iban')}:</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
                           {paymentConfig.bank_account_number}
                         </code>
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => copyToClipboard(paymentConfig.bank_account_number)}
-                          className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
+                          className="h-12 px-4"
                         >
-                          <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
+                          <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.transferReference')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
-                        {realOrderNumber}
+                  <div className="bg-slate-700/50 rounded-lg p-4">
+                    <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.transferReference')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-slate-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
+                        {t('payment:instructions.order')} {realOrderNumber}
                       </code>
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => copyToClipboard(realOrderNumber)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
+                        onClick={() => copyToClipboard(`${t('payment:instructions.order')} ${realOrderNumber}`)}
+                        className="h-12 px-4"
                       >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
 
                   {paymentConfig.bank_instructions && (
-                    <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                      <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.additionalInstructions')}:</p>
-                      <p className="whitespace-pre-line text-foreground/80 text-[10px] xs:text-xs md:text-sm">
+                    <div className="bg-slate-700/50 rounded-lg p-4">
+                      <p className="font-medium text-slate-300 text-sm mb-1">{t('payment:instructions.additionalInstructions')}:</p>
+                      <p className="whitespace-pre-line text-slate-200">
                         {paymentConfig.bank_instructions}
                       </p>
                     </div>
@@ -461,29 +415,29 @@ export default function PaymentInstructions() {
               </div>
 
               {paymentImages.length > 0 && (
-                <div className="space-y-2 xs:space-y-3 md:space-y-4">
-                  <div className="flex items-center gap-1.5 xs:gap-2">
-                    <QrCode className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
-                    <h4 className="font-semibold text-sm xs:text-base md:text-lg text-foreground">{t('payment:instructions.qrCodes')}</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
                   </div>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {t('payment:instructions.scanQr')}
                   </p>
-                  <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paymentImages.map((img, index) => (
-                      <div key={index} className="border-2 border-border rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
                         <img 
                           src={img} 
                           alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                          className="w-full h-24 xs:h-32 md:h-56 object-contain rounded-lg bg-white p-1 xs:p-2"
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
                         />
-                        <div className="text-center space-y-0.5 xs:space-y-1">
-                          <p className="font-semibold text-foreground text-[10px] xs:text-xs md:text-base">
+                        <div className="text-center space-y-1">
+                          <p className="font-semibold text-foreground">
                             {index === 0 ? t('payment:instructions.qrBankTransfer') : 
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                          <p className="text-xs text-muted-foreground">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}
@@ -495,13 +449,13 @@ export default function PaymentInstructions() {
                 </div>
               )}
 
-              <div className="bg-warning/10 border-2 border-warning/30 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 flex items-start gap-2 xs:gap-3">
-                <AlertTriangle className="h-4 w-4 xs:h-5 xs:w-5 text-warning flex-shrink-0 mt-0.5" />
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[10px] xs:text-xs md:text-sm font-medium text-warning">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                     {t('payment:instructions.pendingWarning')}
                   </p>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-warning/80 mt-0.5 xs:mt-1">
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                     {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inTransferReference')}
                   </p>
                 </div>
@@ -510,125 +464,94 @@ export default function PaymentInstructions() {
           )}
 
           {method === "card" && paymentConfig && (
-            <div className="space-y-3 xs:space-y-4 md:space-y-6">
+            <div className="space-y-6">
               {/* Amount to Pay - Highlighted */}
               {total && (
-                <div className="bg-primary/5 border-2 border-primary rounded-lg xs:rounded-xl p-3 xs:p-4 md:p-6 text-center">
-                  <p className="text-xs xs:text-sm font-medium text-foreground/70 mb-1 xs:mb-2">{t('payment:instructions.amountToPay')}:</p>
-                  <p className="text-2xl xs:text-3xl md:text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                  <p className="text-[10px] xs:text-xs text-foreground/60 mt-1 xs:mt-2">{t('payment:instructions.vatIncluded')}</p>
+                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
+                  <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
+                  <p className="text-4xl font-bold text-blue-600">€{Number(total).toFixed(2)}</p>
+                  <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
                 </div>
               )}
 
-              {/* Order Information - Using theme colors */}
-              <div className="bg-card border-2 border-border rounded-lg xs:rounded-xl p-2.5 xs:p-3 md:p-6 space-y-2 xs:space-y-3 md:space-y-4">
-                <h3 className="font-semibold text-sm xs:text-base md:text-lg flex items-center gap-1.5 xs:gap-2 text-foreground border-b border-border pb-2 xs:pb-3">
-                  <CreditCard className="h-4 w-4 xs:h-5 xs:w-5" />
+              {/* Order Information - Highlighted Background */}
+              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
+                  <CreditCard className="h-5 w-5" />
                   {t('payment:instructions.cardPaymentTitle')}
                 </h3>
                 
-                <div className="grid gap-2 xs:gap-3 md:gap-4">
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.orderNumber')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
+                <div className="grid gap-4">
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.orderNumber')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
                         {realOrderNumber}
                       </code>
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => copyToClipboard(realOrderNumber)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
+                        className="h-12 px-4"
                       >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.amountToPay')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
+                  <div className="bg-blue-700/50 rounded-lg p-4">
+                    <p className="font-medium text-blue-200 text-sm mb-1">{t('payment:instructions.amountToPay')}:</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="bg-white text-blue-900 px-4 py-3 rounded-lg flex-1 font-mono text-lg font-bold">
                         €{Number(total).toFixed(2)}
                       </code>
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
+                        className="h-12 px-4"
                       >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Important Instructions */}
-              <div className="bg-primary/5 border-2 border-primary/20 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3">
-                <h4 className="font-semibold text-primary flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm md:text-base">
-                  <Info className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5" />
-                  {t('payment:instructions.importantInstructions')}
-                </h4>
-                <ol className="list-decimal list-inside space-y-1 xs:space-y-1.5 md:space-y-2 text-[10px] xs:text-xs md:text-sm text-foreground/80">
-                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:openPaymentLink')}"</strong>, {t('payment:instructions.step1Redirect')}</li>
-                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
-                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
-                  <li>{t('payment:instructions.step4Complete')}</li>
-                </ol>
-              </div>
-
-              {/* Security Notice - We don't store payment data */}
-              <div className="bg-success/5 border border-success/20 rounded-lg p-2 xs:p-3 md:p-4">
-                <div className="flex items-start gap-1.5 xs:gap-2 md:gap-3">
-                  <ShieldCheck className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6 text-success flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold text-success text-[10px] xs:text-xs md:text-sm">
-                      {t('payment:securityNotice.title')}
-                    </h4>
-                    <p className="text-[10px] xs:text-xs text-success/80 mt-0.5 xs:mt-1 leading-relaxed">
-                      {t('payment:securityNotice.description')}
-                    </p>
-                  </div>
+                <div className="bg-blue-700/50 rounded-lg p-4 mt-4">
+                  <p className="text-sm text-blue-200">
+                    {t('payment:instructions.revolutOpened')}
+                  </p>
+                  <p className="text-sm text-blue-100 mt-2">
+                    {t('payment:instructions.completePaymentInRevolut')}
+                  </p>
                 </div>
               </div>
 
-              {/* Go to Payment Button */}
-              <Button 
-                onClick={handleGoToPayment}
-                disabled={creatingOrder}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 xs:py-4 md:py-6 text-sm xs:text-base md:text-lg" 
-                size="lg"
-              >
-                <CreditCard className="h-4 w-4 xs:h-4 xs:w-4 md:h-5 md:w-5 mr-1.5 xs:mr-2" />
-                {creatingOrder ? t('payment:creatingOrder') : t('payment:openPaymentLink')}
-              </Button>
-
               {/* QR Codes */}
               {paymentImages.length > 0 && (
-                <div className="space-y-2 xs:space-y-3 md:space-y-4">
-                  <div className="flex items-center gap-1.5 xs:gap-2">
-                    <QrCode className="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
-                    <h4 className="font-semibold text-sm xs:text-base md:text-lg text-foreground">{t('payment:instructions.qrCodes')}</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold text-lg">{t('payment:instructions.qrCodes')}</h4>
                   </div>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {t('payment:instructions.scanQrForCard')}
                   </p>
-                  <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paymentImages.map((img, index) => (
-                      <div key={index} className="border-2 border-border rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3 bg-card shadow-sm hover:shadow-md transition-shadow">
+                      <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
                         <img 
                           src={img} 
                           alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                          className="w-full h-24 xs:h-32 md:h-56 object-contain rounded-lg bg-white p-1 xs:p-2"
+                          className="w-full h-56 object-contain rounded-lg bg-white p-2"
                         />
-                        <div className="text-center space-y-0.5 xs:space-y-1">
-                          <p className="font-semibold text-foreground text-[10px] xs:text-xs md:text-base">
+                        <div className="text-center space-y-1">
+                          <p className="font-semibold text-foreground">
                             {index === 0 ? t('payment:instructions.qrBankTransfer') : 
                              index === 1 ? t('payment:instructions.qrRevolut') : 
                              `${t('payment:instructions.qrCode')} ${index + 1}`}
                           </p>
-                          <p className="text-[9px] xs:text-[10px] md:text-xs text-muted-foreground hidden xs:block">
+                          <p className="text-xs text-muted-foreground">
                             {index === 0 ? t('payment:instructions.scanForDirectTransfer') : 
                              index === 1 ? t('payment:instructions.fastRevolutPayment') : 
                              t('payment:instructions.alternativePayment')}
@@ -641,13 +564,13 @@ export default function PaymentInstructions() {
               )}
 
               {/* Warning */}
-              <div className="bg-warning/10 border-2 border-warning/30 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 flex items-start gap-2 xs:gap-3">
-                <AlertTriangle className="h-4 w-4 xs:h-5 xs:w-5 text-warning flex-shrink-0 mt-0.5" />
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[10px] xs:text-xs md:text-sm font-medium text-warning">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                     {t('payment:instructions.paymentPendingWarning')}
                   </p>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-warning/80 mt-0.5 xs:mt-1">
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                     {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inTransferReference')}
                   </p>
                 </div>
@@ -655,211 +578,59 @@ export default function PaymentInstructions() {
             </div>
           )}
 
-          {method === "paypal" && paymentConfig && (
-            <div className="space-y-3 xs:space-y-4 md:space-y-6">
-              {/* Amount to Pay - Highlighted */}
-              {total && (
-                <div className="bg-primary/5 border-2 border-primary rounded-lg xs:rounded-xl p-3 xs:p-4 md:p-6 text-center">
-                  <p className="text-xs xs:text-sm font-medium text-foreground/70 mb-1 xs:mb-2">{t('payment:instructions.amountToPay')}:</p>
-                  <p className="text-2xl xs:text-3xl md:text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                  <p className="text-[10px] xs:text-xs text-foreground/60 mt-1 xs:mt-2">{t('payment:instructions.vatIncluded')}</p>
-                </div>
-              )}
-
-              {/* PayPal Payment Information - Using theme colors */}
-              <div className="bg-card border-2 border-border rounded-lg xs:rounded-xl p-2.5 xs:p-3 md:p-6 space-y-2 xs:space-y-3 md:space-y-4">
-                <h3 className="font-semibold text-sm xs:text-base md:text-lg flex items-center gap-1.5 xs:gap-2 text-foreground border-b border-border pb-2 xs:pb-3">
-                  <svg className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
-                    <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
-                  </svg>
-                  {t('payment:instructions.paypalPaymentTitle')}
+          {method === "paypal" && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <CreditCard className="h-5 w-5" />
+                  PayPal
                 </h3>
-                
-                <div className="grid gap-2 xs:gap-3 md:gap-4">
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.orderNumber')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
-                        {realOrderNumber}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(realOrderNumber)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
-                      >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.amountToPay')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
-                        €{Number(total).toFixed(2)}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
-                      >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
+                  {t('payment:instructions.paypalProcessing')}
+                </p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
+                </p>
               </div>
-
-              {/* Important Instructions */}
-              <div className="bg-primary/5 border-2 border-primary/20 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3">
-                <h4 className="font-semibold text-primary flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm md:text-base">
-                  <Info className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5" />
-                  {t('payment:instructions.importantInstructions')}
-                </h4>
-                <ol className="list-decimal list-inside space-y-1 xs:space-y-1.5 md:space-y-2 text-[10px] xs:text-xs md:text-sm text-foreground/80">
-                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:goToPaypal')}"</strong></li>
-                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
-                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
-                  <li>{t('payment:instructions.step4Complete')}</li>
-                </ol>
-              </div>
-
-              {/* Go to PayPal Button */}
-              <Button 
-                onClick={handleGoToPayment}
-                disabled={creatingOrder}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 xs:py-4 md:py-6 text-sm xs:text-base md:text-lg" 
-                size="lg"
-              >
-                <svg className="h-4 w-4 xs:h-4 xs:w-4 md:h-5 md:w-5 mr-1.5 xs:mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
-                  <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
-                </svg>
-                {creatingOrder ? t('payment:creatingOrder') : t('payment:goToPaypal')}
-              </Button>
-
-              {/* Warning */}
-              <div className="bg-warning/10 border-2 border-warning/30 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 flex items-start gap-2 xs:gap-3">
-                <AlertTriangle className="h-4 w-4 xs:h-5 xs:w-5 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] xs:text-xs md:text-sm font-medium text-warning">
-                    {t('payment:instructions.paymentPendingWarning')}
-                  </p>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-warning/80 mt-0.5 xs:mt-1">
-                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inPaypalNote')}
-                  </p>
-                </div>
+              
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t('payment:instructions.paymentPendingWarning')}
+                </p>
               </div>
             </div>
           )}
 
-          {method === "revolut" && paymentConfig && (
-            <div className="space-y-3 xs:space-y-4 md:space-y-6">
-              {/* Amount to Pay - Highlighted */}
-              {total && (
-                <div className="bg-primary/5 border-2 border-primary rounded-lg xs:rounded-xl p-3 xs:p-4 md:p-6 text-center">
-                  <p className="text-xs xs:text-sm font-medium text-foreground/70 mb-1 xs:mb-2">{t('payment:instructions.amountToPay')}:</p>
-                  <p className="text-2xl xs:text-3xl md:text-4xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                  <p className="text-[10px] xs:text-xs text-foreground/60 mt-1 xs:mt-2">{t('payment:instructions.vatIncluded')}</p>
-                </div>
-              )}
-
-              {/* Revolut Payment Information - Using theme colors */}
-              <div className="bg-card border-2 border-border rounded-lg xs:rounded-xl p-2.5 xs:p-3 md:p-6 space-y-2 xs:space-y-3 md:space-y-4">
-                <h3 className="font-semibold text-sm xs:text-base md:text-lg flex items-center gap-1.5 xs:gap-2 text-foreground border-b border-border pb-2 xs:pb-3">
-                  <svg className="h-4 w-4 xs:h-5 xs:w-5 md:h-6 md:w-6 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                  </svg>
-                  {t('payment:instructions.revolutPaymentTitle')}
+          {method === "revolut" && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <CreditCard className="h-5 w-5" />
+                  Revolut
                 </h3>
-                
-                <div className="grid gap-2 xs:gap-3 md:gap-4">
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.orderNumber')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
-                        {realOrderNumber}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(realOrderNumber)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
-                      >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-2 xs:p-3 md:p-4">
-                    <p className="font-medium text-muted-foreground text-[10px] xs:text-xs md:text-sm mb-0.5 xs:mb-1">{t('payment:instructions.amountToPay')}:</p>
-                    <div className="flex items-center gap-1.5 xs:gap-2 mt-1 xs:mt-2">
-                      <code className="bg-primary/10 text-primary px-2 py-1.5 xs:px-3 xs:py-2 md:px-4 md:py-3 rounded-lg flex-1 font-mono text-[10px] xs:text-xs md:text-lg font-bold">
-                        €{Number(total).toFixed(2)}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => copyToClipboard(`€${Number(total).toFixed(2)}`)}
-                        className="h-8 xs:h-9 md:h-12 px-2 xs:px-3 md:px-4 shrink-0"
-                      >
-                        <Copy className="h-3 w-3 xs:h-4 xs:w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
+                  {t('payment:instructions.revolutProcessing')}
+                </p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('payment:instructions.orderNumber')}: <strong>{orderNumber}</strong>
+                </p>
               </div>
-
-              {/* Important Instructions */}
-              <div className="bg-primary/5 border-2 border-primary/20 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 space-y-1.5 xs:space-y-2 md:space-y-3">
-                <h4 className="font-semibold text-primary flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm md:text-base">
-                  <Info className="h-3.5 w-3.5 xs:h-4 xs:w-4 md:h-5 md:w-5" />
-                  {t('payment:instructions.importantInstructions')}
-                </h4>
-                <ol className="list-decimal list-inside space-y-1 xs:space-y-1.5 md:space-y-2 text-[10px] xs:text-xs md:text-sm text-foreground/80">
-                  <li>{t('payment:instructions.step1ClickButton')} <strong>"{t('payment:goToRevolut')}"</strong></li>
-                  <li>{t('payment:instructions.step2Amount')} <strong>€{Number(total).toFixed(2)}</strong></li>
-                  <li>{t('payment:instructions.step3Reference')} <strong>{realOrderNumber}</strong></li>
-                  <li>{t('payment:instructions.step4Complete')}</li>
-                </ol>
-              </div>
-
-              {/* Go to Revolut Button */}
-              <Button 
-                onClick={handleGoToPayment}
-                disabled={creatingOrder}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 xs:py-4 md:py-6 text-sm xs:text-base md:text-lg" 
-                size="lg"
-              >
-                <svg className="h-4 w-4 xs:h-4 xs:w-4 md:h-5 md:w-5 mr-1.5 xs:mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                </svg>
-                {creatingOrder ? t('payment:creatingOrder') : t('payment:goToRevolut')}
-              </Button>
-
-              {/* Warning */}
-              <div className="bg-warning/10 border-2 border-warning/30 rounded-lg xs:rounded-xl p-2 xs:p-3 md:p-4 flex items-start gap-2 xs:gap-3">
-                <AlertTriangle className="h-4 w-4 xs:h-5 xs:w-5 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] xs:text-xs md:text-sm font-medium text-warning">
-                    {t('payment:instructions.paymentPendingWarning')}
-                  </p>
-                  <p className="text-[10px] xs:text-xs md:text-sm text-warning/80 mt-0.5 xs:mt-1">
-                    {t('payment:instructions.includeOrderNumber')} <strong>{realOrderNumber}</strong> {t('payment:instructions.inRevolutNote')}
-                  </p>
-                </div>
+              
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t('payment:instructions.paymentPendingWarning')}
+                </p>
               </div>
             </div>
           )}
 
-          <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 pt-3 xs:pt-4 md:pt-6 border-t">
-            <Button onClick={() => navigate("/")} className="flex-1 text-[10px] xs:text-xs md:text-base h-8 xs:h-9 md:h-11" size="default">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
+            <Button onClick={() => navigate("/")} className="flex-1" size="lg">
               {t('payment:instructions.backToHome')}
             </Button>
-            <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1 text-[10px] xs:text-xs md:text-base h-8 xs:h-9 md:h-11" size="default">
+            <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1" size="lg">
               {t('payment:instructions.viewMyOrders')}
             </Button>
           </div>

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { i18nToast, toast } from '@/lib/i18nToast';
+import { toast } from 'sonner';
 import { Loader2, RefreshCw, TrendingUp, Eye, EyeOff, Trash2, Edit } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CALIBRATION_RANGES } from '@/lib/calibrationConstants';

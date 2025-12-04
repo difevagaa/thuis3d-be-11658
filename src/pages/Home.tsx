@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Zap, Shield, Printer, FileText, Gift, ArrowRight } from "lucide-react";
 import * as Icons from "lucide-react";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import HeroBanner from "@/components/HeroBanner";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
@@ -16,8 +16,6 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
-import { createChannel, removeChannels } from "@/lib/channelManager";
-import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -445,125 +443,109 @@ const TranslatedBanner = ({
             <CarouselNext className="right-2 h-6 w-6" />
           </Carousel>
         </div>
-        <CardHeader className="pb-2 md:pb-3">
+        <CardHeader className="p-3 md:p-4">
           <CardTitle 
-            className="text-sm md:text-base lg:text-lg"
-            style={titleColor ? { color: titleColor } : undefined}
+            className="leading-tight line-clamp-2" 
+            style={titleColor ? { 
+              color: titleColor,
+              fontSize: getResponsiveFontSize(cardBannerHeight, 22, '0.9rem', '1.25rem')
+            } : {
+              fontSize: getResponsiveFontSize(cardBannerHeight, 22, '0.9rem', '1.25rem')
+            }}
           >
             {content.title}
           </CardTitle>
-          {content.description && (
-            <CardDescription 
-              className="text-xs md:text-sm"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              <RichTextDisplay content={content.description} className="line-clamp-2" />
-            </CardDescription>
-          )}
-        </CardHeader>
-      </Card>;
-  } else {
-    // Single image card
-    return <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer" style={{
-      width: banner.width || '100%',
-      maxWidth: '100%'
-    }} onClick={handleClick}>
-        <div className="relative overflow-hidden" style={{ height: cardBannerHeight }}>
-          {renderMedia(images[0].image_url, images[0].alt_text || content.title)}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        </div>
-        <CardHeader className="pb-2 md:pb-3">
-          <CardTitle 
-            className="text-sm md:text-base lg:text-lg"
-            style={titleColor ? { color: titleColor } : undefined}
+          {content.description && <CardDescription 
+            className="line-clamp-2 mt-1" 
+            style={textColor ? { 
+              color: textColor,
+              fontSize: getResponsiveFontSize(cardBannerHeight, 32, '0.75rem', '1rem')
+            } : {
+              fontSize: getResponsiveFontSize(cardBannerHeight, 32, '0.75rem', '1rem')
+            }}
           >
-            {content.title}
-          </CardTitle>
-          {content.description && (
-            <CardDescription 
-              className="text-xs md:text-sm"
-              style={textColor ? { color: textColor } : undefined}
-            >
               <RichTextDisplay content={content.description} className="line-clamp-2" />
-            </CardDescription>
-          )}
+            </CardDescription>}
         </CardHeader>
+        {banner.link_url && <CardContent className="p-3 pt-0 md:p-4 md:pt-0">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild 
+              className="w-full"
+              style={{
+                fontSize: getResponsiveFontSize(cardBannerHeight, 38, '0.75rem', '0.875rem')
+              }}
+            >
+              <Link to={banner.link_url}>
+                Ver más <ArrowRight className="ml-2 h-3 w-3" />
+              </Link>
+            </Button>
+          </CardContent>}
       </Card>;
   }
-};
-
-// Quick Access Card Component
-const QuickAccessCard = ({
-  icon: Icon,
-  title,
-  description,
-  link,
-  buttonText,
-  colorClass = "primary",
-  variant = "default"
-}: {
-  icon: any;
-  title: string;
-  description: string;
-  link: string;
-  buttonText: string;
-  colorClass?: string;
-  variant?: "default" | "secondary" | "outline";
-}) => {
-  const navigate = useNavigate();
-  return (
-    <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 h-full">
-      <CardHeader className="text-center pb-2 md:pb-4">
-        <div className={`mx-auto mb-2 md:mb-3 w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-full bg-${colorClass}/10 flex items-center justify-center group-hover:bg-${colorClass}/20 transition-colors`}>
-          <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-${colorClass}`} />
-        </div>
-        <CardTitle className="text-base md:text-lg lg:text-xl">{title}</CardTitle>
-        <CardDescription className="text-xs md:text-sm lg:text-base">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="text-center pt-0">
-        <Button 
-          variant={variant} 
-          className="text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2" 
-          onClick={() => navigate(link)}
+  
+  // Single image card
+  return <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer" style={{
+    width: banner.width || '100%',
+    maxWidth: '100%'
+  }} onClick={handleClick}>
+      <div className="relative overflow-hidden" style={{
+      height: cardBannerHeight
+    }}>
+        {renderMedia(images[0].image_url, images[0].alt_text || content.title)}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+      </div>
+      <CardHeader className="p-3 md:p-4">
+        <CardTitle 
+          className="leading-tight line-clamp-2" 
+          style={titleColor ? { 
+            color: titleColor,
+            fontSize: getResponsiveFontSize(cardBannerHeight, 22, '0.9rem', '1.25rem')
+          } : {
+            fontSize: getResponsiveFontSize(cardBannerHeight, 22, '0.9rem', '1.25rem')
+          }}
         >
-          {buttonText}
-        </Button>
-      </CardContent>
-    </Card>
-  );
+          {content.title}
+        </CardTitle>
+        {content.description && <CardDescription 
+          className="line-clamp-2 mt-1" 
+          style={textColor ? { 
+            color: textColor,
+            fontSize: getResponsiveFontSize(cardBannerHeight, 32, '0.75rem', '1rem')
+          } : {
+            fontSize: getResponsiveFontSize(cardBannerHeight, 32, '0.75rem', '1rem')
+          }}
+        >
+            <RichTextDisplay content={content.description} className="line-clamp-2" />
+          </CardDescription>}
+      </CardHeader>
+      {banner.link_url && <CardContent className="p-3 pt-0 md:p-4 md:pt-0">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            asChild 
+            className="w-full"
+            style={{
+              fontSize: getResponsiveFontSize(cardBannerHeight, 38, '0.75rem', '0.875rem')
+            }}
+          >
+            <Link to={banner.link_url}>
+              Ver más <ArrowRight className="ml-2 h-3 w-3" />
+            </Link>
+          </Button>
+        </CardContent>}
+    </Card>;
 };
-
-// Feature Card Component
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  description,
-  colorClass = "primary"
-}: {
-  icon: any;
-  title: string;
-  description: string;
-  colorClass?: string;
-}) => (
-  <div className="text-center p-3 md:p-4 lg:p-6">
-    <div className={`mx-auto mb-2 md:mb-3 lg:mb-4 w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-full bg-${colorClass}/10 flex items-center justify-center`}>
-      <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-${colorClass}`} />
-    </div>
-    <h3 className="font-semibold mb-1 md:mb-2 text-sm md:text-base lg:text-lg">{title}</h3>
-    <p className="text-muted-foreground text-xs md:text-sm">{description}</p>
-  </div>
-);
-
-// Banner interface
 interface Banner {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   image_url: string;
-  link_url?: string;
   video_url?: string;
-  display_order?: number;
-  position_order?: number;
+  link_url?: string;
+  display_order: number;
+  position_order: number;
   is_active: boolean;
   page_section: string;
   height?: string;
@@ -573,247 +555,63 @@ interface Banner {
   title_color?: string;
   text_color?: string;
 }
-
 const Home = () => {
-  const { t } = useTranslation(['home', 'common']);
+  const {
+    t
+  } = useTranslation('home');
   const navigate = useNavigate();
-  
-  // Data states
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [sections, setSections] = useState<any>({});
   const [orderedSections, setOrderedSections] = useState<any[]>([]);
   const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
+  // Component ordering configuration from site_settings
   const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
-  
-  // Loading state - ULTRA SIMPLIFIED
-  const [isLoading, setIsLoading] = useState(true);
-  const hasLoadedRef = useRef(false);
-  
-  // CRITICAL: Protect against infinite loading - force clear after 30 seconds
-  useLoadingTimeout(isLoading, setIsLoading, 30000);
-  
-  // Track dark mode state
+  // Track dark mode state to trigger re-render when mode changes
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
-
-  /**
-   * Execute Supabase query - SIMPLE AND RELIABLE
-   * No timeout tricks, just try and return result
-   */
-  const executeQuery = useCallback(async <T,>(
-    queryFn: () => PromiseLike<{ data: T | null; error: any }>
-  ): Promise<T | null> => {
-    try {
-      const result = await queryFn();
-      if (result.error) {
-        logger.warn('[Home] Query error:', result.error.message);
-        return null;
-      }
-      return result.data;
-    } catch (err: any) {
-      logger.warn('[Home] Query failed:', err.message);
-      return null;
-    }
-  }, []);
-
+  
   // Load component order configuration
   const loadOrderConfig = useCallback(async () => {
-    const data = await executeQuery<{ setting_value: string }>(() =>
-      supabase
+    try {
+      const { data, error } = await supabase
         .from("site_settings")
         .select("setting_value")
         .eq("setting_key", "homepage_component_order")
-        .maybeSingle()
-    );
+        .maybeSingle();
 
-    if (data?.setting_value) {
-      try {
-        const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
-        setOrderConfig(parsed);
-      } catch (parseError) {
-        logger.error('[Home] Error parsing order config:', parseError);
-      }
-    }
-  }, [executeQuery]);
-
-  // Load banners
-  const loadBanners = useCallback(async () => {
-    const bannersData = await executeQuery<any[]>(() =>
-      supabase
-        .from("homepage_banners")
-        .select("*")
-        .neq("is_active", false)
-        .order("position_order", { ascending: true, nullsFirst: false })
-    );
-    
-    if (!bannersData || bannersData.length === 0) {
-      setBanners([]);
-      return;
-    }
-    
-    // Load images for banners
-    const bannerIds = bannersData.map((b: any) => b.id);
-    const imagesData = await executeQuery<any[]>(() =>
-      supabase
-        .from("banner_images")
-        .select("id, banner_id, image_url, display_order, alt_text, is_active")
-        .in("banner_id", bannerIds)
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false })
-    );
-
-    const bannersWithImages = bannersData.map((banner: any) => ({
-      ...banner,
-      banner_images: (imagesData || []).filter((img: any) => img.banner_id === banner.id)
-    }));
-    
-    setBanners(bannersWithImages as Banner[]);
-  }, [executeQuery]);
-
-  // Load sections
-  const loadSections = useCallback(async () => {
-    const data = await executeQuery<any[]>(() =>
-      supabase
-        .from("homepage_sections")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false })
-    );
-    
-    if (!data || data.length === 0) return;
-    
-    const sectionsMap: any = {};
-    data.forEach((section: any) => {
-      sectionsMap[section.section_key] = section;
-    });
-    setSections(sectionsMap);
-    setOrderedSections(data);
-  }, [executeQuery]);
-
-  // Load quick access cards
-  const loadQuickAccessCards = useCallback(async () => {
-    const data = await executeQuery<any[]>(() =>
-      supabase
-        .from("homepage_quick_access_cards")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false })
-    );
-    
-    if (data) {
-      setQuickAccessCards(data);
-    }
-  }, [executeQuery]);
-
-  // Load features
-  const loadFeatures = useCallback(async () => {
-    const data = await executeQuery<any[]>(() =>
-      supabase
-        .from("homepage_features")
-        .select("*")
-        .neq("is_active", false)
-        .order("display_order", { ascending: true, nullsFirst: false })
-    );
-    
-    if (data) {
-      setFeatures(data);
-    }
-  }, [executeQuery]);
-
-  // Load featured products
-  const loadFeaturedProducts = useCallback(async () => {
-    const data = await executeQuery<any[]>(() =>
-      supabase
-        .from("products")
-        .select(`
-          *,
-          images:product_images(image_url, display_order),
-          product_roles(role)
-        `)
-        .is("deleted_at", null)
-        .order('created_at', { ascending: false })
-        .limit(5)
-    );
-    
-    if (!data) return;
-
-    // Get user session (don't block if fails)
-    let user = null;
-    let userRoles: string[] = [];
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      user = session?.user ?? null;
-      
-      if (user) {
-        const rolesData = await executeQuery<any[]>(() =>
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", user.id)
-        );
-        userRoles = (rolesData || [])
-          .map((r: any) => String(r.role || '').trim().toLowerCase())
-          .filter((role: string) => role.length > 0);
-      }
-    } catch (authError) {
-      logger.warn('[Home] Auth error (continuing without user):', authError);
-    }
-
-    // Filter products based on roles
-    const visibleProducts = data.filter((product: any) => {
-      const productRolesList = product.product_roles || [];
-      const productRolesNormalized = productRolesList
-        .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
-        .filter((role: string) => role.length > 0);
-
-      if (productRolesNormalized.length === 0) {
-        return true;
+      if (error) {
+        logger.error('[Home] Error loading order config:', error);
+        return;
       }
 
-      if (!user || userRoles.length === 0) {
-        return false;
+      if (data?.setting_value) {
+        try {
+          const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
+          setOrderConfig(parsed);
+          logger.log('[Home] Loaded component order config:', parsed.components?.length, 'components');
+        } catch (parseError) {
+          logger.error('[Home] Error parsing order config:', parseError);
+          setOrderConfig(null);
+        }
+      } else {
+        setOrderConfig(null);
       }
-      return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
-    });
-    
-    const productsWithSortedImages = visibleProducts.map((product: any) => ({
-      ...product,
-      images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
-    }));
-    setFeaturedProducts(productsWithSortedImages);
-  }, [executeQuery]);
-
-  /**
-   * Load all homepage data - SIMPLE VERSION
-   */
-  const loadAllData = useCallback(async () => {
-    logger.info('[Home] Loading homepage data...');
-
-    // Load all data in parallel - don't wait for all to succeed
-    await Promise.allSettled([
-      loadFeaturedProducts(),
-      loadBanners(),
-      loadSections(),
-      loadQuickAccessCards(),
-      loadFeatures(),
-      loadOrderConfig()
-    ]);
-
-    logger.info('[Home] Homepage data loaded');
-    setIsLoading(false);
-    hasLoadedRef.current = true;
-  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
-
+    } catch (err) {
+      logger.error('[Home] Exception loading order config:', err);
+    }
+  }, []);
+  
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
           const newDarkMode = isDarkMode();
+          // Always compare with fresh check rather than stale closure
           setCurrentDarkMode(prevMode => {
             if (newDarkMode !== prevMode) {
+              logger.log(`🎨 [Home] Theme mode changed: ${newDarkMode ? 'dark' : 'light'}`);
               return newDarkMode;
             }
             return prevMode;
@@ -825,90 +623,228 @@ const Home = () => {
     observer.observe(document.documentElement, { attributes: true });
     
     return () => observer.disconnect();
-  }, []);
-
-  // Initial data load - ONCE on mount
+  }, []); // Empty dependency array since we use functional state update
+  
   useEffect(() => {
-    // Load data immediately
-    loadAllData();
+    loadFeaturedProducts();
+    loadBanners();
+    loadSections();
+    loadQuickAccessCards();
+    loadFeatures();
+    loadOrderConfig();
 
-    // Subscribe to auth state changes
+    // Subscribe to auth state changes to reload featured products with correct filtering
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Reload featured products when user logs in/out to show correct role-based products
       loadFeaturedProducts();
     });
 
-    // Channel names for cleanup
-    const channelNames = [
-      'homepage-products-changes',
-      'homepage-banners-changes', 
-      'homepage-sections-changes',
-      'homepage-order-changes'
-    ];
-
     // Subscribe to product changes for real-time updates
-    const productsChannel = createChannel('homepage-products-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'products'
-      }, loadFeaturedProducts)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'product_images'
-      }, loadFeaturedProducts)
-      .subscribe();
+    const productsChannel = supabase.channel('homepage-products-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'products'
+    }, loadFeaturedProducts).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'product_images'
+    }, loadFeaturedProducts).subscribe();
 
     // Subscribe to banner changes
-    const bannersChannel = createChannel('homepage-banners-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'homepage_banners'
-      }, loadBanners)
-      .subscribe();
+    const bannersChannel = supabase.channel('homepage-banners-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'homepage_banners'
+    }, loadBanners).subscribe();
 
-    // Subscribe to sections changes
-    const sectionsChannel = createChannel('homepage-sections-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'homepage_sections'
-      }, loadSections)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'homepage_quick_access_cards'
-      }, loadQuickAccessCards)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'homepage_features'
-      }, loadFeatures)
-      .subscribe();
+    // Subscribe to sections changes for real-time updates
+    const sectionsChannel = supabase.channel('homepage-sections-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'homepage_sections'
+    }, loadSections).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'homepage_quick_access_cards'
+    }, loadQuickAccessCards).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'homepage_features'
+    }, loadFeatures).subscribe();
 
     // Subscribe to order config changes
-    const orderChannel = createChannel('homepage-order-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'site_settings',
-        filter: 'setting_key=eq.homepage_component_order'
-      }, loadOrderConfig)
-      .subscribe();
+    const orderChannel = supabase.channel('homepage-order-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'site_settings',
+      filter: 'setting_key=eq.homepage_component_order'
+    }, loadOrderConfig).subscribe();
 
-    // CRITICAL: Cleanup on unmount
     return () => {
       authSubscription.unsubscribe();
-      removeChannels(channelNames);
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(bannersChannel);
+      supabase.removeChannel(sectionsChannel);
+      supabase.removeChannel(orderChannel);
     };
-  }, [loadAllData, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
+  }, [loadOrderConfig]);
+  const loadBanners = async () => {
+    try {
+      // Cargar banners activos (neq false includes null and true values)
+      const { data: bannersData, error: bannersError } = await supabase
+        .from("homepage_banners")
+        .select("*")
+        .neq("is_active", false)
+        .order("position_order", { ascending: true, nullsFirst: false });
+      
+      if (bannersError) {
+        logger.error('[Home] Error loading banners:', bannersError);
+        setBanners([]);
+        return;
+      }
 
-  // Helper function to get banners by section
+      if (!bannersData || bannersData.length === 0) {
+        setBanners([]);
+        return;
+      }
+      
+      // Cargar imágenes para estos banners
+      const bannerIds = bannersData.map(b => b.id);
+      const { data: imagesData, error: imagesError } = await supabase
+        .from("banner_images")
+        .select("id, banner_id, image_url, display_order, alt_text, is_active")
+        .in("banner_id", bannerIds)
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false });
+      
+      if (imagesError) {
+        logger.error('[Home] Error loading banner images:', imagesError);
+      }
+
+      // Combinar banners con sus imágenes
+      const bannersWithImages = bannersData.map(banner => ({
+        ...banner,
+        banner_images: (imagesData || []).filter(img => img.banner_id === banner.id)
+      }));
+      
+      setBanners(bannersWithImages);
+    } catch (error) {
+      logger.error('[Home] Exception loading banners:', error);
+      setBanners([]);
+    }
+  };
+
+  // Función para obtener banners por sección
   const getBannersBySection = (section: string) => {
     return banners.filter(b => b.page_section === section);
   };
+  const loadSections = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("homepage_sections")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false });
+      
+      if (error) {
+        logger.error('[Home] Error loading sections:', error);
+        return;
+      }
+      
+      // Store sections as ordered array for dynamic rendering
+      setOrderedSections(data || []);
+      
+      // Also store as object for backward compatibility with specific section lookups
+      const sectionsObj = (data || []).reduce((acc: any, section: any) => {
+        acc[section.section_key] = section;
+        return acc;
+      }, {});
+      setSections(sectionsObj);
+    } catch (error) {
+      logger.error('[Home] Exception loading sections:', error);
+    }
+  };
+  const loadQuickAccessCards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("homepage_quick_access_cards")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false });
+      
+      if (error) {
+        logger.error('[Home] Error loading quick access cards:', error);
+        return;
+      }
+      setQuickAccessCards(data || []);
+    } catch (error) {
+      logger.error('[Home] Exception loading quick access cards:', error);
+    }
+  };
+  const loadFeatures = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("homepage_features")
+        .select("*")
+        .neq("is_active", false)
+        .order("display_order", { ascending: true, nullsFirst: false });
+      
+      if (error) {
+        logger.error('[Home] Error loading features:', error);
+        return;
+      }
+      setFeatures(data || []);
+    } catch (error) {
+      logger.error('[Home] Exception loading features:', error);
+    }
+  };
+  const loadFeaturedProducts = async () => {
+    // First, ensure session is valid by calling getSession() 
+    // This will auto-refresh the token if needed
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    // Get user from the session (already validated)
+    const user = session?.user ?? null;
+    
+    let userRoles: string[] = [];
+    if (user && !sessionError) {
+      const {
+        data: rolesData
+      } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      userRoles = (rolesData || []).map(r => String(r.role || '').trim().toLowerCase()).filter(role => role.length > 0);
+      logger.debug('[Home] User roles:', userRoles);
+    }
+    const {
+      data
+    } = await supabase.from("products").select(`
+        *,
+        images:product_images(image_url, display_order),
+        product_roles(role)
+      `).is("deleted_at", null).order('created_at', {
+      ascending: false
+    }).limit(5);
+    logger.debug('[Home] Raw products data:', data);
+    const visibleProducts = (data || []).filter((product: any) => {
+      const productRolesList = product.product_roles || [];
+      const productRolesNormalized = productRolesList.map((pr: any) => String(pr?.role || '').trim().toLowerCase()).filter((role: string) => role.length > 0);
 
+      // Si NO tiene roles asignados → visible para TODOS
+      if (productRolesNormalized.length === 0) {
+        return true;
+      }
+
+      // Si tiene roles asignados → solo visible para usuarios con esos roles
+      if (!user || userRoles.length === 0) {
+        return false;
+      }
+      return productRolesNormalized.some((productRole: string) => userRoles.includes(productRole));
+    });
+    const productsWithSortedImages = visibleProducts.map(product => ({
+      ...product,
+      images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
+    }));
+    setFeaturedProducts(productsWithSortedImages);
+  };
   // Renderizar sección de banners dinámicamente
   const renderBannersSection = (section: string, className: string = "") => {
     const sectionBanners = getBannersBySection(section);
@@ -962,115 +898,363 @@ const Home = () => {
         return (
           <section 
             key={sectionData.id}
-            className="py-4 md:py-8 lg:py-12"
+            className="py-4 md:py-8 lg:py-12 text-foreground"
             style={getSectionStyles(sectionData)}
           >
             <div className="container mx-auto px-3 md:px-4">
-              <div className="grid gap-3 md:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {quickAccessCards.map((card, index) => (
-                  <TranslatedQuickAccessCard key={card.id} card={card} index={index} />
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                {quickAccessCards.map((card: any, index: number) => <TranslatedQuickAccessCard key={card.id} card={card} index={index} />)}
               </div>
             </div>
           </section>
         );
       
       case 'why_us':
-        // Why Choose Us Section
-        if (features.length === 0) return null;
+        // Features/Why Us Section
         return (
           <section 
             key={sectionData.id}
-            className="py-6 md:py-12 lg:py-16"
+            className="py-6 md:py-12 lg:py-20 relative overflow-hidden"
             style={getSectionStyles(sectionData)}
           >
-            <div className="container mx-auto px-3 md:px-4">
-              <TranslatedSectionTitle section={sectionData} fallbackTitle={t("home:whyUs.title")} fallbackSubtitle={t("home:whyUs.subtitle")} />
-              <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {features.map((feature, index) => (
-                  <TranslatedFeatureCard key={feature.id} feature={feature} index={index} />
-                ))}
-              </div>
+            {!hasCustomSectionStyles(sectionData) && (
+              <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+            )}
+            <div className="container mx-auto px-3 md:px-4 relative z-10">
+              <TranslatedSectionTitle section={sectionData} fallbackTitle={t('whyUs.title')} fallbackSubtitle={t('whyUs.subtitle')} />
+              {features.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                  {features.map((feature: any, index: number) => <TranslatedFeatureCard key={feature.id} feature={feature} index={index} />)}
+                </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                  <FeatureCard icon={Sparkles} title={t('whyUs.quality.title')} description={t('whyUs.quality.description')} colorClass="primary" />
+                  <FeatureCard icon={Zap} title={t('whyUs.speed.title')} description={t('whyUs.speed.description')} colorClass="secondary" />
+                  <FeatureCard icon={Shield} title={t('whyUs.guarantee.title')} description={t('whyUs.guarantee.description')} colorClass="accent" />
+                </div>}
             </div>
           </section>
         );
       
       default:
-        // Custom sections - render dynamically
+        // Custom/Other Sections
         return <CustomSection key={sectionData.id} section={sectionData} />;
     }
   };
 
-  // Render sections using order config
-  const renderOrderedComponents = () => {
-    if (!orderConfig?.components) {
-      // Fallback: render all sections in their display_order
-      return orderedSections.map(section => renderSection(section));
-    }
+  // Helper to check if a section_key exists in orderedSections
+  const hasSectionKey = (key: string) => orderedSections.some(s => s.section_key === key);
 
-    return orderConfig.components
-      .filter(component => component.isActive)
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map(component => {
-        // Find matching section data
-        const sectionData = orderedSections.find(s => s.id === component.id);
+  // Reusable Quick Access Cards section component
+  const QuickAccessCardsSection = () => (
+    <section className="py-4 md:py-8 lg:py-12 text-foreground">
+      <div className="container mx-auto px-3 md:px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+          {quickAccessCards.map((card: any, index: number) => (
+            <TranslatedQuickAccessCard key={card.id} card={card} index={index} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // Reusable Why Us section component
+  const WhyUsSection = () => (
+    <section className="py-6 md:py-12 lg:py-20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+      <div className="container mx-auto px-3 md:px-4 relative z-10">
+        <div className="text-center mb-6 md:mb-8 lg:mb-12">
+          <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold mb-2 md:mb-4">
+            {t('whyUs.title')}
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+            {t('whyUs.subtitle')}
+          </p>
+        </div>
+        {features.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+            {features.map((feature: any, index: number) => (
+              <TranslatedFeatureCard key={feature.id} feature={feature} index={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+            <FeatureCard icon={Sparkles} title={t('whyUs.quality.title')} description={t('whyUs.quality.description')} colorClass="primary" />
+            <FeatureCard icon={Zap} title={t('whyUs.speed.title')} description={t('whyUs.speed.description')} colorClass="secondary" />
+            <FeatureCard icon={Shield} title={t('whyUs.guarantee.title')} description={t('whyUs.guarantee.description')} colorClass="accent" />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+
+  // Render fallback sections when no sections are configured in the database
+  const renderFallbackSections = () => {
+    return (
+      <>
+        {/* Featured Products Fallback */}
+        {featuredProducts.length > 0 && (
+          <section className="py-4 md:py-8 lg:py-12 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent)' }}>
+            <div className="absolute inset-0 bg-gradient-primary opacity-5 bg-red-100"></div>
+            <div className="container mx-auto px-3 md:px-4 relative z-10">
+              <div className="text-center mb-4 md:mb-6 lg:mb-8">
+                <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-2 md:mb-4 text-center text-foreground">
+                  {t('featured.title')}
+                </h2>
+                <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+                  {t('featured.subtitle')}
+                </p>
+              </div>
+              <FeaturedProductsCarousel products={featuredProducts} maxVisible={4} />
+            </div>
+          </section>
+        )}
         
-        // Handle virtual components (quick_access_card is a virtual component)
-        if (component.type === 'quick_access_card') {
-          if (quickAccessCards.length === 0) return null;
+        {/* Quick Access Cards Fallback */}
+        {quickAccessCards.length > 0 && <QuickAccessCardsSection />}
+        
+        {/* Features/Why Us Fallback */}
+        <WhyUsSection />
+      </>
+    );
+  };
+
+  // Render Quick Access Cards section independently if no matching section exists
+  const renderQuickAccessIfNeeded = () => {
+    if (quickAccessCards.length === 0 || hasSectionKey('quick_access')) return null;
+    return <QuickAccessCardsSection />;
+  };
+  
+  // Render Features/Why Us section independently if no matching section exists
+  const renderWhyUsIfNeeded = () => {
+    if (hasSectionKey('why_us')) return null;
+    return <WhyUsSection />;
+  };
+
+  // Render component based on order configuration
+  const renderOrderedComponent = (component: HomepageComponentOrder) => {
+    if (!component.isActive) return null;
+
+    switch (component.type) {
+      case 'featured_products': {
+        const featuredSection = orderedSections.find(s => s.id === component.id || s.section_key === 'featured_products');
+        if (featuredSection) {
+          return renderSection(featuredSection);
+        }
+        // Fallback for featured products
+        if (featuredProducts.length > 0) {
           return (
-            <section 
-              key={component.id}
-              className="py-4 md:py-8 lg:py-12"
-            >
-              <div className="container mx-auto px-3 md:px-4">
-                <div className="grid gap-3 md:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {quickAccessCards.map((card, index) => (
-                    <TranslatedQuickAccessCard key={card.id} card={card} index={index} />
-                  ))}
+            <section key="featured_products_fallback" className="py-4 md:py-8 lg:py-12 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent)' }}>
+              <div className="absolute inset-0 bg-gradient-primary opacity-5 bg-red-100"></div>
+              <div className="container mx-auto px-3 md:px-4 relative z-10">
+                <div className="text-center mb-4 md:mb-6 lg:mb-8">
+                  <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-2 md:mb-4 text-center text-foreground">
+                    {t('featured.title')}
+                  </h2>
+                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+                    {t('featured.subtitle')}
+                  </p>
                 </div>
+                <FeaturedProductsCarousel products={featuredProducts} maxVisible={4} />
               </div>
             </section>
           );
         }
+        return null;
+      }
 
-        // Regular sections need sectionData
-        if (!sectionData) return null;
-        
-        return renderSection(sectionData);
-      });
+      case 'quick_access_card': {
+        const quickAccessSection = orderedSections.find(s => s.id === component.id || s.section_key === 'quick_access');
+        if (quickAccessSection) {
+          return renderSection(quickAccessSection);
+        }
+        // Fallback for quick access cards
+        if (quickAccessCards.length > 0) {
+          return <QuickAccessCardsSection key="quick_access_fallback" />;
+        }
+        return null;
+      }
+
+      case 'why_us': {
+        const whyUsSection = orderedSections.find(s => s.id === component.id || s.section_key === 'why_us');
+        if (whyUsSection) {
+          return renderSection(whyUsSection);
+        }
+        // Fallback for why us section
+        return <WhyUsSection key="why_us_fallback" />;
+      }
+
+      case 'section': {
+        const customSection = orderedSections.find(s => s.id === component.id);
+        if (customSection) {
+          return renderSection(customSection);
+        }
+        return null;
+      }
+
+      default:
+        return null;
+    }
   };
 
-  // Show simple spinner while loading
-  if (isLoading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  // Generate ordered components list based on order config or defaults
+  const getOrderedComponentsList = (): HomepageComponentOrder[] => {
+    if (orderConfig?.components && orderConfig.components.length > 0) {
+      return orderConfig.components
+        .filter(c => c.isActive)
+        .sort((a, b) => a.displayOrder - b.displayOrder);
+    }
+
+    // Default order when no config is saved
+    const defaultComponents: HomepageComponentOrder[] = [];
+    let order = 0;
+
+    // Add featured products first
+    const featuredSection = orderedSections.find(s => s.section_key === 'featured_products');
+    if (featuredSection || featuredProducts.length > 0) {
+      defaultComponents.push({
+        id: featuredSection?.id || 'featured_products_default',
+        type: 'featured_products',
+        displayOrder: order++,
+        isActive: true,
+        label: featuredSection?.title || 'Productos Destacados'
+      });
+    }
+
+    // Add quick access cards
+    const quickAccessSection = orderedSections.find(s => s.section_key === 'quick_access');
+    if (quickAccessSection || quickAccessCards.length > 0) {
+      defaultComponents.push({
+        id: quickAccessSection?.id || 'quick_access_default',
+        type: 'quick_access_card',
+        displayOrder: order++,
+        isActive: true,
+        label: quickAccessSection?.title || 'Accesos Rápidos'
+      });
+    }
+
+    // Add why us section
+    const whyUsSection = orderedSections.find(s => s.section_key === 'why_us');
+    defaultComponents.push({
+      id: whyUsSection?.id || 'why_us_default',
+      type: 'why_us',
+      displayOrder: order++,
+      isActive: true,
+      label: whyUsSection?.title || '¿Por Qué Elegirnos?'
+    });
+
+    // Add other custom sections
+    orderedSections
+      .filter(s => !['featured_products', 'quick_access', 'why_us'].includes(s.section_key))
+      .forEach(section => {
+        defaultComponents.push({
+          id: section.id,
+          type: 'section',
+          displayOrder: order++,
+          isActive: section.is_active !== false,
+          label: section.title
+        });
+      });
+
+    return defaultComponents;
+  };
+
+  return <div className="min-h-screen">
+      {/* Hero Banner with Gradient - Banners de tipo "hero" */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
+        <HeroBanner />
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-dvh">
-      {/* Hero Banner Section */}
-      <HeroBanner />
+      {/* Render components based on order configuration */}
+      {getOrderedComponentsList().map(component => renderOrderedComponent(component))}
 
-      {/* Hero banners */}
-      {renderBannersSection("hero")}
-
-      {/* Pre-content banners */}
-      {renderBannersSection("pre-content")}
-
-      {/* Render ordered homepage components */}
-      {renderOrderedComponents()}
-      
-      {/* Post-content banners */}
-      {renderBannersSection("post-content")}
-
-      {/* Footer banners */}
-      {renderBannersSection("footer")}
-    </div>
-  );
+      {/* Banners al final de la página */}
+      {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}
+    </div>;
 };
 
+// Parallax-enabled Quick Access Card Component
+const QuickAccessCard = ({
+  icon: Icon,
+  title,
+  description,
+  link,
+  buttonText,
+  colorClass,
+  variant = "default"
+}: {
+  icon: any;
+  title: string;
+  description: string;
+  link: string;
+  buttonText: string;
+  colorClass: string;
+  variant?: "default" | "secondary" | "outline";
+}) => {
+  const cardRef = useParallax({
+    speed: 0.15,
+    direction: 'up'
+  });
+
+  // Configurar clases según el tipo de tarjeta
+  const iconColor = colorClass === 'primary' ? 'text-primary' : colorClass === 'secondary' ? 'text-secondary' : 'text-accent';
+  const titleColor = colorClass === 'primary' ? 'text-primary' : colorClass === 'secondary' ? 'text-secondary' : 'text-accent';
+  const borderHoverColor = colorClass === 'primary' ? 'hover:border-primary/50' : colorClass === 'secondary' ? 'hover:border-secondary/50' : 'hover:border-accent/50';
+  return <div ref={cardRef} className="will-change-transform">
+      <Card className={`group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 border-2 ${borderHoverColor}`}>
+        <CardHeader className="p-3 md:p-4 lg:pb-4">
+          <div className="relative">
+            <Icon className={`h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 mb-2 md:mb-4 ${iconColor} group-hover:scale-110 transition-transform duration-300`} />
+          </div>
+          <CardTitle className={`text-base md:text-lg lg:text-xl xl:text-2xl ${titleColor}`}>
+            {title}
+          </CardTitle>
+          <CardDescription className="text-xs md:text-sm lg:text-base text-muted-foreground">
+            {description}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0 p-3 md:p-4">
+          <Button asChild variant={variant} className="w-full text-xs md:text-sm group/btn hover:shadow-medium transition-all duration-300 h-8 md:h-10">
+            <Link to={link}>
+              {buttonText}
+              <ArrowRight className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4 group-hover/btn:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>;
+};
+
+// Parallax-enabled Feature Card Component
+const FeatureCard = ({
+  icon: Icon,
+  title,
+  description,
+  colorClass
+}: {
+  icon: any;
+  title: string;
+  description: string;
+  colorClass: string;
+}) => {
+  const cardRef = useParallax({
+    speed: 0.2,
+    direction: 'up'
+  });
+  const iconColor = colorClass === 'primary' ? 'text-primary' : colorClass === 'secondary' ? 'text-secondary' : 'text-accent';
+  const borderHoverColor = colorClass === 'primary' ? 'hover:border-primary/30' : colorClass === 'secondary' ? 'hover:border-secondary/30' : 'hover:border-accent/30';
+  return <div ref={cardRef} className="will-change-transform">
+      <Card className={`group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 text-center border-2 ${borderHoverColor}`}>
+        <CardHeader className="p-3 md:p-4 lg:p-6">
+          <div className="mx-auto relative">
+            <Icon className={`h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 mb-2 md:mb-4 ${iconColor} group-hover:scale-110 transition-transform duration-300 mx-auto`} />
+          </div>
+          <CardTitle className="text-base md:text-lg lg:text-xl xl:text-2xl">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+          <p className="text-muted-foreground text-xs md:text-sm lg:text-base">
+            {description}
+          </p>
+        </CardContent>
+      </Card>
+    </div>;
+};
 export default Home;

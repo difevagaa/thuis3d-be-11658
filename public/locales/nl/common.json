@@ -30,8 +30,6 @@
   "next": "Volgende",
   "previous": "Vorige",
   "home": "Home",
-  "loading": "Laden...",
-  "retry": "Opnieuw proberen",
   "contact": "Contact",
   "about": "Over",
   "terms": "Algemene Voorwaarden",
@@ -67,13 +65,6 @@
   "errorDownloadingCard": "Fout bij downloaden",
   "noPermissionInvoice": "Je hebt geen toestemming om deze factuur te bekijken",
   "errorLoadingInvoice": "Fout bij laden factuur",
-  "connection": {
-    "connecting": "Verbinden...",
-    "loading": "Inhoud laden...",
-    "error": "Verbindingsfout",
-    "errorMessage": "Kon geen verbinding maken met de server. Controleer je internetverbinding en probeer het opnieuw.",
-    "retry": "Opnieuw proberen"
-  },
   "viewer3d": {
     "zoomIn": "Inzoomen",
     "zoomOut": "Uitzoomen",

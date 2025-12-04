@@ -8,41 +8,10 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Enhanced Supabase client with optimized session management
-// Based on 2024 best practices for e-commerce applications
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    // Use localStorage for session persistence (survives browser restarts)
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    // Keep session active across page refreshes
+    storage: localStorage,
     persistSession: true,
-    // Automatically refresh tokens before they expire
     autoRefreshToken: true,
-    // Detect session from URL (for OAuth redirects)
-    detectSessionInUrl: true,
-    // Use PKCE flow for better security
-    flowType: 'pkce',
-    // Storage key for session data
-    storageKey: 'supabase.auth.token',
-  },
-  global: {
-    // Add request headers for better debugging
-    headers: {
-      'x-client-info': 'thuis3d-web',
-    },
-  },
-  // Realtime configuration for better connection stability
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-    // Add heartbeat to keep connection alive
-    heartbeatIntervalMs: 30000, // 30 seconds
-    // Shorter timeout for faster reconnection
-    timeout: 10000,
-  },
-  // Database configuration for better query performance
-  db: {
-    schema: 'public',
-  },
+  }
 });

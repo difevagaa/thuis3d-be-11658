@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { toast } from "sonner";
 import { 
   GripVertical, 
   ChevronUp, 
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { 
   useHomepageOrder, 
-  type HomepageComponentOrder as HomepageComponentOrderType,
+  HomepageComponentOrder,
   HomepageComponentType 
 } from "@/hooks/useHomepageOrder";
 import { handleSupabaseError } from "@/lib/errorHandler";
@@ -76,7 +76,7 @@ const getTypeColor = (type: HomepageComponentType) => {
 
 export default function HomepageComponentOrder() {
   const { orderConfig, loading, saveOrderConfig, getDefaultOrder } = useHomepageOrder();
-  const [components, setComponents] = useState<HomepageComponentOrderType[]>([]);
+  const [components, setComponents] = useState<HomepageComponentOrder[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);

@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { mapRewardTypeToDiscountType } from "@/lib/paymentUtils";
-import { createChannel, removeChannels } from "@/lib/channelManager";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -51,15 +50,9 @@ export default function MyAccount() {
       setActiveTab(tabParam);
     }
 
-    // Channel names for cleanup
-    const channelNames = [
-      'gift-cards-changes',
-      'notifications-changes',
-      'loyalty-points-changes'
-    ];
-
-    // Realtime subscription para tarjetas de regalo usando channel manager
-    const giftCardsChannel = createChannel('gift-cards-changes')
+    // Realtime subscription para tarjetas de regalo
+    const giftCardsChannel = supabase
+      .channel('gift-cards-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -88,7 +81,8 @@ export default function MyAccount() {
       .subscribe();
 
     // Realtime subscription para notificaciones
-    const notificationsChannel = createChannel('notifications-changes')
+    const notificationsChannel = supabase
+      .channel('notifications-changes')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -109,7 +103,8 @@ export default function MyAccount() {
       .subscribe();
 
     // Realtime subscription para loyalty points
-    const loyaltyChannel = createChannel('loyalty-points-changes')
+    const loyaltyChannel = supabase
+      .channel('loyalty-points-changes')
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -122,9 +117,10 @@ export default function MyAccount() {
       })
       .subscribe();
 
-    // CRITICAL: Proper cleanup on unmount
     return () => {
-      removeChannels(channelNames);
+      supabase.removeChannel(giftCardsChannel);
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(loyaltyChannel);
     };
   }, [location]);
 
@@ -158,7 +154,7 @@ export default function MyAccount() {
         supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name, reward_type, reward_value)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name, reward_type, reward_value), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
       ]);
 
@@ -178,18 +174,18 @@ export default function MyAccount() {
       // Use values from loyalty_rewards (reward_type, reward_value) when available
       // Map reward types to discount types for consistent display
       const userCoupons = redemptionsRes.data?.map(redemption => {
-        const rawDiscountType = redemption.loyalty_rewards?.reward_type || 'percentage';
+        const rawDiscountType = redemption.coupons?.discount_type || redemption.loyalty_rewards?.reward_type || 'percentage';
         return {
           id: redemption.id,
           code: redemption.coupon_code,
           discount_type: mapRewardTypeToDiscountType(rawDiscountType),
-          discount_value: redemption.loyalty_rewards?.reward_value || 0,
+          discount_value: redemption.coupons?.discount_value || redemption.loyalty_rewards?.reward_value || 0,
           created_at: redemption.created_at,
           status: redemption.status,
           reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad',
-          is_active: true,
-          times_used: 0,
-          max_uses: 1
+          is_active: redemption.coupons?.is_active ?? true,
+          times_used: redemption.coupons?.times_used || 0,
+          max_uses: redemption.coupons?.max_uses || 1
         };
       }) || [];
       
@@ -396,61 +392,52 @@ export default function MyAccount() {
   if (loading) return <div>{t('account:loading')}</div>;
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 pb-20 md:px-6 md:py-6 md:pb-12 min-h-screen">
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6">{t('account:title')}</h1>
+    <div className="container mx-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-12 min-h-screen">
+      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{t('account:title')}</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-4 md:grid-cols-7 gap-0.5 sm:gap-1 h-auto p-0.5 sm:p-1 bg-muted/50 mb-3 sm:mb-4">
-          <TabsTrigger value="profile" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
-            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.profileShort')}</span>
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 gap-1 h-auto p-1 bg-muted/50">
+          <TabsTrigger value="profile" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <User className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.profile')}</span>
+            <span className="md:hidden">{t('account:tabs.profileShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
-            <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.ordersShort')}</span>
+          <TabsTrigger value="orders" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <Package className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.orders')}</span>
+            <span className="md:hidden">{t('account:tabs.ordersShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
-            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.invoicesShort')}</span>
+          <TabsTrigger value="invoices" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <FileText className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.invoices')}</span>
+            <span className="md:hidden">{t('account:tabs.invoicesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2">
-            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.quotesShort')}</span>
+          <TabsTrigger value="quotes" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.quotes')}</span>
+            <span className="md:hidden">{t('account:tabs.quotesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
-            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.messagesShort')}</span>
+          <TabsTrigger value="messages" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.messages')}</span>
+            <span className="md:hidden">{t('account:tabs.messagesShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="points" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
-            <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.pointsShort')}</span>
+          <TabsTrigger value="points" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <Award className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.points')}</span>
+            <span className="md:hidden">{t('account:tabs.pointsShort')}</span>
           </TabsTrigger>
-          <TabsTrigger value="giftcards" className="flex-col gap-0.5 py-1.5 sm:py-2 md:py-2.5 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 hidden sm:flex md:flex">
-            <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate max-w-full">{t('account:tabs.giftcardsShort')}</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Mobile-only second row of tabs */}
-        <TabsList className="grid w-full grid-cols-3 gap-0.5 h-auto p-0.5 bg-muted/50 mb-3 sm:hidden">
-          <TabsTrigger value="messages" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
-            <MessageSquare className="h-3.5 w-3.5" />
-            <span className="truncate max-w-full">{t('account:tabs.messagesShort')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="points" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
-            <Award className="h-3.5 w-3.5" />
-            <span className="truncate max-w-full">{t('account:tabs.pointsShort')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="giftcards" className="flex-col gap-0.5 py-1.5 text-[10px] px-1">
-            <Gift className="h-3.5 w-3.5" />
-            <span className="truncate max-w-full">{t('account:tabs.giftcardsShort')}</span>
+          <TabsTrigger value="giftcards" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+            <Gift className="h-4 w-4" />
+            <span className="hidden md:inline">{t('account:tabs.giftcards')}</span>
+            <span className="md:hidden">{t('account:tabs.giftcardsShort')}</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
           <Card>
-            <CardHeader className="p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-base sm:text-lg">{t('account:profile.title')}</CardTitle>
+            <CardHeader>
+              <CardTitle>{t('account:profile.title')}</CardTitle>
               <CardDescription>{t('account:profile.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -513,38 +500,38 @@ export default function MyAccount() {
 
         <TabsContent value="orders">
           <Card>
-            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:orders.title')}</CardTitle>
-              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:orders.description')}</CardDescription>
+            <CardHeader>
+              <CardTitle>{t('account:orders.title')}</CardTitle>
+              <CardDescription>{t('account:orders.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
+            <CardContent>
               {orders.length > 0 ? (
-                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   {orders.map((order) => (
                     <div 
                       key={order.id} 
-                      className="border p-2 xs:p-3 sm:p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                      className="border p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => navigate(`/pedido/${order.id}`)}
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-xs xs:text-sm sm:text-lg truncate">{order.order_number}</p>
-                          <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString(i18n.language, {
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">{order.order_number}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString('es-ES', {
                               day: '2-digit',
-                              month: 'short',
+                              month: 'long',
                               year: 'numeric'
                             })}
                           </p>
-                          <div className="mt-1.5 xs:mt-2">
-                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="text-[10px] xs:text-xs">
+                          <div className="mt-2">
+                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
                               {order.payment_status === 'paid' ? t('account:orders.paid') : t('account:orders.pending')}
                             </Badge>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-sm xs:text-base sm:text-xl">€{Number(order.total).toFixed(2)}</p>
-                          <Button variant="outline" size="sm" className="mt-1.5 xs:mt-2 h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs">
+                        <div className="text-right">
+                          <p className="font-bold text-xl">€{Number(order.total).toFixed(2)}</p>
+                          <Button variant="outline" size="sm" className="mt-2">
                             {t('account:orders.viewDetails')}
                           </Button>
                         </div>
@@ -553,7 +540,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:orders.noOrders')}</p>
+                <p className="text-center text-muted-foreground py-8">{t('account:orders.noOrders')}</p>
               )}
             </CardContent>
           </Card>
@@ -561,44 +548,44 @@ export default function MyAccount() {
 
         <TabsContent value="quotes">
           <Card>
-            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:quotes.title')}</CardTitle>
-              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:quotes.description')}</CardDescription>
+            <CardHeader>
+              <CardTitle>{t('account:quotes.title')}</CardTitle>
+              <CardDescription>{t('account:quotes.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
+            <CardContent>
               {quotes.length > 0 ? (
-                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   {quotes.map((quote) => (
                     <div 
                       key={quote.id} 
-                      className="border p-2 xs:p-3 sm:p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                      className="border p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => navigate(`/cotizacion/${quote.id}`)}
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-xs xs:text-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold">
                             {quote.quote_type === 'file_upload' ? t('account:quotes.file3d') : 
                              quote.quote_type === 'service' ? t('account:quotes.service') : 
                              quote.quote_type}
                           </p>
-                          <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
-                            {new Date(quote.created_at).toLocaleDateString(i18n.language, { 
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(quote.created_at).toLocaleDateString('es-ES', { 
                               year: 'numeric', 
                               month: 'short', 
                               day: 'numeric' 
                             })}
                           </p>
                           {(quote.service_description || quote.additional_notes || quote.description) && (
-                            <div className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <div className="text-sm text-muted-foreground mt-1 line-clamp-3">
                               <RichTextDisplay content={(quote.service_description || quote.additional_notes || quote.description) as string} />
                             </div>
                           )}
                         </div>
-                        <div className="text-right flex flex-col items-end gap-1.5 xs:gap-2 flex-shrink-0">
+                        <div className="text-right flex flex-col items-end gap-2">
                           {quote.estimated_price && (
-                            <p className="font-bold text-primary text-xs xs:text-sm sm:text-base">€{parseFloat(quote.estimated_price).toFixed(2)}</p>
+                            <p className="font-bold text-primary">€{parseFloat(quote.estimated_price).toFixed(2)}</p>
                           )}
-                          <Button variant="outline" size="sm" className="h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs" onClick={(e) => {
+                          <Button variant="outline" size="sm" onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/cotizacion/${quote.id}`);
                           }}>
@@ -610,7 +597,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:quotes.noQuotes')}</p>
+                <p className="text-center text-muted-foreground py-8">{t('account:quotes.noQuotes')}</p>
               )}
             </CardContent>
           </Card>
@@ -618,20 +605,20 @@ export default function MyAccount() {
 
         <TabsContent value="giftcards">
           <Card>
-            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:giftcards.title')}</CardTitle>
-              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:giftcards.description')}</CardDescription>
+            <CardHeader>
+              <CardTitle>{t('account:giftcards.title')}</CardTitle>
+              <CardDescription>{t('account:giftcards.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0">
+            <CardContent>
               {giftCards.length > 0 ? (
-                <div className="grid gap-3 xs:gap-4 sm:gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                   {giftCards.map((card) => (
                     <div 
                       key={card.id} 
                       className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                       onClick={() => navigate(`/mis-tarjetas-regalo`, { state: { selectedCardId: card.id } })}
                     >
-                      <div className="p-2 xs:p-3 sm:p-4 space-y-2 xs:space-y-3">
+                      <div className="p-4 space-y-3">
                         {/* Tarjeta visual mejorada */}
                         <div className="w-full flex justify-center">
                           <GiftCardPrintable
@@ -645,17 +632,17 @@ export default function MyAccount() {
                         </div>
                         
                         {/* Estado y acciones */}
-                        <div className="flex justify-between items-center pt-2 xs:pt-3 border-t">
+                        <div className="flex justify-between items-center pt-3 border-t">
                           <Badge variant={
                             !card.is_active ? 'secondary' : 
                             card.current_balance > 0 ? 'default' : 
                             'outline'
-                          } className="text-[10px] xs:text-xs">
+                          }>
                             {!card.is_active ? t('account:giftcards.notActivated') : 
                              card.current_balance > 0 ? t('account:giftcards.active') : 
                              t('account:giftcards.depleted')}
                           </Badge>
-                          <Button variant="outline" size="sm" className="h-7 xs:h-8 px-2 xs:px-3 text-[10px] xs:text-xs">
+                          <Button variant="outline" size="sm">
                             {t('account:giftcards.viewCard')}
                           </Button>
                         </div>
@@ -664,7 +651,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-4 xs:py-6 sm:py-8 text-xs xs:text-sm">{t('account:giftcards.noGiftCards')}</p>
+                <p className="text-center text-muted-foreground py-8">{t('account:giftcards.noGiftCards')}</p>
               )}
             </CardContent>
           </Card>
@@ -672,32 +659,32 @@ export default function MyAccount() {
 
         <TabsContent value="messages">
           <Card>
-            <CardHeader className="p-2.5 xs:p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-sm xs:text-base sm:text-lg">{t('account:messages.title')}</CardTitle>
-              <CardDescription className="text-[10px] xs:text-xs sm:text-sm">{t('account:messages.description')}</CardDescription>
+            <CardHeader>
+              <CardTitle>{t('account:messages.title')}</CardTitle>
+              <CardDescription>{t('account:messages.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 xs:p-3 sm:p-4 md:p-6 pt-0 space-y-2 xs:space-y-3 sm:space-y-4">
+            <CardContent className="space-y-4">
               <SendAdminMessage />
               {messages.length > 0 ? (
-                <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   {messages.map((message) => {
                     const replyState = replyStates[message.id] || { show: false, text: "", attachments: [] };
                     
                     return (
-                      <div key={message.id} className="border p-2 xs:p-3 sm:p-4 rounded-lg">
-                        <div className="flex justify-between mb-1.5 xs:mb-2 gap-2">
-                          <div className="flex items-center gap-1.5 xs:gap-2 min-w-0 flex-1">
-                            <p className="font-semibold text-xs xs:text-sm truncate">{message.subject}</p>
+                      <div key={message.id} className="border p-4 rounded-lg">
+                        <div className="flex justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{message.subject}</p>
                             {message.is_admin_message && (
-                              <Badge variant="outline" className="text-[10px] xs:text-xs flex-shrink-0">{t('account:messages.fromAdmin')}</Badge>
+                              <Badge variant="outline">{t('account:messages.fromAdmin')}</Badge>
                             )}
                           </div>
-                          <span className={`text-[10px] xs:text-xs px-1.5 xs:px-2 py-0.5 xs:py-1 rounded flex-shrink-0 ${message.is_read ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                          <span className={`text-xs px-2 py-1 rounded ${message.is_read ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
                             {message.is_read ? t('account:messages.read') : t('account:messages.new')}
                           </span>
                         </div>
-                        <p className="text-[10px] xs:text-xs sm:text-sm whitespace-pre-line">{message.message}</p>
-                        <p className="text-[10px] xs:text-xs text-muted-foreground mt-1.5 xs:mt-2">
+                        <p className="text-sm whitespace-pre-line">{message.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
                           {new Date(message.created_at).toLocaleString(i18n.language)}
                         </p>
                         
@@ -1046,66 +1033,59 @@ export default function MyAccount() {
 
         <TabsContent value="invoices">
           <Card>
-            <CardHeader className="p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-base sm:text-lg">{t('account:invoices.title')}</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">{t('account:invoices.description')}</CardDescription>
+            <CardHeader>
+              <CardTitle>{t('account:invoices.title')}</CardTitle>
+              <CardDescription>{t('account:invoices.description')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 sm:p-4 md:p-6 pt-0">
+            <CardContent>
               {invoices.length > 0 ? (
-                <div className="space-y-2 sm:space-y-4">
+                <div className="space-y-4">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="border rounded-lg p-2.5 sm:p-4 bg-card">
-                      {/* Mobile-first layout */}
-                      <div className="flex flex-col gap-2 sm:gap-3">
-                        {/* Top row: Invoice number and status */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-mono text-xs sm:text-sm font-semibold truncate">{invoice.invoice_number}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">
-                              {new Date(invoice.issue_date).toLocaleDateString(i18n.language)}
-                            </p>
-                          </div>
-                          <Badge variant={
-                            invoice.payment_status === 'paid' ? 'default' :
-                            invoice.payment_status === 'pending' ? 'secondary' :
-                            'destructive'
-                          } className="text-[10px] sm:text-xs whitespace-nowrap flex-shrink-0">
-                            {invoice.payment_status === 'paid' ? t('account:invoices.paidStatus') :
-                             invoice.payment_status === 'pending' ? t('account:invoices.pendingStatus') :
-                             invoice.payment_status === 'cancelled' ? t('account:invoices.cancelledStatus') :
-                             invoice.payment_status}
-                          </Badge>
-                        </div>
-                        
-                        {/* Order reference */}
-                        {invoice.order?.order_number && (
-                          <p className="text-[10px] sm:text-xs text-muted-foreground">
-                            {t('account:invoices.order')}: <span className="font-mono">{invoice.order.order_number}</span>
-                          </p>
-                        )}
-                        
-                        {/* Notes if any */}
-                        {invoice.notes && (
-                          <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
-                            <RichTextDisplay content={invoice.notes} />
-                          </div>
-                        )}
-                        
-                        {/* Bottom row: Total and actions */}
-                        <div className="flex items-center justify-between gap-2 pt-2 border-t">
-                          <div>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">{t('account:orders.total')}</p>
-                            <p className="font-bold text-base sm:text-lg text-green-600">€{Number(invoice.total).toFixed(2)}</p>
+                    <div key={invoice.id} className="border p-4 rounded-lg">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="font-semibold font-mono">{invoice.invoice_number}</p>
+                            <Badge variant={
+                              invoice.payment_status === 'paid' ? 'default' :
+                              invoice.payment_status === 'pending' ? 'secondary' :
+                              'destructive'
+                            }>
+                              {invoice.payment_status === 'paid' ? t('account:invoices.paidStatus') :
+                               invoice.payment_status === 'pending' ? t('account:invoices.pendingStatus') :
+                               invoice.payment_status === 'cancelled' ? t('account:invoices.cancelledStatus') :
+                               invoice.payment_status}
+                            </Badge>
                           </div>
                           
-                          <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
+                          {invoice.order?.order_number && (
+                            <p className="text-sm text-muted-foreground">
+                              {t('account:invoices.order')}: {invoice.order.order_number}
+                            </p>
+                          )}
+                          
+                          <p className="text-sm text-muted-foreground">
+                            {t('account:invoices.date')}: {new Date(invoice.issue_date).toLocaleDateString(i18n.language)}
+                          </p>
+                          
+                          {invoice.notes && (
+                            <div className="text-sm mt-2 text-muted-foreground">
+                              <RichTextDisplay content={invoice.notes} />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">{t('account:orders.total')}</p>
+                          <p className="font-bold text-2xl">€{Number(invoice.total).toFixed(2)}</p>
+                          
+                          <div className="flex gap-2 mt-3">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => navigate(`/factura/${invoice.id}`)}
-                              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
                             >
-                              <FileText className="h-3 w-3 mr-1" />
+                              <FileText className="h-4 w-4 mr-1" />
                               {t('account:invoices.view')}
                             </Button>
                             
@@ -1113,6 +1093,7 @@ export default function MyAccount() {
                               <Button
                                 size="sm"
                                 onClick={() => {
+                                  // Guardar datos de factura en sessionStorage para el pago
                                   sessionStorage.setItem('invoice_payment', JSON.stringify({
                                     invoiceId: invoice.id,
                                     invoiceNumber: invoice.invoice_number,
@@ -1124,7 +1105,6 @@ export default function MyAccount() {
                                   }));
                                   navigate('/pago');
                                 }}
-                                className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
                               >
                                 💳 {t('account:invoices.payNow')}
                               </Button>
@@ -1136,7 +1116,7 @@ export default function MyAccount() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-6 text-sm">{t('account:invoices.noInvoices')}</p>
+                <p className="text-center text-muted-foreground py-8">{t('account:invoices.noInvoices')}</p>
               )}
             </CardContent>
           </Card>

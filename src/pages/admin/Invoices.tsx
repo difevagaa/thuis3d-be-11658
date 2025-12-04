@@ -1082,93 +1082,14 @@ export default function Invoices() {
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg sm:text-xl">Lista de Facturas</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
+        <CardHeader>
+          <CardTitle>Lista de Facturas</CardTitle>
+          <CardDescription>
             Todas las facturas generadas automáticamente y manualmente
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
-            {invoices.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No hay facturas registradas
-              </div>
-            ) : (
-              invoices.map((invoice) => (
-                <div key={invoice.id} className="border rounded-lg p-3 space-y-2 bg-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isSelected(invoice.id)}
-                        onCheckedChange={() => toggleSelection(invoice.id)}
-                        aria-label={`Seleccionar ${invoice.invoice_number}`}
-                      />
-                      <div>
-                        <p className="font-mono text-sm font-semibold">{invoice.invoice_number}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(invoice.issue_date || invoice.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className={getStatusColor(invoice.payment_status)}>
-                      {getStatusText(invoice.payment_status)}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cliente</p>
-                      <p className="font-medium truncate">{invoice.user?.full_name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total</p>
-                      <p className="font-bold text-green-600">€{invoice.total?.toFixed(2)}</p>
-                    </div>
-                  </div>
-                  
-                  {invoice.order?.order_number && (
-                    <p className="text-xs text-muted-foreground">
-                      Pedido: <span className="font-mono">{invoice.order.order_number}</span>
-                    </p>
-                  )}
-                  
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => navigate(`/admin/facturas/${invoice.id}`)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Ver
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => handleEditInvoice(invoice)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="h-8 text-xs px-2"
-                      onClick={() => handleDeleteInvoice(invoice.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
+        <CardContent>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -151,28 +151,27 @@ export default function ShippingInfo() {
   }
 
   return (
-    <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-6 xs:py-8 sm:py-12 max-w-2xl">
+    <div className="container mx-auto px-4 py-12 max-w-2xl">
       <Card>
-        <CardHeader className="p-3 xs:p-4 sm:p-6">
-          <CardTitle className="text-base xs:text-lg sm:text-xl">{t('shipping:title')}</CardTitle>
-          <CardDescription className="text-xs xs:text-sm">{t('shipping:description')}</CardDescription>
+        <CardHeader>
+          <CardTitle>{t('shipping:title')}</CardTitle>
+          <CardDescription>{t('shipping:description')}</CardDescription>
         </CardHeader>
-        <CardContent className="p-3 xs:p-4 sm:p-6 pt-0">
-          <form onSubmit={handleSubmit} className="space-y-3 xs:space-y-4">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="full_name" className="text-xs xs:text-sm">{t('shipping:form.fullName')} *</Label>
+              <Label htmlFor="full_name">{t('shipping:form.fullName')} *</Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 placeholder={t('shipping:placeholders.fullName')}
                 required
-                className="text-sm xs:text-base h-9 xs:h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="email" className="text-xs xs:text-sm">{t('shipping:form.email')} *</Label>
+              <Label htmlFor="email">{t('shipping:form.email')} *</Label>
               <Input
                 id="email"
                 type="email"
@@ -180,12 +179,11 @@ export default function ShippingInfo() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder={t('shipping:placeholders.email')}
                 required
-                className="text-sm xs:text-base h-9 xs:h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="phone" className="text-xs xs:text-sm">{t('shipping:form.phone')} *</Label>
+              <Label htmlFor="phone">{t('shipping:form.phone')} *</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -193,50 +191,46 @@ export default function ShippingInfo() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder={t('shipping:placeholders.phone')}
                 required
-                className="text-sm xs:text-base h-9 xs:h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="address" className="text-xs xs:text-sm">{t('shipping:form.address')} *</Label>
+              <Label htmlFor="address">{t('shipping:form.address')} *</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder={t('shipping:placeholders.address')}
                 required
-                className="text-sm xs:text-base h-9 xs:h-10"
               />
             </div>
 
-            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 xs:gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="city" className="text-xs xs:text-sm">{t('shipping:form.city')} *</Label>
+                <Label htmlFor="city">{t('shipping:form.city')} *</Label>
                 <Input
                   id="city"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   placeholder={t('shipping:placeholders.city')}
                   required
-                  className="text-sm xs:text-base h-9 xs:h-10"
                 />
               </div>
 
               <div>
-                <Label htmlFor="postal_code" className="text-xs xs:text-sm">{t('shipping:form.postalCode')} *</Label>
+                <Label htmlFor="postal_code">{t('shipping:form.postalCode')} *</Label>
                 <Input
                   id="postal_code"
                   value={formData.postal_code}
                   onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
                   placeholder={t('shipping:placeholders.postalCode')}
                   required
-                  className="text-sm xs:text-base h-9 xs:h-10"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="country" className="text-xs xs:text-sm">{t('shipping:form.country')} *</Label>
+              <Label htmlFor="country">{t('shipping:form.country')} *</Label>
               <Select 
                 value={formData.country} 
                 onValueChange={(value) => {
@@ -248,27 +242,27 @@ export default function ShippingInfo() {
                   });
                 }}
               >
-                <SelectTrigger className="text-sm xs:text-base h-9 xs:h-10">
+                <SelectTrigger>
                   <SelectValue placeholder={t('shipping:form.countryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableCountries.map((country) => (
-                    <SelectItem key={country.country_code} value={country.country_code} className="text-sm xs:text-base">
+                    <SelectItem key={country.country_code} value={country.country_code}>
                       {country.country_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[10px] xs:text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t('shipping:form.selectCountry')}
               </p>
             </div>
 
-            <div className="flex flex-col xs:flex-row gap-2 xs:gap-4 pt-3 xs:pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1 text-sm xs:text-base h-9 xs:h-10">
+            <div className="flex gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">
                 {t('shipping:buttons.back')}
               </Button>
-              <Button type="submit" className="flex-1 text-sm xs:text-base h-9 xs:h-10">
+              <Button type="submit" className="flex-1">
                 {t('shipping:buttons.continue')}
               </Button>
             </div>

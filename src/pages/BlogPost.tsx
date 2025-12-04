@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime } from "@/utils/textUtils";
-import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -21,7 +20,6 @@ export default function BlogPost() {
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<any>(null);
-  const hasPostRef = useRef(false);
   
   // Hook para contenido traducido del post
   const { content: translatedPost, loading: translatingPost } = useTranslatedContent(
@@ -31,12 +29,11 @@ export default function BlogPost() {
     post
   );
 
-  const loadPost = useCallback(async () => {
-    // Only show loading state if we don't have a post yet (prevents flickering on background reloads)
-    if (!hasPostRef.current) {
-      setLoading(true);
-    }
-    
+  useEffect(() => {
+    loadPost();
+  }, [slug]);
+
+  const loadPost = async () => {
     try {
       // Obtener usuario y sus roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -90,20 +87,12 @@ export default function BlogPost() {
       }
 
       setPost(postData);
-      // Mark as loaded after successful fetch, regardless of whether we got a post
-      hasPostRef.current = true;
     } catch (error) {
       logger.error("Error loading post:", error);
     } finally {
       setLoading(false);
     }
-  }, [slug]);
-
-  // Use data recovery hook - loadPost already includes slug in useCallback deps
-  useDataWithRecovery(loadPost, {
-    timeout: 15000,
-    maxRetries: 3
-  });
+  };
 
   const handleShare = async () => {
     const url = window.location.href;

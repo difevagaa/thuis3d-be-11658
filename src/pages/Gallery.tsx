@@ -1,14 +1,11 @@
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Play, RefreshCw } from "lucide-react";
+import { Play } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
-import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
-import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
-import { Button } from "@/components/ui/button";
 
 interface GalleryItem {
   id: string;
@@ -23,27 +20,13 @@ export default function Gallery() {
   const { t } = useTranslation('gallery');
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
-  const hasItemsRef = useRef(false);
-  const loadAttemptRef = useRef(0);
 
-  // CRITICAL FIX: Add loading timeout protection
-  // If loading state is stuck for more than 30 seconds, force it to false
-  useLoadingTimeout(loading, setLoading, 30000);
+  useEffect(() => {
+    loadGalleryItems();
+  }, []);
 
-  const loadGalleryItems = useCallback(async () => {
-    loadAttemptRef.current++;
-    const attemptNumber = loadAttemptRef.current;
-    
-    console.log(`[Gallery] Load attempt #${attemptNumber} started`);
-    
-    // Only show loading state if we don't have items yet (prevents flickering on background reloads)
-    if (!hasItemsRef.current) {
-      setLoading(true);
-    }
-    setError(false);
-    
+  const loadGalleryItems = async () => {
     try {
       const { data, error } = await supabase
         .from('gallery_items')
@@ -54,46 +37,14 @@ export default function Gallery() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      const galleryItems = (data || []) as GalleryItem[];
-      console.log(`[Gallery] Load attempt #${attemptNumber} succeeded: ${galleryItems.length} items`);
-      
-      setItems(galleryItems);
-      // Mark as loaded after successful fetch, regardless of whether we got items
-      hasItemsRef.current = true;
-      setLoading(false);
+      setItems((data || []) as GalleryItem[]);
     } catch (error) {
-      console.error(`[Gallery] Load attempt #${attemptNumber} failed:`, error);
-      setError(true);
-      setLoading(false);
+      console.error('Error loading gallery:', error);
       toast.error(t('errorLoading', { defaultValue: 'Error al cargar la galería' }));
+    } finally {
+      setLoading(false);
     }
-  }, [t]);
-
-  // Use data recovery hook with proper timeout and retry settings
-  useDataWithRecovery(
-    loadGalleryItems,
-    {
-      timeout: 15000,
-      maxRetries: 3,
-      onError: () => {
-        console.error('[Gallery] All retry attempts failed');
-        setError(true);
-        setLoading(false);
-      }
-    }
-  );
-  
-  // Additional safety: If after 5 seconds we're still loading and have no items, log warning
-  useEffect(() => {
-    const warningTimer = setTimeout(() => {
-      if (loading && !hasItemsRef.current) {
-        console.warn('[Gallery] Still loading after 5 seconds, this might indicate an issue');
-      }
-    }, 5000);
-    
-    return () => clearTimeout(warningTimer);
-  }, [loading]);
+  };
 
   const handleVideoPlay = (itemId: string) => {
     setPlayingVideos(prev => new Set(prev).add(itemId));
@@ -132,18 +83,6 @@ export default function Gallery() {
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">{t('loading')}</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12 space-y-4">
-            <p className="text-destructive font-semibold">{t('errorLoading', { defaultValue: 'Error al cargar la galería' })}</p>
-            <Button onClick={() => {
-              hasItemsRef.current = false;
-              setLoading(true);
-              loadGalleryItems();
-            }} variant="outline" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              {t('retry', { defaultValue: 'Reintentar', ns: 'common' })}
-            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-12">

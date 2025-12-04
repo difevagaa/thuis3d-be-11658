@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { i18nToast, toast } from "@/lib/i18nToast";
-import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette, LayoutGrid } from "lucide-react";
+import { i18nToast } from "@/lib/i18nToast";
+import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette } from "lucide-react";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
 import { logger } from '@/lib/logger';
@@ -16,7 +16,6 @@ import { saveFontsToCache } from '@/utils/fontPersistence';
 import { hexToHSL, saveAdvancedColorsToCache, DEFAULT_COLORS, DEFAULT_COLORS_DARK } from '@/utils/colorPersistence';
 import { AdvancedColorCustomization } from '@/components/admin/AdvancedColorCustomization';
 import { InteractiveContrastChecker } from '@/components/admin/ContrastChecker';
-import { useCarouselSettings } from '@/hooks/useCarouselSettings';
 
 /**
  * Helper to check if a color differs from both light and dark defaults
@@ -57,185 +56,6 @@ const fontOptions = [
   { value: 'Dancing Script', label: 'Dancing Script (Script, Cursivo)' },
   { value: 'Pacifico', label: 'Pacifico (Amigable, Display)' }
 ];
-
-// Component for carousel settings tab
-function CarouselSettingsTab() {
-  const { settings, saveSettings, loading } = useCarouselSettings();
-  const [localSettings, setLocalSettings] = useState({
-    productRefreshInterval: '',
-    imageRotationInterval: '',
-    maxVisibleProducts: '',
-  });
-  const [saving, setSaving] = useState(false);
-
-  // Initialize local state when settings load
-  useEffect(() => {
-    if (!loading) {
-      setLocalSettings({
-        productRefreshInterval: String(settings.productRefreshInterval),
-        imageRotationInterval: String(settings.imageRotationInterval / 1000), // Convert to seconds for display
-        maxVisibleProducts: String(settings.maxVisibleProducts),
-      });
-    }
-  }, [settings, loading]);
-
-  const handleSaveCarouselSettings = async () => {
-    setSaving(true);
-    try {
-      // Parse values, handling empty strings
-      const productRefresh = localSettings.productRefreshInterval === '' 
-        ? settings.productRefreshInterval 
-        : parseInt(localSettings.productRefreshInterval, 10);
-      const imageRotation = localSettings.imageRotationInterval === '' 
-        ? settings.imageRotationInterval / 1000 
-        : parseInt(localSettings.imageRotationInterval, 10);
-      const maxVisible = localSettings.maxVisibleProducts === '' 
-        ? settings.maxVisibleProducts 
-        : parseInt(localSettings.maxVisibleProducts, 10);
-
-      // Validate values
-      if (isNaN(productRefresh) || productRefresh < 5) {
-        toast.error('El tiempo de actualización de productos debe ser al menos 5 segundos');
-        setSaving(false);
-        return;
-      }
-      if (isNaN(imageRotation) || imageRotation < 1) {
-        toast.error('El tiempo de rotación de imágenes debe ser al menos 1 segundo');
-        setSaving(false);
-        return;
-      }
-      if (isNaN(maxVisible) || maxVisible < 1 || maxVisible > 12) {
-        toast.error('El número de productos debe estar entre 1 y 12');
-        setSaving(false);
-        return;
-      }
-
-      const success = await saveSettings({
-        productRefreshInterval: productRefresh,
-        imageRotationInterval: imageRotation * 1000, // Convert to milliseconds for storage
-        maxVisibleProducts: maxVisible,
-      });
-
-      if (success) {
-        toast.success('Configuración del carrusel guardada correctamente');
-        // Trigger reload event for carousels
-        window.dispatchEvent(new CustomEvent('carousel-settings-updated'));
-      } else {
-        toast.error('Error al guardar la configuración');
-      }
-    } catch (error) {
-      console.error('Error saving carousel settings:', error);
-      toast.error('Error al guardar la configuración');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Handle input change - allows empty string for editing
-  const handleInputChange = (field: keyof typeof localSettings, value: string) => {
-    // Allow empty string or valid numbers
-    if (value === '' || /^\d+$/.test(value)) {
-      setLocalSettings(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LayoutGrid className="h-5 w-5" />
-          Configuración del Carrusel de Productos
-        </CardTitle>
-        <CardDescription>
-          Configura los tiempos de actualización y rotación de productos en la página de inicio
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Product Refresh Interval */}
-          <div className="space-y-2">
-            <Label htmlFor="productRefresh">Tiempo de Actualización de Productos (segundos)</Label>
-            <Input
-              id="productRefresh"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={localSettings.productRefreshInterval}
-              onChange={(e) => handleInputChange('productRefreshInterval', e.target.value)}
-              placeholder="60"
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Cada cuántos segundos se muestran nuevos productos aleatorios (mínimo 5 segundos)
-            </p>
-          </div>
-
-          {/* Image Rotation Interval */}
-          <div className="space-y-2">
-            <Label htmlFor="imageRotation">Tiempo de Rotación de Imágenes (segundos)</Label>
-            <Input
-              id="imageRotation"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={localSettings.imageRotationInterval}
-              onChange={(e) => handleInputChange('imageRotationInterval', e.target.value)}
-              placeholder="4"
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Cada cuántos segundos cambia la imagen de cada producto (mínimo 1 segundo)
-            </p>
-          </div>
-
-          {/* Max Visible Products */}
-          <div className="space-y-2">
-            <Label htmlFor="maxVisible">Número de Productos Visibles</Label>
-            <Input
-              id="maxVisible"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={localSettings.maxVisibleProducts}
-              onChange={(e) => handleInputChange('maxVisibleProducts', e.target.value)}
-              placeholder="4"
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Cuántos productos se muestran simultáneamente (1-12 productos)
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <h4 className="font-semibold mb-2">📝 Valores Actuales</h4>
-          <ul className="text-sm space-y-1 text-muted-foreground">
-            <li>• Productos se actualizan cada: <span className="font-medium text-foreground">{settings.productRefreshInterval} segundos</span></li>
-            <li>• Imágenes rotan cada: <span className="font-medium text-foreground">{settings.imageRotationInterval / 1000} segundos</span></li>
-            <li>• Productos visibles: <span className="font-medium text-foreground">{settings.maxVisibleProducts}</span></li>
-          </ul>
-        </div>
-
-        <Button onClick={handleSaveCarouselSettings} disabled={saving} className="w-full">
-          <Save className="mr-2 h-4 w-4" />
-          {saving ? 'Guardando...' : 'Guardar Configuración del Carrusel'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function SiteCustomizer() {
   const [loading, setLoading] = useState(true);
@@ -833,14 +653,14 @@ export default function SiteCustomizer() {
       <h1 className="text-3xl font-bold mb-6">Personalizador del Sitio</h1>
 
       <Tabs defaultValue="themes" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="themes">
             <Sparkles className="mr-2 h-4 w-4" />
             Paletas
           </TabsTrigger>
           <TabsTrigger value="advanced-colors">
             <Palette className="mr-2 h-4 w-4" />
-            Colores
+            Colores Avanzados
           </TabsTrigger>
           <TabsTrigger value="contrast">
             <Settings className="mr-2 h-4 w-4" />
@@ -849,10 +669,6 @@ export default function SiteCustomizer() {
           <TabsTrigger value="typography">
             <Type className="mr-2 h-4 w-4" />
             Tipografía
-          </TabsTrigger>
-          <TabsTrigger value="carousel">
-            <LayoutGrid className="mr-2 h-4 w-4" />
-            Carrusel
           </TabsTrigger>
           <TabsTrigger value="identity">
             <ImageIcon className="mr-2 h-4 w-4" />
@@ -1104,12 +920,7 @@ export default function SiteCustomizer() {
           </Card>
         </TabsContent>
 
-        {/* TAB 5: CARRUSEL DE PRODUCTOS */}
-        <TabsContent value="carousel">
-          <CarouselSettingsTab />
-        </TabsContent>
-
-        {/* TAB 6: IDENTIDAD (LOGOS) */}
+        {/* TAB 4: IDENTIDAD (LOGOS) */}
         <TabsContent value="identity">
           <Card>
             <CardHeader>

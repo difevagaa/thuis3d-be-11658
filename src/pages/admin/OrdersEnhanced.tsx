@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { i18nToast } from "@/lib/i18nToast";
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
 import { AdminPageHeader, AdminStatCard } from "@/components/admin/AdminPageHeader";
 import { Plus, Search, ShoppingCart, Eye, Pencil } from "lucide-react";
@@ -253,7 +253,7 @@ export default function OrdersEnhanced() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <AdminStatCard
           title="Total Pedidos"
           value={orders.length}
@@ -281,21 +281,21 @@ export default function OrdersEnhanced() {
       </div>
 
       {/* Search and Filters */}
-      <Card className="mb-4 sm:mb-6 border-border/50">
-        <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+      <Card className="mb-6 border-border/50">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar pedido, cliente..."
+                placeholder="Buscar por número de pedido, cliente o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 text-sm h-9 sm:h-10"
+                className="pl-10"
               />
             </div>
-            <Badge variant="outline" className="h-9 sm:h-10 px-3 sm:px-4 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap">
+            <Badge variant="outline" className="h-10 px-4 flex items-center gap-2">
               <span>📊</span>
-              <span>{filteredOrders.length}/{orders.length}</span>
+              <span>{filteredOrders.length} de {orders.length} pedidos</span>
             </Badge>
           </div>
         </CardContent>
@@ -303,195 +303,106 @@ export default function OrdersEnhanced() {
 
       {/* Orders Table */}
       <Card className="border-border/50 shadow-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/30 py-3 sm:py-4">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+        <CardHeader className="border-b border-border/50 bg-muted/30">
+          <CardTitle className="flex items-center gap-2">
             <span>📋</span>
             Lista de Pedidos
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
+          <CardDescription>
             Haz clic en un pedido para ver más detalles
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
-            {filteredOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <span className="text-4xl block mb-3">📦</span>
-                <p className="text-muted-foreground text-sm">
-                  {searchTerm ? "No se encontraron pedidos con ese criterio" : "No hay pedidos todavía"}
-                </p>
-              </div>
-            ) : (
-              filteredOrders.map((order) => (
-                <div 
-                  key={order.id}
-                  className="border rounded-lg p-3 space-y-2 bg-card cursor-pointer hover:bg-muted/30 transition-colors"
-                  onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-mono text-sm font-semibold">{order.order_number}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString('es-ES')}
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/20 hover:bg-muted/20">
+                <TableHead className="font-semibold">Nº Pedido</TableHead>
+                <TableHead className="font-semibold">Cliente</TableHead>
+                <TableHead className="font-semibold">Total</TableHead>
+                <TableHead className="font-semibold">Estado</TableHead>
+                <TableHead className="font-semibold">Fecha</TableHead>
+                <TableHead className="font-semibold text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="text-4xl">📦</span>
+                      <p className="text-muted-foreground">
+                        {searchTerm ? "No se encontraron pedidos con ese criterio" : "No hay pedidos todavía"}
                       </p>
                     </div>
-                    <Badge 
-                      variant={order.payment_status === 'paid' ? 'default' : 'secondary'}
-                      className={`text-xs ${
-                        order.payment_status === 'paid' 
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0' 
-                          : order.payment_status === 'pending'
-                          ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0'
-                          : order.payment_status === 'failed'
-                          ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white border-0'
-                          : ''
-                      }`}
-                    >
-                      {order.payment_status === 'paid' ? '✅ Pagado' : 
-                       order.payment_status === 'pending' ? '⏳ Pendiente' :
-                       order.payment_status === 'failed' ? '❌ Fallido' :
-                       order.payment_status === 'refunded' ? '↩️ Reemb.' : '⏳ Pend.'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cliente</p>
-                      <p className="font-medium truncate">{order.user?.full_name || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{order.user?.email || ''}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Total</p>
-                      <p className="font-bold text-green-600 text-lg">€{Number(order.total).toFixed(2)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex-1 h-8 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.location.href = `/admin/pedidos/${order.id}`;
-                      }}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Ver
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex-1 h-8 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingOrder(order);
-                        setSelectedStatus(order.status_id || "");
-                      }}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          
-          {/* Desktop Table View */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/20 hover:bg-muted/20">
-                  <TableHead className="font-semibold">Nº Pedido</TableHead>
-                  <TableHead className="font-semibold">Cliente</TableHead>
-                  <TableHead className="font-semibold">Total</TableHead>
-                  <TableHead className="font-semibold">Estado</TableHead>
-                  <TableHead className="font-semibold">Fecha</TableHead>
-                  <TableHead className="font-semibold text-right">Acciones</TableHead>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <span className="text-4xl">📦</span>
-                        <p className="text-muted-foreground">
-                          {searchTerm ? "No se encontraron pedidos con ese criterio" : "No hay pedidos todavía"}
-                        </p>
+              ) : (
+                filteredOrders.map((order) => (
+                  <TableRow 
+                    key={order.id}
+                    className="cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
+                  >
+                    <TableCell className="font-mono font-medium">{order.order_number}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.user?.full_name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold text-green-600">€{Number(order.total).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={order.payment_status === 'paid' ? 'default' : 'secondary'}
+                        className={
+                          order.payment_status === 'paid' 
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0' 
+                            : order.payment_status === 'pending'
+                            ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0'
+                            : order.payment_status === 'failed'
+                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white border-0'
+                            : ''
+                        }
+                      >
+                        {order.payment_status === 'paid' ? '✅ Pagado' : 
+                         order.payment_status === 'pending' ? '⏳ Pendiente' :
+                         order.payment_status === 'failed' ? '❌ Fallido' :
+                         order.payment_status === 'refunded' ? '↩️ Reembolsado' : '⏳ Pendiente'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1 justify-end">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/admin/pedidos/${order.id}`;
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingOrder(order);
+                            setSelectedStatus(order.status_id || "");
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <TableRow 
-                      key={order.id}
-                      className="cursor-pointer hover:bg-muted/30 transition-colors"
-                      onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
-                    >
-                      <TableCell className="font-mono font-medium">{order.order_number}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.user?.full_name || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-bold text-green-600">€{Number(order.total).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={order.payment_status === 'paid' ? 'default' : 'secondary'}
-                          className={
-                            order.payment_status === 'paid' 
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0' 
-                              : order.payment_status === 'pending'
-                              ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0'
-                              : order.payment_status === 'failed'
-                              ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white border-0'
-                              : ''
-                          }
-                        >
-                          {order.payment_status === 'paid' ? '✅ Pagado' : 
-                           order.payment_status === 'pending' ? '⏳ Pendiente' :
-                           order.payment_status === 'failed' ? '❌ Fallido' :
-                           order.payment_status === 'refunded' ? '↩️ Reembolsado' : '⏳ Pendiente'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-1 justify-end">
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.location.href = `/admin/pedidos/${order.id}`;
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingOrder(order);
-                              setSelectedStatus(order.status_id || "");
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 

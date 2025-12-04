@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { i18nToast, toast } from "@/lib/i18nToast";
+import { i18nToast } from "@/lib/i18nToast";
 import { Plus, Pencil, Trash2, Users, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { logger } from '@/lib/logger';
@@ -321,65 +321,8 @@ export default function RolesPermissions() {
             Lista de roles personalizados creados en el sistema
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
-            {customRoles.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No hay roles personalizados creados
-              </div>
-            ) : (
-              customRoles.map((role) => (
-                <div key={role.id} className="border rounded-lg p-3 space-y-2 bg-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">{role.display_name}</p>
-                      <p className="text-xs text-muted-foreground">{role.name}</p>
-                      {role.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{role.description}</p>
-                      )}
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className="gap-1 cursor-pointer hover:bg-secondary/80 transition-colors shrink-0"
-                      onClick={() => loadUsersForRole(role.name, role.display_name)}
-                    >
-                      <Users className="h-3 w-3" />
-                      {roleUsers[role.name] || 0}
-                      <Eye className="h-3 w-3" />
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    Creado: {new Date(role.created_at).toLocaleDateString('es-ES')}
-                  </p>
-                  
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => setEditingRole(role)}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-8 text-xs px-2"
-                      onClick={() => handleDeleteRole(role.id, role.display_name)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
+        <CardContent>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

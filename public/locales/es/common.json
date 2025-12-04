@@ -30,7 +30,6 @@
   "next": "Siguiente",
   "previous": "Anterior",
   "home": "Inicio",
-  "retry": "Reintentar",
   "contact": "Contacto",
   "about": "Acerca de",
   "terms": "Términos y Condiciones",
@@ -66,13 +65,6 @@
   "errorDownloadingCard": "Error al descargar",
   "noPermissionInvoice": "No tienes permiso para ver esta factura",
   "errorLoadingInvoice": "Error al cargar factura",
-  "connection": {
-    "connecting": "Conectando...",
-    "loading": "Cargando contenido...",
-    "error": "Error de conexión",
-    "errorMessage": "No se pudo conectar al servidor. Por favor, verifica tu conexión a internet e intenta de nuevo.",
-    "retry": "Reintentar"
-  },
   "viewer3d": {
     "zoomIn": "Acercar",
     "zoomOut": "Alejar",

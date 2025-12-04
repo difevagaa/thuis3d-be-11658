@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { STLUploader } from "@/components/STLUploader";
 import { AnalysisResult } from "@/lib/stlAnalyzer";
@@ -20,7 +20,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useQuantityDiscounts } from "@/hooks/useQuantityDiscounts";
 import { logger } from "@/lib/logger";
-import { generatePaymentReference } from "@/lib/paymentUtils";
 // RichTextEditor is lazy-loaded below
 import { useTranslation } from "react-i18next";
 
@@ -44,7 +43,6 @@ interface Color {
 const Quotes = () => {
   const { t } = useTranslation('quotes');
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   // Ref to prevent multiple submissions (updates synchronously, unlike state)
   const isSubmittingRef = useRef(false);
@@ -82,11 +80,8 @@ const Quotes = () => {
   const [shippingZone, setShippingZone] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
-  // Control de pestañas - lee el parámetro 'tab' de la URL para determinar la pestaña activa inicial
-  const [activeTab, setActiveTab] = useState<'3d' | 'service'>(() => {
-    const tabParam = searchParams.get('tab');
-    return tabParam === 'service' ? 'service' : '3d';
-  });
+  // Control de pestañas para evitar suspensión en eventos de entrada
+  const [activeTab, setActiveTab] = useState<'3d' | 'service'>('3d');
 
   // Cargar países disponibles
   useEffect(() => {
@@ -285,10 +280,6 @@ const Quotes = () => {
         return;
       }
 
-      // Generate a unique payment reference for this quote (format: 3 numbers + 3 letters)
-      // This reference will be used as the invoice number when the quote is approved
-      const quoteReference = generatePaymentReference();
-
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id,
         customer_name: customerName,
@@ -307,7 +298,6 @@ const Quotes = () => {
         calculation_details: analysisResult ? {
           dimensions: analysisResult.dimensions,
           preview: analysisResult.preview,
-          payment_reference: quoteReference, // Store the payment reference
           ...(discount && {
             quantity_discount: {
               original_price: discount.originalPrice,
@@ -316,7 +306,7 @@ const Quotes = () => {
               discount_description: discount.tierDescription
             }
           })
-        } : { payment_reference: quoteReference },
+        } : null,
         supports_required: supportsRequired,
         layer_height: layerHeight, // Siempre 0.2mm
         let_team_decide_supports: false,
@@ -488,10 +478,6 @@ const Quotes = () => {
         return;
       }
 
-      // Generate a unique payment reference for this quote (format: 3 numbers + 3 letters)
-      // This reference will be used as the invoice number when the quote is approved
-      const serviceQuoteReference = generatePaymentReference();
-
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id || null,
         customer_name: customerName,
@@ -501,7 +487,6 @@ const Quotes = () => {
         status_id: pendingStatusId,
         file_url: fileLink || null,
         service_attachments: uploadedFiles.length > 0 ? uploadedFiles : null,
-        calculation_details: { payment_reference: serviceQuoteReference }, // Store the payment reference
       });
 
       if (error) {

@@ -17,7 +17,6 @@ import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import type { ColorSelection } from "@/hooks/useCart";
-import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 
 interface Product {
   id: string;
@@ -102,8 +101,8 @@ const ProductDetail = () => {
   const [customizationSections, setCustomizationSections] = useState<CustomizationSection[]>([]);
   const [sectionColorSelections, setSectionColorSelections] = useState<Record<string, string>>({});
   const [sectionImageSelections, setSectionImageSelections] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const hasProductRef = useRef(false);
+  // Ref to prevent multiple submissions (updates synchronously, unlike state)
+  const isSubmittingRef = useRef(false);
   
   // Hook para contenido traducido del producto
   const { content: translatedProduct, loading: translatingProduct } = useTranslatedContent(
@@ -123,6 +122,7 @@ const ProductDetail = () => {
     
     return () => clearInterval(interval);
   }, [productImages.length]);
+  const [loading, setLoading] = useState(true);
   
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -130,11 +130,6 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
 
   const fetchProductData = useCallback(async () => {
-    // Only show loading state if we don't have a product yet (prevents flickering on background reloads)
-    if (!hasProductRef.current) {
-      setLoading(true);
-    }
-    
     try {
       const { data: productData, error: productError } = await supabase
         .from("products")
@@ -145,8 +140,6 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData);
       setProductVideo((productData as any)?.video_url || null);
-      // Mark as loaded after successful fetch, regardless of whether we got a product
-      hasProductRef.current = true;
 
       // Fetch product images
       const { data: imagesData } = await supabase
@@ -165,12 +158,6 @@ const ProductDetail = () => {
       setLoading(false);
     }
   }, [id, navigate]);
-
-  // Use data recovery hook
-  useDataWithRecovery(fetchProductData, {
-    timeout: 15000,
-    maxRetries: 3
-  });
 
   const loadCustomizationSections = useCallback(async () => {
     if (!id) return;
@@ -369,12 +356,97 @@ const ProductDetail = () => {
     navigate("/carrito");
   };
 
-  const requestQuote = () => {
+  const requestQuote = async () => {
     if (!product) return;
 
-    // Redirigir a la página de cotizaciones con la pestaña de servicio activa
-    // Esto permite al usuario describir lo que necesita y subir archivos
-    navigate("/cotizaciones?tab=service");
+    // Prevent multiple submissions using ref (synchronous check)
+    if (isSubmittingRef.current) {
+      return;
+    }
+    
+    // Mark as submitting immediately (synchronous)
+    isSubmittingRef.current = true;
+
+    // Verificar autenticación primero
+    let user;
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data?.user;
+    } catch (authError) {
+      isSubmittingRef.current = false;
+      toast.error(t('error', { ns: 'errors' }));
+      return;
+    }
+    
+    if (!user) {
+      isSubmittingRef.current = false;
+      toast.error(t('mustLoginQuote'));
+      navigate("/auth");
+      return;
+    }
+
+    try {
+
+      const materialName = selectedMaterial ? materials.find(m => m.id === selectedMaterial)?.name : "";
+      const colorName = selectedColor ? availableColors.find(c => c.id === selectedColor)?.name : "";
+      
+      let description = `Producto: ${product.name}`;
+      if (materialName) description += `\nMaterial: ${materialName}`;
+      if (colorName) description += `\nColor: ${colorName}`;
+      if (customText) description += `\nTexto personalizado: ${customText}`;
+      description += `\nCantidad: ${quantity}`;
+
+      const { error } = await supabase.from("quotes").insert({
+        user_id: user?.id,
+        customer_name: user?.email || "",
+        customer_email: user?.email || "",
+        quote_type: "product",
+        product_id: product.id,
+        material_id: selectedMaterial || null,
+        color_id: selectedColor || null,
+        custom_text: customText || null,
+        description,
+      });
+
+      if (error) throw error;
+
+      // Send email to customer
+      if (user?.email) {
+        try {
+          await supabase.functions.invoke('send-quote-email', {
+            body: {
+              to: user.email,
+              customer_name: user.email,
+              quote_type: 'producto',
+              description: description
+            }
+          });
+        } catch (emailError) {
+          // Email error handled silently
+        }
+      }
+
+      // Send notification to admins
+      try {
+        await supabase.functions.invoke('send-admin-notification', {
+          body: {
+            type: 'quote',
+            title: 'Nueva Cotización de Producto',
+            message: `Nueva cotización para ${product.name}`,
+            link: '/admin/quotes'
+          }
+        });
+      } catch (notifError) {
+        // Notification error handled silently
+      }
+
+      toast.success(t('quoteRequested'));
+      navigate("/");
+    } catch (error: any) {
+      toast.error(t('error', { ns: 'errors' }));
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   if (loading) {

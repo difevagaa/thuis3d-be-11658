@@ -1,20 +1,16 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { useViewportReset } from "@/hooks/useViewportReset";
-import { useSessionRecovery } from "@/hooks/useSessionRecovery";
-import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { autoCleanup as autoCleanupLocalStorage } from "@/lib/localStorageDebugger";
-import { startVisibilityMonitoring, startInfiniteLoadingDetection } from "@/lib/visibilityDebugger";
 
 // Public pages - optimized lazy loading
 import Home from "./pages/Home";
@@ -98,137 +94,32 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
 
-/**
- * CRITICAL: Amazon-Style React Query Configuration
- * 
- * GOAL: Make the page as fluid and fast as Amazon.com
- * 
- * KEY PRINCIPLES FROM AMAZON:
- * 1. STALE-WHILE-REVALIDATE: Show cached data INSTANTLY, update in background
- * 2. AGGRESSIVE CACHING: Keep data in cache for long periods
- * 3. NO LOADING SPINNERS: Always show data (even if slightly stale)
- * 4. BACKGROUND UPDATES: Silently fetch fresh data when page becomes visible
- * 5. OPTIMISTIC UI: Changes appear immediately
- * 
- * RESULT: User never waits, page feels instant like Amazon
- */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // AMAZON PATTERN: Data is considered "fresh" for 30 seconds
-      // After 30 seconds, data is marked as stale and will be refetched
-      // in the background, but cached data is still served immediately
-      staleTime: 30 * 1000, // 30 seconds
-      
-      // AMAZON PATTERN: Keep data in cache for 30 minutes
-      // Even if not used, so navigating back is instant
-      gcTime: 30 * 60 * 1000, // 30 minutes
-      
-      // CRITICAL: Enable refetchOnWindowFocus - Amazon does this
-      // When user returns from another tab, silently update data in background
-      // User sees cached data immediately (no loading), fresh data loads behind
-      refetchOnWindowFocus: true,
-      
-      // AMAZON PATTERN: Refetch when reconnecting to internet
-      refetchOnReconnect: true,
-      
-      // AMAZON PATTERN: Don't refetch on every mount
-      // Use cached data if it's fresh enough
-      refetchOnMount: false,
-      
-      // CRITICAL: Retry fast with exponential backoff
-      // Amazon retries failed requests quickly
-      retry: 3,
-      retryDelay: (attemptIndex) => Math.min(300 * 2 ** attemptIndex, 3000), // 300ms, 600ms, 1200ms, max 3s
-      
-      // Don't use automatic polling intervals (saves bandwidth)
-      refetchInterval: false,
-      
-      // Network mode: online (Amazon assumes good connection)
-      networkMode: 'online',
-      
-      // PERFORMANCE: Structural sharing optimizes memory and prevents unnecessary re-renders
-      // by sharing unchanged parts of query results between updates
-      structuralSharing: true,
-    },
-    mutations: {
-      // Don't retry mutations automatically (could cause duplicates)
-      retry: 0,
-      networkMode: 'online',
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
-  
-  // Minimal error logging - don't spam console like Amazon
-  queryCache: new QueryCache({
-    onError: (error, query) => {
-      // Only log if query has active observers (user is watching it)
-      if (query.getObserversCount() > 0) {
-        console.error('[Query Error]:', error);
-      }
-    },
-  }),
-  
-  mutationCache: new MutationCache({
-    onError: (error) => {
-      console.error('[Mutation Error]:', error);
-    },
-  }),
 });
 
-// Make QueryClient available globally for debugging
-if (typeof window !== 'undefined') {
-  (window as any).__queryClient = queryClient;
-}
-
-// Loading fallback component with responsive sizing
+// Loading fallback component
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-dvh">
-    <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-2 border-primary"></div>
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
   </div>
 );
 
 // AppContent component - handles hooks that require router context
 const AppContent = () => {
-  // Global connection recovery (highest priority)
-  useConnectionRecovery();
   // Load and apply global colors on app start
   useGlobalColors();
   // Track visitor activity
   useVisitorTracking();
   // Reset viewport on navigation for mobile devices
   useViewportReset();
-  // Handle session recovery for cache/cookie issues
-  useSessionRecovery();
-  
-  // Initialize debugging and monitoring tools
-  useEffect(() => {
-    // Auto-cleanup corrupted localStorage on startup
-    autoCleanupLocalStorage().then((cleanupPerformed) => {
-      if (cleanupPerformed) {
-        console.log('[App] localStorage auto-cleanup completed');
-      }
-    }).catch((error) => {
-      console.error('[App] localStorage auto-cleanup failed:', error);
-    });
-    
-    // Start visibility change monitoring
-    startVisibilityMonitoring();
-    
-    // Start infinite loading detection
-    const stopDetection = startInfiniteLoadingDetection();
-    
-    // Listen for infinite loading detection
-    const handleInfiniteLoading = () => {
-      console.error('[App] INFINITE LOADING DETECTED! Check console for details.');
-      // Could trigger a user notification here
-    };
-    window.addEventListener('infinite-loading-detected', handleInfiniteLoading);
-    
-    return () => {
-      stopDetection();
-      window.removeEventListener('infinite-loading-detected', handleInfiniteLoading);
-    };
-  }, []);
 
   return (
     <>
