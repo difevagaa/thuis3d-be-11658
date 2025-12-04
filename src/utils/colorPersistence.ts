@@ -42,6 +42,24 @@ export const getDefaultColors = () => {
   return isDarkMode() ? DEFAULT_COLORS_DARK : DEFAULT_COLORS;
 };
 
+/**
+ * Check if a specific section (sidebar, header, or home_menu) has been explicitly customized
+ * @param section - The section to check ('sidebar', 'header', or 'home_menu')
+ * @returns true if the section has been customized, false otherwise
+ */
+export const isSectionCustomized = (section: 'sidebar' | 'header' | 'home_menu'): boolean => {
+  try {
+    const advancedColorsCache = localStorage.getItem('advanced_colors');
+    if (!advancedColorsCache) return false;
+    
+    const advancedColors = JSON.parse(advancedColorsCache);
+    return Boolean(advancedColors[`${section}_customized`]);
+  } catch (e) {
+    logger.warn(`⚠️ [colorPersistence] Error checking if ${section} is customized:`, e);
+    return false;
+  }
+};
+
 export interface AdvancedColorData {
   header_bg_color?: string;
   header_text_color?: string;

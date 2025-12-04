@@ -13,7 +13,7 @@ import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
 import { logger } from '@/lib/logger';
 import { saveFontsToCache } from '@/utils/fontPersistence';
-import { hexToHSL, saveAdvancedColorsToCache, DEFAULT_COLORS, DEFAULT_COLORS_DARK } from '@/utils/colorPersistence';
+import { hexToHSL, saveAdvancedColorsToCache, DEFAULT_COLORS, DEFAULT_COLORS_DARK, isSectionCustomized } from '@/utils/colorPersistence';
 import { AdvancedColorCustomization } from '@/components/admin/AdvancedColorCustomization';
 import { InteractiveContrastChecker } from '@/components/admin/ContrastChecker';
 
@@ -297,15 +297,24 @@ export default function SiteCustomizer() {
     root.style.setProperty('--input', theme.input);
     root.style.setProperty('--ring', theme.ring);
 
-    // Actualizar variables del sidebar para el panel de administración
-    root.style.setProperty('--sidebar-background', theme.secondary);
-    root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
-    root.style.setProperty('--sidebar-primary', theme.primary);
-    root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
-    root.style.setProperty('--sidebar-accent', theme.accent);
-    root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
-    root.style.setProperty('--sidebar-border', theme.border);
-    root.style.setProperty('--sidebar-ring', theme.ring);
+    // Check if sidebar colors are explicitly customized
+    // If they are, we should NOT override them with the palette
+    const sidebarIsCustomized = isSectionCustomized('sidebar');
+
+    // Only apply palette sidebar colors if sidebar is NOT explicitly customized
+    if (!sidebarIsCustomized) {
+      root.style.setProperty('--sidebar-background', theme.secondary);
+      root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
+      root.style.setProperty('--sidebar-primary', theme.primary);
+      root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
+      root.style.setProperty('--sidebar-accent', theme.accent);
+      root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
+      root.style.setProperty('--sidebar-border', theme.border);
+      root.style.setProperty('--sidebar-ring', theme.ring);
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors from palette applied');
+    } else {
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors customized - preserving custom colors');
+    }
 
     // Guardar la paleta completa en localStorage para carga instantánea
     const paletteCache = {

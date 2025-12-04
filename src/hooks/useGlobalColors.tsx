@@ -7,7 +7,8 @@ import {
   hexToHSL, 
   saveAdvancedColorsToCache, 
   applyAdvancedColorsFromCache,
-  reapplyAdvancedColorsAfterThemeChange
+  reapplyAdvancedColorsAfterThemeChange,
+  isSectionCustomized
 } from '@/utils/colorPersistence';
 
 interface ThemeCustomization {
@@ -323,15 +324,24 @@ const applyProfessionalPalette = (paletteData: PaletteData) => {
   root.style.setProperty('--input', theme.input);
   root.style.setProperty('--ring', theme.ring);
 
-  // También actualizar variables específicas del sidebar para que el panel admin refleje la paleta
-  root.style.setProperty('--sidebar-background', theme.secondary);
-  root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
-  root.style.setProperty('--sidebar-primary', theme.primary);
-  root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
-  root.style.setProperty('--sidebar-accent', theme.accent);
-  root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
-  root.style.setProperty('--sidebar-border', theme.border);
-  root.style.setProperty('--sidebar-ring', theme.ring);
+  // Check if sidebar colors are explicitly customized
+  // If they are, we should NOT override them with the palette
+  const sidebarIsCustomized = isSectionCustomized('sidebar');
+
+  // Only apply palette sidebar colors if sidebar is NOT explicitly customized
+  if (!sidebarIsCustomized) {
+    root.style.setProperty('--sidebar-background', theme.secondary);
+    root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
+    root.style.setProperty('--sidebar-primary', theme.primary);
+    root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
+    root.style.setProperty('--sidebar-accent', theme.accent);
+    root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
+    root.style.setProperty('--sidebar-border', theme.border);
+    root.style.setProperty('--sidebar-ring', theme.ring);
+    logger.log('🎨 [applyProfessionalPalette] Sidebar colors from palette applied');
+  } else {
+    logger.log('🎨 [applyProfessionalPalette] Sidebar colors customized - preserving custom colors');
+  }
   
   logger.log('✅ [useGlobalColors] Paleta profesional aplicada:', paletteData.palette_name);
 };
