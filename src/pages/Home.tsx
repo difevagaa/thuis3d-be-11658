@@ -16,6 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -832,53 +833,70 @@ const Home = () => {
       loadFeaturedProducts();
     });
 
+    // Channel names for cleanup
+    const channelNames = [
+      'homepage-products-changes',
+      'homepage-banners-changes', 
+      'homepage-sections-changes',
+      'homepage-order-changes'
+    ];
+
     // Subscribe to product changes for real-time updates
-    const productsChannel = supabase.channel('homepage-products-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'products'
-    }, loadFeaturedProducts).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'product_images'
-    }, loadFeaturedProducts).subscribe();
+    const productsChannel = createChannel('homepage-products-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'products'
+      }, loadFeaturedProducts)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_images'
+      }, loadFeaturedProducts)
+      .subscribe();
 
     // Subscribe to banner changes
-    const bannersChannel = supabase.channel('homepage-banners-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'homepage_banners'
-    }, loadBanners).subscribe();
+    const bannersChannel = createChannel('homepage-banners-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'homepage_banners'
+      }, loadBanners)
+      .subscribe();
 
     // Subscribe to sections changes
-    const sectionsChannel = supabase.channel('homepage-sections-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'homepage_sections'
-    }, loadSections).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'homepage_quick_access_cards'
-    }, loadQuickAccessCards).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'homepage_features'
-    }, loadFeatures).subscribe();
+    const sectionsChannel = createChannel('homepage-sections-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'homepage_sections'
+      }, loadSections)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'homepage_quick_access_cards'
+      }, loadQuickAccessCards)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'homepage_features'
+      }, loadFeatures)
+      .subscribe();
 
     // Subscribe to order config changes
-    const orderChannel = supabase.channel('homepage-order-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'site_settings',
-      filter: 'setting_key=eq.homepage_component_order'
-    }, loadOrderConfig).subscribe();
+    const orderChannel = createChannel('homepage-order-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'site_settings',
+        filter: 'setting_key=eq.homepage_component_order'
+      }, loadOrderConfig)
+      .subscribe();
 
+    // CRITICAL: Cleanup on unmount
     return () => {
       authSubscription.unsubscribe();
-      supabase.removeChannel(productsChannel);
-      supabase.removeChannel(bannersChannel);
-      supabase.removeChannel(sectionsChannel);
-      supabase.removeChannel(orderChannel);
+      removeChannels(channelNames);
     };
   }, [loadAllData, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
 

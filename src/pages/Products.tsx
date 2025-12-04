@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 import { logger } from "@/lib/logger";
 import { LANGUAGE_CHANGED_EVENT } from "@/lib/events";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
