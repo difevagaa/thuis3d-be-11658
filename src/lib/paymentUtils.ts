@@ -3,6 +3,85 @@ import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+/**
+ * Interface for shipping info stored in checkout sessions
+ */
+export interface ShippingInfoWithOrderNumber {
+  orderNumber?: string;
+  [key: string]: any;
+}
+
+/**
+ * Generates a unique order number in the same format as the database function
+ * Format: Letter-Number-Letter-Number-Letter-Number (e.g., X4H8S9, A1B2C3)
+ * This ensures order numbers are consistent throughout the payment flow
+ * 
+ * Note: This mirrors the database function generate_order_number() defined in
+ * supabase/migrations/20251204000000_fix_order_invoice_number_format.sql
+ * Any changes to the format should be synchronized between both implementations.
+ */
+export const generateOrderNumber = (): string => {
+  const letter1 = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  const letter2 = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  const letter3 = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  
+  const num1 = Math.floor(Math.random() * 10);
+  const num2 = Math.floor(Math.random() * 10);
+  const num3 = Math.floor(Math.random() * 10);
+  
+  return `${letter1}${num1}${letter2}${num2}${letter3}${num3}`;
+};
+
+/**
+ * Gets or generates a persistent order number for the current checkout session
+ * Stores the order number in the checkout session to keep it consistent
+ */
+export const getOrCreateOrderNumber = async (sessionId: string): Promise<string | null> => {
+  try {
+    // Get the checkout session
+    const { data: session, error } = await supabase
+      .from('checkout_sessions')
+      .select('shipping_info')
+      .eq('id', sessionId)
+      .single();
+
+    if (error || !session) {
+      logger.error('Error loading checkout session:', error);
+      return null;
+    }
+
+    // Check if order number already exists in session
+    const shippingInfo = session.shipping_info as ShippingInfoWithOrderNumber;
+    if (shippingInfo?.orderNumber) {
+      return shippingInfo.orderNumber;
+    }
+
+    // Generate new order number
+    const orderNumber = generateOrderNumber();
+
+    // Update session with order number
+    const { error: updateError } = await supabase
+      .from('checkout_sessions')
+      .update({
+        shipping_info: {
+          ...shippingInfo,
+          orderNumber
+        }
+      })
+      .eq('id', sessionId);
+
+    if (updateError) {
+      logger.error('Error updating checkout session with order number:', updateError);
+      return null;
+    }
+
+    return orderNumber;
+  } catch (error) {
+    logger.error('Error in getOrCreateOrderNumber:', error);
+    return null;
+  }
+};
+
 export interface Address {
   street: string;
   city: string;
@@ -14,6 +93,7 @@ export interface Address {
 
 export interface OrderData {
   userId?: string | null;
+  orderNumber?: string | null;
   subtotal: number;
   tax: number;
   shipping: number;
@@ -45,21 +125,28 @@ export interface OrderItemData {
  */
 export const createOrder = async (orderData: OrderData) => {
   try {
+    const insertData: any = {
+      user_id: orderData.userId || null,
+      subtotal: orderData.subtotal,
+      tax: orderData.tax,
+      shipping: orderData.shipping,
+      discount: orderData.discount,
+      total: orderData.total,
+      payment_method: orderData.paymentMethod,
+      payment_status: orderData.paymentStatus,
+      shipping_address: JSON.stringify(orderData.shippingAddress),
+      billing_address: orderData.billingAddress ? JSON.stringify(orderData.billingAddress) : JSON.stringify(orderData.shippingAddress),
+      notes: orderData.notes || null
+    };
+
+    // If order number is provided, use it instead of auto-generated one
+    if (orderData.orderNumber) {
+      insertData.order_number = orderData.orderNumber;
+    }
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .insert({
-        user_id: orderData.userId || null,
-        subtotal: orderData.subtotal,
-        tax: orderData.tax,
-        shipping: orderData.shipping,
-        discount: orderData.discount,
-        total: orderData.total,
-        payment_method: orderData.paymentMethod,
-        payment_status: orderData.paymentStatus,
-        shipping_address: JSON.stringify(orderData.shippingAddress),
-        billing_address: orderData.billingAddress ? JSON.stringify(orderData.billingAddress) : JSON.stringify(orderData.shippingAddress),
-        notes: orderData.notes || null
-      })
+      .insert(insertData)
       .select()
       .single();
 

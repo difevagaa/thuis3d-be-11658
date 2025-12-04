@@ -12,7 +12,7 @@ import {
   createOrderItems, 
   convertCartToOrderItems,
   generateOrderNotes,
-  updateGiftCardBalance 
+  updateGiftCardBalance
 } from "@/lib/paymentUtils";
 
 export default function RevolutPaymentPage() {
@@ -23,7 +23,7 @@ export default function RevolutPaymentPage() {
   const [orderData, setOrderData] = useState<any>(null);
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
-  const [tempOrderNumber] = useState(`TEMP-${Date.now()}`);
+  const [orderNumber, setOrderNumber] = useState<string>("");
 
   useEffect(() => {
     loadOrderData();
@@ -40,6 +40,7 @@ export default function RevolutPaymentPage() {
       try {
         const data = JSON.parse(pendingInvoiceStr);
         setOrderData(data);
+        setOrderNumber(data.invoiceNumber || "");
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing invoice data:", error);
@@ -51,6 +52,8 @@ export default function RevolutPaymentPage() {
       try {
         const data = JSON.parse(pendingOrderStr);
         setOrderData(data);
+        // Use the order number from the session data
+        setOrderNumber(data.orderNumber || "");
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing order data:", error);
@@ -150,7 +153,7 @@ export default function RevolutPaymentPage() {
       }
 
       // Normal order payment flow
-      const { cartItems, shippingInfo, total, subtotal, tax, shipping } = orderData;
+      const { cartItems, shippingInfo, total, subtotal, tax, shipping, orderNumber: persistedOrderNumber } = orderData;
 
       // Get saved gift card if applied
       const savedGiftCard = sessionStorage.getItem("applied_gift_card");
@@ -167,9 +170,10 @@ export default function RevolutPaymentPage() {
       // Generate order notes
       const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
 
-      // Create order
+      // Create order with persistent order number
       const order = await createOrder({
         userId: user.id,
+        orderNumber: persistedOrderNumber || null,
         subtotal,
         tax,
         shipping,
@@ -325,25 +329,20 @@ export default function RevolutPaymentPage() {
 
               <div>
                 <p className="font-medium text-purple-900 dark:text-purple-100">
-                  {orderData.isInvoicePayment ? 'Número de Referencia:' : 'Número de Pedido (Temporal):'}
+                  {orderData.isInvoicePayment ? 'Número de Referencia:' : 'Número de Pedido:'}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
-                    {orderData.isInvoicePayment ? orderData.invoiceNumber : tempOrderNumber}
+                    {orderNumber}
                   </code>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(orderData.isInvoicePayment ? orderData.invoiceNumber : tempOrderNumber)}
+                    onClick={() => copyToClipboard(orderNumber)}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-                {!orderData.isInvoicePayment && (
-                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-1">
-                    *Se generará el número de pedido final al confirmar el pago
-                  </p>
-                )}
               </div>
 
               <div className="pt-3 border-t border-purple-200 dark:border-purple-700">

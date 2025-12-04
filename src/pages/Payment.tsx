@@ -13,7 +13,9 @@ import {
   convertCartToOrderItems, 
   calculateOrderTotals,
   generateOrderNotes,
-  updateGiftCardBalance 
+  updateGiftCardBalance,
+  getOrCreateOrderNumber,
+  generateOrderNumber
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
@@ -359,6 +361,19 @@ export default function Payment() {
 
       // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut tienen comportamientos especiales
       if (method === "bank_transfer") {
+        // Get or create persistent order number from checkout session
+        const sessionId = sessionStorage.getItem("checkout_session_id");
+        let orderNumber = null;
+        
+        if (sessionId) {
+          orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
+        }
+        
         // Transferencia bancaria: Guardar info y redirigir a instrucciones (creará pedido allí)
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
@@ -367,14 +382,15 @@ export default function Payment() {
           subtotal,
           tax,
           shipping,
-          method: "bank_transfer"
+          method: "bank_transfer",
+          orderNumber
         }));
 
         toast.success(t('payment:messages.redirectingToInstructions'));
         
         navigate("/pago-instrucciones", { 
           state: { 
-            orderNumber: `TEMP-${Date.now()}`,
+            orderNumber: orderNumber,
             method: "bank_transfer",
             total,
             isPending: true
@@ -387,13 +403,27 @@ export default function Payment() {
 
       // Tarjeta de crédito: Redirigir a página intermedia
       if (method === "card") {
+        // Get or create persistent order number from checkout session
+        const sessionId = sessionStorage.getItem("checkout_session_id");
+        let orderNumber = null;
+        
+        if (sessionId) {
+          orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
+        }
+        
         sessionStorage.setItem("pending_card_order", JSON.stringify({
           cartItems,
           shippingInfo,
           total,
           subtotal,
           tax,
-          shipping
+          shipping,
+          orderNumber
         }));
 
         toast.success("Redirigiendo a página de pago...");
@@ -405,13 +435,27 @@ export default function Payment() {
 
       // Revolut: Redirigir a página intermedia
       if (method === "revolut") {
+        // Get or create persistent order number from checkout session
+        const sessionId = sessionStorage.getItem("checkout_session_id");
+        let orderNumber = null;
+        
+        if (sessionId) {
+          orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
+        }
+        
         sessionStorage.setItem("pending_revolut_order", JSON.stringify({
           cartItems,
           shippingInfo,
           total,
           subtotal,
           tax,
-          shipping
+          shipping,
+          orderNumber
         }));
 
         toast.success("Redirigiendo a página de pago...");

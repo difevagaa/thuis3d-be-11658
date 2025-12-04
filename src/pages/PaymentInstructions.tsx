@@ -33,7 +33,7 @@ export default function PaymentInstructions() {
       }
 
       const pendingOrder = JSON.parse(pendingOrderStr);
-      const { cartItems, shippingInfo, total, method, subtotal: orderSubtotal, tax: orderTax, shipping: orderShipping } = pendingOrder;
+      const { cartItems, shippingInfo, total, method, subtotal: orderSubtotal, tax: orderTax, shipping: orderShipping, orderNumber: persistedOrderNumber } = pendingOrder;
       
       // Asegurar valores numéricos por defecto para evitar NaN
       // Usar verificación explícita de null/undefined antes de Number()
@@ -52,10 +52,11 @@ export default function PaymentInstructions() {
       // Generate order notes using utility function
       const orderNotes = generateOrderNotes(cartItems, null, 0);
       
-      // Create order using utility function
+      // Create order using utility function with persistent order number
       // CRÍTICO: Usar el costo de envío del pendingOrder
       const order = await createOrder({
         userId: user?.id || null, // Permitir user_id = null para invitados
+        orderNumber: persistedOrderNumber || null,
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
