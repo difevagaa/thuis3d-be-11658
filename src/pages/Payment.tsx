@@ -271,7 +271,9 @@ export default function Payment() {
             } 
           });
         } else if (method === "card") {
-          // Get Revolut configuration (card uses same gateway as Revolut per requirements)
+          // REQUIREMENTS: Card payment uses same Revolut gateway configuration
+          // Both "card" and "revolut" payment methods redirect to the same payment gateway
+          // The gateway supports multiple payment methods (Bancontact, Apple Pay, Google Pay, cards)
           const { data: revolutConfig } = await supabase
             .from("site_settings")
             .select("setting_value")
@@ -290,7 +292,7 @@ export default function Payment() {
               } 
             });
           } else {
-            toast.error("Configuración de pago con tarjeta no disponible");
+            toast.error(t('payment:messages.cardNotConfigured') || "Configuración de pago con tarjeta no disponible");
             navigate("/mi-cuenta?tab=invoices");
           }
         } else if (method === "paypal") {
