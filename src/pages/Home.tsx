@@ -793,11 +793,21 @@ const Home = () => {
     setLoadError(false);
 
     try {
-      // Wait for connection if not connected yet
-      if (!isConnected && isConnecting) {
-        logger.info('[Home] Waiting for connection...');
-        // Wait a bit for connection
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for connection if still connecting
+      if (isConnecting) {
+        logger.info('[Home] Waiting for connection to establish...');
+        // Wait up to 3 seconds for connection to be ready
+        for (let i = 0; i < 6; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (isConnected) {
+            logger.info('[Home] Connection established, proceeding with load');
+            break;
+          }
+          if (isFailed) {
+            logger.warn('[Home] Connection failed while waiting');
+            break;
+          }
+        }
       }
 
       // Load all data in parallel

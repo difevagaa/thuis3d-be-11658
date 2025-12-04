@@ -20,7 +20,7 @@ export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'fa
 
 // Global state (shared across all component instances)
 let globalConnectionStatus: ConnectionStatus = 'connecting';
-let globalListeners: Set<(status: ConnectionStatus) => void> = new Set();
+const globalListeners: Set<(status: ConnectionStatus) => void> = new Set();
 let globalTestInProgress = false;
 let globalLastSuccessfulTest = 0;
 

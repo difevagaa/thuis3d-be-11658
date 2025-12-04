@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { forceReconnect, initializeConnection } from './useConnectionState';
+import { forceReconnect, initializeConnection, getConnectionStatus } from './useConnectionState';
 import { logger } from '@/lib/logger';
 
 /**
@@ -59,10 +59,16 @@ export function useConnectionRecovery() {
       }
 
       heartbeatIntervalRef.current = setInterval(async () => {
-        logger.debug('[ConnectionRecovery] Heartbeat check...');
-        const success = await forceReconnect();
-        if (!success) {
-          logger.warn('[ConnectionRecovery] Heartbeat detected connection issue');
+        // Only reconnect if status shows we're disconnected
+        const status = getConnectionStatus();
+        if (status !== 'connected') {
+          logger.warn('[ConnectionRecovery] Heartbeat detected disconnection, reconnecting...');
+          const success = await forceReconnect();
+          if (success) {
+            window.dispatchEvent(new CustomEvent('connection-recovered'));
+          }
+        } else {
+          logger.debug('[ConnectionRecovery] Heartbeat: connection OK');
         }
       }, HEARTBEAT_INTERVAL);
 
