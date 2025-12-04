@@ -21,8 +21,10 @@ BEGIN
       -- Generate a new unique number
       new_number := public.generate_order_number();
       
-      -- Check if this number already exists
-      IF NOT EXISTS (SELECT 1 FROM public.quotes WHERE quote_number = new_number) THEN
+      -- Check if this number already exists in quotes, orders, or invoices tables
+      IF NOT EXISTS (SELECT 1 FROM public.quotes WHERE quote_number = new_number)
+         AND NOT EXISTS (SELECT 1 FROM public.orders WHERE order_number = new_number)
+         AND NOT EXISTS (SELECT 1 FROM public.invoices WHERE invoice_number = new_number) THEN
         -- Update the record with the unique number
         UPDATE public.quotes 
         SET quote_number = new_number 
@@ -32,7 +34,7 @@ BEGIN
       
       attempt := attempt + 1;
       IF attempt >= max_attempts THEN
-        RAISE EXCEPTION 'Failed to generate unique quote number after % attempts for quote id %', max_attempts, quote_record.id;
+        RAISE EXCEPTION 'Failed to generate unique quote number after % attempts for quote id %. This may indicate insufficient randomness in generate_order_number() function or high data volume. Please contact support.', max_attempts, quote_record.id;
       END IF;
     END LOOP;
   END LOOP;
