@@ -242,11 +242,11 @@ export default function Payment() {
           return;
         }
 
-        // Update invoice payment status and method
+        // Update invoice payment status and method - TODOS los pagos en pending
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: method === "card" ? "paid" : "pending",
+            payment_status: "pending", // CRÍTICO: SIEMPRE pending
             payment_method: method
           })
           .eq("id", invoiceData.invoiceId)
@@ -257,7 +257,7 @@ export default function Payment() {
         // Clear invoice payment data
         sessionStorage.removeItem("invoice_payment");
 
-        toast.success(method === "card" ? t('payment:messages.invoicePaid') : t('payment:messages.paymentRegistered'));
+        toast.success(t('payment:messages.paymentRegistered'));
 
         // Navigate based on payment method
         if (method === "bank_transfer") {
