@@ -88,170 +88,170 @@ export const Footer = () => {
   };
 
   return (
-    <footer className="bg-muted border-t mt-8 md:mt-16">
-      <div className="container mx-auto px-4 py-8 md:py-12 pb-24 md:pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {/* Brand & Social */}
-          <div>
-            <h3 className="font-bold text-lg md:text-xl mb-3 md:mb-4">{customization?.site_name || "Thuis3D.be"}</h3>
-            <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-              {t('brand.tagline')}
-            </p>
-            <div className="flex gap-2.5 md:gap-3">
-              {customization?.social_facebook && customization.social_facebook.trim() !== '' && (
-                <a href={customization.social_facebook} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  <Facebook className="h-5 w-5" />
-                </a>
-              )}
-              {customization?.social_instagram && customization.social_instagram.trim() !== '' && (
-                <a href={customization.social_instagram} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  <Instagram className="h-5 w-5" />
-                </a>
-              )}
-              {customization?.social_twitter && customization.social_twitter.trim() !== '' && (
-                <a href={customization.social_twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  <Twitter className="h-5 w-5" />
-                </a>
-              )}
-              {customization?.social_linkedin && customization.social_linkedin.trim() !== '' && (
-                <a href={customization.social_linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              )}
-              {customization?.social_tiktok && customization.social_tiktok.trim() !== '' && (
-                <a href={customization.social_tiktok} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                  </svg>
-                </a>
-              )}
-            </div>
-          </div>
+    <footer className="bg-[#232F3E] text-white border-t border-[#37475A] mt-8 md:mt-16">
+      {/* Back to top button - Amazon style */}
+      <div 
+        className="bg-[#37475A] hover:bg-[#485769] transition-colors cursor-pointer py-3 text-center text-sm font-medium"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      >
+        {t('backToTop', { defaultValue: 'Back to top' })}
+      </div>
 
-          {/* Service Links */}
+      <div className="container mx-auto px-4 py-8 md:py-12 pb-24 md:pb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+          {/* Get to Know Us */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('help.title')}</h4>
-            <ul className="space-y-1.5 md:space-y-2 text-sm md:text-base">
+            <h4 className="font-bold text-base mb-3 md:mb-4">Get to Know Us</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/page/faq" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('help.faq')}
+                <Link to="/page/about" className="text-white/80 hover:text-white transition-colors">
+                  About Us
                 </Link>
               </li>
               <li>
-                <Link to="/legal/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('help.terms')}
+                <Link to="/blog" className="text-white/80 hover:text-white transition-colors">
+                  {t('quickLinks.blog')}
                 </Link>
               </li>
               <li>
-                <Link to="/legal/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('help.privacy')}
+                <Link to="/galeria" className="text-white/80 hover:text-white transition-colors">
+                  Gallery
                 </Link>
               </li>
-              <li>
-                <Link to="/legal/cookies" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('help.cookies')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/legal_notice" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('help.legal')}
-                </Link>
-              </li>
-              {footerLinks.filter(link => link.section === 'help').map((link) => (
-                <li key={link.id}>
-                  <Link to={link.url} className="text-muted-foreground hover:text-primary transition-colors">
-                    {link.title}
-                  </Link>
-                </li>
-              ))}
             </ul>
           </div>
 
-          {/* Quick Links */}
+          {/* Products & Services */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('quickLinks.title')}</h4>
-            <ul className="space-y-1.5 md:space-y-2 text-sm md:text-base">
+            <h4 className="font-bold text-base mb-3 md:mb-4">Products & Services</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/productos" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/productos" className="text-white/80 hover:text-white transition-colors">
                   {t('quickLinks.catalog')}
                 </Link>
               </li>
               <li>
-                <Link to="/cotizaciones" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/cotizaciones" className="text-white/80 hover:text-white transition-colors">
                   {t('quickLinks.requestQuote')}
                 </Link>
               </li>
               <li>
-                <Link to="/tarjetas-regalo" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/tarjetas-regalo" className="text-white/80 hover:text-white transition-colors">
                   {t('quickLinks.giftCards')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">
-                  {t('quickLinks.blog')}
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* Customer Service */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('newsletter.title')}</h4>
-            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3">
-              {t('newsletter.description')}
-            </p>
-            <form onSubmit={handleNewsletterSubmit} className="flex gap-1.5 md:gap-2">
-              <Input
-                type="email"
-                placeholder={t('newsletter.placeholder')}
-                className="text-sm h-9"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Button type="submit" size="icon" className="h-9 w-9">
-                <Mail className="h-4 w-4" />
-              </Button>
-            </form>
+            <h4 className="font-bold text-base mb-3 md:mb-4">{t('help.title')}</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/page/faq" className="text-white/80 hover:text-white transition-colors">
+                  {t('help.faq')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/terms" className="text-white/80 hover:text-white transition-colors">
+                  {t('help.terms')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/privacy" className="text-white/80 hover:text-white transition-colors">
+                  {t('help.privacy')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/cookies" className="text-white/80 hover:text-white transition-colors">
+                  {t('help.cookies')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Connect With Us */}
+          <div>
+            <h4 className="font-bold text-base mb-3 md:mb-4">Connect With Us</h4>
+            <div className="flex gap-3 mb-4">
+              {customization?.social_facebook && (
+                <a href={customization.social_facebook} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors">
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {customization?.social_instagram && (
+                <a href={customization.social_instagram} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors">
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {customization?.social_twitter && (
+                <a href={customization.social_twitter} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors">
+                  <Twitter className="h-5 w-5" />
+                </a>
+              )}
+              {customization?.social_linkedin && (
+                <a href={customization.social_linkedin} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              )}
+            </div>
             
-            {/* Payment Methods Icons */}
-            <div className="mt-4 md:mt-6">
-              <p className="text-xs text-muted-foreground mb-2 md:mb-3">{t('payment.title')}</p>
-              <div className="flex gap-2 md:gap-3 items-center flex-wrap">
-                {/* Visa */}
-                <div className="bg-background border rounded px-2 md:px-3 py-1.5 md:py-2 h-8 md:h-10 flex items-center">
-                  <svg className="h-4 md:h-6 w-auto" viewBox="0 0 48 32" fill="none">
-                    <rect width="48" height="32" rx="4" fill="white"/>
-                    <path d="M18.5 11.5L16 20.5H13.5L12 13.8C11.9 13.4 11.7 13.1 11.4 12.9C10.8 12.5 9.9 12.1 9 11.9L9.1 11.5H13.3C13.8 11.5 14.2 11.9 14.3 12.4L15.1 16.8L17 11.5H18.5ZM24 18.3C24 16.7 21.5 16.6 21.5 15.8C21.5 15.5 21.8 15.2 22.4 15.1C22.7 15.1 23.5 15 24.4 15.4L24.8 13.6C24.2 13.4 23.5 13.2 22.6 13.2C21.2 13.2 20.2 14 20.2 15.1C20.2 15.9 20.9 16.4 21.4 16.7C22 17 22.2 17.2 22.2 17.5C22.2 17.9 21.7 18.1 21.2 18.1C20.4 18.1 20 18 19.3 17.7L18.9 19.5C19.6 19.8 20.9 20 21.3 20C22.8 20 23.8 19.2 24 18.3ZM28.5 20.5H30L28.7 11.5H27.3C26.9 11.5 26.5 11.7 26.4 12.1L23.5 20.5H25L25.5 19H27.5L28.5 20.5ZM26 17.5L26.9 14.8L27.5 17.5H26ZM35.5 11.5L33.8 20.5H32.3L34 11.5H35.5Z" fill="#1434CB"/>
-                  </svg>
-                </div>
-                
-                {/* Mastercard */}
-                <div className="bg-background border rounded px-2 md:px-3 py-1.5 md:py-2 h-8 md:h-10 flex items-center">
-                  <svg className="h-4 md:h-6 w-auto" viewBox="0 0 48 32" fill="none">
-                    <rect width="48" height="32" rx="4" fill="white"/>
-                    <circle cx="18" cy="16" r="7" fill="#EB001B"/>
-                    <circle cx="30" cy="16" r="7" fill="#F79E1B"/>
-                    <path d="M24 11.2C25.3 12.3 26.1 14 26.1 16C26.1 18 25.3 19.7 24 20.8C22.7 19.7 21.9 18 21.9 16C21.9 14 22.7 12.3 24 11.2Z" fill="#FF5F00"/>
-                  </svg>
-                </div>
-                
-                {/* Bancontact */}
-                <div className="bg-background border rounded px-2 md:px-3 py-1.5 md:py-2 h-8 md:h-10 flex items-center">
-                  <svg className="h-4 md:h-6 w-auto" viewBox="0 0 48 32" fill="none">
-                    <rect width="48" height="32" rx="4" fill="white"/>
-                    <path d="M12 12H18V20H12V12Z" fill="#005498"/>
-                    <path d="M18 12H24V20H18V12Z" fill="#009DE0"/>
-                    <path d="M24 12H30V20H24V12Z" fill="#71C5E8"/>
-                    <path d="M30 12H36V20H30V12Z" fill="#FFED00"/>
-                  </svg>
-                </div>
-              </div>
+            {/* Newsletter */}
+            <div className="mt-4">
+              <p className="text-white/80 text-sm mb-2">
+                {t('newsletter.description')}
+              </p>
+              <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder={t('newsletter.placeholder')}
+                  className="text-sm h-9 bg-white text-foreground"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Button type="submit" size="icon" className="h-9 w-9 bg-primary hover:bg-primary/90">
+                  <Mail className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
           </div>
         </div>
 
-        <div className="border-t mt-6 md:mt-8 pt-4 md:pt-6 text-center text-xs md:text-sm text-muted-foreground">
+        {/* Payment Methods */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="flex flex-wrap gap-4 items-center justify-center">
+            <div className="text-sm text-white/60">We accept:</div>
+            {/* Visa */}
+            <div className="bg-white rounded px-3 py-1.5 h-10 flex items-center">
+              <svg className="h-6 w-auto" viewBox="0 0 48 32" fill="none">
+                <path d="M18.5 11.5L16 20.5H13.5L12 13.8C11.9 13.4 11.7 13.1 11.4 12.9C10.8 12.5 9.9 12.1 9 11.9L9.1 11.5H13.3C13.8 11.5 14.2 11.9 14.3 12.4L15.1 16.8L17 11.5H18.5ZM24 18.3C24 16.7 21.5 16.6 21.5 15.8C21.5 15.5 21.8 15.2 22.4 15.1C22.7 15.1 23.5 15 24.4 15.4L24.8 13.6C24.2 13.4 23.5 13.2 22.6 13.2C21.2 13.2 20.2 14 20.2 15.1C20.2 15.9 20.9 16.4 21.4 16.7C22 17 22.2 17.2 22.2 17.5C22.2 17.9 21.7 18.1 21.2 18.1C20.4 18.1 20 18 19.3 17.7L18.9 19.5C19.6 19.8 20.9 20 21.3 20C22.8 20 23.8 19.2 24 18.3ZM28.5 20.5H30L28.7 11.5H27.3C26.9 11.5 26.5 11.7 26.4 12.1L23.5 20.5H25L25.5 19H27.5L28.5 20.5ZM26 17.5L26.9 14.8L27.5 17.5H26ZM35.5 11.5L33.8 20.5H32.3L34 11.5H35.5Z" fill="#1434CB"/>
+              </svg>
+            </div>
+            
+            {/* Mastercard */}
+            <div className="bg-white rounded px-3 py-1.5 h-10 flex items-center">
+              <svg className="h-6 w-auto" viewBox="0 0 48 32" fill="none">
+                <circle cx="18" cy="16" r="7" fill="#EB001B"/>
+                <circle cx="30" cy="16" r="7" fill="#F79E1B"/>
+                <path d="M24 11.2C25.3 12.3 26.1 14 26.1 16C26.1 18 25.3 19.7 24 20.8C22.7 19.7 21.9 18 21.9 16C21.9 14 22.7 12.3 24 11.2Z" fill="#FF5F00"/>
+              </svg>
+            </div>
+            
+            {/* Bancontact */}
+            <div className="bg-white rounded px-3 py-1.5 h-10 flex items-center">
+              <svg className="h-6 w-auto" viewBox="0 0 48 32" fill="none">
+                <path d="M12 12H18V20H12V12Z" fill="#005498"/>
+                <path d="M18 12H24V20H18V12Z" fill="#009DE0"/>
+                <path d="M24 12H30V20H24V12Z" fill="#71C5E8"/>
+                <path d="M30 12H36V20H30V12Z" fill="#FFED00"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="mt-6 pt-6 border-t border-white/10 text-center text-xs text-white/60">
           <p>{customization?.copyright_text || `© ${new Date().getFullYear()} Thuis3D.be - ${t('copyright')}`}</p>
         </div>
       </div>
