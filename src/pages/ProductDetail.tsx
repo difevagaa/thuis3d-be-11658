@@ -169,8 +169,7 @@ const ProductDetail = () => {
   // Use data recovery hook
   useDataWithRecovery(fetchProductData, {
     timeout: 15000,
-    maxRetries: 3,
-    deps: [id]
+    maxRetries: 3
   });
 
   const loadCustomizationSections = useCallback(async () => {
