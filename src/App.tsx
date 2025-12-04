@@ -10,6 +10,7 @@ import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { useViewportReset } from "@/hooks/useViewportReset";
 import { useSessionRecovery } from "@/hooks/useSessionRecovery";
 import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
+import { useSupabaseReconnect } from "@/hooks/useSupabaseReconnect";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -177,6 +178,8 @@ const PageLoader = () => (
 
 // AppContent component - handles hooks that require router context
 const AppContent = () => {
+  // CRITICAL FIX FOR ISSUE #15: Reconnect Supabase when returning from another tab
+  useSupabaseReconnect();
   // Global connection recovery (highest priority)
   useConnectionRecovery();
   // Load and apply global colors on app start
