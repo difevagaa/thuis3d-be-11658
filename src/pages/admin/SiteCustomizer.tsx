@@ -307,7 +307,7 @@ export default function SiteCustomizer() {
         const advancedColors = JSON.parse(advancedColorsCache);
         sidebarIsCustomized = Boolean(advancedColors.sidebar_customized);
       } catch (e) {
-        console.warn('⚠️ Error parsing advanced_colors cache in applyPalette');
+        logger.warn('⚠️ [SiteCustomizer] Error parsing advanced_colors cache in applyPalette');
       }
     }
 
@@ -321,9 +321,9 @@ export default function SiteCustomizer() {
       root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
       root.style.setProperty('--sidebar-border', theme.border);
       root.style.setProperty('--sidebar-ring', theme.ring);
-      console.log('🎨 [applyPalette] Sidebar colors from palette applied');
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors from palette applied');
     } else {
-      console.log('🎨 [applyPalette] Sidebar colors customized - preserving custom colors');
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors customized - preserving custom colors');
     }
 
     // Guardar la paleta completa en localStorage para carga instantánea
