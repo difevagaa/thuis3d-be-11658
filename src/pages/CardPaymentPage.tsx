@@ -254,7 +254,7 @@ export default function CardPaymentPage() {
         <CardContent className="space-y-6">
           {/* Order Information */}
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 text-foreground">Información del Pedido</h3>
+            <h3 className="font-semibold mb-3 text-blue-900 dark:text-blue-100">Información del Pedido</h3>
             
             <div className="space-y-3 text-sm">
               <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4">
@@ -264,9 +264,9 @@ export default function CardPaymentPage() {
               </div>
 
               <div>
-                <p className="font-medium text-slate-700 dark:text-slate-300">Número de Pedido (Temporal):</p>
+                <p className="font-medium text-blue-900 dark:text-blue-100">Número de Pedido (Temporal):</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
+                  <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
                     {tempOrderNumber}
                   </code>
                   <Button
@@ -277,14 +277,14 @@ export default function CardPaymentPage() {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
                   *Se generará el número de pedido final al confirmar el pago
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
-                <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-2">Detalles del Pago:</h4>
-                <div className="space-y-1 text-slate-900 dark:text-slate-100">
+              <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Detalles del Pago:</h4>
+                <div className="space-y-1 text-blue-900 dark:text-blue-50">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
                     <span>€{Number(orderData.subtotal).toFixed(2)}</span>
@@ -332,13 +332,13 @@ export default function CardPaymentPage() {
           {/* QR Codes if available */}
           {paymentImages.length > 0 && (
             <div className="space-y-3">
-              <h4 className="font-semibold">Códigos QR de Pago</h4>
+              <h4 className="font-semibold text-foreground">Códigos QR de Pago</h4>
               <p className="text-sm text-muted-foreground">
                 También puedes escanear estos códigos QR para realizar el pago
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paymentImages.map((img, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-3 bg-white dark:bg-slate-900">
+                  <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                     <img 
                       src={img} 
                       alt={`Código QR ${index + 1}`}

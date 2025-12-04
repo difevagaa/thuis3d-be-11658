@@ -276,7 +276,7 @@ export default function PaymentInstructions() {
           {method === "bank_transfer" && paymentConfig && (
             <div className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-900 dark:text-blue-100">
                   <CreditCard className="h-5 w-5" />
                   Instrucciones para Transferencia Bancaria
                 </h3>
@@ -293,30 +293,30 @@ export default function PaymentInstructions() {
                 <div className="space-y-3 text-sm">
                   {paymentConfig.company_info && (
                     <div>
-                      <p className="font-medium text-slate-700 dark:text-slate-300">Información de la Empresa:</p>
-                      <p className="whitespace-pre-line text-slate-900 dark:text-slate-100">{paymentConfig.company_info}</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Información de la Empresa:</p>
+                      <p className="whitespace-pre-line text-blue-900 dark:text-blue-50">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
                     <div>
-                      <p className="font-medium text-slate-700 dark:text-slate-300">Banco:</p>
-                      <p className="text-slate-900 dark:text-slate-100">{paymentConfig.bank_name}</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Banco:</p>
+                      <p className="text-blue-900 dark:text-blue-50">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
                     <div>
-                      <p className="font-medium text-slate-700 dark:text-slate-300">Titular de la Cuenta:</p>
-                      <p className="text-slate-900 dark:text-slate-100">{paymentConfig.bank_account_name}</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Titular de la Cuenta:</p>
+                      <p className="text-blue-900 dark:text-blue-50">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
                     <div>
-                      <p className="font-medium text-slate-700 dark:text-slate-300">IBAN:</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">IBAN:</p>
                       <div className="flex items-center gap-2">
-                        <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
+                        <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
                           {paymentConfig.bank_account_number}
                         </code>
                         <Button
@@ -331,9 +331,9 @@ export default function PaymentInstructions() {
                   )}
 
                   <div>
-                    <p className="font-medium text-slate-700 dark:text-slate-300">Concepto de la Transferencia:</p>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Concepto de la Transferencia:</p>
                     <div className="flex items-center gap-2">
-                      <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
+                      <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
                         Pedido {realOrderNumber}
                       </code>
                       <Button
@@ -348,8 +348,8 @@ export default function PaymentInstructions() {
 
                   {paymentConfig.bank_instructions && (
                     <div>
-                      <p className="font-medium text-slate-700 dark:text-slate-300">Instrucciones Adicionales:</p>
-                      <p className="whitespace-pre-line text-slate-900 dark:text-slate-100">
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Instrucciones Adicionales:</p>
+                      <p className="whitespace-pre-line text-blue-900 dark:text-blue-50">
                         {paymentConfig.bank_instructions}
                       </p>
                     </div>
@@ -359,20 +359,20 @@ export default function PaymentInstructions() {
 
               {paymentImages.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-semibold">Códigos QR y Referencias de Pago</h4>
+                  <h4 className="font-semibold text-foreground">Códigos QR y Referencias de Pago</h4>
                   <p className="text-sm text-muted-foreground">
                     Escanea cualquiera de estos códigos QR para realizar el pago
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paymentImages.map((img, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-3 bg-white">
+                      <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                         <img 
                           src={img} 
                           alt={`Código QR ${index + 1}`}
                           className="w-full h-56 object-contain rounded"
                         />
                         <div className="text-center space-y-1">
-                          <p className="font-medium text-sm">
+                          <p className="font-medium text-sm text-foreground">
                             {index === 0 ? "QR Transferencia Bancaria" : 
                              index === 1 ? "QR Revolut" : 
                              `Código QR ${index + 1}`}
@@ -389,11 +389,11 @@ export default function PaymentInstructions() {
                 </div>
               )}
 
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                   ⚠️ Tu pedido estará en estado pendiente hasta que recibamos el pago.
                 </p>
-                <p className="text-sm text-warning-foreground/80 mt-1">
+                <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
                   Por favor, incluye el número de pedido <strong>{realOrderNumber}</strong> en el concepto de la transferencia.
                 </p>
               </div>
@@ -401,8 +401,8 @@ export default function PaymentInstructions() {
           )}
 
           {method === "card" && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm">
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm text-green-900 dark:text-green-100">
                 ✅ Tu pago con tarjeta ha sido procesado exitosamente.
                 Recibirás una confirmación por correo electrónico en breve.
               </p>
@@ -411,22 +411,22 @@ export default function PaymentInstructions() {
 
           {method === "paypal" && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-900 dark:text-blue-100">
                   <CreditCard className="h-5 w-5" />
                   Pago con PayPal
                 </h3>
-                <p className="text-sm mb-3">
+                <p className="text-sm mb-3 text-blue-900 dark:text-blue-50">
                   Tu pedido está siendo procesado. Si completaste el pago en PayPal, 
                   recibirás una confirmación pronto.
                 </p>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                   Número de pedido: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                   ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
                 </p>
               </div>
@@ -435,22 +435,22 @@ export default function PaymentInstructions() {
 
           {method === "revolut" && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-purple-900 dark:text-purple-100">
                   <CreditCard className="h-5 w-5" />
                   Pago con Revolut
                 </h3>
-                <p className="text-sm mb-3">
+                <p className="text-sm mb-3 text-purple-900 dark:text-purple-50">
                   Tu pedido está siendo procesado. Si completaste el pago en Revolut, 
                   recibirás una confirmación pronto.
                 </p>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
                   Número de pedido: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-                <p className="text-sm font-medium text-warning-foreground">
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                   ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
                 </p>
               </div>

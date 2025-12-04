@@ -815,14 +815,14 @@ export default function Payment() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {paymentImages.map((img, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3 bg-white dark:bg-slate-900">
+                    <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                       <img 
                         src={img} 
                         alt={`Código QR ${index + 1}`}
                         className="w-full h-56 object-contain rounded"
                       />
                       <div className="text-center space-y-1">
-                        <p className="font-medium text-sm">
+                        <p className="font-medium text-sm text-foreground">
                           {index === 0 ? "QR Transferencia Bancaria" : 
                            index === 1 ? "QR Revolut" : 
                            `Código QR ${index + 1}`}
