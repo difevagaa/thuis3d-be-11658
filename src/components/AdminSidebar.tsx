@@ -190,14 +190,29 @@ export function AdminSidebar() {
     state
   } = useSidebar();
   const collapsed = state === "collapsed";
-  return <Sidebar className={`${collapsed ? "w-16" : "w-72"} transition-all duration-300 border-r bg-sidebar`}>
-      <SidebarContent className="py-4 bg-sidebar">
-        {menuItems.map((section, idx) => <SidebarGroup key={idx} className="mb-1">
+  
+  return <Sidebar className={`${collapsed ? "w-16" : "w-72"} transition-all duration-300 border-r bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 shadow-xl`}>
+      <SidebarContent className="py-4 bg-transparent">
+        {!collapsed && (
+          <div className="px-4 mb-6">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                <LayoutDashboard className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Admin Panel</h3>
+                <p className="text-xs text-gray-400">Gestión Completa</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {menuItems.map((section, idx) => <SidebarGroup key={idx} className="mb-2">
             {section.collapsible ? <Collapsible open={openCalculator} onOpenChange={setOpenCalculator} className="group/collapsible">
                 <SidebarGroupLabel asChild>
                     <CollapsibleTrigger style={{
               fontSize: 'var(--sidebar-label-size, 11px)'
-            }} className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors font-serif">
+            }} className="flex w-full items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-primary transition-colors">
                     {!collapsed && <span>{section.title}</span>}
                     {!collapsed && <ChevronRight className={`h-3 w-3 transition-transform ${openCalculator ? 'rotate-90' : ''}`} />}
                   </CollapsibleTrigger>
@@ -209,7 +224,7 @@ export function AdminSidebar() {
                           <SidebarMenuButton asChild tooltip={collapsed ? item.label : undefined}>
                             <NavLink to={item.url} className={({
                       isActive
-                    }) => `${collapsed ? 'justify-center px-2' : 'pl-6'} ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"} transition-all flex items-center gap-3 py-2 px-3`}>
+                    }) => `${collapsed ? 'justify-center px-2' : 'pl-6'} ${isActive ? "bg-primary/20 text-primary font-semibold border-l-4 border-primary" : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"} transition-all flex items-center gap-3 py-3 px-4 rounded-r-lg`}>
                               <item.icon className="h-4 w-4 flex-shrink-0" />
                               {!collapsed && <span className="text-sm">{item.label}</span>}
                             </NavLink>
@@ -221,7 +236,7 @@ export function AdminSidebar() {
               </Collapsible> : <>
                 <SidebarGroupLabel style={{
             fontSize: 'var(--sidebar-label-size, 11px)'
-          }} className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground">
+          }} className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">
                   {!collapsed && section.title}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -230,7 +245,7 @@ export function AdminSidebar() {
                         <SidebarMenuButton asChild tooltip={collapsed ? item.label : undefined}>
                           <NavLink to={item.url} className={({
                     isActive
-                  }) => `${collapsed ? 'justify-center px-2' : ''} ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"} transition-all flex items-center gap-3 py-2 px-3`}>
+                  }) => `${collapsed ? 'justify-center px-2' : ''} ${isActive ? "bg-primary/20 text-primary font-semibold border-l-4 border-primary" : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"} transition-all flex items-center gap-3 py-3 px-4 rounded-r-lg`}>
                             <item.icon className="h-4 w-4 flex-shrink-0" />
                             {!collapsed && <span className="text-sm">{item.label}</span>}
                           </NavLink>
