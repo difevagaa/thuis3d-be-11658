@@ -211,15 +211,22 @@ export const calculateOrderTotals = (
  */
 export const generateOrderNotes = (
   cartItems: CartItem[],
-  giftCardData?: { code: string; current_balance?: number } | null,
-  giftCardDiscount?: number
+  appliedGiftCard?: { code: string; amount?: number },
+  appliedCoupon?: { code: string; discount_type: string; discount_value: number }
 ): string | null => {
   const notes: string[] = [];
 
   // Add gift card note
-  if (giftCardData && giftCardDiscount) {
+  if (appliedGiftCard) {
     notes.push(
-      `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
+      `Tarjeta de regalo aplicada: ${appliedGiftCard.code} (-€${appliedGiftCard.amount?.toFixed(2) || '0.00'})`
+    );
+  }
+
+  // Add coupon note
+  if (appliedCoupon) {
+    notes.push(
+      `Cupón aplicado: ${appliedCoupon.code} (-${appliedCoupon.discount_type === 'percentage' ? appliedCoupon.discount_value + '%' : '€' + appliedCoupon.discount_value})`
     );
   }
 
