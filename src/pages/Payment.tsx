@@ -270,6 +270,31 @@ export default function Payment() {
               isInvoicePayment: true
             } 
           });
+        } else if (method === "card") {
+          // REQUIREMENTS: Card payment uses same Revolut gateway configuration
+          // Both "card" and "revolut" payment methods redirect to the same payment gateway
+          // The gateway supports multiple payment methods (Bancontact, Apple Pay, Google Pay, cards)
+          const { data: revolutConfig } = await supabase
+            .from("site_settings")
+            .select("setting_value")
+            .eq("setting_key", "revolut_link")
+            .single();
+          
+          if (revolutConfig?.setting_value) {
+            window.open(revolutConfig.setting_value, '_blank');
+            navigate("/pago-instrucciones", { 
+              state: { 
+                orderNumber: invoiceData.invoiceNumber,
+                method: "card",
+                total: invoiceData.total,
+                isPending: false,
+                isInvoicePayment: true
+              } 
+            });
+          } else {
+            toast.error(t('payment:messages.cardNotConfigured') || "Configuración de pago con tarjeta no disponible");
+            navigate("/mi-cuenta?tab=invoices");
+          }
         } else if (method === "paypal") {
           // Get PayPal configuration and open payment
           const { data: paypalConfig } = await supabase
@@ -815,14 +840,14 @@ export default function Payment() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {paymentImages.map((img, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3 bg-white dark:bg-slate-900">
+                    <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                       <img 
                         src={img} 
                         alt={`Código QR ${index + 1}`}
                         className="w-full h-56 object-contain rounded"
                       />
                       <div className="text-center space-y-1">
-                        <p className="font-medium text-sm">
+                        <p className="font-medium text-sm text-foreground">
                           {index === 0 ? "QR Transferencia Bancaria" : 
                            index === 1 ? "QR Revolut" : 
                            `Código QR ${index + 1}`}
