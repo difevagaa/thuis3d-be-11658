@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,8 @@ import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { autoCleanup as autoCleanupLocalStorage } from "@/lib/localStorageDebugger";
+import { startVisibilityMonitoring, startInfiniteLoadingDetection } from "@/lib/visibilityDebugger";
 
 // Public pages - optimized lazy loading
 import Home from "./pages/Home";
@@ -161,6 +163,11 @@ const queryClient = new QueryClient({
   }),
 });
 
+// Make QueryClient available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).__queryClient = queryClient;
+}
+
 // Loading fallback component with responsive sizing
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-dvh">
@@ -180,6 +187,36 @@ const AppContent = () => {
   useViewportReset();
   // Handle session recovery for cache/cookie issues
   useSessionRecovery();
+  
+  // Initialize debugging and monitoring tools
+  useEffect(() => {
+    // Auto-cleanup corrupted localStorage on startup
+    autoCleanupLocalStorage().then((cleanupPerformed) => {
+      if (cleanupPerformed) {
+        console.log('[App] localStorage auto-cleanup completed');
+      }
+    }).catch((error) => {
+      console.error('[App] localStorage auto-cleanup failed:', error);
+    });
+    
+    // Start visibility change monitoring
+    startVisibilityMonitoring();
+    
+    // Start infinite loading detection
+    const stopDetection = startInfiniteLoadingDetection();
+    
+    // Listen for infinite loading detection
+    const handleInfiniteLoading = () => {
+      console.error('[App] INFINITE LOADING DETECTED! Check console for details.');
+      // Could trigger a user notification here
+    };
+    window.addEventListener('infinite-loading-detected', handleInfiniteLoading);
+    
+    return () => {
+      stopDetection();
+      window.removeEventListener('infinite-loading-detected', handleInfiniteLoading);
+    };
+  }, []);
 
   return (
     <>

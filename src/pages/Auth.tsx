@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { i18nToast } from "@/lib/i18nToast";
 import { z } from "zod";
+import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -25,6 +26,10 @@ const Auth = () => {
     password: "",
     fullName: "",
   });
+
+  // CRITICAL FIX: Add loading timeout protection
+  // If loading state is stuck for more than 30 seconds, force it to false
+  useLoadingTimeout(loading, setLoading, 30000);
 
   // Validation schema with translated errors
   const authSchema = z.object({
@@ -50,12 +55,24 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('[Auth] Sign up attempt started');
     setLoading(true);
 
     try {
       const validated = authSchema.parse(formData);
       
-      const { error } = await supabase.auth.signUp({
+      console.log('[Auth] Validation passed, calling Supabase sign up...');
+      
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error('[Auth] Sign up timeout after 30s');
+          reject(new Error('Connection timeout'));
+        }, 30000);
+      });
+      
+      const signUpPromise = supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
@@ -66,31 +83,52 @@ const Auth = () => {
         },
       });
 
-      if (error) throw error;
+      const { error } = await Promise.race([
+        signUpPromise,
+        timeoutPromise
+      ]) as any;
+
+      if (error) {
+        console.error('[Auth] Sign up error:', error);
+        throw error;
+      }
       
+      console.log('[Auth] Sign up successful');
       toast.success(t('accountCreated'));
       navigate("/");
     } catch (error: any) {
+      console.error('[Auth] Sign up failed:', error);
+      
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else if (error.message === 'Connection timeout') {
+        toast.error(t('connectionTimeout', { defaultValue: 'Tiempo de espera agotado. Por favor, verifica tu conexión e intenta de nuevo.' }));
       } else {
         toast.error(error.message || t('errorCreatingAccount'));
       }
     } finally {
+      console.log('[Auth] Sign up attempt finished, clearing loading state');
       setLoading(false);
     }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('[Auth] Sign in attempt started');
     setLoading(true);
 
     try {
       const validated = authSchema.pick({ email: true, password: true }).parse(formData);
       
-      // Create timeout promise (15 seconds)
+      console.log('[Auth] Validation passed, calling Supabase...');
+      
+      // Create timeout promise (30 seconds for auth operations)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection timeout')), 15000);
+        setTimeout(() => {
+          console.error('[Auth] Sign in timeout after 30s');
+          reject(new Error('Connection timeout'));
+        }, 30000);
       });
 
       // Race between sign in and timeout
@@ -104,11 +142,19 @@ const Auth = () => {
         timeoutPromise
       ]) as any;
 
-      if (error) throw error;
+      console.log('[Auth] Supabase response received');
+
+      if (error) {
+        console.error('[Auth] Sign in error:', error);
+        throw error;
+      }
       
+      console.log('[Auth] Sign in successful');
       toast.success(t('welcomeBack'));
       navigate("/");
     } catch (error: any) {
+      console.error('[Auth] Sign in failed:', error);
+      
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else if (error.message === 'Connection timeout') {
@@ -117,12 +163,15 @@ const Auth = () => {
         toast.error(error.message || t('errorSigningIn'));
       }
     } finally {
+      console.log('[Auth] Sign in attempt finished, clearing loading state');
       setLoading(false);
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('[Auth] Password reset attempt started');
     setLoading(true);
 
     try {
@@ -131,24 +180,52 @@ const Auth = () => {
         return;
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      console.log('[Auth] Calling Supabase password reset...');
+      
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error('[Auth] Password reset timeout after 30s');
+          reject(new Error('Connection timeout'));
+        }, 30000);
+      });
+
+      const resetPromise = supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
 
-      if (error) throw error;
+      const { error } = await Promise.race([
+        resetPromise,
+        timeoutPromise
+      ]) as any;
 
+      if (error) {
+        console.error('[Auth] Password reset error:', error);
+        throw error;
+      }
+
+      console.log('[Auth] Password reset email sent');
       toast.success(t('resetEmailSent'));
       setShowResetPassword(false);
       setResetEmail("");
     } catch (error: any) {
-      toast.error(error.message || "Error al enviar email de recuperación");
+      console.error('[Auth] Password reset failed:', error);
+      
+      if (error.message === 'Connection timeout') {
+        toast.error(t('connectionTimeout', { defaultValue: 'Tiempo de espera agotado. Por favor, verifica tu conexión e intenta de nuevo.' }));
+      } else {
+        toast.error(error.message || "Error al enviar email de recuperación");
+      }
     } finally {
+      console.log('[Auth] Password reset attempt finished, clearing loading state');
       setLoading(false);
     }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('[Auth] Password update attempt started');
     setLoading(true);
 
     try {
@@ -157,19 +234,45 @@ const Auth = () => {
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({
+      console.log('[Auth] Calling Supabase password update...');
+      
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error('[Auth] Password update timeout after 30s');
+          reject(new Error('Connection timeout'));
+        }, 30000);
+      });
+
+      const updatePromise = supabase.auth.updateUser({
         password: newPassword
       });
 
-      if (error) throw error;
+      const { error } = await Promise.race([
+        updatePromise,
+        timeoutPromise
+      ]) as any;
 
+      if (error) {
+        console.error('[Auth] Password update error:', error);
+        throw error;
+      }
+
+      console.log('[Auth] Password updated successfully');
       toast.success(t('passwordUpdated'));
       setIsSettingNewPassword(false);
       setNewPassword("");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Error al actualizar contraseña");
+      console.error('[Auth] Password update failed:', error);
+      
+      if (error.message === 'Connection timeout') {
+        toast.error(t('connectionTimeout', { defaultValue: 'Tiempo de espera agotado. Por favor, verifica tu conexión e intenta de nuevo.' }));
+      } else {
+        toast.error(error.message || "Error al actualizar contraseña");
+      }
     } finally {
+      console.log('[Auth] Password update attempt finished, clearing loading state');
       setLoading(false);
     }
   };

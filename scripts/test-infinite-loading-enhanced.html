@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Loading E2E Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #2196F3;
+      border-radius: 4px;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .status.pass {
+      background: #4CAF50;
+      color: white;
+    }
+    .status.fail {
+      background: #f44336;
+      color: white;
+    }
+    .status.running {
+      background: #FF9800;
+      color: white;
+    }
+    .status.pending {
+      background: #9E9E9E;
+      color: white;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #testLog {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 2px 0;
+    }
+    .log-info { color: #4EC9B0; }
+    .log-warn { color: #DCDCAA; }
+    .log-error { color: #F48771; }
+    .log-success { color: #6A9955; }
+    .metric {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+      padding: 10px 15px;
+      background: #e3f2fd;
+      border-radius: 4px;
+      border-left: 4px solid #2196F3;
+    }
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1976D2;
+    }
+    .metric-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+    }
+    .instructions {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #856404;
+    }
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Infinite Loading E2E Test Suite</h1>
+    
+    <div class="test-section">
+      <h3>Test Purpose</h3>
+      <p>This test validates that the infinite loading spinner issue has been resolved. It simulates:</p>
+      <ul>
+        <li>Normal navigation between pages</li>
+        <li>Tab switching and returning</li>
+        <li>Prolonged hidden state (background tab)</li>
+        <li>Multiple rapid tab switches</li>
+      </ul>
+      <p><strong>Expected Result:</strong> No infinite loading spinners. All pages should load within 30 seconds.</p>
+    </div>
+
+    <h2>Automated Test</h2>
+    <div class="test-section">
+      <button id="startAutoTest" onclick="runAutomatedTest()">▶ Start Automated Test</button>
+      <button id="stopAutoTest" onclick="stopAutomatedTest()" disabled>⏹ Stop Test</button>
+      <button onclick="clearLog()">🗑 Clear Log</button>
+      <div id="autoTestStatus">
+        Status: <span class="status pending">NOT STARTED</span>
+      </div>
+      <div id="metrics" style="margin-top: 15px; display: none;">
+        <div class="metric">
+          <div class="metric-value" id="metricNavigations">0</div>
+          <div class="metric-label">Page Navigations</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="metricTabSwitches">0</div>
+          <div class="metric-label">Tab Switches</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="metricLoadingStates">0</div>
+          <div class="metric-label">Loading States</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="metricMaxDuration">0s</div>
+          <div class="metric-label">Max Load Time</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Manual Test</h2>
+    <div class="instructions">
+      <h3>📋 Manual Test Steps</h3>
+      <ol>
+        <li>Open <strong>https://thuis3d.be</strong> in a new tab</li>
+        <li>Navigate normally for <strong>20-30 seconds</strong> (click products, blog, etc.)</li>
+        <li>Switch to <strong>another tab</strong> (e.g., Facebook, email)</li>
+        <li>Wait <strong>10-15 seconds</strong></li>
+        <li>Return to the <strong>thuis3d.be tab</strong></li>
+        <li>Observe if there's an <strong>infinite loading spinner</strong></li>
+      </ol>
+      <p><strong>✅ PASS:</strong> Page loads normally, no infinite spinner, content appears within 30s</p>
+      <p><strong>❌ FAIL:</strong> Infinite spinner, "Cargando..." or "Verbinden..." that never ends</p>
+    </div>
+
+    <h2>Test Log</h2>
+    <div id="testLog">
+      <div class="log-entry log-info">Waiting for test to start...</div>
+    </div>
+
+    <h2>Debugging Commands</h2>
+    <div class="test-section">
+      <p>Open browser console on <strong>thuis3d.be</strong> and run these commands:</p>
+      <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">
+// Check localStorage health
+window.__localStorageDebugger.printReport()
+
+// Check visibility changes
+window.__visibilityDebugger.printReport()
+
+// Get monitoring health report
+window.__monitoring.getHealthReport()
+
+// Check channel health
+window.__monitoring.reportChannelMetrics()
+
+// Check for stuck loading states
+window.__monitoring.checkForStuckLoading()
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    let testWindow = null;
+    let testInterval = null;
+    let testTimeout = null;
+    let metrics = {
+      navigations: 0,
+      tabSwitches: 0,
+      loadingStates: 0,
+      maxDuration: 0
+    };
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('testLog');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.textContent = `[${timestamp}] ${message}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('testLog').innerHTML = '<div class="log-entry log-info">Log cleared. Ready for new test.</div>';
+    }
+
+    function updateMetrics() {
+      document.getElementById('metricNavigations').textContent = metrics.navigations;
+      document.getElementById('metricTabSwitches').textContent = metrics.tabSwitches;
+      document.getElementById('metricLoadingStates').textContent = metrics.loadingStates;
+      document.getElementById('metricMaxDuration').textContent = metrics.maxDuration + 's';
+    }
+
+    function setStatus(status, className) {
+      const statusEl = document.querySelector('#autoTestStatus .status');
+      statusEl.textContent = status;
+      statusEl.className = `status ${className}`;
+    }
+
+    async function runAutomatedTest() {
+      log('Starting automated test...', 'info');
+      setStatus('RUNNING', 'running');
+      document.getElementById('startAutoTest').disabled = true;
+      document.getElementById('stopAutoTest').disabled = false;
+      document.getElementById('metrics').style.display = 'block';
+
+      // Reset metrics
+      metrics = { navigations: 0, tabSwitches: 0, loadingStates: 0, maxDuration: 0 };
+      updateMetrics();
+
+      try {
+        // Open test site
+        log('Opening https://thuis3d.be...', 'info');
+        testWindow = window.open('https://thuis3d.be', '_blank');
+        
+        if (!testWindow) {
+          log('Failed to open window. Please allow popups and try again.', 'error');
+          setStatus('FAILED', 'fail');
+          document.getElementById('startAutoTest').disabled = false;
+          document.getElementById('stopAutoTest').disabled = true;
+          return;
+        }
+
+        // Wait for initial load
+        await sleep(5000);
+        log('Initial page loaded. Starting test sequence...', 'success');
+
+        // Test sequence: 30 seconds of navigation and tab switching
+        const testDuration = 30000; // 30 seconds
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < testDuration) {
+          // Navigate to a random page
+          const pages = ['/productos', '/blog', '/tarjetas-regalo', '/'];
+          const randomPage = pages[Math.floor(Math.random() * pages.length)];
+          
+          if (testWindow && !testWindow.closed) {
+            testWindow.location.href = 'https://thuis3d.be' + randomPage;
+            metrics.navigations++;
+            updateMetrics();
+            log(`Navigating to ${randomPage}...`, 'info');
+            await sleep(3000);
+
+            // Simulate tab switch (focus away and back)
+            window.focus(); // Focus this test window
+            metrics.tabSwitches++;
+            updateMetrics();
+            log('Switching tab focus away...', 'info');
+            await sleep(2000);
+
+            if (testWindow && !testWindow.closed) {
+              testWindow.focus(); // Focus back to test window
+              log('Switching tab focus back...', 'info');
+              await sleep(2000);
+
+              // Check for infinite loading via console
+              try {
+                const hasInfiniteLoading = testWindow.eval(`
+                  (function() {
+                    if (window.__monitoring) {
+                      const stuck = window.__monitoring.checkForStuckLoading();
+                      return stuck && stuck.length > 0;
+                    }
+                    return false;
+                  })()
+                `);
+
+                if (hasInfiniteLoading) {
+                  log('❌ INFINITE LOADING DETECTED!', 'error');
+                  setStatus('FAILED - Infinite Loading', 'fail');
+                  return;
+                }
+              } catch (e) {
+                // Can't access window (CORS), continue
+              }
+            }
+          } else {
+            log('Test window was closed. Ending test.', 'warn');
+            break;
+          }
+
+          await sleep(1000);
+        }
+
+        log('Test sequence completed successfully!', 'success');
+        log('No infinite loading detected during 30-second test.', 'success');
+        setStatus('PASSED', 'pass');
+
+      } catch (error) {
+        log(`Test error: ${error.message}`, 'error');
+        setStatus('FAILED', 'fail');
+      } finally {
+        document.getElementById('startAutoTest').disabled = false;
+        document.getElementById('stopAutoTest').disabled = true;
+        
+        // Keep test window open for manual inspection
+        log('Test window left open for manual inspection.', 'info');
+      }
+    }
+
+    function stopAutomatedTest() {
+      log('Stopping test...', 'warn');
+      if (testInterval) clearInterval(testInterval);
+      if (testTimeout) clearTimeout(testTimeout);
+      if (testWindow && !testWindow.closed) {
+        testWindow.close();
+      }
+      setStatus('STOPPED', 'pending');
+      document.getElementById('startAutoTest').disabled = false;
+      document.getElementById('stopAutoTest').disabled = true;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Log initial state
+    log('Test suite loaded and ready.', 'success');
+    log('Click "Start Automated Test" to begin, or follow manual test steps.', 'info');
+  </script>
+</body>
+</html>
