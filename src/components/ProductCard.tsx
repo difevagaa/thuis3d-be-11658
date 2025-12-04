@@ -41,7 +41,7 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
       <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group border-border/50 bg-card h-full flex flex-col">
         <CardContent className="p-3 md:p-4 flex flex-col h-full">
           {/* Product Image */}
-          <div className="aspect-square bg-white rounded-md mb-3 overflow-hidden flex items-center justify-center relative">
+          <div className="aspect-square bg-background rounded-md mb-3 overflow-hidden flex items-center justify-center relative">
             {sortedImages.length > 0 ? (
               <ProductCarousel 
                 images={sortedImages} 
@@ -93,7 +93,7 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
             <div className="mt-auto">
               <p className="text-2xl md:text-3xl font-bold text-foreground flex items-baseline gap-1">
                 <span className="text-base text-muted-foreground">€</span>
-                {product.price}
+                {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
               </p>
             </div>
           </div>

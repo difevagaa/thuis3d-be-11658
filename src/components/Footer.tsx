@@ -205,7 +205,7 @@ export const Footer = () => {
                 <Input
                   type="email"
                   placeholder={t('newsletter.placeholder')}
-                  className="text-sm h-9 bg-white text-foreground"
+                  className="text-sm h-9 bg-background text-foreground border-white/20"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

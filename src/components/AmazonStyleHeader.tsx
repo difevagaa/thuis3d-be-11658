@@ -171,7 +171,7 @@ export const AmazonStyleHeader = ({ cartCount, user, isAdmin, onLogout }: Amazon
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="text-white hover:bg-white/10 px-2 h-10">
                       <div className="flex flex-col items-start text-xs">
-                        <span className="text-white/80">Hello, {user.email?.split('@')[0]}</span>
+                        <span className="text-white/80">Hello, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}</span>
                         <span className="font-bold">Account & Lists</span>
                       </div>
                     </Button>
