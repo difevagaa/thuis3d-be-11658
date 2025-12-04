@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Clock, Package, MessageCircle, Eye, TrendingUp as TrendingUpIcon, Wallet } from "lucide-react";
+import { RefreshCw, Clock, Package, MessageCircle, Eye, TrendingUp as TrendingUpIcon, Wallet, ShoppingCart, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
 import { logger } from '@/lib/logger';
 import { Badge } from "@/components/ui/badge";
