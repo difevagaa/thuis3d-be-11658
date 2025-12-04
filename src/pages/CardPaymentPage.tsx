@@ -342,13 +342,6 @@ export default function CardPaymentPage() {
                     *Se generará el número de pedido final al confirmar el pago
                   </p>
                 )}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                  *Se generará el número de pedido final al confirmar el pago
-                </p>
               </div>
 
               <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
