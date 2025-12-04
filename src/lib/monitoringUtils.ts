@@ -236,8 +236,18 @@ export function reportPerformanceMetrics(): PerformanceMetrics | null {
   }
   
   // Get memory usage (Chrome only)
-  if ('memory' in performance) {
-    const memory = (performance as any).memory;
+  // Type guard for Chrome's performance.memory extension
+  interface PerformanceWithMemory extends Performance {
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
+  }
+  
+  const perfWithMemory = performance as PerformanceWithMemory;
+  if (perfWithMemory.memory) {
+    const memory = perfWithMemory.memory;
     metrics.memoryUsage = memory.usedJSHeapSize / 1024 / 1024; // Convert to MB
     
     // Check if memory usage is high
@@ -362,7 +372,22 @@ if (typeof window !== 'undefined') {
     const stopMonitoring = startHealthMonitoring();
     
     // Expose to window for debugging
-    (window as any).__monitoring = {
+    // Properly declare the monitoring interface on window
+    interface MonitoringAPI {
+      getHealthReport: typeof getHealthReport;
+      reportChannelMetrics: typeof reportChannelMetrics;
+      getActiveLoadingStates: typeof getActiveLoadingStates;
+      checkForStuckLoading: typeof checkForStuckLoading;
+      stopMonitoring: () => void;
+    }
+    
+    declare global {
+      interface Window {
+        __monitoring?: MonitoringAPI;
+      }
+    }
+    
+    window.__monitoring = {
       getHealthReport,
       reportChannelMetrics,
       getActiveLoadingStates,

@@ -135,11 +135,12 @@
       <h3>⚠️ Test Instructions</h3>
       <ol>
         <li>Click "Start Automated Test" to begin</li>
-        <li>The test will open thuis3d.be in a new tab</li>
+        <li>The test will open the configured URL in a new tab</li>
         <li>It will simulate navigation and tab switching</li>
         <li>Monitor the logs and metrics below</li>
         <li>The test passes if no infinite loading is detected after 60 seconds</li>
       </ol>
+      <p><strong>Note:</strong> You can configure the test URL below before starting the test.</p>
     </div>
 
     <div class="section">
@@ -332,17 +333,17 @@
 
     // Manual test guide
     startManualBtn.addEventListener('click', () => {
+      const url = document.getElementById('testUrl').value;
       log('Starting MANUAL test mode', 'info');
       log('Please follow these steps:', 'info');
-      log('1. Open https://thuis3d.be in a new tab', 'info');
+      log(`1. Open ${url} in a new tab`, 'info');
       log('2. Navigate the site for 20-30 seconds', 'info');
       log('3. Switch to another tab (e.g., Facebook, Gmail)', 'info');
       log('4. Wait 5-10 seconds', 'info');
-      log('5. Return to the thuis3d.be tab', 'info');
+      log(`5. Return to the ${url} tab`, 'info');
       log('6. Observe if you see infinite loading spinner', 'warning');
       log('EXPECTED: Loading should complete within 30 seconds', 'success');
       
-      const url = document.getElementById('testUrl').value;
       testWindow = window.open(url, '_blank');
       
       if (testWindow) {

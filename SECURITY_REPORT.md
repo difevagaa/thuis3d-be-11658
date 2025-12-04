@@ -263,12 +263,30 @@ Defer these to next maintenance window:
 1. **Content Security Policy (CSP)**
    ```typescript
    // Add to index.html
+   // Note: For production, replace 'unsafe-inline' with nonce-based CSP
+   // Example: script-src 'self' 'nonce-{random-value}'
    <meta http-equiv="Content-Security-Policy" 
          content="default-src 'self'; 
-                  script-src 'self' 'unsafe-inline'; 
+                  script-src 'self'; 
+                  style-src 'self';
+                  img-src 'self' data: https:;
+                  connect-src 'self' https://*.supabase.co;">
+   ```
+   
+   **For Development (with Vite HMR):**
+   ```typescript
+   // Temporarily allow unsafe-inline for development only
+   <meta http-equiv="Content-Security-Policy" 
+         content="default-src 'self'; 
+                  script-src 'self' 'unsafe-inline' 'unsafe-eval'; 
                   style-src 'self' 'unsafe-inline';
                   img-src 'self' data: https:;">
    ```
+   
+   **Recommended Production Solution:**
+   - Implement nonce-based CSP
+   - Move all inline scripts to external files
+   - Use CSS-in-JS libraries that support CSP nonces
 
 2. **Subresource Integrity (SRI)**
    - Add integrity hashes to CDN resources
