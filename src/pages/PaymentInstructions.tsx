@@ -262,14 +262,10 @@ export default function PaymentInstructions() {
             <CheckCircle2 className="w-6 h-6 text-green-600" />
           </div>
           <CardTitle className="text-2xl">
-            {isInvoicePayment ? '¡Pago de Factura!' : '¡Pedido Recibido!'}
+            ¡Recibido!
           </CardTitle>
           <CardDescription>
-            {isInvoicePayment ? (
-              <>Tu número de factura es: <strong>{realOrderNumber}</strong></>
-            ) : (
-              <>Tu número de pedido es: <strong>{realOrderNumber}</strong></>
-            )}
+            Tu número de referencia es: <strong>{realOrderNumber}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -334,12 +330,12 @@ export default function PaymentInstructions() {
                     <p className="font-medium text-blue-900 dark:text-blue-100">Concepto de la Transferencia:</p>
                     <div className="flex items-center gap-2">
                       <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
-                        Pedido {realOrderNumber}
+                        {realOrderNumber}
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => copyToClipboard(`Pedido ${realOrderNumber}`)}
+                        onClick={() => copyToClipboard(realOrderNumber)}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -391,10 +387,10 @@ export default function PaymentInstructions() {
 
               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que recibamos el pago.
+                  ⚠️ Estará en estado pendiente hasta que recibamos tu transferencia.
                 </p>
                 <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
-                  Por favor, incluye el número de pedido <strong>{realOrderNumber}</strong> en el concepto de la transferencia.
+                  Por favor, incluye el número de referencia <strong>{realOrderNumber}</strong> en el concepto de la transferencia.
                 </p>
               </div>
             </div>
@@ -403,7 +399,7 @@ export default function PaymentInstructions() {
           {method === "card" && (
             <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <p className="text-sm text-green-900 dark:text-green-100">
-                ✅ Tu pago con tarjeta ha sido procesado exitosamente.
+                ✅ La transacción con tarjeta ha sido procesada exitosamente.
                 Recibirás una confirmación por correo electrónico en breve.
               </p>
             </div>
@@ -414,20 +410,20 @@ export default function PaymentInstructions() {
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-900 dark:text-blue-100">
                   <CreditCard className="h-5 w-5" />
-                  Pago con PayPal
+                  PayPal
                 </h3>
                 <p className="text-sm mb-3 text-blue-900 dark:text-blue-50">
-                  Tu pedido está siendo procesado. Si completaste el pago en PayPal, 
+                  Está siendo procesado. Si completaste el proceso en PayPal, 
                   recibirás una confirmación pronto.
                 </p>
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Número de pedido: <strong>{orderNumber}</strong>
+                  Número de referencia: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
+                  ⚠️ Estará en estado pendiente hasta que confirmemos la transacción.
                 </p>
               </div>
             </div>
@@ -438,20 +434,20 @@ export default function PaymentInstructions() {
               <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <h3 className="font-semibold mb-2 flex items-center gap-2 text-purple-900 dark:text-purple-100">
                   <CreditCard className="h-5 w-5" />
-                  Pago con Revolut
+                  Revolut
                 </h3>
                 <p className="text-sm mb-3 text-purple-900 dark:text-purple-50">
-                  Tu pedido está siendo procesado. Si completaste el pago en Revolut, 
+                  Está siendo procesado. Si completaste el proceso en Revolut, 
                   recibirás una confirmación pronto.
                 </p>
                 <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                  Número de pedido: <strong>{orderNumber}</strong>
+                  Número de referencia: <strong>{orderNumber}</strong>
                 </p>
               </div>
               
               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Tu pedido estará en estado pendiente hasta que confirmemos el pago.
+                  ⚠️ Estará en estado pendiente hasta que confirmemos la transacción.
                 </p>
               </div>
             </div>
@@ -462,7 +458,7 @@ export default function PaymentInstructions() {
               Volver al Inicio
             </Button>
             <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1">
-              Ver Mis Pedidos
+              Ver Mi Cuenta
             </Button>
           </div>
         </CardContent>

@@ -31,21 +31,36 @@ export default function RevolutPaymentPage() {
   }, []);
 
   const loadOrderData = () => {
+    // Check for invoice payment first
+    const pendingInvoiceStr = sessionStorage.getItem("pending_revolut_invoice");
     const pendingOrderStr = sessionStorage.getItem("pending_revolut_order");
-    if (!pendingOrderStr) {
+    
+    if (pendingInvoiceStr) {
+      // This is an invoice payment
+      try {
+        const data = JSON.parse(pendingInvoiceStr);
+        setOrderData(data);
+        setLoading(false);
+      } catch (error) {
+        logger.error("Error parsing invoice data:", error);
+        toast.error("Error al cargar información de la factura");
+        navigate("/pago");
+      }
+    } else if (pendingOrderStr) {
+      // This is a normal order payment
+      try {
+        const data = JSON.parse(pendingOrderStr);
+        setOrderData(data);
+        setLoading(false);
+      } catch (error) {
+        logger.error("Error parsing order data:", error);
+        toast.error("Error al cargar información del pedido");
+        navigate("/pago");
+      }
+    } else {
       toast.error("No se encontró información del pedido");
       navigate("/pago");
       return;
-    }
-
-    try {
-      const data = JSON.parse(pendingOrderStr);
-      setOrderData(data);
-      setLoading(false);
-    } catch (error) {
-      logger.error("Error parsing order data:", error);
-      toast.error("Error al cargar información del pedido");
-      navigate("/pago");
     }
   };
 
@@ -94,6 +109,47 @@ export default function RevolutPaymentPage() {
         return;
       }
 
+      // Check if this is an invoice payment
+      if (orderData.isInvoicePayment) {
+        // Invoice payment flow - just update the invoice and redirect
+        const { invoiceId, invoiceNumber, total } = orderData;
+        
+        // Update invoice payment status and method
+        const { error: updateError } = await supabase
+          .from("invoices")
+          .update({
+            payment_status: "pending",
+            payment_method: "revolut"
+          })
+          .eq("id", invoiceId)
+          .eq("user_id", user.id);
+
+        if (updateError) throw updateError;
+
+        // Clear invoice payment data
+        sessionStorage.removeItem("pending_revolut_invoice");
+
+        toast.success(t('payment:messages.paymentRegistered'));
+
+        // Redirect to payment gateway
+        if (paymentConfig?.revolut_link) {
+          window.location.href = paymentConfig.revolut_link;
+        } else {
+          // If no gateway configured, go to instructions page
+          navigate("/pago-instrucciones", { 
+            state: { 
+              orderNumber: invoiceNumber,
+              method: "revolut",
+              total: total,
+              isPending: false,
+              isInvoicePayment: true
+            } 
+          });
+        }
+        return;
+      }
+
+      // Normal order payment flow
       const { cartItems, shippingInfo, total, subtotal, tax, shipping } = orderData;
 
       // Get saved gift card if applied
@@ -254,9 +310,11 @@ export default function RevolutPaymentPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Order Information */}
+          {/* Order/Invoice Information */}
           <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 text-purple-900 dark:text-purple-100">Información del Pedido</h3>
+            <h3 className="font-semibold mb-3 text-purple-900 dark:text-purple-100">
+              {orderData.isInvoicePayment ? 'Información de la Factura' : 'Información del Pedido'}
+            </h3>
             
             <div className="space-y-3 text-sm">
               <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4">
@@ -266,22 +324,26 @@ export default function RevolutPaymentPage() {
               </div>
 
               <div>
-                <p className="font-medium text-purple-900 dark:text-purple-100">Número de Pedido (Temporal):</p>
+                <p className="font-medium text-purple-900 dark:text-purple-100">
+                  {orderData.isInvoicePayment ? 'Número de Referencia:' : 'Número de Pedido (Temporal):'}
+                </p>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
-                    {tempOrderNumber}
+                    {orderData.isInvoicePayment ? orderData.invoiceNumber : tempOrderNumber}
                   </code>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(tempOrderNumber)}
+                    onClick={() => copyToClipboard(orderData.isInvoicePayment ? orderData.invoiceNumber : tempOrderNumber)}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-purple-800 dark:text-purple-200 mt-1">
-                  *Se generará el número de pedido final al confirmar el pago
-                </p>
+                {!orderData.isInvoicePayment && (
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-1">
+                    *Se generará el número de pedido final al confirmar el pago
+                  </p>
+                )}
               </div>
 
               <div className="pt-3 border-t border-purple-200 dark:border-purple-700">

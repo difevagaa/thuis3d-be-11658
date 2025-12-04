@@ -271,30 +271,22 @@ export default function Payment() {
             } 
           });
         } else if (method === "card") {
-          // REQUIREMENTS: Card payment uses same Revolut gateway configuration
-          // Both "card" and "revolut" payment methods redirect to the same payment gateway
-          // The gateway supports multiple payment methods (Bancontact, Apple Pay, Google Pay, cards)
-          const { data: revolutConfig } = await supabase
-            .from("site_settings")
-            .select("setting_value")
-            .eq("setting_key", "revolut_link")
-            .single();
+          // Navigate to card payment intermediate page for invoice payments
+          sessionStorage.setItem("pending_card_invoice", JSON.stringify({
+            invoiceId: invoiceData.invoiceId,
+            invoiceNumber: invoiceData.invoiceNumber,
+            total: invoiceData.total,
+            subtotal: invoiceData.subtotal,
+            tax: invoiceData.tax,
+            shipping: invoiceData.shipping || 0,
+            discount: invoiceData.discount || 0,
+            isInvoicePayment: true
+          }));
           
-          if (revolutConfig?.setting_value) {
-            window.open(revolutConfig.setting_value, '_blank');
-            navigate("/pago-instrucciones", { 
-              state: { 
-                orderNumber: invoiceData.invoiceNumber,
-                method: "card",
-                total: invoiceData.total,
-                isPending: false,
-                isInvoicePayment: true
-              } 
-            });
-          } else {
-            toast.error(t('payment:messages.cardNotConfigured') || "Configuración de pago con tarjeta no disponible");
-            navigate("/mi-cuenta?tab=invoices");
-          }
+          toast.success("Redirigiendo a página de pago...");
+          navigate("/pago-tarjeta");
+          setProcessing(false);
+          return;
         } else if (method === "paypal") {
           // Get PayPal configuration and open payment
           const { data: paypalConfig } = await supabase
@@ -321,28 +313,22 @@ export default function Payment() {
             navigate("/mi-cuenta?tab=invoices");
           }
         } else if (method === "revolut") {
-          // Get Revolut configuration and open payment
-          const { data: revolutConfig } = await supabase
-            .from("site_settings")
-            .select("setting_value")
-            .eq("setting_key", "revolut_link")
-            .single();
+          // Navigate to revolut payment intermediate page for invoice payments
+          sessionStorage.setItem("pending_revolut_invoice", JSON.stringify({
+            invoiceId: invoiceData.invoiceId,
+            invoiceNumber: invoiceData.invoiceNumber,
+            total: invoiceData.total,
+            subtotal: invoiceData.subtotal,
+            tax: invoiceData.tax,
+            shipping: invoiceData.shipping || 0,
+            discount: invoiceData.discount || 0,
+            isInvoicePayment: true
+          }));
           
-          if (revolutConfig?.setting_value) {
-            window.open(revolutConfig.setting_value, '_blank');
-            navigate("/pago-instrucciones", { 
-              state: { 
-                orderNumber: invoiceData.invoiceNumber,
-                method: "revolut",
-                total: invoiceData.total,
-                isPending: false,
-                isInvoicePayment: true
-              } 
-            });
-          } else {
-            toast.error(t('payment:messages.revolutNotConfigured'));
-            navigate("/mi-cuenta?tab=invoices");
-          }
+          toast.success("Redirigiendo a página de pago...");
+          navigate("/pago-revolut");
+          setProcessing(false);
+          return;
         } else {
           navigate("/mi-cuenta?tab=invoices");
         }
