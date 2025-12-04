@@ -22,6 +22,8 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const GiftCard = lazy(() => import("./pages/GiftCard"));
 const PaymentInstructions = lazy(() => import("./pages/PaymentInstructions"));
+const CardPaymentPage = lazy(() => import("./pages/CardPaymentPage"));
+const RevolutPaymentPage = lazy(() => import("./pages/RevolutPaymentPage"));
 const Page = lazy(() => import("./pages/Page"));
 const StaticPage = lazy(() => import("./pages/StaticPage"));
 const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
@@ -141,6 +143,8 @@ const App = () => {
             <Route path="/tarjetas-regalo" element={<Layout><GiftCard /></Layout>} />
             <Route path="/galeria" element={<Layout><Gallery /></Layout>} />
             <Route path="/pago-instrucciones" element={<Layout><PaymentInstructions /></Layout>} />
+            <Route path="/pago-tarjeta" element={<Layout><CardPaymentPage /></Layout>} />
+            <Route path="/pago-revolut" element={<Layout><RevolutPaymentPage /></Layout>} />
             <Route path="/informacion-envio" element={<Layout><ShippingInfo /></Layout>} />
             <Route path="/resumen-pago" element={<Layout><PaymentSummary /></Layout>} />
             <Route path="/pago" element={<Layout><Payment /></Layout>} />

@@ -50,7 +50,7 @@ export default function PaymentInstructions() {
       }
 
       // Generate order notes using utility function
-      const orderNotes = generateOrderNotes(cartItems);
+      const orderNotes = generateOrderNotes(cartItems, null, 0);
       
       // Create order using utility function
       // CRÍTICO: Usar el costo de envío del pendingOrder
@@ -275,48 +275,48 @@ export default function PaymentInstructions() {
         <CardContent className="space-y-6">
           {method === "bank_transfer" && paymentConfig && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
                   <CreditCard className="h-5 w-5" />
                   Instrucciones para Transferencia Bancaria
                 </h3>
                 
                 {/* MONTO A TRANSFERIR - DESTACADO */}
                 {total && (
-                  <div className="bg-white border-2 border-primary rounded-lg p-4 mb-4">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Monto a Transferir:</p>
+                  <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4 mb-4">
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Monto a Transferir:</p>
                     <p className="text-3xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">IVA incluido</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">IVA incluido</p>
                   </div>
                 )}
                 
                 <div className="space-y-3 text-sm">
                   {paymentConfig.company_info && (
                     <div>
-                      <p className="font-medium text-muted-foreground">Información de la Empresa:</p>
-                      <p className="whitespace-pre-line">{paymentConfig.company_info}</p>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">Información de la Empresa:</p>
+                      <p className="whitespace-pre-line text-slate-900 dark:text-slate-100">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
                     <div>
-                      <p className="font-medium text-muted-foreground">Banco:</p>
-                      <p>{paymentConfig.bank_name}</p>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">Banco:</p>
+                      <p className="text-slate-900 dark:text-slate-100">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
                     <div>
-                      <p className="font-medium text-muted-foreground">Titular de la Cuenta:</p>
-                      <p>{paymentConfig.bank_account_name}</p>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">Titular de la Cuenta:</p>
+                      <p className="text-slate-900 dark:text-slate-100">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
                     <div>
-                      <p className="font-medium text-muted-foreground">IBAN:</p>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">IBAN:</p>
                       <div className="flex items-center gap-2">
-                        <code className="bg-white px-3 py-2 rounded border flex-1">
+                        <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
                           {paymentConfig.bank_account_number}
                         </code>
                         <Button
@@ -331,9 +331,9 @@ export default function PaymentInstructions() {
                   )}
 
                   <div>
-                    <p className="font-medium text-muted-foreground">Concepto de la Transferencia:</p>
+                    <p className="font-medium text-slate-700 dark:text-slate-300">Concepto de la Transferencia:</p>
                     <div className="flex items-center gap-2">
-                      <code className="bg-white px-3 py-2 rounded border flex-1">
+                      <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1">
                         Pedido {realOrderNumber}
                       </code>
                       <Button
@@ -348,8 +348,8 @@ export default function PaymentInstructions() {
 
                   {paymentConfig.bank_instructions && (
                     <div>
-                      <p className="font-medium text-muted-foreground">Instrucciones Adicionales:</p>
-                      <p className="whitespace-pre-line text-muted-foreground">
+                      <p className="font-medium text-slate-700 dark:text-slate-300">Instrucciones Adicionales:</p>
+                      <p className="whitespace-pre-line text-slate-900 dark:text-slate-100">
                         {paymentConfig.bank_instructions}
                       </p>
                     </div>
