@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { mapRewardTypeToDiscountType } from "@/lib/paymentUtils";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -50,9 +51,15 @@ export default function MyAccount() {
       setActiveTab(tabParam);
     }
 
-    // Realtime subscription para tarjetas de regalo
-    const giftCardsChannel = supabase
-      .channel('gift-cards-changes')
+    // Channel names for cleanup
+    const channelNames = [
+      'gift-cards-changes',
+      'notifications-changes',
+      'loyalty-points-changes'
+    ];
+
+    // Realtime subscription para tarjetas de regalo usando channel manager
+    const giftCardsChannel = createChannel('gift-cards-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -81,8 +88,7 @@ export default function MyAccount() {
       .subscribe();
 
     // Realtime subscription para notificaciones
-    const notificationsChannel = supabase
-      .channel('notifications-changes')
+    const notificationsChannel = createChannel('notifications-changes')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -103,8 +109,7 @@ export default function MyAccount() {
       .subscribe();
 
     // Realtime subscription para loyalty points
-    const loyaltyChannel = supabase
-      .channel('loyalty-points-changes')
+    const loyaltyChannel = createChannel('loyalty-points-changes')
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -117,10 +122,9 @@ export default function MyAccount() {
       })
       .subscribe();
 
+    // CRITICAL: Proper cleanup on unmount
     return () => {
-      supabase.removeChannel(giftCardsChannel);
-      supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(loyaltyChannel);
+      removeChannels(channelNames);
     };
   }, [location]);
 

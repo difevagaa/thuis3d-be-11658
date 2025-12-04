@@ -8,6 +8,7 @@ import { Calendar, User, Clock, BookOpen, ArrowRight } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { calculateReadingTime, stripHtml } from "@/utils/textUtils";
 import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 export default function Blog() {
   const { t, i18n } = useTranslation('blog');
@@ -111,9 +112,15 @@ export default function Blog() {
   });
 
   useEffect(() => {
+    // Channel names for cleanup
+    const channelNames = [
+      'blog-roles-changes',
+      'blog-post-roles-changes',
+      'blog-posts-changes'
+    ];
+
     // Subscribe to user_roles changes to reload posts with correct filtering
-    const rolesChannel = supabase
-      .channel('blog-roles-changes')
+    const rolesChannel = createChannel('blog-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -125,8 +132,7 @@ export default function Blog() {
       .subscribe();
 
     // Subscribe to blog_post_roles changes to update visibility immediately
-    const blogPostRolesChannel = supabase
-      .channel('blog-post-roles-changes')
+    const blogPostRolesChannel = createChannel('blog-post-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -138,8 +144,7 @@ export default function Blog() {
       .subscribe();
 
     // Subscribe to blog_posts changes
-    const blogPostsChannel = supabase
-      .channel('blog-posts-changes')
+    const blogPostsChannel = createChannel('blog-posts-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -150,10 +155,9 @@ export default function Blog() {
       })
       .subscribe();
 
+    // CRITICAL: Proper cleanup on unmount
     return () => {
-      supabase.removeChannel(rolesChannel);
-      supabase.removeChannel(blogPostRolesChannel);
-      supabase.removeChannel(blogPostsChannel);
+      removeChannels(channelNames);
     };
   }, [loadPosts]);
 

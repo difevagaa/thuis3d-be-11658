@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
@@ -96,21 +96,34 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
 
-// Optimized QueryClient with best practices for e-commerce
-// Based on TanStack Query 2024 recommendations
+/**
+ * CRITICAL FIX: React Query Configuration
+ * 
+ * PREVIOUS PROBLEM:
+ * - refetchOnWindowFocus: true → caused reloads on every tab switch
+ * - refetchOnMount: "always" → caused reloads on every navigation
+ * - Combined with 30+ pages having realtime subscriptions
+ * - Result: Infinite loading after 20-30 seconds of navigation
+ * 
+ * SOLUTION:
+ * - Disable aggressive refetching
+ * - Increase stale time (data stays fresh longer)
+ * - Reduce cache time (faster garbage collection)
+ * - Let realtime subscriptions handle updates
+ */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data is fresh for 1 minute - allows quicker recovery
-      staleTime: 1 * 60 * 1000,
-      // Keep unused data in cache for 5 minutes
-      gcTime: 5 * 60 * 1000,
-      // Refetch on window focus for better recovery
-      refetchOnWindowFocus: true,
-      // Refetch on reconnect
-      refetchOnReconnect: true,
-      // Always refetch on mount
-      refetchOnMount: "always",
+      // Data is fresh for 3 minutes - reduces unnecessary refetches
+      staleTime: 3 * 60 * 1000,
+      // Keep unused data in cache for 2 minutes only - faster cleanup
+      gcTime: 2 * 60 * 1000,
+      
+      // CRITICAL: Disable aggressive refetching that caused infinite loading
+      refetchOnWindowFocus: false, // Don't refetch on tab switch
+      refetchOnReconnect: false,   // Don't refetch on reconnect
+      refetchOnMount: false,       // Don't refetch on every mount
+      
       // Retry failed requests with exponential backoff
       retry: (failureCount, error) => {
         // Don't retry on authentication errors
@@ -118,19 +131,34 @@ const queryClient = new QueryClient({
           const status = (error as { status: number }).status;
           if (status === 401 || status === 403) return false;
         }
-        return failureCount < 2;
+        // Only retry once to avoid cascading failures
+        return failureCount < 1;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-      // Network mode - always try to fetch
-      networkMode: 'offlineFirst',
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+      
+      // Network mode
+      networkMode: 'online',
     },
     mutations: {
-      // Retry mutations once on failure
-      retry: 1,
-      // Network mode for mutations
-      networkMode: 'offlineFirst',
+      // Don't retry mutations - could cause duplicate operations
+      retry: 0,
+      networkMode: 'online',
     },
   },
+  
+  // Error handling for queries
+  queryCache: new QueryCache({
+    onError: (error) => {
+      console.error('[QueryCache] Global query error:', error);
+    },
+  }),
+  
+  // Error handling for mutations
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      console.error('[MutationCache] Global mutation error:', error);
+    },
+  }),
 });
 
 // Loading fallback component with responsive sizing

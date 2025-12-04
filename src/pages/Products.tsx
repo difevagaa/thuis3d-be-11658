@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useDataWithRecovery } from "@/hooks/useDataWithRecovery";
 import { logger } from "@/lib/logger";
 import { LANGUAGE_CHANGED_EVENT } from "@/lib/events";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 const Products = () => {
   const { t, i18n } = useTranslation('products');
@@ -112,15 +113,21 @@ const Products = () => {
   });
 
   useEffect(() => {
+    // Channel names for cleanup
+    const channelNames = [
+      'products-list-changes',
+      'products-roles-changes',
+      'products-product-roles-changes'
+    ];
+
     // Subscribe to auth state changes to reload products with correct filtering
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, _session) => {
       // Reload products when user logs in/out to show correct role-based products
       loadData();
     });
 
-    // Subscribe to product changes for real-time updates
-    const productsChannel = supabase
-      .channel('products-list-changes')
+    // Subscribe to product changes for real-time updates using centralized manager
+    const productsChannel = createChannel('products-list-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -134,34 +141,27 @@ const Products = () => {
       .subscribe();
 
     // Subscribe to user_roles changes to reload products with correct filtering
-    const rolesChannel = supabase
-      .channel('products-roles-changes')
+    const rolesChannel = createChannel('products-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'user_roles'
-      }, () => {
-        loadData();
-      })
+      }, loadData)
       .subscribe();
 
     // Subscribe to product_roles changes to update visibility immediately
-    const productRolesChannel = supabase
-      .channel('products-product-roles-changes')
+    const productRolesChannel = createChannel('products-product-roles-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'product_roles'
-      }, () => {
-        loadData();
-      })
+      }, loadData)
       .subscribe();
 
+    // CRITICAL: Proper cleanup on unmount
     return () => {
       authSubscription.unsubscribe();
-      supabase.removeChannel(productsChannel);
-      supabase.removeChannel(rolesChannel);
-      supabase.removeChannel(productRolesChannel);
+      removeChannels(channelNames);
     };
   }, [loadData]);
 
