@@ -16,7 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
-import { useConnectionState } from "@/hooks/useConnectionState";
+import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -556,15 +556,14 @@ interface Banner {
   title_color?: string;
   text_color?: string;
 }
-// Connection states - REMOVED (using useConnectionState instead)
+// Connection states - REMOVED (simplified approach)
 
 const Home = () => {
   const { t } = useTranslation(['home', 'common']);
   const navigate = useNavigate();
   
-  // Use global connection state
-  const { status: connectionStatus, isConnected, isConnecting, isFailed } = useConnectionState();
-  
+  // Initialize connection recovery (handles visibility changes, etc.)
+  useConnectionRecovery();
   // Data states
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -574,41 +573,47 @@ const Home = () => {
   const [features, setFeatures] = useState<any[]>([]);
   const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
   
-  // Loading states - SIMPLIFIED
+  // Loading states - SIMPLIFIED: only isLoading and hasLoaded
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   
   // Track dark mode state
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
   
-  // Refs for managing load state - SIMPLIFIED
+  // Refs for managing load state
   const loadInProgressRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * Execute Supabase query with timeout
-   * SIMPLIFIED - no complex retry logic, just timeout
+   * Execute Supabase query with timeout - SIMPLE VERSION
+   * Always completes within timeout, returns null on failure
    */
-  const executeWithTimeout = useCallback(async <T,>(
+  const executeQuery = useCallback(async <T,>(
     queryFn: () => PromiseLike<{ data: T | null; error: any }>,
-    timeoutMs = 8000
-  ): Promise<{ data: T | null; error: any }> => {
+    timeoutMs = 5000
+  ): Promise<T | null> => {
     try {
-      const result = await Promise.race([
-        queryFn(),
-        new Promise<{ data: null; error: Error }>((_, reject) =>
-          setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-        )
-      ]);
-      return result;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
+      const result = await queryFn();
+      clearTimeout(timeoutId);
+      
+      if (result.error) {
+        logger.warn('[Home] Query error:', result.error.message);
+        return null;
+      }
+      return result.data;
     } catch (err: any) {
       logger.warn('[Home] Query failed:', err.message);
-      return { data: null, error: err };
+      return null;
     }
   }, []);
 
   // Load component order configuration
   const loadOrderConfig = useCallback(async () => {
-    const { data, error } = await executeWithTimeout<{ setting_value: string } | null>(() =>
+    const data = await executeQuery<{ setting_value: string }>(() =>
       supabase
         .from("site_settings")
         .select("setting_value")
@@ -616,9 +621,7 @@ const Home = () => {
         .maybeSingle()
     );
 
-    if (error || !data) return;
-
-    if (data.setting_value) {
+    if (data?.setting_value) {
       try {
         const parsed = JSON.parse(data.setting_value) as HomepageOrderConfig;
         setOrderConfig(parsed);
@@ -626,11 +629,11 @@ const Home = () => {
         logger.error('[Home] Error parsing order config:', parseError);
       }
     }
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   // Load banners
   const loadBanners = useCallback(async () => {
-    const { data: bannersData, error: bannersError } = await executeWithTimeout<any[]>(() =>
+    const bannersData = await executeQuery<any[]>(() =>
       supabase
         .from("homepage_banners")
         .select("*")
@@ -638,14 +641,14 @@ const Home = () => {
         .order("position_order", { ascending: true, nullsFirst: false })
     );
     
-    if (bannersError || !bannersData || bannersData.length === 0) {
+    if (!bannersData || bannersData.length === 0) {
       setBanners([]);
       return;
     }
     
     // Load images for banners
     const bannerIds = bannersData.map((b: any) => b.id);
-    const { data: imagesData } = await executeWithTimeout<any[]>(() =>
+    const imagesData = await executeQuery<any[]>(() =>
       supabase
         .from("banner_images")
         .select("id, banner_id, image_url, display_order, alt_text, is_active")
@@ -660,11 +663,11 @@ const Home = () => {
     }));
     
     setBanners(bannersWithImages as Banner[]);
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   // Load sections
   const loadSections = useCallback(async () => {
-    const { data, error } = await executeWithTimeout<any[]>(() =>
+    const data = await executeQuery<any[]>(() =>
       supabase
         .from("homepage_sections")
         .select("*")
@@ -672,7 +675,7 @@ const Home = () => {
         .order("display_order", { ascending: true, nullsFirst: false })
     );
     
-    if (error || !data || data.length === 0) return;
+    if (!data || data.length === 0) return;
     
     const sectionsMap: any = {};
     data.forEach((section: any) => {
@@ -680,11 +683,11 @@ const Home = () => {
     });
     setSections(sectionsMap);
     setOrderedSections(data);
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   // Load quick access cards
   const loadQuickAccessCards = useCallback(async () => {
-    const { data, error } = await executeWithTimeout<any[]>(() =>
+    const data = await executeQuery<any[]>(() =>
       supabase
         .from("homepage_quick_access_cards")
         .select("*")
@@ -692,14 +695,14 @@ const Home = () => {
         .order("display_order", { ascending: true, nullsFirst: false })
     );
     
-    if (!error && data) {
+    if (data) {
       setQuickAccessCards(data);
     }
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   // Load features
   const loadFeatures = useCallback(async () => {
-    const { data, error } = await executeWithTimeout<any[]>(() =>
+    const data = await executeQuery<any[]>(() =>
       supabase
         .from("homepage_features")
         .select("*")
@@ -707,14 +710,14 @@ const Home = () => {
         .order("display_order", { ascending: true, nullsFirst: false })
     );
     
-    if (!error && data) {
+    if (data) {
       setFeatures(data);
     }
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   // Load featured products
   const loadFeaturedProducts = useCallback(async () => {
-    const { data, error: productsError } = await executeWithTimeout<any[]>(() =>
+    const data = await executeQuery<any[]>(() =>
       supabase
         .from("products")
         .select(`
@@ -727,7 +730,7 @@ const Home = () => {
         .limit(5)
     );
     
-    if (productsError || !data) return;
+    if (!data) return;
 
     // Get user session (don't block if fails)
     let user = null;
@@ -738,7 +741,7 @@ const Home = () => {
       user = session?.user ?? null;
       
       if (user) {
-        const { data: rolesData } = await executeWithTimeout<any[]>(() =>
+        const rolesData = await executeQuery<any[]>(() =>
           supabase
             .from("user_roles")
             .select("role")
@@ -774,11 +777,11 @@ const Home = () => {
       images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
     }));
     setFeaturedProducts(productsWithSortedImages);
-  }, [executeWithTimeout]);
+  }, [executeQuery]);
 
   /**
-   * Reload all homepage data - REWRITTEN FOR RELIABILITY
-   * GUARANTEED to complete and reset loading state
+   * Reload all homepage data - SIMPLIFIED VERSION
+   * GUARANTEED to complete within 10 seconds max
    */
   const reloadAllData = useCallback(async () => {
     // Prevent concurrent reloads
@@ -792,27 +795,24 @@ const Home = () => {
     setIsLoading(true);
     setLoadError(false);
 
-    try {
-      // Wait for connection if still connecting
-      if (isConnecting) {
-        logger.info('[Home] Waiting for connection to establish...');
-        // Wait up to 3 seconds for connection to be ready
-        for (let i = 0; i < 6; i++) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          if (isConnected) {
-            logger.info('[Home] Connection established, proceeding with load');
-            break;
-          }
-          if (isFailed) {
-            logger.warn('[Home] Connection failed while waiting');
-            break;
-          }
-        }
-      }
+    // Clear any existing timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
 
+    // Set a maximum timeout of 10 seconds - NEVER stay loading forever
+    loadTimeoutRef.current = setTimeout(() => {
+      if (loadInProgressRef.current) {
+        logger.warn('[Home] Load timeout reached, forcing completion');
+        setIsLoading(false);
+        setHasLoaded(true);
+        loadInProgressRef.current = false;
+      }
+    }, 10000);
+
+    try {
       // Load all data in parallel
-      // Even if some fail, others should succeed
-      const results = await Promise.allSettled([
+      await Promise.allSettled([
         loadFeaturedProducts(),
         loadBanners(),
         loadSections(),
@@ -821,27 +821,23 @@ const Home = () => {
         loadOrderConfig()
       ]);
 
-      // Check if any succeeded
-      const anySucceeded = results.some(r => r.status === 'fulfilled');
-      
-      if (!anySucceeded) {
-        logger.error('[Home] All data loads failed');
-        setLoadError(true);
-      } else {
-        logger.info('[Home] Homepage data loaded successfully');
-        setLoadError(false);
-      }
+      logger.info('[Home] Homepage data loaded successfully');
+      setHasLoaded(true);
+      setLoadError(false);
 
     } catch (error) {
       logger.error('[Home] Error loading homepage data:', error);
       setLoadError(true);
     } finally {
       // CRITICAL: Always reset loading state
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
       setIsLoading(false);
       loadInProgressRef.current = false;
       logger.info('[Home] Reload complete');
     }
-  }, [isConnected, isConnecting, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
+  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
 
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
@@ -1263,20 +1259,20 @@ const Home = () => {
     return defaultComponents;
   };
 
-  // Show connection/loading state - USING NEW CONNECTION STATE
-  if ((isConnecting || isLoading) && !isFailed) {
+  // Show loading state - SIMPLIFIED
+  if (isLoading && !hasLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{t('common:connection.connecting', { defaultValue: 'Conectando...' })}</p>
+          <p className="text-muted-foreground">{t('common:connection.loading', { defaultValue: 'Cargando...' })}</p>
         </div>
       </div>
     );
   }
 
-  // Show error state with retry button - USING NEW CONNECTION STATE
-  if (isFailed || loadError) {
+  // Show error state with retry button
+  if (loadError && !hasLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4 p-8">

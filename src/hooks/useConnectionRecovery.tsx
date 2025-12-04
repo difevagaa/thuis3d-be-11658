@@ -1,148 +1,112 @@
 import { useEffect, useRef } from 'react';
-import { forceReconnect, initializeConnection, getConnectionStatus } from './useConnectionState';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
 /**
- * Global Connection Recovery Hook - REWRITTEN FOR RELIABILITY
+ * Simple Connection Recovery Hook - COMPLETELY REWRITTEN
  * 
- * This hook is the PRIMARY handler for all connection events:
- * - Initial connection on app start
- * - Tab visibility changes
- * - Network online/offline events
- * - Page restoration from browser cache
+ * Design: When the page becomes visible after being in background,
+ * ALWAYS dispatch recovery event to trigger data reload.
+ * Don't wait for connection test - just reload.
  * 
- * Design Principles:
- * 1. Single responsibility: detect events and trigger reconnection
- * 2. Delegates connection logic to useConnectionState (no duplication)
- * 3. Dispatches 'connection-recovered' event when reconnection succeeds
- * 4. Simple, predictable, no race conditions
+ * The data loading functions themselves handle timeouts and errors.
  */
 
-export const CONNECTION_TIMEOUT = 5000; // 5 seconds for connection test
-export const HEARTBEAT_INTERVAL = 30000; // 30 seconds heartbeat
-export const MAX_RECONNECT_ATTEMPTS = 3;
-
 export function useConnectionRecovery() {
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const wasInBackgroundRef = useRef(false);
   const initializedRef = useRef(false);
 
-  // Set up all event listeners and initial connection
   useEffect(() => {
-    /**
-     * Initialize connection on mount
-     */
-    const initialize = async () => {
-      if (initializedRef.current) return;
+    // Dispatch recovery on mount (initial load)
+    if (!initializedRef.current) {
       initializedRef.current = true;
-
-      logger.info('[ConnectionRecovery] Initializing connection...');
-      const success = await initializeConnection();
-
-      if (success) {
-        logger.info('[ConnectionRecovery] Initial connection established');
-        window.dispatchEvent(new CustomEvent('connection-ready'));
+      logger.info('[ConnectionRecovery] Dispatching initial connection-recovered');
+      // Small delay to ensure components are mounted
+      setTimeout(() => {
         window.dispatchEvent(new CustomEvent('connection-recovered'));
-        startHeartbeat();
-      } else {
-        logger.error('[ConnectionRecovery] Initial connection failed');
-        window.dispatchEvent(new CustomEvent('connection-failed'));
-      }
-    };
+      }, 100);
+    }
 
     /**
-     * Start heartbeat to keep connection alive
+     * Handle tab visibility changes - SIMPLE version
+     * Just dispatch recovery event, let data loaders handle the rest
      */
-    const startHeartbeat = () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-
-      heartbeatIntervalRef.current = setInterval(async () => {
-        // Only reconnect if status shows we're disconnected
-        const status = getConnectionStatus();
-        if (status !== 'connected') {
-          logger.warn('[ConnectionRecovery] Heartbeat detected disconnection, reconnecting...');
-          const success = await forceReconnect();
-          if (success) {
-            window.dispatchEvent(new CustomEvent('connection-recovered'));
-          }
-        } else {
-          logger.debug('[ConnectionRecovery] Heartbeat: connection OK');
-        }
-      }, HEARTBEAT_INTERVAL);
-
-      logger.info('[ConnectionRecovery] Heartbeat started');
-    };
-
-    /**
-     * Handle tab visibility changes
-     */
-    const handleVisibilityChange = async () => {
+    const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         if (wasInBackgroundRef.current) {
-          logger.info('[ConnectionRecovery] App returned from background, reconnecting...');
+          logger.info('[ConnectionRecovery] Page visible again, dispatching recovery');
           wasInBackgroundRef.current = false;
           
-          const success = await forceReconnect();
-          if (success) {
-            window.dispatchEvent(new CustomEvent('connection-recovered'));
-          }
-          
-          startHeartbeat();
+          // Dispatch recovery event immediately - data loaders will retry if needed
+          window.dispatchEvent(new CustomEvent('connection-recovered'));
         }
       } else {
         wasInBackgroundRef.current = true;
-        logger.info('[ConnectionRecovery] App going to background');
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-        }
+        logger.debug('[ConnectionRecovery] Page going to background');
       }
     };
 
     /**
      * Handle page restoration from browser cache
      */
-    const handlePageShow = async (event: PageTransitionEvent) => {
+    const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
-        logger.info('[ConnectionRecovery] Page restored from bfcache, reconnecting...');
-        const success = await forceReconnect();
-        if (success) {
-          window.dispatchEvent(new CustomEvent('connection-recovered'));
-        }
+        logger.info('[ConnectionRecovery] Page restored from bfcache, dispatching recovery');
+        window.dispatchEvent(new CustomEvent('connection-recovered'));
       }
     };
 
     /**
      * Handle network coming back online
      */
-    const handleOnline = async () => {
-      logger.info('[ConnectionRecovery] Network restored, reconnecting...');
-      const success = await forceReconnect();
-      if (success) {
+    const handleOnline = () => {
+      logger.info('[ConnectionRecovery] Network online, dispatching recovery');
+      window.dispatchEvent(new CustomEvent('connection-recovered'));
+    };
+
+    /**
+     * Handle window focus
+     */
+    const handleFocus = () => {
+      if (wasInBackgroundRef.current) {
+        logger.info('[ConnectionRecovery] Window focused, dispatching recovery');
+        wasInBackgroundRef.current = false;
         window.dispatchEvent(new CustomEvent('connection-recovered'));
       }
     };
-
-    // Initialize connection
-    initialize();
 
     // Set up event listeners
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('online', handleOnline);
+    window.addEventListener('focus', handleFocus);
 
-    // Cleanup
     return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
   return {};
+}
+
+// Export simple utility to test if we can reach Supabase
+export async function testSupabaseConnection(timeoutMs = 3000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const { error } = await supabase
+      .from('products')
+      .select('id')
+      .limit(1)
+      .abortSignal(controller.signal);
+
+    clearTimeout(timeoutId);
+    return !error;
+  } catch {
+    return false;
+  }
 }
