@@ -50,7 +50,7 @@ export default function PaymentInstructions() {
       }
 
       // Generate order notes using utility function
-      const orderNotes = generateOrderNotes(cartItems);
+      const orderNotes = generateOrderNotes(cartItems, null, 0);
       
       // Create order using utility function
       // CRÍTICO: Usar el costo de envío del pendingOrder

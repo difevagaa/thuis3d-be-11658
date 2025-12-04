@@ -208,11 +208,11 @@ export default function CardPaymentPage() {
 
       toast.success(t('payment:messages.orderCreated'));
 
-      // Redirect to payment gateway
+      // Redirect to payment gateway (uses Revolut configuration as per requirements)
       if (paymentConfig?.revolut_link) {
         window.location.href = paymentConfig.revolut_link;
       } else {
-        toast.error("Configuración de pago no disponible");
+        toast.error("Configuración de pasarela de pago no disponible");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
