@@ -99,66 +99,78 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 import Gallery from "./pages/Gallery";
 
 /**
- * CRITICAL FIX: React Query Configuration
+ * CRITICAL: Amazon-Style React Query Configuration
  * 
- * PREVIOUS PROBLEM:
- * - refetchOnWindowFocus: true → caused reloads on every tab switch
- * - refetchOnMount: "always" → caused reloads on every navigation
- * - Combined with 30+ pages having realtime subscriptions
- * - Result: Infinite loading after 20-30 seconds of navigation
+ * GOAL: Make the page as fluid and fast as Amazon.com
  * 
- * SOLUTION:
- * - Disable aggressive refetching
- * - Increase stale time (data stays fresh longer)
- * - Reduce cache time (faster garbage collection)
- * - Let realtime subscriptions handle updates
+ * KEY PRINCIPLES FROM AMAZON:
+ * 1. STALE-WHILE-REVALIDATE: Show cached data INSTANTLY, update in background
+ * 2. AGGRESSIVE CACHING: Keep data in cache for long periods
+ * 3. NO LOADING SPINNERS: Always show data (even if slightly stale)
+ * 4. BACKGROUND UPDATES: Silently fetch fresh data when page becomes visible
+ * 5. OPTIMISTIC UI: Changes appear immediately
+ * 
+ * RESULT: User never waits, page feels instant like Amazon
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data is fresh for 3 minutes - reduces unnecessary refetches
-      staleTime: 3 * 60 * 1000,
-      // Keep unused data in cache for 2 minutes only - faster cleanup
-      gcTime: 2 * 60 * 1000,
+      // AMAZON PATTERN: Data is considered "fresh" for 30 seconds
+      // After 30 seconds, data is marked as stale and will be refetched
+      // in the background, but cached data is still served immediately
+      staleTime: 30 * 1000, // 30 seconds
       
-      // CRITICAL: Disable aggressive refetching that caused infinite loading
-      refetchOnWindowFocus: false, // Don't refetch on tab switch
-      refetchOnReconnect: false,   // Don't refetch on reconnect
-      refetchOnMount: false,       // Don't refetch on every mount
+      // AMAZON PATTERN: Keep data in cache for 30 minutes
+      // Even if not used, so navigating back is instant
+      gcTime: 30 * 60 * 1000, // 30 minutes
       
-      // Retry failed requests with exponential backoff
-      retry: (failureCount, error) => {
-        // Don't retry on authentication errors
-        if (error && typeof error === 'object' && 'status' in error) {
-          const status = (error as { status: number }).status;
-          if (status === 401 || status === 403) return false;
-        }
-        // Only retry once to avoid cascading failures
-        return failureCount < 1;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+      // CRITICAL: Enable refetchOnWindowFocus - Amazon does this
+      // When user returns from another tab, silently update data in background
+      // User sees cached data immediately (no loading), fresh data loads behind
+      refetchOnWindowFocus: true,
       
-      // Network mode
+      // AMAZON PATTERN: Refetch when reconnecting to internet
+      refetchOnReconnect: true,
+      
+      // AMAZON PATTERN: Don't refetch on every mount
+      // Use cached data if it's fresh enough
+      refetchOnMount: false,
+      
+      // CRITICAL: Retry fast with exponential backoff
+      // Amazon retries failed requests quickly
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(300 * 2 ** attemptIndex, 3000), // 300ms, 600ms, 1200ms, max 3s
+      
+      // Don't use automatic polling intervals (saves bandwidth)
+      refetchInterval: false,
+      
+      // Network mode: online (Amazon assumes good connection)
       networkMode: 'online',
+      
+      // PERFORMANCE: Structural sharing optimizes memory and prevents unnecessary re-renders
+      // by sharing unchanged parts of query results between updates
+      structuralSharing: true,
     },
     mutations: {
-      // Don't retry mutations - could cause duplicate operations
+      // Don't retry mutations automatically (could cause duplicates)
       retry: 0,
       networkMode: 'online',
     },
   },
   
-  // Error handling for queries
+  // Minimal error logging - don't spam console like Amazon
   queryCache: new QueryCache({
-    onError: (error) => {
-      console.error('[QueryCache] Global query error:', error);
+    onError: (error, query) => {
+      // Only log if query has active observers (user is watching it)
+      if (query.getObserversCount() > 0) {
+        console.error('[Query Error]:', error);
+      }
     },
   }),
   
-  // Error handling for mutations
   mutationCache: new MutationCache({
     onError: (error) => {
-      console.error('[MutationCache] Global mutation error:', error);
+      console.error('[Mutation Error]:', error);
     },
   }),
 });
