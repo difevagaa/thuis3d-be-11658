@@ -145,9 +145,8 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData);
       setProductVideo((productData as any)?.video_url || null);
-      if (productData) {
-        hasProductRef.current = true;
-      }
+      // Mark as loaded after successful fetch, regardless of whether we got a product
+      hasProductRef.current = true;
 
       // Fetch product images
       const { data: imagesData } = await supabase

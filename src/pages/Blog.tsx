@@ -95,9 +95,8 @@ export default function Blog() {
         }));
       
       setPosts(filteredPosts);
-      if (filteredPosts.length > 0) {
-        hasPostsRef.current = true;
-      }
+      // Mark as loaded after successful fetch, regardless of whether we got posts
+      hasPostsRef.current = true;
     } catch (error) {
       logger.error("Error loading posts:", error);
     } finally {

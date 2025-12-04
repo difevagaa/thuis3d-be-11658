@@ -90,9 +90,8 @@ export default function BlogPost() {
       }
 
       setPost(postData);
-      if (postData) {
-        hasPostRef.current = true;
-      }
+      // Mark as loaded after successful fetch, regardless of whether we got a post
+      hasPostRef.current = true;
     } catch (error) {
       logger.error("Error loading post:", error);
     } finally {

@@ -45,9 +45,8 @@ export default function Gallery() {
       if (error) throw error;
       const galleryItems = (data || []) as GalleryItem[];
       setItems(galleryItems);
-      if (galleryItems.length > 0) {
-        hasItemsRef.current = true;
-      }
+      // Mark as loaded after successful fetch, regardless of whether we got items
+      hasItemsRef.current = true;
     } catch (error) {
       console.error('Error loading gallery:', error);
       setError(true);
