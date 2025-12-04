@@ -150,16 +150,21 @@ export const AdminLayout = ({
     return null;
   }
   return <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <AdminSidebar />
         <div className="flex-1">
-          <header className="h-14 flex items-center justify-between border-b px-4">
-            <div className="flex items-center">
+          <header className="h-16 flex items-center justify-between border-b bg-white shadow-sm px-6">
+            <div className="flex items-center gap-4">
               <SidebarTrigger />
-              <h1 className="ml-4 text-lg font-semibold">Panel de Administración</h1>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                  <Shield className="h-4 w-4 text-white" />
+                </div>
+                <h1 className="text-lg font-bold text-gray-900">Panel de Administración</h1>
+              </div>
             </div>
             <TooltipProvider delayDuration={300}>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 {/* Home - Go to homepage */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -167,9 +172,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={() => navigate("/")}
-                      className="h-9 w-9"
+                      className="h-9 w-9 hover:bg-gray-100"
                     >
-                      <Home className="h-5 w-5" />
+                      <Home className="h-5 w-5 text-gray-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -184,9 +189,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshPage}
-                      className="h-9 w-9"
+                      className="h-9 w-9 hover:bg-gray-100"
                     >
-                      <RotateCcw className="h-5 w-5" />
+                      <RotateCcw className="h-5 w-5 text-gray-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -201,10 +206,10 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshData}
-                      className="h-9 w-9"
+                      className="h-9 w-9 hover:bg-gray-100"
                       disabled={isRefreshing}
                     >
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <RefreshCw className={`h-5 w-5 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -219,9 +224,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleGrayscale}
-                      className={`h-9 w-9 ${isGrayscale ? "bg-accent" : ""}`}
+                      className={`h-9 w-9 hover:bg-gray-100 ${isGrayscale ? "bg-gray-200" : ""}`}
                     >
-                      <Contrast className="h-5 w-5" />
+                      <Contrast className="h-5 w-5 text-gray-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -236,12 +241,12 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleFullscreen}
-                      className="h-9 w-9"
+                      className="h-9 w-9 hover:bg-gray-100"
                     >
                       {isFullscreen ? (
-                        <Minimize className="h-5 w-5" />
+                        <Minimize className="h-5 w-5 text-gray-600" />
                       ) : (
-                        <Maximize className="h-5 w-5" />
+                        <Maximize className="h-5 w-5 text-gray-600" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -255,7 +260,7 @@ export const AdminLayout = ({
               </div>
             </TooltipProvider>
           </header>
-          <main className="p-6">{children}</main>
+          <main className="p-6 bg-gray-50">{children}</main>
         </div>
       </div>
     </SidebarProvider>;
