@@ -19,7 +19,8 @@ import {
   RotateCcw, 
   Contrast, 
   Maximize, 
-  Minimize 
+  Minimize,
+  Shield
 } from "lucide-react";
 interface AdminLayoutProps {
   children: ReactNode;
