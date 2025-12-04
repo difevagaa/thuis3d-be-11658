@@ -119,7 +119,7 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   
   const finalImage = image || seoData?.og_image || siteCustomization?.og_image || globalSettings?.og_image || "/placeholder.svg";
   const canonicalUrl = seoData?.canonical_url || `${globalSettings?.canonical_domain || ''}${location.pathname}`;
-  const baseUrl = globalSettings?.canonical_domain || 'https://thuis3d.com';
+  const baseUrl = globalSettings?.canonical_domain || 'https://thuis3d.be';
 
   const structuredData = {
     "@context": "https://schema.org",
