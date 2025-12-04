@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { logger } from '@/lib/logger';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { createChannel, removeChannels } from "@/lib/channelManager";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -135,9 +136,16 @@ export default function AdminDashboard() {
       loadStatsRef.current?.();
     }, 30000);
     
-    // Suscribirse a cambios en tiempo real de múltiples tablas
-    const visitorsChannel = supabase
-      .channel('dashboard-visitors')
+    // Channel names for cleanup
+    const channelNames = [
+      'dashboard-visitors',
+      'dashboard-orders',
+      'dashboard-quotes',
+      'dashboard-messages'
+    ];
+    
+    // Suscribirse a cambios en tiempo real de múltiples tablas usando channel manager
+    const visitorsChannel = createChannel('dashboard-visitors')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'visitor_sessions' },
@@ -145,8 +153,7 @@ export default function AdminDashboard() {
       )
       .subscribe();
 
-    const ordersChannel = supabase
-      .channel('dashboard-orders')
+    const ordersChannel = createChannel('dashboard-orders')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
@@ -154,8 +161,7 @@ export default function AdminDashboard() {
       )
       .subscribe();
 
-    const quotesChannel = supabase
-      .channel('dashboard-quotes')
+    const quotesChannel = createChannel('dashboard-quotes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'quotes' },
@@ -163,8 +169,7 @@ export default function AdminDashboard() {
       )
       .subscribe();
 
-    const messagesChannel = supabase
-      .channel('dashboard-messages')
+    const messagesChannel = createChannel('dashboard-messages')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'messages' },
@@ -172,12 +177,10 @@ export default function AdminDashboard() {
       )
       .subscribe();
 
+    // CRITICAL: Proper cleanup on unmount
     return () => {
       clearInterval(autoRefreshInterval);
-      supabase.removeChannel(visitorsChannel);
-      supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(quotesChannel);
-      supabase.removeChannel(messagesChannel);
+      removeChannels(channelNames);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
