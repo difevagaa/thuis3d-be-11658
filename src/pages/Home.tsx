@@ -16,7 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
 import { HomepageOrderConfig, HomepageComponentOrder } from "@/hooks/useHomepageOrder";
-import { CONNECTION_TIMEOUT } from "@/hooks/useConnectionRecovery";
+import { useConnectionState } from "@/hooks/useConnectionState";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -556,12 +556,14 @@ interface Banner {
   title_color?: string;
   text_color?: string;
 }
-// Connection states
-type ConnectionState = 'connecting' | 'connected' | 'failed';
+// Connection states - REMOVED (using useConnectionState instead)
 
 const Home = () => {
   const { t } = useTranslation(['home', 'common']);
   const navigate = useNavigate();
+  
+  // Use global connection state
+  const { status: connectionStatus, isConnected, isConnecting, isFailed } = useConnectionState();
   
   // Data states
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -572,113 +574,41 @@ const Home = () => {
   const [features, setFeatures] = useState<any[]>([]);
   const [orderConfig, setOrderConfig] = useState<HomepageOrderConfig | null>(null);
   
-  // Loading states
-  const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
+  // Loading states - SIMPLIFIED
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
   
   // Track dark mode state
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
   
-  // Refs for managing load state
-  const dataLoadedRef = useRef(false);
-  const connectionCheckInProgressRef = useRef(false);
-  const reloadInProgressRef = useRef(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Refs for managing load state - SIMPLIFIED
+  const loadInProgressRef = useRef(false);
 
   /**
-   * Wake up Supabase connection with retries
+   * Execute Supabase query with timeout
+   * SIMPLIFIED - no complex retry logic, just timeout
    */
-  const wakeUpConnection = useCallback(async (): Promise<boolean> => {
-    if (connectionCheckInProgressRef.current) {
-      return false;
-    }
-    
-    connectionCheckInProgressRef.current = true;
-    const maxAttempts = 5;
-    
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        setLoadingMessage(t('common:connection.connecting', { defaultValue: 'Conectando...' }) + ` (${attempt}/${maxAttempts})`);
-        logger.info(`[Home] Connection attempt ${attempt}/${maxAttempts}`);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT);
-        
-        const { error } = await supabase
-          .from('products')
-          .select('id')
-          .limit(1)
-          .abortSignal(controller.signal);
-        
-        clearTimeout(timeoutId);
-        
-        if (!error) {
-          logger.info(`[Home] Connection established on attempt ${attempt}`);
-          setConnectionState('connected');
-          connectionCheckInProgressRef.current = false;
-          return true;
-        }
-        
-        logger.warn(`[Home] Attempt ${attempt} failed:`, error.message);
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          logger.warn(`[Home] Attempt ${attempt} timed out`);
-        } else {
-          logger.warn(`[Home] Attempt ${attempt} error:`, err.message);
-        }
-      }
-      
-      if (attempt < maxAttempts) {
-        const delay = 500 * attempt;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    
-    logger.error('[Home] All connection attempts failed');
-    setConnectionState('failed');
-    connectionCheckInProgressRef.current = false;
-    return false;
-  }, [t]);
-
-  /**
-   * Execute Supabase query with retry
-   */
-  const executeWithRetry = useCallback(async <T,>(
-    queryFn: () => PromiseLike<{ data: T | null; error: any }>
+  const executeWithTimeout = useCallback(async <T,>(
+    queryFn: () => PromiseLike<{ data: T | null; error: any }>,
+    timeoutMs = 8000
   ): Promise<{ data: T | null; error: any }> => {
-    const maxRetries = 2;
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await Promise.race([
-          queryFn(),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Query timeout')), 8000)
-          )
-        ]) as { data: T | null; error: any };
-        
-        if (!result.error) {
-          return result;
-        }
-        
-        logger.warn(`[Home] Query attempt ${attempt + 1} failed:`, result.error.message);
-      } catch (err: any) {
-        logger.warn(`[Home] Query attempt ${attempt + 1} exception:`, err.message);
-      }
-      
-      if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-      }
+    try {
+      const result = await Promise.race([
+        queryFn(),
+        new Promise<{ data: null; error: Error }>((_, reject) =>
+          setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+        )
+      ]);
+      return result;
+    } catch (err: any) {
+      logger.warn('[Home] Query failed:', err.message);
+      return { data: null, error: err };
     }
-    
-    return { data: null, error: new Error('Query failed after retries') };
   }, []);
 
   // Load component order configuration
   const loadOrderConfig = useCallback(async () => {
-    const { data, error } = await executeWithRetry<{ setting_value: string } | null>(() =>
+    const { data, error } = await executeWithTimeout<{ setting_value: string } | null>(() =>
       supabase
         .from("site_settings")
         .select("setting_value")
@@ -696,11 +626,11 @@ const Home = () => {
         logger.error('[Home] Error parsing order config:', parseError);
       }
     }
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
   // Load banners
   const loadBanners = useCallback(async () => {
-    const { data: bannersData, error: bannersError } = await executeWithRetry<any[]>(() =>
+    const { data: bannersData, error: bannersError } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("homepage_banners")
         .select("*")
@@ -715,7 +645,7 @@ const Home = () => {
     
     // Load images for banners
     const bannerIds = bannersData.map((b: any) => b.id);
-    const { data: imagesData } = await executeWithRetry<any[]>(() =>
+    const { data: imagesData } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("banner_images")
         .select("id, banner_id, image_url, display_order, alt_text, is_active")
@@ -730,11 +660,11 @@ const Home = () => {
     }));
     
     setBanners(bannersWithImages as Banner[]);
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
   // Load sections
   const loadSections = useCallback(async () => {
-    const { data, error } = await executeWithRetry<any[]>(() =>
+    const { data, error } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("homepage_sections")
         .select("*")
@@ -750,11 +680,11 @@ const Home = () => {
     });
     setSections(sectionsMap);
     setOrderedSections(data);
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
   // Load quick access cards
   const loadQuickAccessCards = useCallback(async () => {
-    const { data, error } = await executeWithRetry<any[]>(() =>
+    const { data, error } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("homepage_quick_access_cards")
         .select("*")
@@ -765,11 +695,11 @@ const Home = () => {
     if (!error && data) {
       setQuickAccessCards(data);
     }
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
   // Load features
   const loadFeatures = useCallback(async () => {
-    const { data, error } = await executeWithRetry<any[]>(() =>
+    const { data, error } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("homepage_features")
         .select("*")
@@ -780,11 +710,11 @@ const Home = () => {
     if (!error && data) {
       setFeatures(data);
     }
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
   // Load featured products
   const loadFeaturedProducts = useCallback(async () => {
-    const { data, error: productsError } = await executeWithRetry<any[]>(() =>
+    const { data, error: productsError } = await executeWithTimeout<any[]>(() =>
       supabase
         .from("products")
         .select(`
@@ -808,7 +738,7 @@ const Home = () => {
       user = session?.user ?? null;
       
       if (user) {
-        const { data: rolesData } = await executeWithRetry<any[]>(() =>
+        const { data: rolesData } = await executeWithTimeout<any[]>(() =>
           supabase
             .from("user_roles")
             .select("role")
@@ -844,56 +774,64 @@ const Home = () => {
       images: product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
     }));
     setFeaturedProducts(productsWithSortedImages);
-  }, [executeWithRetry]);
+  }, [executeWithTimeout]);
 
-  // Function to reload all homepage data
+  /**
+   * Reload all homepage data - REWRITTEN FOR RELIABILITY
+   * GUARANTEED to complete and reset loading state
+   */
   const reloadAllData = useCallback(async () => {
-    // Prevent simultaneous reload attempts
-    if (reloadInProgressRef.current) {
-      logger.info('[Home] Reload already in progress, skipping duplicate request');
+    // Prevent concurrent reloads
+    if (loadInProgressRef.current) {
+      logger.info('[Home] Reload already in progress, skipping');
       return;
     }
-    
+
     logger.info('[Home] Reloading all homepage data...');
-    reloadInProgressRef.current = true;
+    loadInProgressRef.current = true;
     setIsLoading(true);
     setLoadError(false);
-    setLoadingMessage(t('common:connection.loading', { defaultValue: 'Cargando...' }));
-    
+
     try {
-      // First verify connection is awake
-      const isConnected = await wakeUpConnection();
-      if (!isConnected) {
-        logger.error('[Home] Connection failed, showing error state');
-        setLoadError(true);
-        setConnectionState('failed');
-        // Ensure finally block executes to reset loading state and reload flag
-      } else {
-        // Run all loads in parallel only if connected
-        await Promise.all([
-          loadFeaturedProducts(),
-          loadBanners(),
-          loadSections(),
-          loadQuickAccessCards(),
-          loadFeatures(),
-          loadOrderConfig()
-        ]);
-        
-        dataLoadedRef.current = true;
-        setLoadError(false);
-        setConnectionState('connected');
+      // Wait for connection if not connected yet
+      if (!isConnected && isConnecting) {
+        logger.info('[Home] Waiting for connection...');
+        // Wait a bit for connection
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
+
+      // Load all data in parallel
+      // Even if some fail, others should succeed
+      const results = await Promise.allSettled([
+        loadFeaturedProducts(),
+        loadBanners(),
+        loadSections(),
+        loadQuickAccessCards(),
+        loadFeatures(),
+        loadOrderConfig()
+      ]);
+
+      // Check if any succeeded
+      const anySucceeded = results.some(r => r.status === 'fulfilled');
+      
+      if (!anySucceeded) {
+        logger.error('[Home] All data loads failed');
+        setLoadError(true);
+      } else {
+        logger.info('[Home] Homepage data loaded successfully');
+        setLoadError(false);
+      }
+
     } catch (error) {
       logger.error('[Home] Error loading homepage data:', error);
       setLoadError(true);
-      setConnectionState('failed');
     } finally {
-      // CRITICAL: Always clear loading state in finally block
+      // CRITICAL: Always reset loading state
       setIsLoading(false);
-      setLoadingMessage('');
-      reloadInProgressRef.current = false;
+      loadInProgressRef.current = false;
+      logger.info('[Home] Reload complete');
     }
-  }, [loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig, wakeUpConnection, t]);
+  }, [isConnected, isConnecting, loadFeaturedProducts, loadBanners, loadSections, loadQuickAccessCards, loadFeatures, loadOrderConfig]);
 
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
@@ -983,21 +921,10 @@ const Home = () => {
   // which dispatch 'connection-recovered' and 'session-recovered' events.
   // Listening here would cause triple loading attempts and race conditions.
   useEffect(() => {
-    // Debounced reload function to prevent rapid-fire calls
-    const debouncedReload = (delay: number = 300) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-      debounceTimerRef.current = setTimeout(() => {
-        debounceTimerRef.current = null;
-        reloadAllData();
-      }, delay);
-    };
-    
     const handleRecovery = () => {
-      logger.info('[Home] Recovery event received, scheduling reload...');
-      debouncedReload(500);
+      logger.info('[Home] Recovery event received, reloading data...');
+      // No debounce needed - reloadAllData has its own concurrency protection
+      reloadAllData();
     };
 
     // Only listen to recovery events dispatched by global hooks
@@ -1006,16 +933,11 @@ const Home = () => {
     window.addEventListener('connection-recovered', handleRecovery);
 
     return () => {
-      // Clear debounce timer on cleanup
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-      
       window.removeEventListener('session-recovered', handleRecovery);
       window.removeEventListener('connection-recovered', handleRecovery);
     };
   }, [reloadAllData]);
+
   // Helper function to get banners by section
   const getBannersBySection = (section: string) => {
     return banners.filter(b => b.page_section === section);
@@ -1331,20 +1253,20 @@ const Home = () => {
     return defaultComponents;
   };
 
-  // Show connection/loading state
-  if (connectionState === 'connecting' && isLoading) {
+  // Show connection/loading state - USING NEW CONNECTION STATE
+  if ((isConnecting || isLoading) && !isFailed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">{loadingMessage || t('common:connection.connecting', { defaultValue: 'Conectando...' })}</p>
+          <p className="text-muted-foreground">{t('common:connection.connecting', { defaultValue: 'Conectando...' })}</p>
         </div>
       </div>
     );
   }
 
-  // Show error state with retry button
-  if (connectionState === 'failed' || loadError) {
+  // Show error state with retry button - USING NEW CONNECTION STATE
+  if (isFailed || loadError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4 p-8">
@@ -1361,7 +1283,6 @@ const Home = () => {
           </p>
           <Button 
             onClick={() => {
-              setConnectionState('connecting');
               setLoadError(false);
               reloadAllData();
             }}

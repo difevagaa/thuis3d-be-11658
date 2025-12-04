@@ -3,44 +3,60 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
 /**
- * Session Recovery Hook - Best Practices 2024
+ * Session Recovery Hook - REWRITTEN FOR RELIABILITY
  * 
- * This hook handles common issues when users have stale cookies/cache:
- * 1. Detects when session tokens are corrupted or expired
- * 2. Clears stale session data that causes connection issues
- * 3. Attempts to recover or gracefully degrades to unauthenticated state
- * 4. Ensures products and data load even when session is problematic
- * 5. Handles storage quota errors gracefully
- * 6. Handles mobile background/foreground transitions
+ * This hook handles session validation and cleanup:
+ * 1. Validates sessions periodically
+ * 2. Clears corrupted session data
+ * 3. Handles storage quota errors
+ * 4. Responds to connection recovery events
+ * 
+ * Design Principles:
+ * 1. Simple session validation logic
+ * 2. No duplicate connection handling (delegated to useConnectionRecovery)
+ * 3. Graceful error handling
+ * 4. No infinite loops or stuck states
  */
+
 export function useSessionRecovery() {
-  const recoveryAttempted = useRef(false);
-  const lastCheck = useRef<number>(0);
-  const isValidating = useRef(false);
-  const CHECK_INTERVAL = 30000; // 30 seconds between checks
+  const recoveryAttemptedRef = useRef(false);
+  const lastValidationRef = useRef<number>(0);
+  const isValidatingRef = useRef(false);
+  
+  const VALIDATION_INTERVAL_MS = 30000; // 30 seconds between validations
+  const MIN_TIME_BETWEEN_VALIDATIONS_MS = 5000; // Don't validate more than once per 5 seconds
 
   /**
-   * Validates the current session and clears if corrupted
+   * Validate the current session
+   * Returns true if session is valid or no session exists
+   * Returns false only if session is corrupted
    */
   const validateSession = useCallback(async (forceCheck = false): Promise<boolean> => {
     const now = Date.now();
-    
-    // Throttle checks to avoid excessive API calls (unless forced)
-    if (!forceCheck && (now - lastCheck.current < CHECK_INTERVAL || isValidating.current)) {
-      return true;
+
+    // Throttle validations (unless forced)
+    if (!forceCheck) {
+      if (isValidatingRef.current) {
+        logger.debug('[SessionRecovery] Validation already in progress');
+        return true;
+      }
+      if (now - lastValidationRef.current < MIN_TIME_BETWEEN_VALIDATIONS_MS) {
+        logger.debug('[SessionRecovery] Too soon since last validation');
+        return true;
+      }
     }
-    
-    isValidating.current = true;
-    lastCheck.current = now;
+
+    isValidatingRef.current = true;
+    lastValidationRef.current = now;
 
     try {
-      // First, try to get the session from local storage
+      // Get current session
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
+      // If error getting session, it might be corrupted
       if (error) {
-        logger.warn('[SessionRecovery] Error getting session:', error);
+        logger.warn('[SessionRecovery] Error getting session:', error.message);
         
-        // If there's an error with the session, it might be corrupted
         if (error.message?.includes('invalid') || 
             error.message?.includes('expired') ||
             error.message?.includes('token') ||
@@ -49,79 +65,73 @@ export function useSessionRecovery() {
           return false;
         }
       }
-      
-      // If there's a session, validate it's still active
+
+      // If there's a session, verify it's still valid
       if (session?.access_token) {
-        try {
-          // Make a lightweight API call to verify the session is still valid
-          const { error: userError } = await supabase.auth.getUser();
-          
-          if (userError) {
-            logger.warn('[SessionRecovery] Session validation failed:', userError);
-            
-            // Session exists but is invalid - clear it
-            if (userError.message?.includes('invalid') ||
-                userError.message?.includes('expired') ||
-                userError.message?.includes('JWT') ||
-                userError.status === 401 ||
-                userError.status === 403) {
-              await clearCorruptedSession();
-              return false;
-            }
+        const { error: userError } = await supabase.auth.getUser();
+
+        if (userError) {
+          logger.warn('[SessionRecovery] Session validation failed:', userError.message);
+
+          // Session exists but is invalid - clear it
+          if (userError.message?.includes('invalid') ||
+              userError.message?.includes('expired') ||
+              userError.message?.includes('JWT') ||
+              userError.status === 401 ||
+              userError.status === 403) {
+            await clearCorruptedSession();
+            return false;
           }
-        } catch (validationError) {
-          // Don't clear session on network errors, just continue
-          logger.debug('[SessionRecovery] Network error during validation (ignoring):', validationError);
         }
       }
-      
+
       return true;
     } catch (error) {
-      logger.error('[SessionRecovery] Unexpected error during session validation:', error);
+      logger.error('[SessionRecovery] Unexpected error during validation:', error);
       return true; // Don't clear session on unexpected errors
     } finally {
-      isValidating.current = false;
+      isValidatingRef.current = false;
     }
   }, []);
 
   /**
-   * Clears corrupted session data from storage
+   * Clear corrupted session data
    */
   const clearCorruptedSession = useCallback(async () => {
-    if (recoveryAttempted.current) {
-      return; // Only attempt recovery once per session
+    if (recoveryAttemptedRef.current) {
+      logger.debug('[SessionRecovery] Recovery already attempted');
+      return;
     }
-    recoveryAttempted.current = true;
+    recoveryAttemptedRef.current = true;
 
     logger.info('[SessionRecovery] Clearing corrupted session data...');
-    
+
     try {
-      // Sign out to clear the Supabase session properly
+      // Sign out locally
       await supabase.auth.signOut({ scope: 'local' });
-      
-      // Clear any cached session data that might be corrupted
+
+      // Clear localStorage items related to auth
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (
           key.includes('supabase') ||
           key.includes('sb-') ||
-          key.includes('auth-token') ||
-          key.includes('supabase.auth')
+          key.includes('auth-token')
         )) {
           keysToRemove.push(key);
         }
       }
-      
+
       keysToRemove.forEach(key => {
         try {
           localStorage.removeItem(key);
         } catch {
-          // Ignore removal errors
+          // Ignore errors
         }
       });
-      
-      // Also clear sessionStorage
+
+      // Clear sessionStorage items
       try {
         for (let i = sessionStorage.length - 1; i >= 0; i--) {
           const key = sessionStorage.key(i);
@@ -130,13 +140,12 @@ export function useSessionRecovery() {
           }
         }
       } catch {
-        // Ignore sessionStorage errors
+        // Ignore errors
       }
-      
-      logger.info('[SessionRecovery] Session data cleared successfully');
-      
-      // Reload the page to reset the application state
-      // Use a small delay to ensure cleanup is complete
+
+      logger.info('[SessionRecovery] Session data cleared, reloading page...');
+
+      // Reload page after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 100);
@@ -146,138 +155,69 @@ export function useSessionRecovery() {
   }, []);
 
   /**
-   * Recovers from storage quota exceeded errors
+   * Handle storage quota errors
    */
   const handleStorageError = useCallback(() => {
-    logger.warn('[SessionRecovery] Storage error detected, cleaning up...');
-    
+    logger.warn('[SessionRecovery] Storage quota exceeded, cleaning up...');
+
     try {
-      // Clear non-essential cached data
+      // Keep essential items, remove cache/temp items
       const keysToKeep = ['theme', 'i18nextLng', 'cookie-consent', 'supabase.auth.token'];
       const keysToRemove: string[] = [];
-      
+
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && !keysToKeep.some(k => key.includes(k))) {
-          // Remove non-essential items
           if (key.includes('cache') || key.includes('temp') || key.includes('draft')) {
             keysToRemove.push(key);
           }
         }
       }
-      
+
       keysToRemove.forEach(key => {
         try {
           localStorage.removeItem(key);
         } catch {
-          // Ignore individual removal errors
+          // Ignore errors
         }
       });
-      
+
       logger.info('[SessionRecovery] Storage cleanup complete');
     } catch (error) {
       logger.error('[SessionRecovery] Storage cleanup failed:', error);
     }
   }, []);
 
-  /**
-   * Ensures data loads even without valid session
-   * This prevents the "blank page" issue
-   */
-  const ensureDataLoading = useCallback(() => {
-    // Dispatch custom event to notify components to reload data
-    window.dispatchEvent(new CustomEvent('session-recovered'));
-  }, []);
-
-  /**
-   * Reconnect Supabase realtime and refresh data
-   * IMPROVED: Don't remove channels, just reconnect them
-   */
-  const reconnectAndRefresh = useCallback(async () => {
-    logger.info('[SessionRecovery] Reconnecting after background...');
-    
-    try {
-      // DON'T remove channels - just reconnect existing ones
-      const channels = supabase.getChannels();
-      logger.info(`[SessionRecovery] Found ${channels.length} existing channels`);
-      
-      // Test connection with multiple attempts
-      let connectionOk = false;
-      let attempts = 0;
-      const maxAttempts = 3;
-      
-      while (!connectionOk && attempts < maxAttempts) {
-        attempts++;
-        try {
-          await supabase.from('products').select('id').limit(1);
-          connectionOk = true;
-          logger.info('[SessionRecovery] Connection test successful');
-        } catch (testError) {
-          logger.warn(`[SessionRecovery] Connection test failed (attempt ${attempts}/${maxAttempts}):`, testError);
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-          }
-        }
-      }
-      
-      if (!connectionOk) {
-        logger.error('[SessionRecovery] All connection attempts failed');
-        // Still try to validate and reload
-      }
-      
-      // Validate session
-      await validateSession(true);
-      
-      // Dispatch event to notify components to reload data
-      setTimeout(() => {
-        ensureDataLoading();
-      }, 200);
-      
-    } catch (error) {
-      logger.error('[SessionRecovery] Error reconnecting:', error);
-      // Still dispatch the reload event
-      ensureDataLoading();
-    }
-  }, [validateSession, ensureDataLoading]);
-
-  // Set up session validation on mount and periodically
-  // IMPORTANT: Visibility/focus/pageshow events are handled by useConnectionRecovery
-  // This hook only validates sessions and listens to connection-recovered events
+  // Set up periodic validation and event listeners
   useEffect(() => {
-    // Initial validation with small delay to let app initialize
+    // Initial validation (delayed to allow app initialization)
     const initTimer = setTimeout(() => {
-      validateSession().then(isValid => {
-        if (isValid) {
-          ensureDataLoading();
-        }
-      });
+      validateSession();
     }, 1000);
 
-    // Set up auth state change listener for recovery
+    // Auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, _session) => {
       if (event === 'TOKEN_REFRESHED') {
-        logger.debug('[SessionRecovery] Token refreshed successfully');
-        recoveryAttempted.current = false; // Reset recovery flag
+        logger.debug('[SessionRecovery] Token refreshed');
+        recoveryAttemptedRef.current = false;
       } else if (event === 'SIGNED_OUT') {
         logger.debug('[SessionRecovery] User signed out');
-        recoveryAttempted.current = false;
+        recoveryAttemptedRef.current = false;
       } else if (event === 'SIGNED_IN') {
         logger.debug('[SessionRecovery] User signed in');
-        recoveryAttempted.current = false;
-        ensureDataLoading();
+        recoveryAttemptedRef.current = false;
+        window.dispatchEvent(new CustomEvent('session-recovered'));
       }
     });
 
-    // Validate session periodically
+    // Periodic validation
     const intervalId = setInterval(() => {
       validateSession();
-    }, CHECK_INTERVAL);
+    }, VALIDATION_INTERVAL_MS);
 
     // Listen for storage changes from other tabs
     const handleStorageEvent = (event: StorageEvent) => {
       if (event.key && (event.key.includes('supabase') || event.key.includes('sb-'))) {
-        // Session storage was modified externally (another tab)
-        // Reload to sync state
         if (event.oldValue && !event.newValue) {
           // Session was cleared in another tab
           window.location.reload();
@@ -287,49 +227,21 @@ export function useSessionRecovery() {
 
     window.addEventListener('storage', handleStorageEvent);
 
-    // Listen for connection recovery events from useConnectionRecovery
-    // When connection is recovered, validate session and dispatch session-recovered
+    // Listen for connection recovery - validate session when connection recovers
     const handleConnectionRecovered = () => {
       logger.info('[SessionRecovery] Connection recovered, validating session...');
-      reconnectAndRefresh();
+      validateSession(true).then(isValid => {
+        if (isValid) {
+          window.dispatchEvent(new CustomEvent('session-recovered'));
+        }
+      });
     };
 
     window.addEventListener('connection-recovered', handleConnectionRecovered);
 
-    return () => {
-      clearTimeout(initTimer);
-      subscription.unsubscribe();
-      clearInterval(intervalId);
-      window.removeEventListener('storage', handleStorageEvent);
-      window.removeEventListener('connection-recovered', handleConnectionRecovered);
-    };
-  }, [validateSession, ensureDataLoading, reconnectAndRefresh]);
-
-  // Listen for storage quota errors - use try-catch wrapper instead of override
-  useEffect(() => {
-    // Create a safe storage wrapper that handles quota errors
-    const safeSetItem = (key: string, value: string) => {
-      try {
-        localStorage.setItem(key, value);
-      } catch (e) {
-        if (e instanceof Error && (e.name === 'QuotaExceededError' || e.message.includes('quota'))) {
-          handleStorageError();
-          // Retry after cleanup
-          try {
-            localStorage.setItem(key, value);
-          } catch {
-            // Give up on this item
-            logger.warn('[SessionRecovery] Could not save item after cleanup:', key);
-          }
-        } else {
-          throw e;
-        }
-      }
-    };
-
-    // Listen for storage errors via global error event
+    // Listen for storage errors
     const handleGlobalError = (event: ErrorEvent) => {
-      if (event.error?.name === 'QuotaExceededError' || 
+      if (event.error?.name === 'QuotaExceededError' ||
           event.message?.includes('QuotaExceededError') ||
           event.message?.includes('quota')) {
         handleStorageError();
@@ -338,14 +250,16 @@ export function useSessionRecovery() {
 
     window.addEventListener('error', handleGlobalError);
 
-    // Expose safe storage wrapper for components that need it
-    (window as unknown as { safeSetItem: typeof safeSetItem }).safeSetItem = safeSetItem;
-
+    // Cleanup
     return () => {
+      clearTimeout(initTimer);
+      subscription.unsubscribe();
+      clearInterval(intervalId);
+      window.removeEventListener('storage', handleStorageEvent);
+      window.removeEventListener('connection-recovered', handleConnectionRecovered);
       window.removeEventListener('error', handleGlobalError);
-      delete (window as unknown as { safeSetItem?: typeof safeSetItem }).safeSetItem;
     };
-  }, [handleStorageError]);
+  }, [validateSession, handleStorageError]);
 
   return {
     validateSession,
