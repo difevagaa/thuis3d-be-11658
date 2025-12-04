@@ -5,7 +5,7 @@
   <!-- Homepage - Highest priority, updated daily -->
   <url>
     <loc>https://thuis3d.be/</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-12-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/" />
@@ -17,7 +17,7 @@
   <!-- Products page - High priority, updated daily -->
   <url>
     <loc>https://thuis3d.be/productos</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-12-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/productos" />
@@ -28,7 +28,7 @@
   <!-- Quotes page - High priority -->
   <url>
     <loc>https://thuis3d.be/cotizaciones</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-12-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/cotizaciones" />
@@ -39,7 +39,7 @@
   <!-- Blog page - Regular updates -->
   <url>
     <loc>https://thuis3d.be/blog</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/blog" />
@@ -50,7 +50,7 @@
   <!-- Gift cards page -->
   <url>
     <loc>https://thuis3d.be/tarjetas-regalo</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-11-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/tarjetas-regalo" />
@@ -61,7 +61,7 @@
   <!-- Gallery page -->
   <url>
     <loc>https://thuis3d.be/gallery</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -69,7 +69,7 @@
   <!-- About/Contact pages -->
   <url>
     <loc>https://thuis3d.be/about</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2024-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

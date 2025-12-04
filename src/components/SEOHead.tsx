@@ -150,7 +150,7 @@ export function SEOHead({
       "height": 512
     },
     "image": finalImage,
-    "telephone": "+32-XXX-XXX-XXX", // TODO: Add actual phone if available
+    "telephone": "", // Phone number not configured
     "email": "info@thuis3d.be",
     "address": {
       "@type": "PostalAddress",
@@ -250,7 +250,7 @@ export function SEOHead({
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": `${baseUrl}/productos?search={search_term_string}`
+        "urlTemplate": `${baseUrl}/products?search={search_term_string}`
       },
       "query-input": "required name=search_term_string"
     }
