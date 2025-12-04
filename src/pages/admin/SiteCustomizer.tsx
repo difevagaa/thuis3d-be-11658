@@ -297,15 +297,34 @@ export default function SiteCustomizer() {
     root.style.setProperty('--input', theme.input);
     root.style.setProperty('--ring', theme.ring);
 
-    // Actualizar variables del sidebar para el panel de administración
-    root.style.setProperty('--sidebar-background', theme.secondary);
-    root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
-    root.style.setProperty('--sidebar-primary', theme.primary);
-    root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
-    root.style.setProperty('--sidebar-accent', theme.accent);
-    root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
-    root.style.setProperty('--sidebar-border', theme.border);
-    root.style.setProperty('--sidebar-ring', theme.ring);
+    // Check if sidebar colors are explicitly customized
+    // If they are, we should NOT override them with the palette
+    const advancedColorsCache = localStorage.getItem('advanced_colors');
+    let sidebarIsCustomized = false;
+    
+    if (advancedColorsCache) {
+      try {
+        const advancedColors = JSON.parse(advancedColorsCache);
+        sidebarIsCustomized = Boolean(advancedColors.sidebar_customized);
+      } catch (e) {
+        console.warn('⚠️ Error parsing advanced_colors cache in applyPalette');
+      }
+    }
+
+    // Only apply palette sidebar colors if sidebar is NOT explicitly customized
+    if (!sidebarIsCustomized) {
+      root.style.setProperty('--sidebar-background', theme.secondary);
+      root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
+      root.style.setProperty('--sidebar-primary', theme.primary);
+      root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
+      root.style.setProperty('--sidebar-accent', theme.accent);
+      root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
+      root.style.setProperty('--sidebar-border', theme.border);
+      root.style.setProperty('--sidebar-ring', theme.ring);
+      console.log('🎨 [applyPalette] Sidebar colors from palette applied');
+    } else {
+      console.log('🎨 [applyPalette] Sidebar colors customized - preserving custom colors');
+    }
 
     // Guardar la paleta completa en localStorage para carga instantánea
     const paletteCache = {
