@@ -738,10 +738,10 @@ export default function Payment() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Order Summary */}
-        <Card>
-          <CardHeader>
+        <Card className="w-full">
+          <CardHeader className="text-center md:text-left">
             <CardTitle>{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -855,29 +855,29 @@ export default function Payment() {
 
         {/* Bank Transfer Payment Info - Show when bank transfer is selected */}
         {selectedPaymentMethod === "bank_transfer" && orderCreated && (
-          <Card className="md:col-span-2 shadow-lg border-2 border-green-200 dark:border-green-800">
+          <Card className="md:col-span-2 shadow-lg border-2 border-green-200 dark:border-green-800 w-full">
             <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-t-lg">
               <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
                 <Building2 className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <CardTitle className="text-2xl text-green-800 dark:text-green-200">
+              <CardTitle className="text-xl md:text-2xl text-green-800 dark:text-green-200">
                 {t('payment:instructions.bankTransferTitle')}
               </CardTitle>
               <CardDescription className="text-green-700 dark:text-green-300">
                 {t('payment:instructions.orderNumber')}: <strong className="text-green-800 dark:text-green-200">{orderCreated.orderNumber}</strong>
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
+            <CardContent className="space-y-6 p-4 md:p-6">
               {/* Amount to Transfer */}
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-6 text-center">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary rounded-xl p-4 md:p-6 text-center">
                 <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToTransfer')}:</p>
-                <p className="text-4xl font-bold text-primary">€{orderCreated.total.toFixed(2)}</p>
+                <p className="text-3xl md:text-4xl font-bold text-primary">€{orderCreated.total.toFixed(2)}</p>
                 <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
               </div>
 
               {/* Bank Information */}
-              <div className="bg-slate-800 dark:bg-slate-900 text-white rounded-xl p-6 space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-slate-600 pb-3">
+              <div className="bg-slate-800 dark:bg-slate-900 text-white rounded-xl p-4 md:p-6 space-y-4">
+                <h3 className="font-semibold text-base md:text-lg flex items-center justify-center md:justify-start gap-2 text-white border-b border-slate-600 pb-3">
                   <Building2 className="h-5 w-5" />
                   {t('payment:instructions.bankDetails')}
                 </h3>
@@ -1036,28 +1036,28 @@ export default function Payment() {
 
         {/* Card Payment Info - Show when card is selected */}
         {selectedPaymentMethod === "card" && orderCreated && (
-          <Card className="md:col-span-2 shadow-lg border-2 border-blue-200 dark:border-blue-800">
+          <Card className="md:col-span-2 shadow-lg border-2 border-blue-200 dark:border-blue-800 w-full">
             <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-t-lg">
               <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <CardTitle className="text-2xl text-blue-800 dark:text-blue-200">
+              <CardTitle className="text-xl md:text-2xl text-blue-800 dark:text-blue-200">
                 {t('payment:instructions.cardPaymentTitle')}
               </CardTitle>
               <CardDescription className="text-blue-700 dark:text-blue-300">
                 {t('payment:instructions.orderNumber')}: <strong className="text-blue-800 dark:text-blue-200">{orderCreated.orderNumber}</strong>
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
+            <CardContent className="space-y-6 p-4 md:p-6">
               {/* Amount to Pay */}
-              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-6 text-center">
+              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-2 border-blue-500 rounded-xl p-4 md:p-6 text-center">
                 <p className="text-sm font-medium text-foreground/70 mb-2">{t('payment:instructions.amountToPay')}:</p>
-                <p className="text-4xl font-bold text-blue-600">€{orderCreated.total.toFixed(2)}</p>
+                <p className="text-3xl md:text-4xl font-bold text-blue-600">€{orderCreated.total.toFixed(2)}</p>
                 <p className="text-xs text-foreground/60 mt-2">{t('payment:instructions.vatIncluded')}</p>
               </div>
 
               {/* Payment Information - Similar to Bank Transfer */}
-              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-6 space-y-4">
+              <div className="bg-blue-800 dark:bg-blue-900 text-white rounded-xl p-4 md:p-6 space-y-4">
                 <h3 className="font-semibold text-lg flex items-center gap-2 text-white border-b border-blue-600 pb-3">
                   <CreditCard className="h-5 w-5" />
                   {t('payment:instructions.cardPaymentTitle')}
@@ -1198,27 +1198,27 @@ export default function Payment() {
 
         {/* Payment Methods - Only show if no payment method is selected */}
         {!selectedPaymentMethod && (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {/* QR Codes Section - Show FIRST before payment methods */}
           {paymentImages.length > 0 && (
-            <Card className="shadow-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl flex items-center gap-2 text-primary">
+            <Card className="shadow-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 w-full">
+              <CardHeader className="pb-3 text-center md:text-left">
+                <CardTitle className="text-xl flex items-center justify-center md:justify-start gap-2 text-primary">
                   <QrCode className="h-6 w-6" />
                   {t('payment:instructions.qrCodes')}
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-base text-center md:text-left">
                   {t('payment:instructions.scanQr')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {paymentImages.map((img, index) => (
-                    <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={index} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow mx-auto w-full max-w-sm md:max-w-none">
                       <img 
                         src={img} 
                         alt={`${t('payment:instructions.qrCode')} ${index + 1}`}
-                        className="w-full h-56 object-contain rounded-lg bg-white p-2"
+                        className="w-full h-56 object-contain rounded-lg bg-white p-2 mx-auto"
                       />
                       <div className="text-center space-y-1">
                         <p className="font-semibold text-foreground">
@@ -1240,9 +1240,9 @@ export default function Payment() {
           )}
 
           {paymentConfig.company_info && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <Card className="border-primary/20 bg-primary/5 w-full">
+              <CardHeader className="pb-2 text-center md:text-left">
+                <CardTitle className="text-lg flex items-center justify-center md:justify-start gap-2">
                   <Building2 className="h-5 w-5" />
                   {t('payment:companyInfo')}
                 </CardTitle>
@@ -1253,13 +1253,13 @@ export default function Payment() {
             </Card>
           )}
           
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
+          <Card className="shadow-lg w-full">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg text-center md:text-left">
+              <CardTitle className="flex items-center justify-center md:justify-start gap-2">
                 <ShieldCheck className="h-5 w-5 text-primary" />
                 {t('payment:paymentMethodTitle')}
               </CardTitle>
-              <CardDescription className="text-foreground/70">{t('payment:paymentMethod')}</CardDescription>
+              <CardDescription className="text-foreground/70 text-center md:text-left">{t('payment:paymentMethod')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
               {/* TARJETA - Opción principal (usa Revolut internamente) */}

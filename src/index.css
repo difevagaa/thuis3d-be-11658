@@ -212,6 +212,38 @@ body {
 }
 
 @layer utilities {
+  /* Mobile-responsive layout utilities */
+  .mobile-stack {
+    @apply grid grid-cols-1 gap-6;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-stack {
+      @apply grid-cols-2;
+    }
+  }
+  
+  .mobile-center {
+    @apply text-center;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-center {
+      @apply text-left;
+    }
+  }
+  
+  /* Ensure content blocks are centered and don't overflow on mobile */
+  .mobile-responsive-grid {
+    @apply grid grid-cols-1 gap-6 mx-auto w-full;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-responsive-grid {
+      @apply grid-cols-2;
+    }
+  }
+  
   /* Gradient utilities */
   .bg-gradient-primary {
     background: var(--gradient-primary);
