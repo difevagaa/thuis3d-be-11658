@@ -17,9 +17,23 @@ interface SEOHeadProps {
   keywords?: string[];
   image?: string;
   type?: string;
+  price?: number;
+  currency?: string;
+  availability?: string;
+  breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-export function SEOHead({ title, description, keywords, image, type = "website" }: SEOHeadProps) {
+export function SEOHead({ 
+  title, 
+  description, 
+  keywords, 
+  image, 
+  type = "website",
+  price,
+  currency = "EUR",
+  availability = "InStock",
+  breadcrumbs
+}: SEOHeadProps) {
   const location = useLocation();
   const [seoData, setSeoData] = useState<any>(null);
   const [globalSettings, setGlobalSettings] = useState<any>(null);
@@ -121,21 +135,125 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
   const canonicalUrl = seoData?.canonical_url || `${globalSettings?.canonical_domain || ''}${location.pathname}`;
   const baseUrl = globalSettings?.canonical_domain || 'https://thuis3d.be';
 
-  const structuredData = {
+  // LocalBusiness structured data for better local SEO
+  const localBusinessData = {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "LocalBusiness",
+    "@id": `${baseUrl}#business`,
     "name": "Thuis 3D",
-    "url": baseUrl,
-    "logo": finalImage,
     "description": finalDescription,
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": finalImage,
+      "width": 512,
+      "height": 512
+    },
+    "image": finalImage,
+    "telephone": "+32-XXX-XXX-XXX", // TODO: Add actual phone if available
+    "email": "info@thuis3d.be",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Sint-Niklaas",
+      "addressLocality": "Sint-Niklaas",
+      "addressRegion": "Vlaanderen",
+      "postalCode": "9100",
+      "addressCountry": "BE"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "51.1667",
+      "longitude": "4.1333"
+    },
     "areaServed": {
       "@type": "Country",
       "name": "Belgium"
     },
-    "availableLanguage": ["Spanish", "English", "Dutch"],
+    "priceRange": "€€",
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "18:00"
+      }
+    ],
     "sameAs": [
       globalSettings?.twitter_handle ? `https://twitter.com/${globalSettings.twitter_handle.replace('@', '')}` : ""
     ].filter(Boolean)
+  };
+
+  // Organization structured data
+  const organizationData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Thuis 3D",
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": finalImage
+    },
+    "description": finalDescription,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Sint-Niklaas",
+      "addressRegion": "Vlaanderen",
+      "addressCountry": "BE"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "Customer Service",
+      "availableLanguage": ["Dutch", "English", "Spanish"],
+      "areaServed": "BE"
+    }
+  };
+
+  // Breadcrumb structured data
+  const breadcrumbData = breadcrumbs && breadcrumbs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": breadcrumbs.map((crumb, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": crumb.name,
+      "item": `${baseUrl}${crumb.url}`
+    }))
+  } : null;
+
+  // Product structured data (if price is provided)
+  const productData = price ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": finalTitle,
+    "description": finalDescription,
+    "image": finalImage,
+    "offers": {
+      "@type": "Offer",
+      "url": canonicalUrl,
+      "priceCurrency": currency,
+      "price": price,
+      "availability": `https://schema.org/${availability}`,
+      "seller": {
+        "@type": "Organization",
+        "name": "Thuis 3D"
+      }
+    }
+  } : null;
+
+  // WebSite structured data with search action
+  const websiteData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Thuis 3D",
+    "url": baseUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${baseUrl}/productos?search={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
   };
 
   return (
@@ -149,36 +267,62 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
       )}
       <link rel="canonical" href={canonicalUrl} />
 
-      {/* Hreflang tags for multilingual SEO - Belgium market 
-          Note: Same content with multilingual keywords serves all language audiences */}
-      <link rel="alternate" hrefLang="es" href={`${baseUrl}${location.pathname}`} />
-      <link rel="alternate" hrefLang="en" href={`${baseUrl}${location.pathname}`} />
+      {/* Language and Region */}
+      <meta httpEquiv="content-language" content="nl-BE" />
+      <meta name="language" content="Dutch" />
+
+      {/* Hreflang tags for multilingual SEO - Belgium market */}
       <link rel="alternate" hrefLang="nl-BE" href={`${baseUrl}${location.pathname}`} />
+      <link rel="alternate" hrefLang="en" href={`${baseUrl}${location.pathname}`} />
+      <link rel="alternate" hrefLang="es" href={`${baseUrl}${location.pathname}`} />
       <link rel="alternate" hrefLang="x-default" href={`${baseUrl}${location.pathname}`} />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />
       <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:site_name" content="Thuis 3D" />
       <meta property="og:title" content={seoData?.og_title || finalTitle} />
       <meta property="og:description" content={seoData?.og_description || finalDescription} />
       <meta property="og:image" content={finalImage} />
-      <meta property="og:locale" content="es_ES" />
+      <meta property="og:image:secure_url" content={finalImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={finalTitle} />
+      <meta property="og:locale" content="nl_BE" />
       <meta property="og:locale:alternate" content="en_US" />
-      <meta property="og:locale:alternate" content="nl_NL" />
+      <meta property="og:locale:alternate" content="es_ES" />
 
       {/* Twitter */}
-      <meta property="twitter:card" content="summary_large_image" />
-      <meta property="twitter:url" content={canonicalUrl} />
-      <meta property="twitter:title" content={seoData?.twitter_title || finalTitle} />
-      <meta property="twitter:description" content={seoData?.twitter_description || finalDescription} />
-      <meta property="twitter:image" content={finalImage} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:url" content={canonicalUrl} />
+      <meta name="twitter:title" content={seoData?.twitter_title || finalTitle} />
+      <meta name="twitter:description" content={seoData?.twitter_description || finalDescription} />
+      <meta name="twitter:image" content={finalImage} />
+      <meta name="twitter:image:alt" content={finalTitle} />
       {globalSettings?.twitter_handle && (
-        <meta property="twitter:site" content={globalSettings.twitter_handle} />
+        <>
+          <meta name="twitter:site" content={globalSettings.twitter_handle} />
+          <meta name="twitter:creator" content={globalSettings.twitter_handle} />
+        </>
+      )}
+
+      {/* Price and Product Info (if available) */}
+      {price && (
+        <>
+          <meta property="product:price:amount" content={price.toString()} />
+          <meta property="product:price:currency" content={currency} />
+          <meta property="og:type" content="product" />
+        </>
       )}
 
       {/* Google Site Verification */}
       {globalSettings?.google_site_verification && (
         <meta name="google-site-verification" content={globalSettings.google_site_verification} />
+      )}
+
+      {/* Bing Site Verification */}
+      {globalSettings?.bing_site_verification && (
+        <meta name="msvalidate.01" content={globalSettings.bing_site_verification} />
       )}
 
       {/* Robots */}
@@ -188,21 +332,43 @@ export function SEOHead({ title, description, keywords, image, type = "website" 
           content={`${seoData.noindex ? 'noindex' : 'index'},${seoData.nofollow ? 'nofollow' : 'follow'}`} 
         />
       ) : (
-        <meta name="robots" content="index,follow" />
+        <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
       )}
+      <meta name="googlebot" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
 
-      {/* Structured Data */}
+      {/* Structured Data - Multiple schemas */}
       <script type="application/ld+json">
-        {JSON.stringify(structuredData)}
+        {JSON.stringify(localBusinessData)}
       </script>
+      <script type="application/ld+json">
+        {JSON.stringify(organizationData)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(websiteData)}
+      </script>
+      {breadcrumbData && (
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbData)}
+        </script>
+      )}
+      {productData && (
+        <script type="application/ld+json">
+          {JSON.stringify(productData)}
+        </script>
+      )}
 
       {/* Additional SEO Meta Tags */}
       <meta name="author" content="Thuis 3D" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta name="geo.region" content="BE" />
-      <meta name="geo.placename" content="Belgium" />
+      <meta name="copyright" content="Thuis 3D" />
       <meta name="revisit-after" content="7 days" />
+      <meta name="distribution" content="global" />
+      <meta name="rating" content="general" />
+      
+      {/* Geographic Tags */}
+      <meta name="geo.region" content="BE" />
+      <meta name="geo.placename" content="Sint-Niklaas, Belgium" />
+      <meta name="geo.position" content="51.1667;4.1333" />
+      <meta name="ICBM" content="51.1667, 4.1333" />
     </Helmet>
   );
 }
