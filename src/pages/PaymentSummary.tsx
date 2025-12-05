@@ -231,10 +231,10 @@ export default function PaymentSummary() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-8">{t('payment:orderSummary')}</h1>
+    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-3xl">
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-8">{t('payment:orderSummary')}</h1>
 
-      <div className="grid gap-6">
+      <div className="flex flex-col gap-4 md:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>{t('payment:shippingInfo')}</CardTitle>
@@ -351,11 +351,11 @@ export default function PaymentSummary() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1 order-2 sm:order-1">
             {t('common:back')}
           </Button>
-          <Button onClick={handleConfirmOrder} className="flex-1" size="lg">
+          <Button onClick={handleConfirmOrder} className="flex-1 order-1 sm:order-2" size="lg">
             {t('cart:checkout')}
           </Button>
         </div>

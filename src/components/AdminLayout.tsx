@@ -151,21 +151,22 @@ export const AdminLayout = ({
     return null;
   }
   return <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1">
-          <header className="h-16 flex items-center justify-between border-b bg-white shadow-sm px-6">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                  <Shield className="h-4 w-4 text-white" />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 md:h-16 flex items-center justify-between border-b bg-card shadow-sm px-3 md:px-6 sticky top-0 z-40">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+              <SidebarTrigger className="flex-shrink-0" />
+              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                 </div>
-                <h1 className="text-lg font-bold text-gray-900">Panel de Administración</h1>
+                <h1 className="text-sm md:text-lg font-bold text-foreground truncate hidden sm:block">Panel de Administración</h1>
+                <h1 className="text-sm font-bold text-foreground sm:hidden">Admin</h1>
               </div>
             </div>
             <TooltipProvider delayDuration={300}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 {/* Home - Go to homepage */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -173,9 +174,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={() => navigate("/")}
-                      className="h-9 w-9 hover:bg-gray-100"
+                      className="h-8 w-8 md:h-9 md:w-9 hover:bg-muted"
                     >
-                      <Home className="h-5 w-5 text-gray-600" />
+                      <Home className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -190,9 +191,9 @@ export const AdminLayout = ({
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshPage}
-                      className="h-9 w-9 hover:bg-gray-100"
+                      className="h-8 w-8 md:h-9 md:w-9 hover:bg-muted"
                     >
-                      <RotateCcw className="h-5 w-5 text-gray-600" />
+                      <RotateCcw className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -200,17 +201,17 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Refresh Data */}
+                {/* Refresh Data - Hidden on mobile */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={handleRefreshData}
-                      className="h-9 w-9 hover:bg-gray-100"
+                      className="h-8 w-8 md:h-9 md:w-9 hover:bg-muted hidden sm:flex"
                       disabled={isRefreshing}
                     >
-                      <RefreshCw className={`h-5 w-5 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <RefreshCw className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -218,16 +219,16 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Toggle Grayscale Mode */}
+                {/* Toggle Grayscale Mode - Hidden on mobile */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleGrayscale}
-                      className={`h-9 w-9 hover:bg-gray-100 ${isGrayscale ? "bg-gray-200" : ""}`}
+                      className={`h-8 w-8 md:h-9 md:w-9 hover:bg-muted hidden md:flex ${isGrayscale ? "bg-muted" : ""}`}
                     >
-                      <Contrast className="h-5 w-5 text-gray-600" />
+                      <Contrast className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -235,19 +236,19 @@ export const AdminLayout = ({
                   </TooltipContent>
                 </Tooltip>
 
-                {/* Toggle Fullscreen */}
+                {/* Toggle Fullscreen - Hidden on mobile */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={toggleFullscreen}
-                      className="h-9 w-9 hover:bg-gray-100"
+                      className="h-8 w-8 md:h-9 md:w-9 hover:bg-muted hidden md:flex"
                     >
                       {isFullscreen ? (
-                        <Minimize className="h-5 w-5 text-gray-600" />
+                        <Minimize className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                       ) : (
-                        <Maximize className="h-5 w-5 text-gray-600" />
+                        <Maximize className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -261,7 +262,7 @@ export const AdminLayout = ({
               </div>
             </TooltipProvider>
           </header>
-          <main className="p-6 bg-gray-50">{children}</main>
+          <main className="flex-1 p-3 md:p-6 bg-muted/30 overflow-auto pb-20 md:pb-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>;

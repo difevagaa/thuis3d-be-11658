@@ -497,17 +497,17 @@ export default function MyAccount() {
             </CardHeader>
             <CardContent>
               {orders.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {orders.map((order) => (
                     <div 
                       key={order.id} 
-                      className="border p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                      className="border p-3 md:p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => navigate(`/pedido/${order.id}`)}
                     >
-                      <div className="flex justify-between items-start">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1">
-                          <p className="font-semibold text-lg">{order.order_number}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-semibold text-base md:text-lg">{order.order_number}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">
                             {new Date(order.created_at).toLocaleDateString('es-ES', {
                               day: '2-digit',
                               month: 'long',
@@ -515,14 +515,14 @@ export default function MyAccount() {
                             })}
                           </p>
                           <div className="mt-2">
-                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="text-xs">
                               {order.payment_status === 'paid' ? t('account:orders.paid') : t('account:orders.pending')}
                             </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xl">€{Number(order.total).toFixed(2)}</p>
-                          <Button variant="outline" size="sm" className="mt-2">
+                        <div className="flex sm:flex-col justify-between sm:items-end sm:text-right">
+                          <p className="font-bold text-lg md:text-xl text-primary">€{Number(order.total).toFixed(2)}</p>
+                          <Button variant="outline" size="sm" className="text-xs h-8">
                             {t('account:orders.viewDetails')}
                           </Button>
                         </div>
@@ -545,21 +545,21 @@ export default function MyAccount() {
             </CardHeader>
             <CardContent>
               {quotes.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {quotes.map((quote) => (
                     <div 
                       key={quote.id} 
-                      className="border p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                      className="border p-3 md:p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => navigate(`/cotizacion/${quote.id}`)}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-semibold">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm md:text-base">
                             {quote.quote_type === 'file_upload' ? t('account:quotes.file3d') : 
                              quote.quote_type === 'service' ? t('account:quotes.service') : 
                              quote.quote_type}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs md:text-sm text-muted-foreground">
                             {new Date(quote.created_at).toLocaleDateString('es-ES', { 
                               year: 'numeric', 
                               month: 'short', 
@@ -567,16 +567,16 @@ export default function MyAccount() {
                             })}
                           </p>
                           {(quote.service_description || quote.additional_notes || quote.description) && (
-                            <div className="text-sm text-muted-foreground mt-1 line-clamp-3">
+                            <div className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
                               <RichTextDisplay content={(quote.service_description || quote.additional_notes || quote.description) as string} />
                             </div>
                           )}
                         </div>
-                        <div className="text-right flex flex-col items-end gap-2">
+                        <div className="flex sm:flex-col justify-between sm:items-end gap-2">
                           {quote.estimated_price && (
                             <p className="font-bold text-primary">€{parseFloat(quote.estimated_price).toFixed(2)}</p>
                           )}
-                          <Button variant="outline" size="sm" onClick={(e) => {
+                          <Button variant="outline" size="sm" className="text-xs h-8" onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/cotizacion/${quote.id}`);
                           }}>

@@ -151,14 +151,14 @@ export default function ShippingInfo() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-2xl">
+    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-2xl">
       <Card>
-        <CardHeader>
-          <CardTitle>{t('shipping:title')}</CardTitle>
-          <CardDescription>{t('shipping:description')}</CardDescription>
+        <CardHeader className="px-4 md:px-6">
+          <CardTitle className="text-lg md:text-xl lg:text-2xl">{t('shipping:title')}</CardTitle>
+          <CardDescription className="text-sm">{t('shipping:description')}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-4 md:px-6">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             <div>
               <Label htmlFor="full_name">{t('shipping:form.fullName')} *</Label>
               <Input
@@ -205,26 +205,28 @@ export default function ShippingInfo() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div>
-                <Label htmlFor="city">{t('shipping:form.city')} *</Label>
+                <Label htmlFor="city" className="text-sm">{t('shipping:form.city')} *</Label>
                 <Input
                   id="city"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   placeholder={t('shipping:placeholders.city')}
                   required
+                  className="h-10"
                 />
               </div>
 
               <div>
-                <Label htmlFor="postal_code">{t('shipping:form.postalCode')} *</Label>
+                <Label htmlFor="postal_code" className="text-sm">{t('shipping:form.postalCode')} *</Label>
                 <Input
                   id="postal_code"
                   value={formData.postal_code}
                   onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
                   placeholder={t('shipping:placeholders.postalCode')}
                   required
+                  className="h-10"
                 />
               </div>
             </div>
@@ -258,11 +260,11 @@ export default function ShippingInfo() {
               </p>
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1 order-2 sm:order-1">
                 {t('shipping:buttons.back')}
               </Button>
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="flex-1 order-1 sm:order-2">
                 {t('shipping:buttons.continue')}
               </Button>
             </div>
