@@ -121,7 +121,7 @@ export default function SiteCustomizer() {
     
     loadCustomization();
     loadSettings();
-  }, []);
+  }, [loadCustomization, loadSettings]); // Now functions are in dependencies
 
   // Update CSS variables whenever customization changes
   useEffect(() => {
@@ -135,7 +135,7 @@ export default function SiteCustomizer() {
     }
   }, [customization, updateCSSVariables]);
 
-  const loadCustomization = async () => {
+  const loadCustomization = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("site_customization")
@@ -194,9 +194,9 @@ export default function SiteCustomizer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No dependencies needed - uses only setState functions
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("site_settings")
@@ -213,7 +213,7 @@ export default function SiteCustomizer() {
     } catch (error) {
       logger.error("Error loading settings:", error);
     }
-  };
+  }, []); // No dependencies needed - uses only setState functions
 
   const updateSetting = async (key: string, value: string) => {
     const { error } = await supabase
