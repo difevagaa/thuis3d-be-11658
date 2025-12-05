@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,11 +40,7 @@ export default function PaymentSummary() {
   const { taxSettings, calculateTax } = useTaxSettings();
   const { calculateShipping } = useShippingCalculator();
 
-  useEffect(() => {
-    loadCheckoutData();
-  }, []);
-
-  const loadCheckoutData = async () => {
+  const loadCheckoutData = useCallback(async () => {
     try {
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (!sessionId) {
@@ -154,7 +150,11 @@ export default function PaymentSummary() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, t, calculateShipping]);
+
+  useEffect(() => {
+    loadCheckoutData();
+  }, [loadCheckoutData]);
 
   const calculateSubtotal = () => {
     return cartItems.reduce((sum, item) => {

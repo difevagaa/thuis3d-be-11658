@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,12 +25,7 @@ export default function RevolutPaymentPage() {
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [orderNumber, setOrderNumber] = useState<string>("");
 
-  useEffect(() => {
-    loadOrderData();
-    loadPaymentConfig();
-  }, []);
-
-  const loadOrderData = () => {
+  const loadOrderData = useCallback(() => {
     // Check for invoice payment first
     const pendingInvoiceStr = sessionStorage.getItem("pending_revolut_invoice");
     const pendingOrderStr = sessionStorage.getItem("pending_revolut_order");
@@ -65,9 +60,9 @@ export default function RevolutPaymentPage() {
       navigate("/pago");
       return;
     }
-  };
+  }, [navigate]);
 
-  const loadPaymentConfig = async () => {
+  const loadPaymentConfig = useCallback(async () => {
     try {
       const settingKeys = ['revolut_link', 'payment_images'];
       const { data } = await supabase
@@ -93,7 +88,12 @@ export default function RevolutPaymentPage() {
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadOrderData();
+    loadPaymentConfig();
+  }, [loadOrderData, loadPaymentConfig]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

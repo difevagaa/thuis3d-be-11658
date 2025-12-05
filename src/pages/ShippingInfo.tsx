@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,15 +30,15 @@ export default function ShippingInfo() {
     country_name: "Bélgica"
   });
 
+  const loadAvailableCountries = useCallback(async () => {
+    const countries = await getAvailableCountries();
+    setAvailableCountries(countries);
+  }, [getAvailableCountries]);
+
   useEffect(() => {
     loadUserShippingData();
     loadAvailableCountries();
-  }, []);
-
-  const loadAvailableCountries = async () => {
-    const countries = await getAvailableCountries();
-    setAvailableCountries(countries);
-  };
+  }, [loadAvailableCountries]);
 
   const loadUserShippingData = async () => {
     try {
