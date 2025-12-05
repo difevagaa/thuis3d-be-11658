@@ -97,6 +97,8 @@ export const useGlobalColors = () => {
               if (favicon) favicon.href = metadata.favicon_url;
               const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
               if (apple) apple.href = metadata.favicon_url;
+              const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+              if (shortcut) shortcut.href = metadata.favicon_url;
             }
             if (metadata.site_name && mounted) {
               document.title = metadata.site_name;
@@ -200,6 +202,11 @@ export const useGlobalColors = () => {
             if (apple) {
               apple.href = data.favicon_url;
               logger.log('🍎 [useGlobalColors] Apple touch icon aplicado:', data.favicon_url);
+            }
+            const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+            if (shortcut) {
+              shortcut.href = data.favicon_url;
+              logger.log('🔗 [useGlobalColors] Shortcut icon aplicado:', data.favicon_url);
             }
           }
           

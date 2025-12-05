@@ -405,6 +405,8 @@ export default function SiteCustomizer() {
       if (favicon && customization.favicon_url) favicon.href = customization.favicon_url;
       const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
       if (apple && customization.favicon_url) apple.href = customization.favicon_url;
+      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+      if (shortcut && customization.favicon_url) shortcut.href = customization.favicon_url;
 
       // Aplicar cambios CSS inmediatamente
       updateCSSVariables();
@@ -644,6 +646,10 @@ export default function SiteCustomizer() {
     if (customization.favicon_url) {
       const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
       if (favicon) favicon.href = customization.favicon_url;
+      const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+      if (apple) apple.href = customization.favicon_url;
+      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+      if (shortcut) shortcut.href = customization.favicon_url;
     }
 
     // Update page title
