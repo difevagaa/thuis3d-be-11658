@@ -656,8 +656,9 @@ export default function Payment() {
   const isInvoicePayment = shippingInfo.isInvoicePayment;
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="grid md:grid-cols-2 gap-6">
+    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-4xl">
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">{t('payment:title')}</h1>
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Order Summary */}
         <Card>
           <CardHeader>
@@ -787,13 +788,13 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("bank_transfer")}
                   disabled={processing}
-                  className="w-full h-20 text-lg"
+                  className="w-full h-auto min-h-[4rem] md:h-20 text-sm md:text-lg py-3"
                   variant="outline"
                 >
-                  <Banknote className="h-8 w-8 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold">Transferencia Bancaria</div>
-                    <div className="text-xs text-muted-foreground">Te enviaremos los datos bancarios</div>
+                  <Banknote className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-sm md:text-base">Transferencia Bancaria</div>
+                    <div className="text-xs text-muted-foreground truncate">Te enviaremos los datos bancarios</div>
                   </div>
                 </Button>
               )}
@@ -802,13 +803,13 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("card")}
                   disabled={processing}
-                  className="w-full h-20 text-lg"
+                  className="w-full h-auto min-h-[4rem] md:h-20 text-sm md:text-lg py-3"
                   variant="outline"
                 >
-                  <CreditCard className="h-8 w-8 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold">Tarjeta de Crédito/Débito</div>
-                    <div className="text-xs text-muted-foreground">Visa, Mastercard, American Express</div>
+                  <CreditCard className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-sm md:text-base">Tarjeta de Crédito/Débito</div>
+                    <div className="text-xs text-muted-foreground truncate">Visa, Mastercard, American Express</div>
                   </div>
                 </Button>
               )}

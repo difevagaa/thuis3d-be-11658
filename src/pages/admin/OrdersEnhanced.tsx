@@ -204,78 +204,127 @@ export default function OrdersEnhanced() {
     }
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <div className="p-4 md:p-6">Cargando...</div>;
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Pedidos</h1>
+    <div className="container mx-auto p-4 md:p-6">
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">Gestión de Pedidos</h1>
 
-      <div className="mb-6">
-        <Button onClick={() => window.location.href = "/admin/pedidos/crear"}>
+      <div className="mb-4 md:mb-6">
+        <Button onClick={() => window.location.href = "/admin/pedidos/crear"} size="sm" className="w-full sm:w-auto">
           Crear Pedido Manual
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Pedidos Activos</CardTitle>
-          <CardDescription>Administra los pedidos de tus clientes</CardDescription>
+        <CardHeader className="px-4 md:px-6">
+          <CardTitle className="text-lg md:text-xl">Pedidos Activos</CardTitle>
+          <CardDescription className="text-sm">Administra los pedidos de tus clientes</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Número de Pedido</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Estado de Pago</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow 
-                  key={order.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
-                >
-                  <TableCell className="font-mono">{order.order_number}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{order.user?.full_name || 'N/A'}</div>
-                      <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-bold">€{Number(order.total).toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
-                      {order.payment_status === 'paid' ? 'Pagado' : 
-                       order.payment_status === 'pending' ? 'Pendiente' :
-                       order.payment_status === 'failed' ? 'Fallido' :
-                       order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingOrder(order);
-                        setSelectedStatus(order.status_id || "");
-                      }}
-                    >
-                      Actualizar Estado
-                    </Button>
-                  </TableCell>
+        <CardContent className="px-0 md:px-6">
+          {/* Desktop Table */}
+          <div className="hidden lg:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Número de Pedido</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Estado de Pago</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow 
+                    key={order.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
+                  >
+                    <TableCell className="font-mono">{order.order_number}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div>{order.user?.full_name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{order.user?.email || 'N/A'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold">€{Number(order.total).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                        {order.payment_status === 'paid' ? 'Pagado' : 
+                         order.payment_status === 'pending' ? 'Pendiente' :
+                         order.payment_status === 'failed' ? 'Fallido' :
+                         order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingOrder(order);
+                          setSelectedStatus(order.status_id || "");
+                        }}
+                      >
+                        Actualizar Estado
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="lg:hidden space-y-3 px-4">
+            {orders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-card border rounded-lg p-4 shadow-sm cursor-pointer active:bg-muted/50"
+                onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-mono font-semibold text-sm">{order.order_number}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString('es-ES')}
+                    </p>
+                  </div>
+                  <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="text-xs">
+                    {order.payment_status === 'paid' ? 'Pagado' : 
+                     order.payment_status === 'pending' ? 'Pendiente' :
+                     order.payment_status === 'failed' ? 'Fallido' :
+                     order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+                  </Badge>
+                </div>
+                <div className="space-y-1 mb-3">
+                  <p className="text-sm font-medium">{order.user?.full_name || 'N/A'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{order.user?.email || 'N/A'}</p>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="font-bold text-primary">€{Number(order.total).toFixed(2)}</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="text-xs h-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingOrder(order);
+                      setSelectedStatus(order.status_id || "");
+                    }}
+                  >
+                    Estado
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {orders.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No hay pedidos todavía</p>
+            <p className="text-center text-muted-foreground py-8 px-4">No hay pedidos todavía</p>
           )}
         </CardContent>
       </Card>

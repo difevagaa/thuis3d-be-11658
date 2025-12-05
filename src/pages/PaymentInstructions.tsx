@@ -256,17 +256,17 @@ export default function PaymentInstructions() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl">
+    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-3xl">
       <Card>
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="w-6 h-6 text-green-600" />
+        <CardHeader className="text-center px-4 md:px-6">
+          <div className="mx-auto w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 md:mb-4">
+            <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
           </div>
-          <CardTitle className="text-2xl">
+          <CardTitle className="text-xl md:text-2xl">
             ¡Recibido!
           </CardTitle>
-          <CardDescription>
-            Tu número de referencia es: <strong>{realOrderNumber}</strong>
+          <CardDescription className="text-sm md:text-base">
+            Tu número de referencia es: <strong className="break-all">{realOrderNumber}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
