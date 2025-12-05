@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import { validateCouponCode, validateGiftCardCode } from "@/lib/validation";
+import { validateCouponCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 interface CartItem {
@@ -45,9 +45,8 @@ const Cart = () => {
   const { t } = useTranslation(['cart', 'common']);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
-  const [giftCardCode, setGiftCardCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
-  const [appliedGiftCard, setAppliedGiftCard] = useState<any>(null);
+  const [appliedGiftCard, setAppliedGiftCard] = useState<any>(null); // Keep for display only
   const [loading, setLoading] = useState(false);
   const { calculateTax } = useTaxSettings();
 
@@ -68,7 +67,7 @@ const Cart = () => {
       }
     }
 
-    // Load applied gift card from sessionStorage
+    // Load applied gift card from sessionStorage (display only)
     const savedGiftCard = sessionStorage.getItem("applied_gift_card");
     if (savedGiftCard) {
       try {
@@ -154,92 +153,10 @@ const Cart = () => {
     }
   };
 
-  const applyGiftCard = async () => {
-    const validation = validateGiftCardCode(giftCardCode);
-    if (!validation.isValid) {
-      toast.error(validation.error);
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("gift_cards")
-        .select("*")
-        .eq("code", giftCardCode.toUpperCase())
-        .eq("is_active", true)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (error) {
-        handleSupabaseError(error, {
-          toastMessage: t('cart:giftCard.invalid'),
-          context: "Validate Gift Card"
-        });
-        return;
-      }
-
-      if (!data) {
-        toast.error(t('cart:giftCard.invalid'));
-        return;
-      }
-
-      // Check expiration
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        toast.error(t('cart:giftCard.expired'));
-        return;
-      }
-
-      if (data.current_balance <= 0) {
-        toast.error(t('cart:giftCard.noBalance'));
-        return;
-      }
-
-      setAppliedGiftCard(data);
-      sessionStorage.setItem("applied_gift_card", JSON.stringify(data));
-      
-      // Send notification about gift card redemption with broadcast for immediate update
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Format the message with the actual amount (not using translation in RPC)
-        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
-        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
-        
-        // Use RPC to create the notification
-        await supabase.rpc('send_notification', {
-          p_user_id: user.id,
-          p_type: 'giftcard_redeemed',
-          p_title: notificationTitle,
-          p_message: notificationMessage,
-          p_link: '/carrito'
-        });
-        
-        // Trigger a broadcast to ensure immediate notification refresh
-        await triggerNotificationRefresh(user.id);
-      }
-      
-      toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));
-      setGiftCardCode("");
-    } catch (error) {
-      handleSupabaseError(error, {
-        toastMessage: t('cart:giftCard.invalid'),
-        context: "Apply Gift Card"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const removeCoupon = () => {
     setAppliedCoupon(null);
     sessionStorage.removeItem("applied_coupon");
     toast.info(t('cart:coupon.removed'));
-  };
-
-  const removeGiftCard = () => {
-    setAppliedGiftCard(null);
-    sessionStorage.removeItem("applied_gift_card");
-    toast.info(t('cart:giftCard.removed'));
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -459,39 +376,6 @@ const Cart = () => {
                       />
                       <Button onClick={applyCoupon} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-3 whitespace-nowrap">
                         {t('cart:coupon.apply')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                    <Gift className="h-3 w-3 md:h-4 md:w-4" />
-                    {t('cart:giftCard.title')}
-                  </Label>
-                  {appliedGiftCard ? (
-                    <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{appliedGiftCard.code}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {t('cart:giftCard.balance')}: €{appliedGiftCard.current_balance}
-                        </p>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="h-7 text-xs ml-2">
-                        {t('cart:giftCard.remove')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-1.5 md:gap-2">
-                      <Input
-                        placeholder={t('cart:giftCard.placeholder')}
-                        className="text-sm h-9"
-                        value={giftCardCode}
-                        onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
-                        disabled={loading}
-                      />
-                      <Button onClick={applyGiftCard} variant="outline" disabled={loading} size="sm" className="h-9 text-xs md:text-sm px-3 whitespace-nowrap">
-                        {t('cart:giftCard.apply')}
                       </Button>
                     </div>
                   )}

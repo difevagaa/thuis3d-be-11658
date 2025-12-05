@@ -13,6 +13,23 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, GripVertical } from "lucide-react";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import * as Icons from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Feature {
   id: string;
@@ -25,8 +42,84 @@ interface Feature {
 
 const ICON_OPTIONS = [
   'Sparkles', 'Zap', 'Shield', 'Award', 'CheckCircle', 'Heart',
-  'Rocket', 'Target', 'Users', 'Trophy', 'Gem', 'Crown'
+  'Rocket', 'Target', 'Users', 'Trophy', 'Gem', 'Crown',
+  'Star', 'Flame', 'Lightbulb', 'ThumbsUp', 'Smile', 'TrendingUp',
+  'Activity', 'BarChart', 'PieChart', 'Clock', 'Timer', 'Hourglass',
+  'Lock', 'Key', 'Eye', 'EyeOff', 'Settings', 'Tool',
+  'Package', 'Box', 'Truck', 'Palette', 'Brush', 'Layers'
 ];
+
+// Sortable Row Component
+function SortableFeatureRow({ 
+  feature, 
+  renderIcon, 
+  handleEdit, 
+  handleDelete 
+}: { 
+  feature: Feature;
+  renderIcon: (iconName: string) => React.ReactNode;
+  handleEdit: (feature: Feature) => void;
+  handleDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: feature.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 rounded p-1 transition-colors"
+          title="Arrastra para reordenar"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </TableCell>
+      <TableCell>{renderIcon(feature.icon_name)}</TableCell>
+      <TableCell className="font-medium">{feature.title}</TableCell>
+      <TableCell className="text-sm text-muted-foreground max-w-md truncate">
+        {feature.description}
+      </TableCell>
+      <TableCell>{feature.display_order}</TableCell>
+      <TableCell>
+        <span className={`text-xs px-2 py-1 rounded ${feature.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {feature.is_active ? 'Activa' : 'Inactiva'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEdit(feature)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(feature.id)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export default function HomepageFeatures() {
   const [features, setFeatures] = useState<Feature[]>([]);
@@ -40,6 +133,13 @@ export default function HomepageFeatures() {
     display_order: 0,
     is_active: true
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadFeatures();
@@ -147,6 +247,49 @@ export default function HomepageFeatures() {
     });
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = features.findIndex((feature) => feature.id === active.id);
+    const newIndex = features.findIndex((feature) => feature.id === over.id);
+
+    const newFeatures = arrayMove(features, oldIndex, newIndex);
+    
+    // Update local state immediately for better UX
+    setFeatures(newFeatures);
+
+    // Update display_order in database using batch update
+    try {
+      // Prepare all updates in a single batch
+      const updates = newFeatures.map((feature, index) => 
+        supabase
+          .from("homepage_features")
+          .update({ display_order: index })
+          .eq("id", feature.id)
+      );
+
+      // Execute all updates in parallel
+      const results = await Promise.all(updates);
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} feature(s)`);
+      }
+
+      toast.success("Orden actualizado correctamente");
+    } catch (error: any) {
+      console.error("Error al actualizar el orden:", error);
+      toast.error("Error al actualizar el orden");
+      // Reload to restore correct order
+      loadFeatures();
+    }
+  };
+
   const renderIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as any;
     return IconComponent ? <IconComponent className="h-5 w-5" /> : null;
@@ -167,7 +310,9 @@ export default function HomepageFeatures() {
           <div>
             <CardTitle>Características "¿Por Qué Elegirnos?"</CardTitle>
             <CardDescription>
-              Gestiona las características que destacan los beneficios de tu negocio
+              Gestiona las características que destacan los beneficios de tu negocio.
+              <br />
+              <strong>💡 Arrastra y suelta</strong> las filas para cambiar el orden de las características.
             </CardDescription>
           </div>
           <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -273,57 +418,41 @@ export default function HomepageFeatures() {
             No hay características configuradas. Crea una para comenzar.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead>Icono</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="w-20">Orden</TableHead>
-                <TableHead className="w-20">Estado</TableHead>
-                <TableHead className="w-24">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {features.map((feature) => (
-                <TableRow key={feature.id}>
-                  <TableCell>
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  </TableCell>
-                  <TableCell>{renderIcon(feature.icon_name)}</TableCell>
-                  <TableCell className="font-medium">{feature.title}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-md truncate">
-                    {feature.description}
-                  </TableCell>
-                  <TableCell>{feature.display_order}</TableCell>
-                  <TableCell>
-                    <span className={`text-xs px-2 py-1 rounded ${feature.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {feature.is_active ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(feature)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(feature.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={features.map(f => f.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Icono</TableHead>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead className="w-20">Orden</TableHead>
+                    <TableHead className="w-20">Estado</TableHead>
+                    <TableHead className="w-24">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {features.map((feature) => (
+                    <SortableFeatureRow
+                      key={feature.id}
+                      feature={feature}
+                      renderIcon={renderIcon}
+                      handleEdit={handleEdit}
+                      handleDelete={handleDelete}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
     </Card>
