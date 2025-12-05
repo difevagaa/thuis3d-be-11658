@@ -5,7 +5,7 @@ import React from "react";
 // Constants for amount display thresholds
 const LARGE_AMOUNT_THRESHOLD = 1000;
 const MEDIUM_AMOUNT_THRESHOLD = 100;
-const MESSAGE_MAX_HEIGHT = '3.5rem';
+const MESSAGE_MAX_HEIGHT = '2.5rem';
 
 interface GiftCardPrintableProps {
   code: string;
@@ -92,20 +92,24 @@ export default function GiftCardPrintable({
         </div>
 
         {/* Amount - Centered and prominent with adaptive sizing */}
-        <div className="text-center space-y-2 flex-1 flex flex-col justify-center min-h-0">
+        <div className="text-center space-y-1.5 flex-1 flex flex-col justify-center min-h-0">
           <div className={`font-bold drop-shadow-lg ${getAmountFontSize(amount)}`}>
             €{amount.toFixed(2)}
           </div>
-          <div className="bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono font-bold text-xs md:text-sm tracking-wider border-2 border-white/50 inline-block shadow-lg mx-auto">
+        </div>
+
+        {/* Code - Always visible, positioned separately */}
+        <div className="text-center pb-2">
+          <div className="bg-white/40 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono font-bold text-xs md:text-sm tracking-wider border-2 border-white/60 inline-block shadow-lg">
             {code}
           </div>
         </div>
 
         {/* Footer - Improved spacing and overflow handling */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {message && (
-            <div className="bg-white/20 backdrop-blur-md p-2 md:p-2.5 rounded-lg border border-white/30 overflow-y-auto" style={{ maxHeight: MESSAGE_MAX_HEIGHT }}>
-              <p className="text-[10px] md:text-xs italic leading-snug break-words">
+            <div className="bg-white/20 backdrop-blur-md p-2 rounded-lg border border-white/30 overflow-y-auto" style={{ maxHeight: MESSAGE_MAX_HEIGHT }}>
+              <p className="text-[9px] md:text-[10px] italic leading-tight break-words">
                 "{message}"
               </p>
             </div>
