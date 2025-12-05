@@ -7,11 +7,15 @@
   "gallery": "Gallery",
   "cart": "Cart",
   "myAccount": "My Account",
+  "myProfile": "My Profile",
   "adminPanel": "Admin Panel",
   "login": "Sign In",
   "logout": "Sign Out",
   "register": "Register",
   "myOrders": "My Orders",
   "myQuotes": "My Quotes",
+  "myMessages": "Messages",
+  "myInvoices": "Invoices",
+  "viewAll": "View All",
   "settings": "Settings"
 }
