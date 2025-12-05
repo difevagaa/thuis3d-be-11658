@@ -2,6 +2,11 @@ import { Card } from "@/components/ui/card";
 import { getThemeById, getIconById, DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
 import React from "react";
 
+// Constants for amount display thresholds
+const LARGE_AMOUNT_THRESHOLD = 1000;
+const MEDIUM_AMOUNT_THRESHOLD = 100;
+const MESSAGE_MAX_HEIGHT = '3.5rem';
+
 interface GiftCardPrintableProps {
   code: string;
   amount: number;
@@ -42,6 +47,13 @@ export default function GiftCardPrintable({
 
   const accentColorValue = accentColorMap[theme.accentColor] || '#3b82f6';
 
+  // Get responsive font size classes based on amount
+  const getAmountFontSize = (amount: number): string => {
+    if (amount >= LARGE_AMOUNT_THRESHOLD) return 'text-3xl md:text-4xl';
+    if (amount >= MEDIUM_AMOUNT_THRESHOLD) return 'text-4xl md:text-5xl';
+    return 'text-5xl md:text-6xl';
+  };
+
   return (
     <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]" style={{ '--accent-color': accentColorValue } as React.CSSProperties}>
       {/* Enhanced gradient background with selected theme */}
@@ -81,7 +93,7 @@ export default function GiftCardPrintable({
 
         {/* Amount - Centered and prominent with adaptive sizing */}
         <div className="text-center space-y-2 flex-1 flex flex-col justify-center min-h-0">
-          <div className={`font-bold drop-shadow-lg ${amount >= 1000 ? 'text-3xl md:text-4xl' : amount >= 100 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-6xl'}`}>
+          <div className={`font-bold drop-shadow-lg ${getAmountFontSize(amount)}`}>
             €{amount.toFixed(2)}
           </div>
           <div className="bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono font-bold text-xs md:text-sm tracking-wider border-2 border-white/50 inline-block shadow-lg mx-auto">
@@ -92,7 +104,7 @@ export default function GiftCardPrintable({
         {/* Footer - Improved spacing and overflow handling */}
         <div className="space-y-2">
           {message && (
-            <div className="bg-white/20 backdrop-blur-md p-2 md:p-2.5 rounded-lg border border-white/30 max-h-[3.5rem] overflow-y-auto">
+            <div className="bg-white/20 backdrop-blur-md p-2 md:p-2.5 rounded-lg border border-white/30 overflow-y-auto" style={{ maxHeight: MESSAGE_MAX_HEIGHT }}>
               <p className="text-[10px] md:text-xs italic leading-snug break-words">
                 "{message}"
               </p>

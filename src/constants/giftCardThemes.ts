@@ -175,5 +175,5 @@ export function getIconById(iconId: string): GiftCardIcon {
 }
 
 // Default theme (black - as requested)
-export const DEFAULT_THEME = GIFT_CARD_THEMES[8]; // Black theme
+export const DEFAULT_THEME = GIFT_CARD_THEMES.find(t => t.id === 'black') || GIFT_CARD_THEMES[0];
 export const DEFAULT_ICON = GIFT_CARD_ICONS[0];
