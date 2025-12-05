@@ -179,9 +179,11 @@ export default function PaymentSummary() {
     
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
-    const afterDiscount = subtotal - discount;
+    const tax = calculateTotalTax();
+    // CRÍTICO: La tarjeta de regalo debe cubrir subtotal - descuento + IVA + envío
+    const totalBeforeGiftCard = subtotal - discount + tax + shippingCost;
     
-    return Math.min(appliedGiftCard.current_balance, afterDiscount);
+    return Math.min(appliedGiftCard.current_balance, totalBeforeGiftCard);
   };
 
   const calculateTotalTax = () => {
@@ -214,8 +216,231 @@ export default function PaymentSummary() {
     return Math.max(0, subtotal - discount - giftCardAmount + tax + shippingCost);
   };
 
-  const handleConfirmOrder = () => {
-    navigate("/pago");
+  const [processing, setProcessing] = useState(false);
+
+  const handleConfirmOrder = async () => {
+    // Prevenir múltiples clicks
+    if (processing) return;
+    
+    const total = calculateTotal();
+    
+    // Si el total es 0 o negativo (cubierto por tarjeta de regalo), procesar automáticamente
+    if (total <= 0 && appliedGiftCard) {
+      setProcessing(true);
+      
+      try {
+        // Obtener usuario actual
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast.error("Debes iniciar sesión para continuar");
+          navigate("/auth");
+          setProcessing(false);
+          return;
+        }
+
+        const subtotal = calculateSubtotal();
+        const discount = calculateDiscount();
+        const giftCardAmount = calculateGiftCardAmount();
+        const tax = calculateTotalTax();
+        
+        // Preparar notas del pedido
+        const orderNotes = [];
+        if (appliedGiftCard && giftCardAmount > 0) {
+          orderNotes.push(
+            `Tarjeta de regalo aplicada: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          );
+        }
+        if (appliedCoupon && discount > 0) {
+          orderNotes.push(
+            `Cupón aplicado: ${appliedCoupon.code} (-€${discount.toFixed(2)})`
+          );
+        }
+
+        // Crear pedido con estado PAID ya que está pagado con tarjeta de regalo
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            user_id: user.id,
+            subtotal,
+            tax,
+            shipping: shippingCost,
+            discount: discount + giftCardAmount,
+            total: 0, // Total pagado es 0 porque la tarjeta lo cubre todo
+            payment_method: "gift_card",
+            payment_status: "paid", // CRÍTICO: Marcar como PAID automáticamente
+            shipping_address: JSON.stringify(shippingInfo),
+            billing_address: JSON.stringify(shippingInfo),
+            notes: orderNotes.length > 0 ? orderNotes.join('\n\n') : null
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        // Actualizar balance de tarjeta de regalo
+        const newBalance = appliedGiftCard.current_balance - giftCardAmount;
+        const { error: giftCardError } = await supabase
+          .from("gift_cards")
+          .update({ current_balance: newBalance })
+          .eq("id", appliedGiftCard.id);
+
+        if (giftCardError) throw giftCardError;
+
+        // Crear items del pedido
+        const orderItemsData = cartItems.map(item => ({
+          order_id: order.id,
+          product_id: item.isGiftCard ? null : (item.productId || null),
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+          selected_material: item.materialId || null,
+          selected_color: item.colorId || null,
+          custom_text: item.customText || null
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(orderItemsData);
+
+        if (itemsError) throw itemsError;
+
+        // Actualizar el uso del cupón si se aplicó
+        if (appliedCoupon) {
+          await supabase
+            .from("coupons")
+            .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+            .eq("id", appliedCoupon.id);
+        }
+
+        // Crear factura automáticamente
+        try {
+          await supabase.from("invoices").insert({
+            invoice_number: order.order_number,
+            user_id: user.id,
+            order_id: order.id,
+            subtotal: subtotal,
+            tax: tax,
+            shipping: shippingCost,
+            discount: discount + giftCardAmount,
+            total: 0,
+            payment_method: "gift_card",
+            payment_status: "paid", // CRÍTICO: Factura también marcada como PAID
+            issue_date: new Date().toISOString(),
+            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            notes: `Factura generada automáticamente para el pedido ${order.order_number} - Pagado con tarjeta de regalo`
+          });
+        } catch (invoiceError) {
+          logger.error('Error creating invoice:', invoiceError);
+          // No lanzar error, continuar con el flujo
+        }
+
+        // Enviar correo de confirmación al cliente
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.email) {
+            await supabase.functions.invoke('send-order-confirmation', {
+              body: {
+                to: profile.email,
+                customer_name: profile.full_name || shippingInfo.full_name || 'Cliente',
+                order_number: order.order_number,
+                subtotal: subtotal,
+                tax: tax,
+                shipping: shippingCost,
+                discount: discount + giftCardAmount,
+                total: 0,
+                items: cartItems.map(item => ({
+                  product_name: item.name,
+                  quantity: item.quantity,
+                  unit_price: item.price
+                }))
+              }
+            });
+          }
+        } catch (emailError) {
+          logger.error('Error sending order confirmation email:', emailError);
+          // No lanzar error, continuar con el flujo
+        }
+
+        // Notificar a administradores por correo
+        try {
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              to: 'admin@thuis3d.be',
+              type: 'order',
+              subject: `Nuevo Pedido: ${order.order_number}`,
+              message: `Pedido pagado con tarjeta de regalo de ${shippingInfo.full_name || 'Cliente'}`,
+              link: `/admin/pedidos/${order.id}`,
+              order_number: order.order_number,
+              customer_name: shippingInfo.full_name,
+              customer_email: shippingInfo.email
+            }
+          });
+        } catch (notifError) {
+          logger.error('Error sending admin notification:', notifError);
+          // No lanzar error, continuar con el flujo
+        }
+
+        // Enviar notificaciones in-app a todos los administradores
+        try {
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'admin');
+
+          if (adminProfiles && adminProfiles.length > 0) {
+            for (const admin of adminProfiles) {
+              await supabase.rpc('send_notification', {
+                p_user_id: admin.id,
+                p_type: 'new_order',
+                p_title: `Nuevo Pedido: ${order.order_number}`,
+                p_message: `Pedido pagado con tarjeta de regalo de ${shippingInfo.full_name || 'Cliente'} - Total: €0.00`,
+                p_link: `/admin/pedidos/${order.id}`
+              });
+              
+              // Trigger refresh para cada admin
+              await triggerNotificationRefresh(admin.id);
+            }
+          }
+        } catch (notifError) {
+          logger.error('Error sending admin in-app notifications:', notifError);
+          // No lanzar error, continuar con el flujo
+        }
+
+        // Limpiar carrito y sesión
+        localStorage.removeItem("cart");
+        sessionStorage.removeItem("applied_coupon");
+        sessionStorage.removeItem("applied_gift_card");
+        const sessionId = sessionStorage.getItem("checkout_session_id");
+        if (sessionId) {
+          await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+          sessionStorage.removeItem("checkout_session_id");
+        }
+
+        toast.success(`¡Pedido ${order.order_number} creado exitosamente!`);
+        
+        // Redirigir a página de confirmación
+        navigate("/mi-cuenta?tab=orders", { 
+          state: { 
+            newOrder: order.order_number,
+            message: "Tu pedido ha sido procesado exitosamente con tu tarjeta de regalo"
+          } 
+        });
+      } catch (error) {
+        logger.error("Error processing gift card order:", error);
+        toast.error("Error al procesar el pedido. Por favor intenta de nuevo.");
+        setProcessing(false);
+      }
+    } else {
+      // Si hay saldo pendiente, continuar al flujo normal de pago
+      navigate("/pago");
+    }
   };
 
   if (loading) {
@@ -352,11 +577,11 @@ export default function PaymentSummary() {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1 order-2 sm:order-1">
+          <Button variant="outline" onClick={() => navigate("/informacion-envio")} className="flex-1 order-2 sm:order-1" disabled={processing}>
             {t('common:back')}
           </Button>
-          <Button onClick={handleConfirmOrder} className="flex-1 order-1 sm:order-2" size="lg">
-            {t('cart:checkout')}
+          <Button onClick={handleConfirmOrder} className="flex-1 order-1 sm:order-2" size="lg" disabled={processing}>
+            {processing ? "Procesando..." : calculateTotal() <= 0 && appliedGiftCard ? "Confirmar Pedido" : t('cart:checkout')}
           </Button>
         </div>
       </div>

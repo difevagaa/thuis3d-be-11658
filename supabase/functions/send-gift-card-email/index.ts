@@ -207,7 +207,7 @@ const handler = async (req: Request): Promise<Response> => {
                     </div>
                     
                     <div>
-                      ${safeMessage ? `<div class="gift-card-message">"${safeMessage}"</div>` : ''}
+                      ${safeMessage ? `<div class="gift-card-message">${safeMessage}</div>` : ''}
                       ${safeSenderName ? `<p class="gift-card-from">De: <strong>${safeSenderName}</strong></p>` : ''}
                       <p class="gift-card-website">www.thuis3d.be • Uso exclusivo tienda online</p>
                     </div>
