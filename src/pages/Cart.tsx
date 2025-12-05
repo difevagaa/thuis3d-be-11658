@@ -201,12 +201,16 @@ const Cart = () => {
       // Send notification about gift card redemption with broadcast for immediate update
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Format the message with the actual amount (not using translation in RPC)
+        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
+        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
+        
         // Use RPC to create the notification
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
           p_type: 'giftcard_redeemed',
-          p_title: t('cart:giftCard.redeemed', { amount: data.current_balance.toFixed(2) }),
-          p_message: t('cart:giftCard.redeemed', { amount: data.current_balance.toFixed(2) }),
+          p_title: notificationTitle,
+          p_message: notificationMessage,
           p_link: '/carrito'
         });
         
