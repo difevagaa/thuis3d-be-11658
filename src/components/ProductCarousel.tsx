@@ -76,12 +76,5 @@ export default function ProductCarousel({
     }}>
         <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
       </Button>
-
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2">
-        {images.map((_, index) => <button key={index} onClick={e => {
-        e.preventDefault();
-        setCurrentIndex(index);
-      }} className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white w-3 md:w-4' : 'bg-white/50 hover:bg-white/75'}`} />)}
-      </div>
     </div>;
 }
