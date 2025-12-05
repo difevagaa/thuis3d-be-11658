@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play } from "lucide-react";
@@ -22,11 +22,7 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadGalleryItems();
-  }, []);
-
-  const loadGalleryItems = async () => {
+  const loadGalleryItems = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('gallery_items')
@@ -44,7 +40,11 @@ export default function Gallery() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    loadGalleryItems();
+  }, [loadGalleryItems]);
 
   const handleVideoPlay = (itemId: string) => {
     setPlayingVideos(prev => new Set(prev).add(itemId));

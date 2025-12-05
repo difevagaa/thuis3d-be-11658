@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +9,7 @@ export default function StaticPage() {
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadPage();
-  }, [slug]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("pages")
@@ -29,7 +25,11 @@ export default function StaticPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    loadPage();
+  }, [loadPage]);
 
   if (loading) {
     return (

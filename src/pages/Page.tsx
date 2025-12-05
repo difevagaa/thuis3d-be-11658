@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +9,7 @@ export default function Page() {
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadPage();
-  }, [slug]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("pages")
@@ -30,7 +26,11 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    loadPage();
+  }, [loadPage]);
 
   if (loading) {
     return <div className="container mx-auto p-6">Cargando...</div>;
