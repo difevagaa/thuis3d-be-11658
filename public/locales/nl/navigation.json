@@ -7,11 +7,15 @@
   "gallery": "Galerij",
   "cart": "Winkelwagen",
   "myAccount": "Mijn Account",
+  "myProfile": "Mijn Profiel",
   "adminPanel": "Beheerpaneel",
   "login": "Inloggen",
   "logout": "Uitloggen",
   "register": "Registreren",
   "myOrders": "Mijn Bestellingen",
   "myQuotes": "Mijn Offertes",
+  "myMessages": "Berichten",
+  "myInvoices": "Facturen",
+  "viewAll": "Bekijk alles",
   "settings": "Instellingen"
 }

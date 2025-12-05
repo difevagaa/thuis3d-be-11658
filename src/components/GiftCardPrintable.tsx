@@ -79,11 +79,11 @@ export default function GiftCardPrintable({
         </div>
 
         {/* Amount - Centered and prominent */}
-        <div className="text-center space-y-4">
-          <div className="text-6xl md:text-7xl font-bold drop-shadow-lg">
+        <div className="text-center space-y-3">
+          <div className="text-5xl md:text-6xl font-bold drop-shadow-lg">
             €{amount.toFixed(2)}
           </div>
-          <div className="bg-white px-6 py-3 rounded-xl font-mono font-bold text-sm md:text-base tracking-widest shadow-lg inline-block" style={{ color: `var(--accent-color, #3b82f6)` }}>
+          <div className="bg-white/25 backdrop-blur-sm px-5 py-2.5 rounded-lg font-mono font-bold text-sm md:text-base tracking-widest border-2 border-white/50 inline-block shadow-lg">
             {code}
           </div>
         </div>

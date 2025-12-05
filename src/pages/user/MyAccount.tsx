@@ -16,6 +16,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
+import { parseGiftCardMessage } from "@/lib/giftCardUtils";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -603,7 +604,9 @@ export default function MyAccount() {
             <CardContent>
               {giftCards.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                  {giftCards.map((card) => (
+                  {giftCards.map((card) => {
+                    const { userMessage, themeId, iconId } = parseGiftCardMessage(card.message);
+                    return (
                     <div 
                       key={card.id} 
                       className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -615,10 +618,12 @@ export default function MyAccount() {
                           <GiftCardPrintable
                             code={card.code}
                             amount={card.current_balance}
-                            message={card.message}
+                            message={userMessage}
                             senderName={card.sender_name}
                             expiresAt={card.expires_at}
                             recipientEmail={card.recipient_email}
+                            themeId={themeId}
+                            iconId={iconId}
                           />
                         </div>
                         
@@ -639,7 +644,7 @@ export default function MyAccount() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">{t('account:giftcards.noGiftCards')}</p>

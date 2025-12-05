@@ -7,24 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Printer, Gift } from "lucide-react";
 import GiftCardPrintable from "@/components/GiftCardPrintable";
 import { i18nToast } from "@/lib/i18nToast";
-import { DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
-
-// Helper function to extract customization from message
-function parseGiftCardMessage(message: string | null) {
-  if (!message) return { userMessage: null, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
-  
-  try {
-    const parsed = JSON.parse(message);
-    return {
-      userMessage: parsed.userMessage || null,
-      themeId: parsed.themeId || DEFAULT_THEME.id,
-      iconId: parsed.iconId || DEFAULT_ICON.id
-    };
-  } catch {
-    // If not JSON, treat as plain message (backwards compatible)
-    return { userMessage: message, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
-  }
-}
+import { parseGiftCardMessage } from "@/lib/giftCardUtils";
 
 export default function GiftCardView() {
   const { t } = useTranslation(['common', 'account']);

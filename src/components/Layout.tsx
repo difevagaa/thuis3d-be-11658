@@ -283,7 +283,7 @@ export const Layout = ({ children }: LayoutProps) => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")}>
                       <UserCircle className="mr-2 h-4 w-4" />
-                      {t('myAccount')}
+                      {t('myProfile')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")}>
                       <ShoppingBag className="mr-2 h-4 w-4" />
@@ -291,15 +291,15 @@ export const Layout = ({ children }: LayoutProps) => {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")}>
                       <MessageSquare className="mr-2 h-4 w-4" />
-                      {t('myAccount')}
+                      {t('myMessages')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=invoices")}>
                       <Package className="mr-2 h-4 w-4" />
-                      Facturas
+                      {t('myInvoices')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta")} className="font-semibold">
-                      Ver todo
+                      {t('viewAll')}
                     </DropdownMenuItem>
                     {isAdmin && (
                       <>
