@@ -18,13 +18,7 @@ export default function UserQuoteDetail() {
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      loadQuoteDetail();
-    }
-  }, [id]);
-
-  const loadQuoteDetail = async () => {
+  const loadQuoteDetail = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +57,13 @@ export default function UserQuoteDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]); // Depends on id and navigate
+
+  useEffect(() => {
+    if (id) {
+      loadQuoteDetail();
+    }
+  }, [id, loadQuoteDetail]); // Now includes loadQuoteDetail
 
   const handleDownloadFile = async (filePath?: string) => {
     const pathToDownload = filePath || quote?.file_storage_path;

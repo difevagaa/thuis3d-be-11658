@@ -43,11 +43,7 @@ export default function OrderDetail() {
     return s.startsWith('[') && s.endsWith(']');
   };
 
-  useEffect(() => {
-    loadOrderDetail();
-  }, [id]);
-
-  const loadOrderDetail = async () => {
+  const loadOrderDetail = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -99,7 +95,11 @@ export default function OrderDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]); // Depends on id and navigate
+
+  useEffect(() => {
+    loadOrderDetail();
+  }, [loadOrderDetail]); // Now includes loadOrderDetail
 
   const printInvoice = () => {
     window.print();
