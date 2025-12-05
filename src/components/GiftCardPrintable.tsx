@@ -1,4 +1,6 @@
 import { Card } from "@/components/ui/card";
+import { getThemeById, getIconById, DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
+import React from "react";
 
 interface GiftCardPrintableProps {
   code: string;
@@ -7,6 +9,8 @@ interface GiftCardPrintableProps {
   senderName?: string;
   expiresAt?: string;
   recipientEmail: string;
+  themeId?: string;
+  iconId?: string;
 }
 
 export default function GiftCardPrintable({
@@ -15,12 +19,32 @@ export default function GiftCardPrintable({
   message,
   senderName,
   expiresAt,
-  recipientEmail
+  recipientEmail,
+  themeId,
+  iconId
 }: GiftCardPrintableProps) {
+  // Get theme and icon, fallback to defaults
+  const theme = themeId ? getThemeById(themeId) : DEFAULT_THEME;
+  const icon = iconId ? getIconById(iconId) : DEFAULT_ICON;
+
+  // Map accent colors to actual color values for inline styles
+  const accentColorMap: Record<string, string> = {
+    'blue-500': '#3b82f6',
+    'green-500': '#22c55e',
+    'amber-500': '#f59e0b',
+    'purple-500': '#a855f7',
+    'pink-500': '#ec4899',
+    'slate-500': '#64748b',
+    'teal-500': '#14b8a6',
+    'orange-400': '#fb923c'
+  };
+
+  const accentColorValue = accentColorMap[theme.accentColor] || '#3b82f6';
+
   return (
-    <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]">
-      {/* Enhanced gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-purple-600" />
+    <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]" style={{ '--accent-color': accentColorValue } as React.CSSProperties}>
+      {/* Enhanced gradient background with selected theme */}
+      <div className={`absolute inset-0 ${theme.bgGradient}`} />
       
       {/* Animated pattern overlay */}
       <div className="absolute inset-0 opacity-20">
@@ -41,11 +65,11 @@ export default function GiftCardPrintable({
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
       {/* Content */}
-      <div className="relative h-full p-6 md:p-8 flex flex-col justify-between text-white">
+      <div className={`relative h-full p-6 md:p-8 flex flex-col justify-between ${theme.textColor}`}>
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <div className="text-4xl md:text-5xl mb-2">🎁</div>
+            <div className="text-4xl md:text-5xl mb-2">{icon.emoji}</div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight">Tarjeta Regalo</h2>
             <p className="text-sm md:text-base opacity-90 font-medium">Thuis3D.be</p>
           </div>
@@ -59,7 +83,7 @@ export default function GiftCardPrintable({
           <div className="text-6xl md:text-7xl font-bold drop-shadow-lg">
             €{amount.toFixed(2)}
           </div>
-          <div className="bg-white text-orange-600 px-6 py-3 rounded-xl font-mono font-bold text-sm md:text-base tracking-widest shadow-lg inline-block">
+          <div className="bg-white px-6 py-3 rounded-xl font-mono font-bold text-sm md:text-base tracking-widest shadow-lg inline-block" style={{ color: `var(--accent-color, #3b82f6)` }}>
             {code}
           </div>
         </div>
