@@ -83,7 +83,12 @@ function SortableCardRow({
   return (
     <TableRow ref={setNodeRef} style={style}>
       <TableCell>
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 rounded p-1 transition-colors"
+          title="Arrastra para reordenar"
+        >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>
       </TableCell>
