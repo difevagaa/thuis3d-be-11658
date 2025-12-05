@@ -13,6 +13,23 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, GripVertical } from "lucide-react";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import * as Icons from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface QuickAccessCard {
   id: string;
@@ -27,8 +44,79 @@ interface QuickAccessCard {
 
 const ICON_OPTIONS = [
   'Printer', 'FileText', 'Gift', 'Package', 'ShoppingCart', 'Zap', 
-  'Star', 'Heart', 'Briefcase', 'Calculator', 'Camera', 'Mail'
+  'Star', 'Heart', 'Briefcase', 'Calculator', 'Camera', 'Mail',
+  'Phone', 'MapPin', 'Users', 'User', 'Settings', 'Home',
+  'Search', 'TrendingUp', 'Award', 'CheckCircle', 'Clock',
+  'Download', 'Upload', 'Share2', 'MessageCircle', 'ThumbsUp',
+  'Bookmark', 'Flag', 'Archive', 'Inbox', 'Send',
+  'Globe', 'Wifi', 'Lock', 'Unlock', 'Key',
+  'Truck', 'Box', 'DollarSign', 'CreditCard', 'Wallet'
 ];
+
+// Sortable Row Component
+function SortableCardRow({ 
+  card, 
+  renderIcon, 
+  handleEdit, 
+  handleDelete 
+}: { 
+  card: QuickAccessCard;
+  renderIcon: (iconName: string) => React.ReactNode;
+  handleEdit: (card: QuickAccessCard) => void;
+  handleDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </TableCell>
+      <TableCell>{renderIcon(card.icon_name)}</TableCell>
+      <TableCell className="font-medium">{card.title}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">{card.button_url}</TableCell>
+      <TableCell>{card.display_order}</TableCell>
+      <TableCell>
+        <span className={`text-xs px-2 py-1 rounded ${card.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {card.is_active ? 'Activa' : 'Inactiva'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEdit(card)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(card.id)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export default function HomepageQuickAccessCards() {
   const [cards, setCards] = useState<QuickAccessCard[]>([]);
@@ -44,6 +132,13 @@ export default function HomepageQuickAccessCards() {
     display_order: 0,
     is_active: true
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadCards();
@@ -156,6 +251,46 @@ export default function HomepageQuickAccessCards() {
     });
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = cards.findIndex((card) => card.id === active.id);
+    const newIndex = cards.findIndex((card) => card.id === over.id);
+
+    const newCards = arrayMove(cards, oldIndex, newIndex);
+    
+    // Update local state immediately for better UX
+    setCards(newCards);
+
+    // Update display_order in database
+    try {
+      const updates = newCards.map((card, index) => ({
+        id: card.id,
+        display_order: index
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("homepage_quick_access_cards")
+          .update({ display_order: update.display_order })
+          .eq("id", update.id);
+
+        if (error) throw error;
+      }
+
+      toast.success("Orden actualizado correctamente");
+    } catch (error: any) {
+      console.error("Error al actualizar el orden:", error);
+      toast.error("Error al actualizar el orden");
+      // Reload to restore correct order
+      loadCards();
+    }
+  };
+
   const renderIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as any;
     return IconComponent ? <IconComponent className="h-5 w-5" /> : null;
@@ -176,7 +311,9 @@ export default function HomepageQuickAccessCards() {
           <div>
             <CardTitle>Tarjetas de Acceso Rápido</CardTitle>
             <CardDescription>
-              Gestiona las tarjetas que aparecen en la sección de acceso rápido de la página de inicio
+              Gestiona las tarjetas que aparecen en la sección de acceso rápido de la página de inicio.
+              <br />
+              <strong>💡 Arrastra y suelta</strong> las filas para cambiar el orden de las tarjetas.
             </CardDescription>
           </div>
           <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -303,55 +440,41 @@ export default function HomepageQuickAccessCards() {
             No hay tarjetas configuradas. Crea una para comenzar.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead>Icono</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead className="w-20">Orden</TableHead>
-                <TableHead className="w-20">Estado</TableHead>
-                <TableHead className="w-24">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cards.map((card) => (
-                <TableRow key={card.id}>
-                  <TableCell>
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  </TableCell>
-                  <TableCell>{renderIcon(card.icon_name)}</TableCell>
-                  <TableCell className="font-medium">{card.title}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{card.button_url}</TableCell>
-                  <TableCell>{card.display_order}</TableCell>
-                  <TableCell>
-                    <span className={`text-xs px-2 py-1 rounded ${card.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {card.is_active ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(card)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(card.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={cards.map(c => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Icono</TableHead>
+                    <TableHead>Título</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead className="w-20">Orden</TableHead>
+                    <TableHead className="w-20">Estado</TableHead>
+                    <TableHead className="w-24">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cards.map((card) => (
+                    <SortableCardRow
+                      key={card.id}
+                      card={card}
+                      renderIcon={renderIcon}
+                      handleEdit={handleEdit}
+                      handleDelete={handleDelete}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
     </Card>
