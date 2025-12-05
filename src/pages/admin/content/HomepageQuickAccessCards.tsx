@@ -271,20 +271,23 @@ export default function HomepageQuickAccessCards() {
     // Update local state immediately for better UX
     setCards(newCards);
 
-    // Update display_order in database
+    // Update display_order in database using batch update
     try {
-      const updates = newCards.map((card, index) => ({
-        id: card.id,
-        display_order: index
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
+      // Prepare all updates in a single batch
+      const updates = newCards.map((card, index) => 
+        supabase
           .from("homepage_quick_access_cards")
-          .update({ display_order: update.display_order })
-          .eq("id", update.id);
+          .update({ display_order: index })
+          .eq("id", card.id)
+      );
 
-        if (error) throw error;
+      // Execute all updates in parallel
+      const results = await Promise.all(updates);
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} card(s)`);
       }
 
       toast.success("Orden actualizado correctamente");

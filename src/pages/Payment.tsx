@@ -223,6 +223,8 @@ export default function Payment() {
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
+    if (subtotal === 0) return 0; // Avoid division by zero
+    
     const giftCardAmount = calculateGiftCardAmount();
     
     const taxableAmount = cartItems
@@ -311,7 +313,7 @@ export default function Payment() {
           p_type: 'giftcard_redeemed',
           p_title: notificationTitle,
           p_message: notificationMessage,
-          p_link: '/pago'
+          p_link: '/informacion-envio'
         });
         
         await triggerNotificationRefresh(user.id);
