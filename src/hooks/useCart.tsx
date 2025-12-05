@@ -78,7 +78,7 @@ export const useCart = () => {
     if (userId) {
       syncCartToDatabase();
     }
-  }, [userId]);
+  }, [userId, syncCartToDatabase]);
 
   const syncCartToDatabase = useCallback(async () => {
     if (!userId) return;
