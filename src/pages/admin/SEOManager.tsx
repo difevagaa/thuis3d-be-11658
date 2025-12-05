@@ -57,11 +57,7 @@ export default function SEOManager() {
 
   const { regenerateAllProductSEO, validateSEO } = useAutoSEO();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -120,7 +116,11 @@ export default function SEOManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No external dependencies
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]); // Now includes loadData
 
   const calculateSeoScore = async (settingsData: any, keywordsData: any[], metaTagsData: any[]) => {
     const checks: SEOCheck[] = [];

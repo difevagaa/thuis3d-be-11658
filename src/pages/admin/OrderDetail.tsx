@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,12 +46,7 @@ export default function OrderDetail() {
     return s.startsWith('[') && s.endsWith(']');
   };
 
-  useEffect(() => {
-    loadOrderData();
-    loadStatuses();
-  }, [id]);
-
-  const loadStatuses = async () => {
+  const loadStatuses = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("order_statuses")
@@ -64,9 +59,9 @@ export default function OrderDetail() {
     } catch (error) {
       logger.error("Error loading statuses:", error);
     }
-  };
+  }, []); // No external dependencies
 
-  const loadOrderData = async () => {
+  const loadOrderData = useCallback(async () => {
     try {
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
@@ -98,7 +93,12 @@ export default function OrderDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]); // Depends on id from useParams
+
+  useEffect(() => {
+    loadOrderData();
+    loadStatuses();
+  }, [loadOrderData, loadStatuses]); // Now includes the functions
 
   const updateOrderStatus = async (statusId: string) => {
     try {

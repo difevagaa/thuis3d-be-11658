@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,7 +121,7 @@ export default function SiteCustomizer() {
     
     loadCustomization();
     loadSettings();
-  }, []);
+  }, [loadCustomization, loadSettings]); // Now functions are in dependencies
 
   // Update CSS variables whenever customization changes
   useEffect(() => {
@@ -133,9 +133,9 @@ export default function SiteCustomizer() {
     } else if (hasProPalette) {
       console.log('🎨 [SiteCustomizer] Paleta profesional detectada - NO se aplican CSS variables legacy');
     }
-  }, [customization]);
+  }, [customization, updateCSSVariables]);
 
-  const loadCustomization = async () => {
+  const loadCustomization = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("site_customization")
@@ -194,9 +194,9 @@ export default function SiteCustomizer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No dependencies needed - uses only setState functions
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("site_settings")
@@ -213,7 +213,7 @@ export default function SiteCustomizer() {
     } catch (error) {
       logger.error("Error loading settings:", error);
     }
-  };
+  }, []); // No dependencies needed - uses only setState functions
 
   const updateSetting = async (key: string, value: string) => {
     const { error } = await supabase
@@ -405,6 +405,8 @@ export default function SiteCustomizer() {
       if (favicon && customization.favicon_url) favicon.href = customization.favicon_url;
       const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
       if (apple && customization.favicon_url) apple.href = customization.favicon_url;
+      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+      if (shortcut && customization.favicon_url) shortcut.href = customization.favicon_url;
 
       // Aplicar cambios CSS inmediatamente
       updateCSSVariables();
@@ -417,7 +419,7 @@ export default function SiteCustomizer() {
     }
   };
 
-  const updateCSSVariables = () => {
+  const updateCSSVariables = useCallback(() => {
     const root = document.documentElement;
     const hasProPalette = !!localStorage.getItem('selected_palette');
 
@@ -644,6 +646,10 @@ export default function SiteCustomizer() {
     if (customization.favicon_url) {
       const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
       if (favicon) favicon.href = customization.favicon_url;
+      const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+      if (apple) apple.href = customization.favicon_url;
+      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+      if (shortcut) shortcut.href = customization.favicon_url;
     }
 
     // Update page title
@@ -653,7 +659,7 @@ export default function SiteCustomizer() {
 
     // CRÍTICO: Save advanced colors to cache for instant load on refresh
     saveAdvancedColorsToCache(customization);
-  };
+  }, [customization]); // customization is the dependency
 
   if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
 

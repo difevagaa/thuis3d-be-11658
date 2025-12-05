@@ -16,6 +16,7 @@ export function RandomModelPreview({ color, className = "" }: RandomModelPreview
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentModel, setCurrentModel] = useState<any>(null);
   const [autoRotate, setAutoRotate] = useState(true);
+  const autoRotateRef = useRef(autoRotate);
   const [zoomLevel, setZoomLevel] = useState(1);
   const sceneRef = useRef<{
     scene?: THREE.Scene;
@@ -26,6 +27,11 @@ export function RandomModelPreview({ color, className = "" }: RandomModelPreview
     initialCameraPosition?: THREE.Vector3;
     initialMeshRotation?: THREE.Euler;
   }>({});
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    autoRotateRef.current = autoRotate;
+  }, [autoRotate]);
 
   // Load random model on mount
   const loadRandomModel = useCallback(async () => {
@@ -171,13 +177,11 @@ export function RandomModelPreview({ color, className = "" }: RandomModelPreview
     renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
     // Animation loop
-    const animationAutoRotate = autoRotate;
-    
     const animate = () => {
       sceneRef.current.animationId = requestAnimationFrame(animate);
       
       // Auto-rotate slowly when enabled and not dragging
-      if (animationAutoRotate && !isDragging && sceneRef.current.mesh) {
+      if (autoRotateRef.current && !isDragging && sceneRef.current.mesh) {
         sceneRef.current.mesh.rotation.y += 0.005;
       }
       

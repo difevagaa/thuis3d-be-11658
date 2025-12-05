@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,13 +21,7 @@ export default function QuoteDetail() {
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [updatingTax, setUpdatingTax] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadQuoteDetail();
-    }
-  }, [id]);
-
-  const loadQuoteDetail = async () => {
+  const loadQuoteDetail = useCallback(async () => {
     try {
       setLoading(true);
       logger.log('Loading quote detail for ID:', id);
@@ -83,7 +77,13 @@ export default function QuoteDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]); // Depends on id from useParams
+
+  useEffect(() => {
+    if (id) {
+      loadQuoteDetail();
+    }
+  }, [id, loadQuoteDetail]); // Now includes loadQuoteDetail
 
   const handleDownloadFile = async (filePath?: string) => {
     const pathToDownload = filePath || quote?.file_storage_path;

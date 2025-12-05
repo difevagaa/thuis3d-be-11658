@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,11 +15,7 @@ export default function UserInvoiceView() {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadInvoice();
-  }, [id]);
-
-  const loadInvoice = async () => {
+  const loadInvoice = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -56,7 +52,11 @@ export default function UserInvoiceView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    loadInvoice();
+  }, [loadInvoice]);
 
   const handlePrint = () => {
     window.print();

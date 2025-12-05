@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +9,7 @@ export default function LegalPage() {
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadPage();
-  }, [type]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("legal_pages")
@@ -29,7 +25,11 @@ export default function LegalPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [type]);
+
+  useEffect(() => {
+    loadPage();
+  }, [loadPage]);
 
   if (loading) {
     return (
