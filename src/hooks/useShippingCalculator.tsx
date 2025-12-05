@@ -111,6 +111,34 @@ export const useShippingCalculator = () => {
       if (products && products.length > 0) {
         logger.debug('Products loaded:', products);
 
+        // NUEVO: Check product-specific shipping rates by country
+        const { data: productRates, error: ratesError } = await supabase
+          .from("product_shipping_rates")
+          .select("product_id, country_code, shipping_cost, is_enabled")
+          .in("product_id", productIds)
+          .eq("country_code", countryCode)
+          .eq("is_enabled", true);
+
+        if (ratesError) {
+          logger.error('Error loading product shipping rates:', ratesError);
+        }
+
+        // If all products have specific rates for this country, use those
+        if (productRates && productRates.length > 0) {
+          const productsWithRates = productRates.map(r => r.product_id);
+          const allProductsHaveRates = productIds.every(id => productsWithRates.includes(id));
+          
+          if (allProductsHaveRates) {
+            // All products have specific rates - use the highest one
+            const maxRate = Math.max(...productRates.map(r => Number(r.shipping_cost)));
+            logger.info(`Using product-specific shipping rate for ${countryCode}: €${maxRate}`);
+            return { cost: maxRate, isFree: maxRate === 0, country: countryCode };
+          } else {
+            // Some products have rates, some don't - log warning and continue with standard logic
+            logger.warn(`Only ${productRates.length}/${productIds.length} products have specific rates for ${countryCode}`);
+          }
+        }
+
         // Verificar si TODOS los productos tienen envío gratuito
         const allFreeShipping = products.every(p => p.shipping_type === 'free');
         if (allFreeShipping) {
