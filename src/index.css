@@ -1042,3 +1042,501 @@ html.grayscale * {
     min-width: 44px;
   }
 }
+
+/* ===== COMPREHENSIVE MOBILE RESPONSIVE UTILITIES ===== */
+
+/* Container responsive - ensures proper padding on all screens */
+.container-responsive {
+  @apply w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container-responsive {
+    max-width: 1536px;
+  }
+}
+
+/* Responsive text sizes */
+.text-responsive-xs {
+  @apply text-[10px] sm:text-xs md:text-sm;
+}
+
+.text-responsive-sm {
+  @apply text-xs sm:text-sm md:text-base;
+}
+
+.text-responsive-base {
+  @apply text-sm sm:text-base md:text-lg;
+}
+
+.text-responsive-lg {
+  @apply text-base sm:text-lg md:text-xl;
+}
+
+.text-responsive-xl {
+  @apply text-lg sm:text-xl md:text-2xl;
+}
+
+.text-responsive-2xl {
+  @apply text-xl sm:text-2xl md:text-3xl;
+}
+
+.text-responsive-3xl {
+  @apply text-2xl sm:text-3xl md:text-4xl;
+}
+
+/* Responsive headings */
+.heading-responsive-h1 {
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold;
+}
+
+.heading-responsive-h2 {
+  @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold;
+}
+
+.heading-responsive-h3 {
+  @apply text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold;
+}
+
+.heading-responsive-h4 {
+  @apply text-base sm:text-lg md:text-xl lg:text-2xl font-semibold;
+}
+
+/* Responsive spacing */
+.spacing-responsive-sm {
+  @apply space-y-2 sm:space-y-3 md:space-y-4;
+}
+
+.spacing-responsive-md {
+  @apply space-y-3 sm:space-y-4 md:space-y-6;
+}
+
+.spacing-responsive-lg {
+  @apply space-y-4 sm:space-y-6 md:space-y-8;
+}
+
+/* Responsive padding */
+.padding-responsive-sm {
+  @apply p-2 sm:p-3 md:p-4;
+}
+
+.padding-responsive-md {
+  @apply p-3 sm:p-4 md:p-6;
+}
+
+.padding-responsive-lg {
+  @apply p-4 sm:p-6 md:p-8;
+}
+
+/* Responsive margin */
+.margin-responsive-sm {
+  @apply m-2 sm:m-3 md:m-4;
+}
+
+.margin-responsive-md {
+  @apply m-3 sm:m-4 md:m-6;
+}
+
+.margin-responsive-lg {
+  @apply m-4 sm:m-6 md:m-8;
+}
+
+/* Responsive gap */
+.gap-responsive-sm {
+  @apply gap-2 sm:gap-3 md:gap-4;
+}
+
+.gap-responsive-md {
+  @apply gap-3 sm:gap-4 md:gap-6;
+}
+
+.gap-responsive-lg {
+  @apply gap-4 sm:gap-6 md:gap-8;
+}
+
+/* Responsive grid layouts */
+.grid-responsive-1 {
+  @apply grid grid-cols-1;
+}
+
+.grid-responsive-2 {
+  @apply grid grid-cols-1 sm:grid-cols-2;
+}
+
+.grid-responsive-3 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.grid-responsive-4 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+.grid-responsive-5 {
+  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5;
+}
+
+.grid-responsive-6 {
+  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
+}
+
+/* Responsive flex layouts */
+.flex-responsive-col {
+  @apply flex flex-col;
+}
+
+.flex-responsive-row {
+  @apply flex flex-col sm:flex-row;
+}
+
+.flex-responsive-wrap {
+  @apply flex flex-wrap;
+}
+
+/* Responsive image containers */
+.image-responsive {
+  @apply w-full h-auto object-cover;
+}
+
+.image-responsive-contain {
+  @apply w-full h-auto object-contain;
+}
+
+.image-responsive-square {
+  @apply aspect-square w-full object-cover;
+}
+
+/* Responsive card layouts */
+.card-responsive {
+  @apply rounded-lg shadow-sm hover:shadow-md transition-shadow;
+  @apply p-3 sm:p-4 md:p-5 lg:p-6;
+}
+
+.card-responsive-compact {
+  @apply rounded-lg shadow-sm;
+  @apply p-2 sm:p-3 md:p-4;
+}
+
+/* Responsive buttons */
+.button-responsive {
+  @apply px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-2.5;
+  @apply text-xs sm:text-sm md:text-base;
+}
+
+.button-responsive-sm {
+  @apply px-2 py-1 sm:px-3 sm:py-1.5;
+  @apply text-[10px] sm:text-xs md:text-sm;
+}
+
+.button-responsive-lg {
+  @apply px-4 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5;
+  @apply text-sm sm:text-base md:text-lg;
+}
+
+/* Responsive icon sizes */
+.icon-responsive-sm {
+  @apply h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5;
+}
+
+.icon-responsive-md {
+  @apply h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6;
+}
+
+.icon-responsive-lg {
+  @apply h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8;
+}
+
+.icon-responsive-xl {
+  @apply h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12;
+}
+
+/* Responsive table wrapper */
+.table-responsive-wrapper {
+  @apply w-full overflow-x-auto -mx-3 sm:mx-0;
+  @apply scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100;
+}
+
+.table-responsive-wrapper table {
+  @apply min-w-full;
+}
+
+/* Mobile table alternative - card view */
+.mobile-table-card {
+  @apply lg:hidden bg-card border rounded-lg p-3 sm:p-4 mb-3 shadow-sm;
+}
+
+.mobile-table-card-row {
+  @apply flex justify-between items-start py-2 border-b last:border-0;
+}
+
+.mobile-table-card-label {
+  @apply text-xs font-medium text-muted-foreground uppercase tracking-wide;
+  @apply w-1/3 flex-shrink-0;
+}
+
+.mobile-table-card-value {
+  @apply text-sm font-medium text-foreground;
+  @apply w-2/3 text-right;
+}
+
+/* Hide desktop table on mobile */
+.desktop-table {
+  @apply hidden lg:table;
+}
+
+/* Form responsive */
+.form-responsive {
+  @apply space-y-3 sm:space-y-4 md:space-y-5;
+}
+
+.form-field-responsive {
+  @apply space-y-1.5 sm:space-y-2;
+}
+
+.form-label-responsive {
+  @apply text-xs sm:text-sm md:text-base font-medium;
+}
+
+.form-input-responsive {
+  @apply h-9 sm:h-10 md:h-11;
+  @apply text-xs sm:text-sm md:text-base;
+  @apply px-2.5 sm:px-3 md:px-4;
+}
+
+/* Responsive modal/dialog */
+.dialog-responsive {
+  @apply w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw];
+  @apply max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl;
+  @apply max-h-[90vh] overflow-y-auto;
+}
+
+.dialog-content-responsive {
+  @apply p-4 sm:p-5 md:p-6;
+}
+
+/* Responsive sections */
+.section-responsive {
+  @apply py-8 sm:py-12 md:py-16 lg:py-20;
+}
+
+.section-responsive-sm {
+  @apply py-4 sm:py-6 md:py-8;
+}
+
+/* Responsive max-width containers */
+.max-w-responsive-sm {
+  @apply max-w-full sm:max-w-sm;
+}
+
+.max-w-responsive-md {
+  @apply max-w-full sm:max-w-md;
+}
+
+.max-w-responsive-lg {
+  @apply max-w-full sm:max-w-lg md:max-w-xl;
+}
+
+.max-w-responsive-xl {
+  @apply max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl;
+}
+
+/* Responsive horizontal scroll */
+.scroll-responsive {
+  @apply overflow-x-auto;
+  @apply scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent content from being too wide on mobile */
+.prevent-overflow {
+  @apply max-w-full overflow-hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Responsive line clamping */
+.line-clamp-responsive-2 {
+  @apply line-clamp-3 sm:line-clamp-2;
+}
+
+.line-clamp-responsive-3 {
+  @apply line-clamp-4 sm:line-clamp-3;
+}
+
+/* Stack elements vertically on mobile */
+.stack-on-mobile {
+  @apply flex flex-col sm:flex-row;
+  @apply gap-2 sm:gap-3 md:gap-4;
+}
+
+/* Center content on mobile */
+.center-on-mobile {
+  @apply text-center sm:text-left;
+}
+
+/* Full width on mobile */
+.full-width-mobile {
+  @apply w-full sm:w-auto;
+}
+
+/* Responsive aspect ratios */
+.aspect-responsive-video {
+  @apply aspect-video;
+}
+
+.aspect-responsive-square {
+  @apply aspect-square;
+}
+
+.aspect-responsive-4-3 {
+  @apply aspect-[4/3];
+}
+
+.aspect-responsive-16-9 {
+  @apply aspect-[16/9];
+}
+
+/* Hide on mobile */
+.hide-mobile {
+  @apply hidden sm:block;
+}
+
+/* Show only on mobile */
+.show-mobile {
+  @apply block sm:hidden;
+}
+
+/* Responsive navbar */
+.navbar-responsive {
+  @apply sticky top-0 z-50 w-full border-b;
+  @apply backdrop-blur supports-[backdrop-filter]:bg-background/60;
+}
+
+.navbar-content-responsive {
+  @apply flex h-14 sm:h-16 items-center justify-between;
+  @apply px-3 sm:px-4 md:px-6;
+}
+
+/* Responsive sidebar */
+.sidebar-responsive {
+  @apply w-full sm:w-64 md:w-72 lg:w-80;
+}
+
+/* Responsive footer */
+.footer-responsive {
+  @apply py-6 sm:py-8 md:py-10 lg:py-12;
+}
+
+.footer-grid-responsive {
+  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+  @apply gap-6 sm:gap-8;
+}
+
+/* Responsive badge */
+.badge-responsive {
+  @apply px-1.5 py-0.5 sm:px-2 sm:py-1;
+  @apply text-[9px] sm:text-[10px] md:text-xs;
+  @apply rounded;
+}
+
+/* Ensure images don't break layout */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better mobile scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Responsive product grid (common pattern) */
+.product-grid-responsive {
+  @apply grid gap-3 sm:gap-4 md:gap-5 lg:gap-6;
+  @apply grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+}
+
+/* Responsive stats grid */
+.stats-grid-responsive {
+  @apply grid gap-3 sm:gap-4 md:gap-5;
+  @apply grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+}
+
+/* Mobile-optimized filters */
+.filter-section-mobile {
+  @apply space-y-3 p-3 sm:p-4;
+}
+
+/* Improved touch targets for mobile */
+@media (max-width: 640px) {
+  button, a, [role="button"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  input, select, textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Responsive horizontal padding */
+.px-responsive {
+  @apply px-3 sm:px-4 md:px-6 lg:px-8;
+}
+
+.py-responsive {
+  @apply py-3 sm:py-4 md:py-6 lg:py-8;
+}
+
+/* Scrollbar styling for mobile */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-gray-300 {
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
