@@ -7,6 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Download, Printer, Gift } from "lucide-react";
 import GiftCardPrintable from "@/components/GiftCardPrintable";
 import { i18nToast } from "@/lib/i18nToast";
+import { DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
+
+// Helper function to extract customization from message
+function parseGiftCardMessage(message: string | null) {
+  if (!message) return { userMessage: null, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
+  
+  try {
+    const parsed = JSON.parse(message);
+    return {
+      userMessage: parsed.userMessage || null,
+      themeId: parsed.themeId || DEFAULT_THEME.id,
+      iconId: parsed.iconId || DEFAULT_ICON.id
+    };
+  } catch {
+    // If not JSON, treat as plain message (backwards compatible)
+    return { userMessage: message, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
+  }
+}
 
 export default function GiftCardView() {
   const { t } = useTranslation(['common', 'account']);
@@ -143,9 +161,11 @@ export default function GiftCardView() {
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
         {giftCards
           .filter(card => !selectedCardId || card.id === selectedCardId)
-          .map((card) => (
+          .map((card) => {
+            const { userMessage, themeId, iconId } = parseGiftCardMessage(card.message);
+            return (
           <Card key={card.id} className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-br from-orange-500 via-red-500 to-purple-600 text-white">
+            <CardHeader className="bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400 text-white">
               <CardTitle className="flex items-center gap-2">
                 <Gift className="h-5 w-5" />
                 Tarjeta de Regalo
@@ -157,10 +177,12 @@ export default function GiftCardView() {
                 <GiftCardPrintable
                   code={card.code}
                   amount={card.current_balance}
-                  message={card.message}
+                  message={userMessage}
                   senderName={card.sender_name}
                   expiresAt={card.expires_at}
                   recipientEmail={card.recipient_email}
+                  themeId={themeId}
+                  iconId={iconId}
                 />
               </div>
 
@@ -169,10 +191,12 @@ export default function GiftCardView() {
                 <GiftCardPrintable
                   code={card.code}
                   amount={card.current_balance}
-                  message={card.message}
+                  message={userMessage}
                   senderName={card.sender_name}
                   expiresAt={card.expires_at}
                   recipientEmail={card.recipient_email}
+                  themeId={themeId}
+                  iconId={iconId}
                 />
               </div>
 
@@ -204,7 +228,7 @@ export default function GiftCardView() {
               )}
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
     </div>
   );

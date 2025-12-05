@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Pencil, Trash2, Download, Info } from "lucide-react";
+import { Mail, Pencil, Trash2, Download, Info, Gift } from "lucide-react";
 import { logger } from '@/lib/logger';
 
 function generateGiftCardCode(): string {
@@ -230,17 +230,22 @@ export default function GiftCardsEnhanced() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Tarjetas Regalo</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-gradient-to-br from-blue-500 to-teal-600 p-3 rounded-lg">
+          <Gift className="h-8 w-8 text-white" />
+        </div>
+        <h1 className="text-3xl font-bold">Gestión de Tarjetas Regalo</h1>
+      </div>
 
-      <Card className="mb-6">
-        <CardHeader>
+      <Card className="mb-6 border-2 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-500/10 to-teal-500/10 border-b">
           <CardTitle>Crear Nueva Tarjeta Regalo</CardTitle>
           <CardDescription>Genera y envía tarjetas regalo por email</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
+          <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-800 dark:text-blue-300">
               <strong>Producto Digital:</strong> Las tarjetas regalo NO tienen costo de envío porque son productos digitales. 
               Tampoco deberían tener IVA aplicado (salvo requerimiento legal específico).
             </AlertDescription>
@@ -298,14 +303,15 @@ export default function GiftCardsEnhanced() {
               onCheckedChange={(checked) => setNewCard({ ...newCard, tax_enabled: checked })} 
             />
           </div>
-          <Button onClick={createGiftCard} disabled={!newCard.recipient_email || newCard.initial_amount <= 0}>
+          <Button onClick={createGiftCard} disabled={!newCard.recipient_email || newCard.initial_amount <= 0} className="bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700">
+            <Gift className="mr-2 h-4 w-4" />
             Crear y Enviar Tarjeta
           </Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-cyan-500/10 to-sky-500/10 border-b">
           <CardTitle>Tarjetas Regalo Existentes</CardTitle>
           <CardDescription>Administra todas las tarjetas regalo</CardDescription>
         </CardHeader>
@@ -330,7 +336,7 @@ export default function GiftCardsEnhanced() {
                   <TableCell>€{card.initial_amount}</TableCell>
                   <TableCell className="font-bold">€{card.current_balance}</TableCell>
                   <TableCell>
-                    <Badge variant={card.is_active ? "default" : "secondary"}>
+                    <Badge variant={card.is_active ? "default" : "secondary"} className={card.is_active ? "bg-teal-500 hover:bg-teal-600" : ""}>
                       {card.is_active ? "Activa" : "Inactiva"}
                     </Badge>
                   </TableCell>
