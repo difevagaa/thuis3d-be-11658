@@ -101,40 +101,6 @@ export default function SiteCustomizer() {
     home_menu_hover_bg_color: "#F3F4F6"
   });
 
-  useEffect(() => {
-    // Aplicar tema desde caché primero para prevenir flash
-    const cachedTheme = localStorage.getItem('theme_customization');
-    if (cachedTheme) {
-      try {
-        const parsed = JSON.parse(cachedTheme);
-        logger.log('🎨 [SiteCustomizer] Aplicando tema en caché primero');
-        const root = document.documentElement;
-        if (parsed.primary_hsl) root.style.setProperty('--primary', parsed.primary_hsl);
-        if (parsed.secondary_hsl) root.style.setProperty('--secondary', parsed.secondary_hsl);
-        if (parsed.background_hsl) root.style.setProperty('--background', parsed.background_hsl);
-        if (parsed.home_hero_bg_hsl) root.style.setProperty('--home-hero-bg', parsed.home_hero_bg_hsl);
-        if (parsed.card_bg_hsl) root.style.setProperty('--card', parsed.card_bg_hsl);
-      } catch (e) {
-        logger.warn('⚠️ Error al parsear tema en caché en SiteCustomizer');
-      }
-    }
-    
-    loadCustomization();
-    loadSettings();
-  }, [loadCustomization, loadSettings]); // Now functions are in dependencies
-
-  // Update CSS variables whenever customization changes
-  useEffect(() => {
-    // CRÍTICO: Solo aplicar CSS si NO hay paleta profesional activa
-    const hasProPalette = !!localStorage.getItem('selected_palette');
-    if (customization.primary_color && !hasProPalette) {
-      console.log('🎨 [SiteCustomizer] Aplicando CSS variables (sin paleta profesional)');
-      updateCSSVariables();
-    } else if (hasProPalette) {
-      console.log('🎨 [SiteCustomizer] Paleta profesional detectada - NO se aplican CSS variables legacy');
-    }
-  }, [customization, updateCSSVariables]);
-
   const loadCustomization = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -214,210 +180,6 @@ export default function SiteCustomizer() {
       logger.error("Error loading settings:", error);
     }
   }, []); // No dependencies needed - uses only setState functions
-
-  const updateSetting = async (key: string, value: string) => {
-    const { error } = await supabase
-      .from("site_settings")
-      .upsert(
-        { setting_key: key, setting_value: value, setting_group: 'general' },
-        { onConflict: 'setting_key' }
-      );
-    
-    if (error) throw error;
-  };
-
-  const uploadFile = async (file: File, path: string) => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${path}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error: any) {
-      toast.error(`Error al subir archivo: ${error.message}`);
-      return null;
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const url = await uploadFile(file, 'customization');
-    if (url) {
-      setCustomization({ ...customization, [field]: url });
-      toast.success("Archivo subido exitosamente");
-    }
-  };
-
-  const applyPalette = async (palette: typeof professionalPalettes[0]) => {
-    console.log('🎨 [SiteCustomizer] Aplicando paleta:', palette.name);
-    
-    // CRÍTICO: Eliminar theme_customization para evitar conflicto
-    localStorage.removeItem('theme_customization');
-    console.log('🗑️ [SiteCustomizer] Cache legacy eliminado');
-    
-    // Aplicar la paleta inmediatamente en el CSS
-    const root = document.documentElement;
-    const isDark = root.classList.contains('dark');
-    const theme = isDark ? palette.dark : palette.light;
-
-    // Aplicar todos los colores de la paleta
-    root.style.setProperty('--background', theme.background);
-    root.style.setProperty('--foreground', theme.foreground);
-    root.style.setProperty('--card', theme.card);
-    root.style.setProperty('--card-foreground', theme.cardForeground);
-    root.style.setProperty('--popover', theme.popover);
-    root.style.setProperty('--popover-foreground', theme.popoverForeground);
-    root.style.setProperty('--primary', theme.primary);
-    root.style.setProperty('--primary-foreground', theme.primaryForeground);
-    root.style.setProperty('--secondary', theme.secondary);
-    root.style.setProperty('--secondary-foreground', theme.secondaryForeground);
-    root.style.setProperty('--accent', theme.accent);
-    root.style.setProperty('--accent-foreground', theme.accentForeground);
-    root.style.setProperty('--muted', theme.muted);
-    root.style.setProperty('--muted-foreground', theme.mutedForeground);
-    root.style.setProperty('--destructive', theme.destructive);
-    root.style.setProperty('--destructive-foreground', theme.destructiveForeground);
-    root.style.setProperty('--success', theme.success);
-    root.style.setProperty('--success-foreground', theme.successForeground);
-    root.style.setProperty('--warning', theme.warning);
-    root.style.setProperty('--warning-foreground', theme.warningForeground);
-    root.style.setProperty('--border', theme.border);
-    root.style.setProperty('--input', theme.input);
-    root.style.setProperty('--ring', theme.ring);
-
-    // Check if sidebar colors are explicitly customized
-    // If they are, we should NOT override them with the palette
-    const sidebarIsCustomized = isSectionCustomized('sidebar');
-
-    // Only apply palette sidebar colors if sidebar is NOT explicitly customized
-    if (!sidebarIsCustomized) {
-      root.style.setProperty('--sidebar-background', theme.secondary);
-      root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
-      root.style.setProperty('--sidebar-primary', theme.primary);
-      root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
-      root.style.setProperty('--sidebar-accent', theme.accent);
-      root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
-      root.style.setProperty('--sidebar-border', theme.border);
-      root.style.setProperty('--sidebar-ring', theme.ring);
-      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors from palette applied');
-    } else {
-      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors customized - preserving custom colors');
-    }
-
-    // Guardar la paleta completa en localStorage para carga instantánea
-    const paletteCache = {
-      palette_id: palette.id,
-      palette_name: palette.name,
-      light: palette.light,
-      dark: palette.dark,
-      applied_at: new Date().toISOString()
-    };
-    localStorage.setItem('selected_palette', JSON.stringify(paletteCache));
-
-    // Actualizar estado con el theme_preset
-    const updatedCustomization = { ...customization, theme_preset: palette.id };
-    setCustomization(updatedCustomization);
-
-    try {
-      // Guardar automáticamente en la base de datos
-      const { data: existing } = await supabase
-        .from("site_customization")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("site_customization")
-          .update({ theme_preset: palette.id })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("site_customization")
-          .insert([updatedCustomization]);
-        if (error) throw error;
-      }
-      
-      toast.success(`Paleta "${palette.name}" aplicada y guardada exitosamente`);
-    } catch (error: any) {
-      logger.error("Error saving palette:", error);
-      toast.error(`Error al guardar la paleta: ${error.message}`);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!customization.site_name.trim()) {
-      toast.error("El nombre del sitio es obligatorio");
-      return;
-    }
-
-    if (!customization.company_name.trim()) {
-      toast.error("El nombre de la empresa es obligatorio");
-      return;
-    }
-
-    try {
-      // Save site_customization
-      const { data: existing } = await supabase
-        .from("site_customization")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("site_customization")
-          .update(customization)
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("site_customization")
-          .insert([customization]);
-        if (error) throw error;
-      }
-
-      // Save site_settings (social media and copyright)
-      for (const [key, value] of Object.entries(settings)) {
-        await updateSetting(key, value as string);
-      }
-      
-      // Actualizar cache metadata y favicon inmediatamente
-      localStorage.setItem('site_metadata', JSON.stringify({
-        favicon_url: customization.favicon_url || '',
-        site_name: customization.site_name || 'Thuis3D',
-        cached_at: new Date().toISOString()
-      }));
-      const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-      if (favicon && customization.favicon_url) favicon.href = customization.favicon_url;
-      const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
-      if (apple && customization.favicon_url) apple.href = customization.favicon_url;
-      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
-      if (shortcut && customization.favicon_url) shortcut.href = customization.favicon_url;
-
-      // Aplicar cambios CSS inmediatamente
-      updateCSSVariables();
-      toast.success("Configuración guardada exitosamente");
-      loadCustomization();
-      loadSettings();
-    } catch (error: any) {
-      logger.error("Save error:", error);
-      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
-    }
-  };
 
   const updateCSSVariables = useCallback(() => {
     const root = document.documentElement;
@@ -660,6 +422,244 @@ export default function SiteCustomizer() {
     // CRÍTICO: Save advanced colors to cache for instant load on refresh
     saveAdvancedColorsToCache(customization);
   }, [customization]); // customization is the dependency
+
+  useEffect(() => {
+    // Aplicar tema desde caché primero para prevenir flash
+    const cachedTheme = localStorage.getItem('theme_customization');
+    if (cachedTheme) {
+      try {
+        const parsed = JSON.parse(cachedTheme);
+        logger.log('🎨 [SiteCustomizer] Aplicando tema en caché primero');
+        const root = document.documentElement;
+        if (parsed.primary_hsl) root.style.setProperty('--primary', parsed.primary_hsl);
+        if (parsed.secondary_hsl) root.style.setProperty('--secondary', parsed.secondary_hsl);
+        if (parsed.background_hsl) root.style.setProperty('--background', parsed.background_hsl);
+        if (parsed.home_hero_bg_hsl) root.style.setProperty('--home-hero-bg', parsed.home_hero_bg_hsl);
+        if (parsed.card_bg_hsl) root.style.setProperty('--card', parsed.card_bg_hsl);
+      } catch (e) {
+        logger.warn('⚠️ Error al parsear tema en caché en SiteCustomizer');
+      }
+    }
+    
+    loadCustomization();
+    loadSettings();
+  }, [loadCustomization, loadSettings]); // Now functions are in dependencies
+
+  // Update CSS variables whenever customization changes
+  useEffect(() => {
+    // CRÍTICO: Solo aplicar CSS si NO hay paleta profesional activa
+    const hasProPalette = !!localStorage.getItem('selected_palette');
+    if (customization.primary_color && !hasProPalette) {
+      console.log('🎨 [SiteCustomizer] Aplicando CSS variables (sin paleta profesional)');
+      updateCSSVariables();
+    } else if (hasProPalette) {
+      console.log('🎨 [SiteCustomizer] Paleta profesional detectada - NO se aplican CSS variables legacy');
+    }
+  }, [customization, updateCSSVariables]);
+
+  const updateSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert(
+        { setting_key: key, setting_value: value, setting_group: 'general' },
+        { onConflict: 'setting_key' }
+      );
+    
+    if (error) throw error;
+  };
+
+  const uploadFile = async (file: File, path: string) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${path}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      toast.error(`Error al subir archivo: ${error.message}`);
+      return null;
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await uploadFile(file, 'customization');
+    if (url) {
+      setCustomization({ ...customization, [field]: url });
+      toast.success("Archivo subido exitosamente");
+    }
+  };
+
+  const applyPalette = async (palette: typeof professionalPalettes[0]) => {
+    console.log('🎨 [SiteCustomizer] Aplicando paleta:', palette.name);
+    
+    // CRÍTICO: Eliminar theme_customization para evitar conflicto
+    localStorage.removeItem('theme_customization');
+    console.log('🗑️ [SiteCustomizer] Cache legacy eliminado');
+    
+    // Aplicar la paleta inmediatamente en el CSS
+    const root = document.documentElement;
+    const isDark = root.classList.contains('dark');
+    const theme = isDark ? palette.dark : palette.light;
+
+    // Aplicar todos los colores de la paleta
+    root.style.setProperty('--background', theme.background);
+    root.style.setProperty('--foreground', theme.foreground);
+    root.style.setProperty('--card', theme.card);
+    root.style.setProperty('--card-foreground', theme.cardForeground);
+    root.style.setProperty('--popover', theme.popover);
+    root.style.setProperty('--popover-foreground', theme.popoverForeground);
+    root.style.setProperty('--primary', theme.primary);
+    root.style.setProperty('--primary-foreground', theme.primaryForeground);
+    root.style.setProperty('--secondary', theme.secondary);
+    root.style.setProperty('--secondary-foreground', theme.secondaryForeground);
+    root.style.setProperty('--accent', theme.accent);
+    root.style.setProperty('--accent-foreground', theme.accentForeground);
+    root.style.setProperty('--muted', theme.muted);
+    root.style.setProperty('--muted-foreground', theme.mutedForeground);
+    root.style.setProperty('--destructive', theme.destructive);
+    root.style.setProperty('--destructive-foreground', theme.destructiveForeground);
+    root.style.setProperty('--success', theme.success);
+    root.style.setProperty('--success-foreground', theme.successForeground);
+    root.style.setProperty('--warning', theme.warning);
+    root.style.setProperty('--warning-foreground', theme.warningForeground);
+    root.style.setProperty('--border', theme.border);
+    root.style.setProperty('--input', theme.input);
+    root.style.setProperty('--ring', theme.ring);
+
+    // Check if sidebar colors are explicitly customized
+    // If they are, we should NOT override them with the palette
+    const sidebarIsCustomized = isSectionCustomized('sidebar');
+
+    // Only apply palette sidebar colors if sidebar is NOT explicitly customized
+    if (!sidebarIsCustomized) {
+      root.style.setProperty('--sidebar-background', theme.secondary);
+      root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
+      root.style.setProperty('--sidebar-primary', theme.primary);
+      root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
+      root.style.setProperty('--sidebar-accent', theme.accent);
+      root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
+      root.style.setProperty('--sidebar-border', theme.border);
+      root.style.setProperty('--sidebar-ring', theme.ring);
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors from palette applied');
+    } else {
+      logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors customized - preserving custom colors');
+    }
+
+    // Guardar la paleta completa en localStorage para carga instantánea
+    const paletteCache = {
+      palette_id: palette.id,
+      palette_name: palette.name,
+      light: palette.light,
+      dark: palette.dark,
+      applied_at: new Date().toISOString()
+    };
+    localStorage.setItem('selected_palette', JSON.stringify(paletteCache));
+
+    // Actualizar estado con el theme_preset
+    const updatedCustomization = { ...customization, theme_preset: palette.id };
+    setCustomization(updatedCustomization);
+
+    try {
+      // Guardar automáticamente en la base de datos
+      const { data: existing } = await supabase
+        .from("site_customization")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("site_customization")
+          .update({ theme_preset: palette.id })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("site_customization")
+          .insert([updatedCustomization]);
+        if (error) throw error;
+      }
+      
+      toast.success(`Paleta "${palette.name}" aplicada y guardada exitosamente`);
+    } catch (error: any) {
+      logger.error("Error saving palette:", error);
+      toast.error(`Error al guardar la paleta: ${error.message}`);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!customization.site_name.trim()) {
+      toast.error("El nombre del sitio es obligatorio");
+      return;
+    }
+
+    if (!customization.company_name.trim()) {
+      toast.error("El nombre de la empresa es obligatorio");
+      return;
+    }
+
+    try {
+      // Save site_customization
+      const { data: existing } = await supabase
+        .from("site_customization")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("site_customization")
+          .update(customization)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("site_customization")
+          .insert([customization]);
+        if (error) throw error;
+      }
+
+      // Save site_settings (social media and copyright)
+      for (const [key, value] of Object.entries(settings)) {
+        await updateSetting(key, value as string);
+      }
+      
+      // Actualizar cache metadata y favicon inmediatamente
+      localStorage.setItem('site_metadata', JSON.stringify({
+        favicon_url: customization.favicon_url || '',
+        site_name: customization.site_name || 'Thuis3D',
+        cached_at: new Date().toISOString()
+      }));
+      const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      if (favicon && customization.favicon_url) favicon.href = customization.favicon_url;
+      const apple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+      if (apple && customization.favicon_url) apple.href = customization.favicon_url;
+      const shortcut = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement;
+      if (shortcut && customization.favicon_url) shortcut.href = customization.favicon_url;
+
+      // Aplicar cambios CSS inmediatamente
+      updateCSSVariables();
+      toast.success("Configuración guardada exitosamente");
+      loadCustomization();
+      loadSettings();
+    } catch (error: any) {
+      logger.error("Save error:", error);
+      toast.error(`Error al guardar configuración: ${error.message || 'Error desconocido'}`);
+    }
+  };
 
   if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
 
