@@ -83,7 +83,7 @@ export default function GiftCardPrintable({
           <div className="text-5xl md:text-6xl font-bold drop-shadow-lg">
             €{amount.toFixed(2)}
           </div>
-          <div className="bg-white/10 backdrop-blur-sm px-5 py-2.5 rounded-lg font-mono font-bold text-sm md:text-base tracking-widest border border-white/30 inline-block">
+          <div className="bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-lg font-mono font-bold text-sm md:text-base tracking-widest border-2 border-white/40 inline-block shadow-lg">
             {code}
           </div>
         </div>

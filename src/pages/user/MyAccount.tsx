@@ -18,7 +18,15 @@ import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
 
-// Helper function to extract customization from message
+/**
+ * Parses the gift card message field to extract customization data.
+ * The message field can contain either:
+ * - A JSON object with { userMessage, themeId, iconId }
+ * - A plain text message (for backwards compatibility)
+ * 
+ * @param message - The message field from the gift card database record
+ * @returns Object containing userMessage, themeId, and iconId with defaults if not present
+ */
 function parseGiftCardMessage(message: string | null) {
   if (!message) return { userMessage: null, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
   
