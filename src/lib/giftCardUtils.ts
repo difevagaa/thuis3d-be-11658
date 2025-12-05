@@ -15,9 +15,9 @@ export function parseGiftCardMessage(message: string | null) {
   try {
     const parsed = JSON.parse(message);
     return {
-      userMessage: parsed.userMessage || null,
-      themeId: parsed.themeId || DEFAULT_THEME.id,
-      iconId: parsed.iconId || DEFAULT_ICON.id
+      userMessage: parsed.userMessage ?? null,
+      themeId: parsed.themeId ?? DEFAULT_THEME.id,
+      iconId: parsed.iconId ?? DEFAULT_ICON.id
     };
   } catch {
     // If not JSON, treat as plain message (backwards compatible)
