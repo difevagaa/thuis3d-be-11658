@@ -157,144 +157,147 @@ export default function AdminDashboard() {
 
   const netProfit = stats.totalRevenue - stats.totalExpenses;
 
-  if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
+  if (loading) return <div className="container mx-auto p-3 sm:p-4 md:p-6">Cargando...</div>;
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Dashboard</h1>
         <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
           <DialogTrigger asChild>
-            <Button variant="outline">Registrar Gasto</Button>
+            <Button variant="outline" className="w-full sm:w-auto text-sm">Registrar Gasto</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] sm:w-[90vw] md:w-full max-w-md">
             <DialogHeader>
-              <DialogTitle>Registrar Nuevo Gasto</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">Registrar Nuevo Gasto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <Label>Concepto</Label>
+                <Label className="text-xs sm:text-sm">Concepto</Label>
                 <Input
                   value={newExpense.concept}
                   onChange={(e) => setNewExpense({ ...newExpense, concept: e.target.value })}
                   placeholder="Materia prima, transporte, etc."
+                  className="text-sm"
                 />
               </div>
               <div>
-                <Label>Monto (€)</Label>
+                <Label className="text-xs sm:text-sm">Monto (€)</Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={newExpense.amount}
                   onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                   placeholder="Ej: 125.00"
+                  className="text-sm"
                 />
               </div>
               <div>
-                <Label>Fecha</Label>
+                <Label className="text-xs sm:text-sm">Fecha</Label>
                 <Input
                   type="date"
                   value={newExpense.date}
                   onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                  className="text-sm"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAddExpense}>Guardar Gasto</Button>
+              <Button onClick={handleAddExpense} className="w-full sm:w-auto text-sm">Guardar Gasto</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" onClick={() => window.location.href = '/admin/pedidos'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Ingresos Totales</CardTitle>
-              <div className="text-3xl font-bold text-primary">€{stats.totalRevenue.toFixed(2)}</div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Ingresos Totales</CardTitle>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">€{stats.totalRevenue.toFixed(2)}</div>
               {stats.lastOrderDate && (
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
                   Último: {new Date(stats.lastOrderDate).toLocaleDateString('es-ES')}
                 </p>
               )}
             </div>
             <div 
-              className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center"
+              className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 ml-2"
               style={{
                 animation: 'float 18s ease-in-out infinite'
               }}
             >
-              <Euro className="h-8 w-8 text-primary" />
+              <Euro className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-primary" />
             </div>
           </CardHeader>
         </Card>
 
         <Card className="hover:shadow-lg transition-all bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Gastos Totales</CardTitle>
-              <div className="text-3xl font-bold text-destructive">€{stats.totalExpenses.toFixed(2)}</div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Gastos Totales</CardTitle>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-destructive">€{stats.totalExpenses.toFixed(2)}</div>
             </div>
-            <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center">
-              <TrendingDown className="h-8 w-8 text-destructive" />
+            <div className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 ml-2">
+              <TrendingDown className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-destructive" />
             </div>
           </CardHeader>
         </Card>
 
         <Card className="hover:shadow-lg transition-all bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Beneficio Neto</CardTitle>
-              <div className={`text-3xl font-bold ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Beneficio Neto</CardTitle>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                 €{netProfit.toFixed(2)}
               </div>
             </div>
-            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${netProfit >= 0 ? 'bg-success/20' : 'bg-destructive/20'}`}>
-              <TrendingUp className={`h-8 w-8 ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`} />
+            <div className={`h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center flex-shrink-0 ml-2 ${netProfit >= 0 ? 'bg-success/20' : 'bg-destructive/20'}`}>
+              <TrendingUp className={`h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`} />
             </div>
           </CardHeader>
         </Card>
 
         <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20" onClick={() => window.location.href = '/admin/pedidos'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Total Pedidos</CardTitle>
-              <div className="text-3xl font-bold text-accent">{stats.totalOrders}</div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Pedidos</CardTitle>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-accent">{stats.totalOrders}</div>
             </div>
             <div 
-              className="h-16 w-16 rounded-full bg-accent/20 flex items-center justify-center"
+              className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 ml-2"
               style={{
                 animation: 'smooth-bounce 15s ease-in-out infinite'
               }}
             >
-              <ShoppingCart className="h-8 w-8 text-accent" />
+              <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-accent" />
             </div>
           </CardHeader>
         </Card>
 
         <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20" onClick={() => window.location.href = '/admin/cotizaciones'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Cotizaciones</CardTitle>
-              <div className="text-3xl font-bold text-warning">{stats.totalQuotes}</div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Cotizaciones</CardTitle>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-warning">{stats.totalQuotes}</div>
             </div>
             <div 
-              className="h-16 w-16 rounded-full bg-warning/20 flex items-center justify-center"
+              className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0 ml-2"
               style={{
                 animation: 'gentle-swing 20s ease-in-out infinite'
               }}
             >
-              <FileText className="h-8 w-8 text-warning" />
+              <FileText className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-warning" />
             </div>
           </CardHeader>
         </Card>
 
         <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/20" onClick={() => window.location.href = '/admin/visitantes'}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-sm font-medium text-muted-foreground mb-1">Visitantes</CardTitle>
-              <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>{stats.totalCustomers}</div>
-              <div className="flex items-center gap-3 mt-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 p-4 sm:p-6">
+            <div className="flex-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Visitantes</CardTitle>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>{stats.totalCustomers}</div>
+              <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2">
                 <div className="flex items-center gap-1">
                   <div 
                     className="h-2 w-2 rounded-full bg-success" 
