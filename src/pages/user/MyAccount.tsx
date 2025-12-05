@@ -16,6 +16,24 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
+import { DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
+
+// Helper function to extract customization from message
+function parseGiftCardMessage(message: string | null) {
+  if (!message) return { userMessage: null, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
+  
+  try {
+    const parsed = JSON.parse(message);
+    return {
+      userMessage: parsed.userMessage || null,
+      themeId: parsed.themeId || DEFAULT_THEME.id,
+      iconId: parsed.iconId || DEFAULT_ICON.id
+    };
+  } catch {
+    // If not JSON, treat as plain message (backwards compatible)
+    return { userMessage: message, themeId: DEFAULT_THEME.id, iconId: DEFAULT_ICON.id };
+  }
+}
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -603,7 +621,9 @@ export default function MyAccount() {
             <CardContent>
               {giftCards.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                  {giftCards.map((card) => (
+                  {giftCards.map((card) => {
+                    const { userMessage, themeId, iconId } = parseGiftCardMessage(card.message);
+                    return (
                     <div 
                       key={card.id} 
                       className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -615,10 +635,12 @@ export default function MyAccount() {
                           <GiftCardPrintable
                             code={card.code}
                             amount={card.current_balance}
-                            message={card.message}
+                            message={userMessage}
                             senderName={card.sender_name}
                             expiresAt={card.expires_at}
                             recipientEmail={card.recipient_email}
+                            themeId={themeId}
+                            iconId={iconId}
                           />
                         </div>
                         
@@ -639,7 +661,7 @@ export default function MyAccount() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">{t('account:giftcards.noGiftCards')}</p>
