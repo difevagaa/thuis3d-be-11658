@@ -198,6 +198,86 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+  
+  /* Ensure all images are responsive by default */
+  img, video, iframe, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Prevent horizontal overflow */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Better mobile text sizing - smaller by default */
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+    
+    h1 {
+      font-size: 1.5rem !important;
+      line-height: 1.3;
+    }
+    
+    h2 {
+      font-size: 1.25rem !important;
+      line-height: 1.3;
+    }
+    
+    h3 {
+      font-size: 1.125rem !important;
+      line-height: 1.3;
+    }
+    
+    h4, h5, h6 {
+      font-size: 1rem !important;
+      line-height: 1.3;
+    }
+    
+    /* Compact all text elements */
+    p, span, div {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+    
+    /* Smaller buttons on mobile */
+    button {
+      font-size: 0.8125rem !important;
+      padding: 0.5rem 0.75rem !important;
+    }
+    
+    /* Compact form inputs */
+    input, select, textarea {
+      font-size: 0.875rem !important;
+      padding: 0.5rem !important;
+    }
+  }
+  
+  /* Make tables scroll horizontally on mobile */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  
+  @media (min-width: 1024px) {
+    table {
+      display: table;
+      white-space: normal;
+    }
+  }
+  
+  /* Compact table cells on mobile */
+  @media (max-width: 1023px) {
+    th, td {
+      font-size: 0.75rem !important;
+      padding: 0.5rem !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -1047,19 +1127,23 @@ html.grayscale * {
 
 /* Container responsive - ensures proper padding on all screens */
 .container-responsive {
-  @apply w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8;
+  @apply w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8;
   max-width: 100%;
 }
 
 @media (min-width: 640px) {
   .container-responsive {
     max-width: 640px;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
 @media (min-width: 768px) {
   .container-responsive {
     max-width: 768px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
@@ -1081,102 +1165,106 @@ html.grayscale * {
   }
 }
 
-/* Responsive text sizes */
+/* Responsive text sizes - SMALLER for mobile */
 .text-responsive-xs {
-  @apply text-[10px] sm:text-xs md:text-sm;
+  @apply text-[9px] sm:text-[10px] md:text-xs;
 }
 
 .text-responsive-sm {
-  @apply text-xs sm:text-sm md:text-base;
+  @apply text-[10px] sm:text-xs md:text-sm;
 }
 
 .text-responsive-base {
-  @apply text-sm sm:text-base md:text-lg;
+  @apply text-xs sm:text-sm md:text-base;
 }
 
 .text-responsive-lg {
-  @apply text-base sm:text-lg md:text-xl;
+  @apply text-sm sm:text-base md:text-lg;
 }
 
 .text-responsive-xl {
-  @apply text-lg sm:text-xl md:text-2xl;
+  @apply text-base sm:text-lg md:text-xl;
 }
 
 .text-responsive-2xl {
-  @apply text-xl sm:text-2xl md:text-3xl;
+  @apply text-lg sm:text-xl md:text-2xl;
 }
 
 .text-responsive-3xl {
-  @apply text-2xl sm:text-3xl md:text-4xl;
+  @apply text-xl sm:text-2xl md:text-3xl;
 }
 
-/* Responsive headings */
+/* Responsive headings - COMPACT for mobile */
 .heading-responsive-h1 {
-  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold;
+  @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold;
+  line-height: 1.2;
 }
 
 .heading-responsive-h2 {
-  @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold;
+  @apply text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold;
+  line-height: 1.2;
 }
 
 .heading-responsive-h3 {
-  @apply text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold;
+  @apply text-base sm:text-lg md:text-xl lg:text-2xl font-semibold;
+  line-height: 1.3;
 }
 
 .heading-responsive-h4 {
-  @apply text-base sm:text-lg md:text-xl lg:text-2xl font-semibold;
+  @apply text-sm sm:text-base md:text-lg lg:text-xl font-semibold;
+  line-height: 1.3;
 }
 
-/* Responsive spacing */
+/* Responsive spacing - COMPACT for mobile */
 .spacing-responsive-sm {
-  @apply space-y-2 sm:space-y-3 md:space-y-4;
+  @apply space-y-1 sm:space-y-2 md:space-y-3;
 }
 
 .spacing-responsive-md {
-  @apply space-y-3 sm:space-y-4 md:space-y-6;
+  @apply space-y-2 sm:space-y-3 md:space-y-4;
 }
 
 .spacing-responsive-lg {
-  @apply space-y-4 sm:space-y-6 md:space-y-8;
+  @apply space-y-2 sm:space-y-4 md:space-y-6;
 }
 
-/* Responsive padding */
+/* Responsive padding - COMPACT for mobile */
 .padding-responsive-sm {
-  @apply p-2 sm:p-3 md:p-4;
+  @apply p-1.5 sm:p-2 md:p-3;
 }
 
 .padding-responsive-md {
-  @apply p-3 sm:p-4 md:p-6;
+  @apply p-2 sm:p-3 md:p-4;
 }
 
 .padding-responsive-lg {
-  @apply p-4 sm:p-6 md:p-8;
+  @apply p-2 sm:p-4 md:p-6;
 }
 
-/* Responsive margin */
+/* Responsive margin - COMPACT for mobile */
 .margin-responsive-sm {
-  @apply m-2 sm:m-3 md:m-4;
+  @apply m-1 sm:m-2 md:m-3;
 }
 
 .margin-responsive-md {
-  @apply m-3 sm:m-4 md:m-6;
+  @apply m-2 sm:m-3 md:m-4;
 }
 
 .margin-responsive-lg {
-  @apply m-4 sm:m-6 md:m-8;
+  @apply m-2 sm:m-4 md:m-6;
 }
 
-/* Responsive gap */
+/* Responsive gap - COMPACT for mobile */
 .gap-responsive-sm {
-  @apply gap-2 sm:gap-3 md:gap-4;
+  @apply gap-1 sm:gap-2 md:gap-3;
 }
 
 .gap-responsive-md {
-  @apply gap-3 sm:gap-4 md:gap-6;
+  @apply gap-2 sm:gap-3 md:gap-4;
 }
 
 .gap-responsive-lg {
-  @apply gap-4 sm:gap-6 md:gap-8;
+  @apply gap-2 sm:gap-4 md:gap-6;
 }
 
 /* Responsive grid layouts */
@@ -1230,75 +1318,95 @@ html.grayscale * {
   @apply aspect-square w-full object-cover;
 }
 
-/* Responsive card layouts */
+/* Responsive card layouts - COMPACT for mobile */
 .card-responsive {
   @apply rounded-lg shadow-sm hover:shadow-md transition-shadow;
-  @apply p-3 sm:p-4 md:p-5 lg:p-6;
+  @apply p-2 sm:p-3 md:p-4 lg:p-5;
 }
 
 .card-responsive-compact {
   @apply rounded-lg shadow-sm;
-  @apply p-2 sm:p-3 md:p-4;
+  @apply p-1.5 sm:p-2 md:p-3;
 }
 
-/* Responsive buttons */
+/* Responsive buttons - COMPACT for mobile */
 .button-responsive {
-  @apply px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-2.5;
-  @apply text-xs sm:text-sm md:text-base;
-}
-
-.button-responsive-sm {
-  @apply px-2 py-1 sm:px-3 sm:py-1.5;
+  @apply px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5;
   @apply text-[10px] sm:text-xs md:text-sm;
 }
 
-.button-responsive-lg {
-  @apply px-4 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5;
-  @apply text-sm sm:text-base md:text-lg;
+.button-responsive-sm {
+  @apply px-1.5 py-1 sm:px-2 sm:py-1.5;
+  @apply text-[9px] sm:text-[10px] md:text-xs;
 }
 
-/* Responsive icon sizes */
+.button-responsive-lg {
+  @apply px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3;
+  @apply text-xs sm:text-sm md:text-base;
+}
+
+/* Responsive icon sizes - SMALLER for mobile */
 .icon-responsive-sm {
-  @apply h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5;
+  @apply h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4;
 }
 
 .icon-responsive-md {
-  @apply h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6;
+  @apply h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5;
 }
 
 .icon-responsive-lg {
-  @apply h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8;
+  @apply h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6;
 }
 
 .icon-responsive-xl {
-  @apply h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12;
+  @apply h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 lg:h-10 lg:w-10;
 }
 
 /* Responsive table wrapper */
 .table-responsive-wrapper {
   @apply w-full overflow-x-auto -mx-3 sm:mx-0;
+  max-width: 100vw;
 }
 
 .table-responsive-wrapper table {
   @apply min-w-full;
+  font-size: 0.75rem;
 }
 
-/* Mobile table alternative - card view */
+@media (max-width: 640px) {
+  .table-responsive-wrapper {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+  
+  .table-responsive-wrapper table {
+    font-size: 0.7rem;
+  }
+  
+  .table-responsive-wrapper th,
+  .table-responsive-wrapper td {
+    padding: 0.375rem !important;
+    white-space: nowrap;
+  }
+}
+
+/* Mobile table alternative - card view - COMPACT */
 .mobile-table-card {
-  @apply lg:hidden bg-card border rounded-lg p-3 sm:p-4 mb-3 shadow-sm;
+  @apply lg:hidden bg-card border rounded-lg p-2 sm:p-3 mb-2 shadow-sm;
 }
 
 .mobile-table-card-row {
-  @apply flex justify-between items-start py-2 border-b last:border-0;
+  @apply flex justify-between items-start py-1.5 border-b last:border-0;
 }
 
 .mobile-table-card-label {
-  @apply text-xs font-medium text-muted-foreground uppercase tracking-wide;
+  @apply text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide;
   @apply w-1/3 flex-shrink-0;
 }
 
 .mobile-table-card-value {
-  @apply text-sm font-medium text-foreground;
+  @apply text-[10px] sm:text-xs font-medium text-foreground;
   @apply w-2/3 text-right;
 }
 
@@ -1307,23 +1415,23 @@ html.grayscale * {
   @apply hidden lg:table;
 }
 
-/* Form responsive */
+/* Form responsive - COMPACT for mobile */
 .form-responsive {
-  @apply space-y-3 sm:space-y-4 md:space-y-5;
+  @apply space-y-2 sm:space-y-3 md:space-y-4;
 }
 
 .form-field-responsive {
-  @apply space-y-1.5 sm:space-y-2;
+  @apply space-y-1 sm:space-y-1.5;
 }
 
 .form-label-responsive {
-  @apply text-xs sm:text-sm md:text-base font-medium;
+  @apply text-[10px] sm:text-xs md:text-sm font-medium;
 }
 
 .form-input-responsive {
-  @apply h-9 sm:h-10 md:h-11;
-  @apply text-xs sm:text-sm md:text-base;
-  @apply px-2.5 sm:px-3 md:px-4;
+  @apply h-8 sm:h-9 md:h-10;
+  @apply text-[11px] sm:text-xs md:text-sm;
+  @apply px-2 sm:px-2.5 md:px-3;
 }
 
 /* Responsive modal/dialog */
@@ -1337,13 +1445,13 @@ html.grayscale * {
   @apply p-4 sm:p-5 md:p-6;
 }
 
-/* Responsive sections */
+/* Responsive sections - COMPACT for mobile */
 .section-responsive {
-  @apply py-8 sm:py-12 md:py-16 lg:py-20;
+  @apply py-4 sm:py-8 md:py-12 lg:py-16;
 }
 
 .section-responsive-sm {
-  @apply py-4 sm:py-6 md:py-8;
+  @apply py-2 sm:py-4 md:py-6;
 }
 
 /* Responsive max-width containers */
@@ -1454,11 +1562,12 @@ html.grayscale * {
   @apply gap-6 sm:gap-8;
 }
 
-/* Responsive badge */
+/* Responsive badge - COMPACT for mobile */
 .badge-responsive {
-  @apply px-1.5 py-0.5 sm:px-2 sm:py-1;
-  @apply text-[9px] sm:text-[10px] md:text-xs;
+  @apply px-1 py-0.5 sm:px-1.5 sm:py-0.5;
+  @apply text-[8px] sm:text-[9px] md:text-[10px];
   @apply rounded;
+  white-space: nowrap;
 }
 
 /* Ensure images don't break layout */
