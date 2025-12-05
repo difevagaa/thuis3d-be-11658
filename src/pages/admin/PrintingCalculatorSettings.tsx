@@ -1082,21 +1082,27 @@ export default function PrintingCalculatorSettings() {
                     <TooltipContent className="max-w-xs">
                       <p>Número promedio de retracciones del filamento por capa. 
                       Usado para estimar tiempo adicional de retracciones.</p>
+                      <p className="mt-2 text-xs font-semibold text-yellow-600">
+                        Nota: Valor corregido de 1.5 a 15 (valor realista para piezas complejas)
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="flex gap-2 items-center">
                   <Input
                     type="number"
-                    step="0.1"
+                    step="1"
                     min="0"
-                    max="10"
+                    max="50"
                     value={settings.retractionCountPerLayer}
                     onChange={(e) => setSettings({ ...settings, retractionCountPerLayer: e.target.value })}
-                    placeholder="1.5"
+                    placeholder="15"
                   />
                   <span className="text-sm text-muted-foreground">por capa</span>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Valor típico: 10-20 retracciones por capa para piezas con detalles
+                </p>
               </div>
             </div>
           </div>

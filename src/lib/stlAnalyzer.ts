@@ -839,7 +839,7 @@ export const analyzeSTLFile = async (
       // 💳 APLICAR DESCUENTOS POR CANTIDAD
       // ============================================================
       let quantityDiscountAmount = 0;
-      let quantityDiscountApplied: any = null;
+      let quantityDiscountApplied: { tier_name: string; discount_type: string; discount_value: number } | null = null;
       
       if (quantity > 1) {
         try {
@@ -847,11 +847,11 @@ export const analyzeSTLFile = async (
             .from('quantity_discount_tiers')
             .select('*')
             .eq('is_active', true)
-            .order('discount_value', { ascending: false }); // Mayor descuento primero
+            .order('display_order', { ascending: true }); // Usar display_order para prioridad correcta
           
           if (discountTiers && discountTiers.length > 0) {
             // Buscar el descuento aplicable para esta cantidad
-            const applicableTier = discountTiers.find(tier => {
+            const applicableTier = discountTiers.find((tier: any) => {
               const meetsMin = quantity >= tier.min_quantity;
               const meetsMax = tier.max_quantity === null || quantity <= tier.max_quantity;
               return meetsMin && meetsMax;
@@ -864,7 +864,14 @@ export const analyzeSTLFile = async (
                 quantityDiscountAmount = applicableTier.discount_value;
               }
               
-              quantityDiscountApplied = applicableTier;
+              // Validar que el descuento no exceda el total
+              quantityDiscountAmount = Math.min(quantityDiscountAmount, totalBeforeDiscounts * 0.95); // Máximo 95% de descuento
+              
+              quantityDiscountApplied = {
+                tier_name: applicableTier.tier_name,
+                discount_type: applicableTier.discount_type,
+                discount_value: applicableTier.discount_value
+              };
               
               logger.log('🎁 Descuento por cantidad aplicado:', {
                 nivel: applicableTier.tier_name,
@@ -884,7 +891,7 @@ export const analyzeSTLFile = async (
       }
       
       // 13. APLICAR DESCUENTO POR CANTIDAD
-      const totalAfterQuantityDiscount = totalBeforeDiscounts - quantityDiscountAmount;
+      const totalAfterQuantityDiscount = Math.max(0, totalBeforeDiscounts - quantityDiscountAmount);
       
       // 14. PROTECCIÓN: Precio mínimo (solo si el total está debajo del mínimo)
       let estimatedTotal = totalAfterQuantityDiscount;
