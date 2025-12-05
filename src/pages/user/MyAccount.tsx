@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,24 @@ export default function MyAccount() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showCouponNotification, setShowCouponNotification] = useState(false);
   const [newCouponNotification, setNewCouponNotification] = useState<any>(null);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        i18nToast.error("error.unauthorized");
+        navigate("/auth");
+        return;
+      }
+
+      await loadUserData(user.id);
+    } catch (error) {
+      i18nToast.error("error.general");
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     checkAuth();
@@ -121,25 +139,7 @@ export default function MyAccount() {
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(loyaltyChannel);
     };
-  }, [location]);
-
-  const checkAuth = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        i18nToast.error("error.unauthorized");
-        navigate("/auth");
-        return;
-      }
-
-      await loadUserData(user.id);
-    } catch (error) {
-      i18nToast.error("error.general");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [location, checkAuth, profile?.id]);
 
   const loadUserData = async (userId: string) => {
     try {

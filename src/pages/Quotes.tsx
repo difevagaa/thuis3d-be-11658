@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, startTransition, useRef } from "react";
+import { useState, useEffect, lazy, Suspense, startTransition, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +96,7 @@ const Quotes = () => {
     };
     
     loadCountries();
-  }, []);
+  }, [country, getAvailableCountries]);
 
   // Prefetch heavy lazy components to avoid Suspense during user input
   useEffect(() => {
@@ -140,7 +140,7 @@ const Quotes = () => {
     
     loadUserData();
     filterColorsByMaterial(null);
-  }, []);
+  }, [availableCountries, filterColorsByMaterial]);
   
   // Calcular envío cuando cambie el código postal o el total estimado - contexto de cotizaciones
   useEffect(() => {
@@ -159,7 +159,7 @@ const Quotes = () => {
     };
     
     calculateShipping();
-  }, [postalCode, analysisResult?.weight, analysisResult?.estimatedTotal, country]);
+  }, [postalCode, analysisResult?.weight, analysisResult?.estimatedTotal, country, calculateShippingByPostalCode]);
 
   const handleFileQuote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

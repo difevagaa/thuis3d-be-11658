@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,6 +89,46 @@ export default function Payment() {
     }
   };
 
+  // Calcular subtotal (precio sin IVA)
+  const calculateSubtotal = useCallback(() => {
+    const subtotal = cartItems.reduce((sum, item) => {
+      const itemPrice = Number(item.price) || 0;
+      const itemQuantity = Number(item.quantity) || 1;
+      return sum + (itemPrice * itemQuantity);
+    }, 0);
+    return subtotal;
+  }, [cartItems]);
+
+  const loadShippingInfo = useCallback(async () => {
+    try {
+      // Get session ID from session storage
+      const sessionId = sessionStorage.getItem("checkout_session_id");
+      if (!sessionId) {
+        toast.error(t('payment:messages.mustCompleteShipping'));
+        navigate("/informacion-envio");
+        return;
+      }
+
+      // Load shipping info from database
+      const { data: session, error } = await supabase
+        .from('checkout_sessions')
+        .select('shipping_info')
+        .eq('id', sessionId)
+        .single();
+
+      if (error || !session) {
+        toast.error(t('payment:messages.mustCompleteShipping'));
+        navigate("/informacion-envio");
+        return;
+      }
+
+      setShippingInfo(session.shipping_info);
+    } catch (error) {
+      logger.error("Error loading shipping info:", error);
+      navigate("/informacion-envio");
+    }
+  }, [t, navigate]);
+
   useEffect(() => {
     // Check if this is an invoice payment
     const invoicePaymentData = sessionStorage.getItem("invoice_payment");
@@ -126,7 +166,7 @@ export default function Payment() {
         setCartItems([]);
       }
     }
-  }, [navigate]);
+  }, [navigate, t, loadShippingInfo]);
 
   // Calculate shipping when shipping info and cart items are loaded
   useEffect(() => {
@@ -158,47 +198,7 @@ export default function Payment() {
     };
 
     calculateShippingCost();
-  }, [shippingInfo, cartItems]);
-
-  const loadShippingInfo = async () => {
-    try {
-      // Get session ID from session storage
-      const sessionId = sessionStorage.getItem("checkout_session_id");
-      if (!sessionId) {
-        toast.error(t('payment:messages.mustCompleteShipping'));
-        navigate("/informacion-envio");
-        return;
-      }
-
-      // Load shipping info from database
-      const { data: session, error } = await supabase
-        .from('checkout_sessions')
-        .select('shipping_info')
-        .eq('id', sessionId)
-        .single();
-
-      if (error || !session) {
-        toast.error(t('payment:messages.mustCompleteShipping'));
-        navigate("/informacion-envio");
-        return;
-      }
-
-      setShippingInfo(session.shipping_info);
-    } catch (error) {
-      logger.error("Error loading shipping info:", error);
-      navigate("/informacion-envio");
-    }
-  };
-
-  // Calcular subtotal (precio sin IVA)
-  const calculateSubtotal = () => {
-    const subtotal = cartItems.reduce((sum, item) => {
-      const itemPrice = Number(item.price) || 0;
-      const itemQuantity = Number(item.quantity) || 1;
-      return sum + (itemPrice * itemQuantity);
-    }, 0);
-    return subtotal;
-  };
+  }, [shippingInfo, cartItems, calculateShipping, calculateSubtotal]);
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   const calculateTax = () => {

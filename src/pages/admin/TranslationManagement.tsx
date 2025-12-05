@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,25 +83,11 @@ export default function TranslationManagement() {
     };
   }, []);
 
-  // Load entities when entity type changes
-  useEffect(() => {
-    if (selectedEntityType) {
-      loadEntities(selectedEntityType);
-    }
-  }, [selectedEntityType]);
-
-  // Load translations when entity is selected
-  useEffect(() => {
-    if (selectedEntityId && selectedEntityType) {
-      loadTranslationsForEntity(selectedEntityType, selectedEntityId);
-    }
-  }, [selectedEntityId, selectedEntityType]);
-
   const loadData = async () => {
     await Promise.all([loadStats(), loadQueue(), loadSettings()]);
   };
 
-  const loadEntities = async (entityType: string) => {
+  const loadEntities = useCallback(async (entityType: string) => {
     setContentLoading(true);
     setSelectedEntityId('');
     setTranslations([]);
@@ -139,9 +125,9 @@ export default function TranslationManagement() {
     } finally {
       setContentLoading(false);
     }
-  };
+  }, []);
 
-  const loadTranslationsForEntity = async (entityType: string, entityId: string) => {
+  const loadTranslationsForEntity = useCallback(async (entityType: string, entityId: string) => {
     // Validate entityId before making the query
     if (!entityId || entityId.trim() === '') {
       logger.error('Invalid entityId provided to loadTranslationsForEntity');
@@ -165,7 +151,21 @@ export default function TranslationManagement() {
     } finally {
       setContentLoading(false);
     }
-  };
+  }, []);
+
+  // Load entities when entity type changes
+  useEffect(() => {
+    if (selectedEntityType) {
+      loadEntities(selectedEntityType);
+    }
+  }, [selectedEntityType, loadEntities]);
+
+  // Load translations when entity is selected
+  useEffect(() => {
+    if (selectedEntityId && selectedEntityType) {
+      loadTranslationsForEntity(selectedEntityType, selectedEntityId);
+    }
+  }, [selectedEntityId, selectedEntityType, loadTranslationsForEntity]);
 
   const getTranslationKey = (fieldName: string, language: string) => `${fieldName}_${language}`;
 

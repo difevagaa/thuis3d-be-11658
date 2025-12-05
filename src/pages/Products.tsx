@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,9 +62,33 @@ const Products = () => {
     };
   }, []);
 
+  const filterAndSortProducts = useCallback(() => {
+    let filtered = [...products];
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(p => p.category_id === selectedCategory);
+    }
+
+    filtered = filtered.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+
+    switch (sortBy) {
+      case "price-asc":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "newest":
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+    }
+
+    setFilteredProducts(filtered);
+  }, [products, selectedCategory, priceRange, sortBy]);
+
   useEffect(() => {
     filterAndSortProducts();
-  }, [products, selectedCategory, selectedMaterial, priceRange, sortBy, searchedByCode]);
+  }, [filterAndSortProducts, searchedByCode]);
 
   const loadData = async () => {
     try {
@@ -166,30 +190,6 @@ const Products = () => {
     setSearchedByCode(false);
     loadData(); // Recargar productos normales
     toast.info("Búsqueda por código eliminada");
-  };
-
-  const filterAndSortProducts = () => {
-    let filtered = [...products];
-
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(p => p.category_id === selectedCategory);
-    }
-
-    filtered = filtered.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
-
-    switch (sortBy) {
-      case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "newest":
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-    }
-
-    setFilteredProducts(filtered);
   };
 
   return (
