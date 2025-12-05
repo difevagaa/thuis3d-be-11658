@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,36 +30,7 @@ export default function AdminDashboard() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  useEffect(() => {
-    logger.log('🚀 AdminDashboard - Iniciando carga de datos y suscripción');
-    loadDashboardData();
-    
-    // Real-time subscription para visitantes activos
-    const channel = supabase
-      .channel('dashboard-visitors')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'visitor_sessions'
-      }, () => {
-        logger.log('🔔 AdminDashboard - Cambio detectado en visitor_sessions');
-        loadVisitorStats();
-      })
-      .subscribe();
-
-    // Actualizar visitantes cada 30 segundos
-    const interval = setInterval(() => {
-      logger.log('⏰ AdminDashboard - Actualizando visitantes (intervalo 30s)');
-      loadVisitorStats();
-    }, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const loadVisitorStats = async () => {
+  const loadVisitorStats = useCallback(async () => {
     try {
       // Visitantes activos (últimos 3 minutos)
       const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
@@ -91,9 +62,9 @@ export default function AdminDashboard() {
     } catch (error) {
       logger.error("Error loading visitor stats:", error);
     }
-  };
+  }, []); // No external dependencies
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [ordersData, quotesData, customersData, expensesData, recentOrdersData] = await Promise.all([
         supabase.from("orders").select("total, created_at, payment_status").eq("payment_status", "paid").order("created_at", { ascending: false }),
@@ -126,7 +97,36 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadVisitorStats]); // Depends on loadVisitorStats
+
+  useEffect(() => {
+    logger.log('🚀 AdminDashboard - Iniciando carga de datos y suscripción');
+    loadDashboardData();
+    
+    // Real-time subscription para visitantes activos
+    const channel = supabase
+      .channel('dashboard-visitors')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'visitor_sessions'
+      }, () => {
+        logger.log('🔔 AdminDashboard - Cambio detectado en visitor_sessions');
+        loadVisitorStats();
+      })
+      .subscribe();
+
+    // Actualizar visitantes cada 30 segundos
+    const interval = setInterval(() => {
+      logger.log('⏰ AdminDashboard - Actualizando visitantes (intervalo 30s)');
+      loadVisitorStats();
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [loadDashboardData, loadVisitorStats]); // Now includes both functions
 
   const handleAddExpense = async () => {
     try {
