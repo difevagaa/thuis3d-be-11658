@@ -63,6 +63,8 @@ const handler = async (req: Request): Promise<Response> => {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
     // Define theme colors (matching frontend themes)
+    // Note: Using template literal interpolation for email CSS is necessary
+    // because email clients don't support CSS custom properties (CSS variables)
     const themes: Record<string, { gradient: string; bgColor: string; textColor: string }> = {
       ocean: { gradient: 'linear-gradient(135deg, #60a5fa 0%, #22d3ee 50%, #2dd4bf 100%)', bgColor: '#22d3ee', textColor: '#ffffff' },
       forest: { gradient: 'linear-gradient(135deg, #34d399 0%, #4ade80 50%, #a3e635 100%)', bgColor: '#4ade80', textColor: '#ffffff' },

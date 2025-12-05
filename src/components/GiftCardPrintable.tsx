@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { getThemeById, getIconById, DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
+import React from "react";
 
 interface GiftCardPrintableProps {
   code: string;
@@ -26,8 +27,22 @@ export default function GiftCardPrintable({
   const theme = themeId ? getThemeById(themeId) : DEFAULT_THEME;
   const icon = iconId ? getIconById(iconId) : DEFAULT_ICON;
 
+  // Map accent colors to actual color values for inline styles
+  const accentColorMap: Record<string, string> = {
+    'blue-500': '#3b82f6',
+    'green-500': '#22c55e',
+    'amber-500': '#f59e0b',
+    'purple-500': '#a855f7',
+    'pink-500': '#ec4899',
+    'slate-500': '#64748b',
+    'teal-500': '#14b8a6',
+    'orange-400': '#fb923c'
+  };
+
+  const accentColorValue = accentColorMap[theme.accentColor] || '#3b82f6';
+
   return (
-    <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]">
+    <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]" style={{ '--accent-color': accentColorValue } as React.CSSProperties}>
       {/* Enhanced gradient background with selected theme */}
       <div className={`absolute inset-0 ${theme.bgGradient}`} />
       
@@ -68,7 +83,7 @@ export default function GiftCardPrintable({
           <div className="text-6xl md:text-7xl font-bold drop-shadow-lg">
             €{amount.toFixed(2)}
           </div>
-          <div className={`bg-white text-${theme.accentColor} px-6 py-3 rounded-xl font-mono font-bold text-sm md:text-base tracking-widest shadow-lg inline-block`}>
+          <div className="bg-white px-6 py-3 rounded-xl font-mono font-bold text-sm md:text-base tracking-widest shadow-lg inline-block" style={{ color: `var(--accent-color, #3b82f6)` }}>
             {code}
           </div>
         </div>
