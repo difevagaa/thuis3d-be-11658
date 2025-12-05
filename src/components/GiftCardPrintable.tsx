@@ -36,7 +36,8 @@ export default function GiftCardPrintable({
     'pink-500': '#ec4899',
     'slate-500': '#64748b',
     'teal-500': '#14b8a6',
-    'orange-400': '#fb923c'
+    'orange-400': '#fb923c',
+    'gray-700': '#374151'
   };
 
   const accentColorValue = accentColorMap[theme.accentColor] || '#3b82f6';
@@ -65,50 +66,50 @@ export default function GiftCardPrintable({
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
       {/* Content */}
-      <div className={`relative h-full p-6 md:p-8 flex flex-col justify-between ${theme.textColor}`}>
+      <div className={`relative h-full p-4 md:p-6 flex flex-col justify-between ${theme.textColor}`}>
         {/* Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="text-4xl md:text-5xl mb-2">{icon.emoji}</div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Tarjeta Regalo</h2>
-            <p className="text-sm md:text-base opacity-90 font-medium">Thuis3D.be</p>
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-shrink-0">
+            <div className="text-3xl md:text-4xl mb-1">{icon.emoji}</div>
+            <h2 className="text-base md:text-lg font-bold tracking-tight">Tarjeta Regalo</h2>
+            <p className="text-xs md:text-sm opacity-90 font-medium">Thuis3D.be</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/30">
+          <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-semibold border border-white/30 flex-shrink-0">
             No vendible
           </div>
         </div>
 
-        {/* Amount - Centered and prominent */}
-        <div className="text-center space-y-3">
-          <div className="text-5xl md:text-6xl font-bold drop-shadow-lg">
+        {/* Amount - Centered and prominent with adaptive sizing */}
+        <div className="text-center space-y-2 flex-1 flex flex-col justify-center min-h-0">
+          <div className={`font-bold drop-shadow-lg ${amount >= 1000 ? 'text-3xl md:text-4xl' : amount >= 100 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-6xl'}`}>
             €{amount.toFixed(2)}
           </div>
-          <div className="bg-white/25 backdrop-blur-sm px-5 py-2.5 rounded-lg font-mono font-bold text-sm md:text-base tracking-widest border-2 border-white/50 inline-block shadow-lg">
+          <div className="bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono font-bold text-xs md:text-sm tracking-wider border-2 border-white/50 inline-block shadow-lg mx-auto">
             {code}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="space-y-3">
+        {/* Footer - Improved spacing and overflow handling */}
+        <div className="space-y-2">
           {message && (
-            <div className="bg-white/20 backdrop-blur-md p-3 rounded-lg border border-white/30">
-              <p className="text-xs md:text-sm italic leading-relaxed line-clamp-2">
+            <div className="bg-white/20 backdrop-blur-md p-2 md:p-2.5 rounded-lg border border-white/30 max-h-[3.5rem] overflow-y-auto">
+              <p className="text-[10px] md:text-xs italic leading-snug break-words">
                 "{message}"
               </p>
             </div>
           )}
           {senderName && (
-            <p className="text-xs md:text-sm text-center font-medium">
+            <p className="text-[10px] md:text-xs text-center font-medium truncate">
               De: <span className="font-bold">{senderName}</span>
             </p>
           )}
-          <div className="flex justify-between items-end text-[10px] md:text-xs opacity-80 font-medium">
-            <span className="truncate max-w-[55%]">{recipientEmail}</span>
+          <div className="flex justify-between items-end text-[9px] md:text-[10px] opacity-80 font-medium gap-1">
+            <span className="truncate max-w-[50%]">{recipientEmail}</span>
             {expiresAt && (
-              <span className="whitespace-nowrap">Válida hasta {new Date(expiresAt).toLocaleDateString('es-ES')}</span>
+              <span className="whitespace-nowrap text-right flex-shrink-0">Válida hasta {new Date(expiresAt).toLocaleDateString('es-ES')}</span>
             )}
           </div>
-          <p className="text-[10px] md:text-xs text-center opacity-70 font-medium">
+          <p className="text-[9px] md:text-[10px] text-center opacity-70 font-medium">
             www.thuis3d.be • Uso exclusivo tienda online
           </p>
         </div>

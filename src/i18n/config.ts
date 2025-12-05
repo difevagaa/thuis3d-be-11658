@@ -4,7 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 
 const detectionOptions = {
-  order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
+  order: ['querystring', 'localStorage', 'htmlTag'],
   lookupQuerystring: 'lang',
   lookupLocalStorage: 'i18nextLng',
   caches: ['localStorage'],
@@ -16,6 +16,7 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    lng: 'nl', // Set default language explicitly
     fallbackLng: 'nl',
     supportedLngs: ['es', 'en', 'nl'],
     debug: false,
