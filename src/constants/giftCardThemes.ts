@@ -81,6 +81,15 @@ export const GIFT_CARD_THEMES: GiftCardTheme[] = [
     textColor: 'text-gray-800',
     accentColor: 'orange-400',
     borderColor: 'border-orange-200'
+  },
+  {
+    id: 'black',
+    name: 'Negro Elegante',
+    gradient: 'from-gray-900 via-gray-800 to-black',
+    bgGradient: 'bg-gradient-to-br from-gray-900 via-gray-800 to-black',
+    textColor: 'text-white',
+    accentColor: 'gray-700',
+    borderColor: 'border-gray-600'
   }
 ];
 
@@ -165,6 +174,6 @@ export function getIconById(iconId: string): GiftCardIcon {
   return GIFT_CARD_ICONS.find(i => i.id === iconId) || GIFT_CARD_ICONS[0];
 }
 
-// Default theme (ocean - neutral and pleasant)
-export const DEFAULT_THEME = GIFT_CARD_THEMES[0];
+// Default theme (black - as requested)
+export const DEFAULT_THEME = GIFT_CARD_THEMES.find(t => t.id === 'black') || GIFT_CARD_THEMES[0];
 export const DEFAULT_ICON = GIFT_CARD_ICONS[0];
