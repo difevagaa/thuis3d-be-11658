@@ -1277,7 +1277,6 @@ html.grayscale * {
 /* Responsive table wrapper */
 .table-responsive-wrapper {
   @apply w-full overflow-x-auto -mx-3 sm:mx-0;
-  @apply scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100;
 }
 
 .table-responsive-wrapper table {
@@ -1367,7 +1366,6 @@ html.grayscale * {
 /* Responsive horizontal scroll */
 .scroll-responsive {
   @apply overflow-x-auto;
-  @apply scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100;
   -webkit-overflow-scrolling: touch;
 }
 
