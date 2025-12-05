@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,7 +133,7 @@ export default function SiteCustomizer() {
     } else if (hasProPalette) {
       console.log('🎨 [SiteCustomizer] Paleta profesional detectada - NO se aplican CSS variables legacy');
     }
-  }, [customization]);
+  }, [customization, updateCSSVariables]);
 
   const loadCustomization = async () => {
     try {
@@ -419,7 +419,7 @@ export default function SiteCustomizer() {
     }
   };
 
-  const updateCSSVariables = () => {
+  const updateCSSVariables = useCallback(() => {
     const root = document.documentElement;
     const hasProPalette = !!localStorage.getItem('selected_palette');
 
@@ -659,7 +659,7 @@ export default function SiteCustomizer() {
 
     // CRÍTICO: Save advanced colors to cache for instant load on refresh
     saveAdvancedColorsToCache(customization);
-  };
+  }, [customization]); // customization is the dependency
 
   if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
 

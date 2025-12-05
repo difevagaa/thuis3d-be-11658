@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,11 +28,7 @@ export default function BlogPost() {
     post
   );
 
-  useEffect(() => {
-    loadPost();
-  }, [slug]);
-
-  const loadPost = async () => {
+  const loadPost = useCallback(async () => {
     try {
       // Obtener usuario y sus roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -91,7 +87,11 @@ export default function BlogPost() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]); // slug is the dependency
+
+  useEffect(() => {
+    loadPost();
+  }, [loadPost]);
 
   const handleShare = async () => {
     const url = window.location.href;

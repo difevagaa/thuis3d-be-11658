@@ -17,6 +17,7 @@ export function STLViewer3D({ stlData, color, className = "" }: STLViewer3DProps
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
+  const autoRotateRef = useRef(autoRotate);
   const [zoomLevel, setZoomLevel] = useState(1);
   const sceneRef = useRef<{
     scene?: THREE.Scene;
@@ -27,6 +28,11 @@ export function STLViewer3D({ stlData, color, className = "" }: STLViewer3DProps
     initialCameraPosition?: THREE.Vector3;
     initialMeshRotation?: THREE.Euler;
   }>({});
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    autoRotateRef.current = autoRotate;
+  }, [autoRotate]);
 
   // Zoom controls
   const handleZoom = useCallback((delta: number) => {
@@ -302,13 +308,11 @@ export function STLViewer3D({ stlData, color, className = "" }: STLViewer3DProps
       window.addEventListener('resize', handleResize);
 
       // Animation loop with auto-rotate state
-      const animationAutoRotate = autoRotate;
-      
       const animate = () => {
         sceneRef.current.animationId = requestAnimationFrame(animate);
         
         // Auto-rotate slowly when enabled and not dragging
-        if (animationAutoRotate && !isDragging && sceneRef.current.mesh) {
+        if (autoRotateRef.current && !isDragging && sceneRef.current.mesh) {
           sceneRef.current.mesh.rotation.y += 0.003;
         }
         
