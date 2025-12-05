@@ -138,13 +138,32 @@ export default function GiftCardsEnhanced() {
 
   const sendGiftCardEmail = async (card: any) => {
     try {
+      // Parse message to extract customization data
+      let userMessage = card.message;
+      let themeId = 'ocean';
+      let iconId = 'gift';
+      
+      if (card.message) {
+        try {
+          const parsed = JSON.parse(card.message);
+          userMessage = parsed.userMessage || null;
+          themeId = parsed.themeId || 'ocean';
+          iconId = parsed.iconId || 'gift';
+        } catch {
+          // If not JSON, use as plain message
+          userMessage = card.message;
+        }
+      }
+      
       const { error } = await supabase.functions.invoke('send-gift-card-email', {
         body: {
           recipient_email: card.recipient_email,
           sender_name: card.sender_name || "Thuis3d.be",
           gift_card_code: card.code,
           amount: card.initial_amount,
-          message: card.message
+          message: userMessage,
+          themeId,
+          iconId
         }
       });
 
