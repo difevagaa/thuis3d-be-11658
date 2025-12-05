@@ -26,11 +26,8 @@ export default function PrintingCalculatorSettings() {
     replacementPartsCost: '110',
     errorMarginPercentage: '29',
     profitMultiplierRetail: '5',
-    profitMultiplierWholesale: '3',
-    profitMultiplierKeychains: '5',
     suppliesCost: '0',
     layerHeight: '0.2',
-    printSpeed: '50',
     infill: '20',
     numberOfPerimeters: '3',
     travelSpeed: '120',
@@ -45,7 +42,7 @@ export default function PrintingCalculatorSettings() {
     topBottomSpeed: '30',
     firstLayerSpeed: '20',
     acceleration: '1000',
-    retractionCountPerLayer: '1.5',
+    retractionCountPerLayer: '15',
     // Precio mínimo
     minimumPrice: '5.00'
   });
@@ -96,11 +93,8 @@ export default function PrintingCalculatorSettings() {
         const replacementPartsCost = String(settingsData.find(s => s.setting_key === 'replacement_parts_cost')?.setting_value || '110');
         const errorMarginPercentage = String(settingsData.find(s => s.setting_key === 'error_margin_percentage')?.setting_value || '29');
         const profitMultiplierRetail = String(settingsData.find(s => s.setting_key === 'profit_multiplier_retail')?.setting_value || '5');
-        const profitMultiplierWholesale = String(settingsData.find(s => s.setting_key === 'profit_multiplier_wholesale')?.setting_value || '3');
-        const profitMultiplierKeychains = String(settingsData.find(s => s.setting_key === 'profit_multiplier_keychains')?.setting_value || '5');
         const suppliesCost = String(settingsData.find(s => s.setting_key === 'additional_supplies_cost')?.setting_value || '0');
         const layerHeight = String(settingsData.find(s => s.setting_key === 'default_layer_height')?.setting_value || '0.2');
-        const printSpeed = String(settingsData.find(s => s.setting_key === 'default_print_speed')?.setting_value || '50');
         const infill = String(settingsData.find(s => s.setting_key === 'default_infill')?.setting_value || '20');
         const numberOfPerimeters = String(settingsData.find(s => s.setting_key === 'number_of_perimeters')?.setting_value || '3');
         const travelSpeed = String(settingsData.find(s => s.setting_key === 'travel_speed')?.setting_value || '120');
@@ -116,7 +110,7 @@ export default function PrintingCalculatorSettings() {
         const topBottomSpeed = String(settingsData.find(s => s.setting_key === 'top_bottom_speed')?.setting_value || '30');
         const firstLayerSpeed = String(settingsData.find(s => s.setting_key === 'first_layer_speed')?.setting_value || '20');
         const acceleration = String(settingsData.find(s => s.setting_key === 'acceleration')?.setting_value || '1000');
-        const retractionCountPerLayer = String(settingsData.find(s => s.setting_key === 'retraction_count_per_layer')?.setting_value || '1.5');
+        const retractionCountPerLayer = String(settingsData.find(s => s.setting_key === 'retraction_count_per_layer')?.setting_value || '15');
         const minimumPrice = String(settingsData.find(s => s.setting_key === 'minimum_price')?.setting_value || '5.00');
 
         setSettings({
@@ -128,11 +122,8 @@ export default function PrintingCalculatorSettings() {
           replacementPartsCost,
           errorMarginPercentage,
           profitMultiplierRetail,
-          profitMultiplierWholesale,
-          profitMultiplierKeychains,
           suppliesCost,
           layerHeight,
-          printSpeed,
           infill,
           numberOfPerimeters,
           travelSpeed,
@@ -203,11 +194,8 @@ export default function PrintingCalculatorSettings() {
         { key: 'replacement_parts_cost', value: settings.replacementPartsCost },
         { key: 'error_margin_percentage', value: settings.errorMarginPercentage },
         { key: 'profit_multiplier_retail', value: settings.profitMultiplierRetail },
-        { key: 'profit_multiplier_wholesale', value: settings.profitMultiplierWholesale },
-        { key: 'profit_multiplier_keychains', value: settings.profitMultiplierKeychains },
         { key: 'additional_supplies_cost', value: settings.suppliesCost },
         { key: 'default_layer_height', value: settings.layerHeight },
-        { key: 'default_print_speed', value: settings.printSpeed },
         { key: 'default_infill', value: settings.infill },
         { key: 'number_of_perimeters', value: settings.numberOfPerimeters },
         { key: 'travel_speed', value: settings.travelSpeed },
@@ -506,7 +494,7 @@ export default function PrintingCalculatorSettings() {
           {/* Parámetros por defecto */}
           <div>
             <h3 className="font-semibold mb-4">Valores por Defecto</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label>Altura de Capa (mm)</Label>
@@ -529,31 +517,6 @@ export default function PrintingCalculatorSettings() {
                     placeholder="0.2"
                   />
                   <span className="text-sm text-muted-foreground">mm</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Velocidad de Impresión</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Velocidad de impresión en mm/s. Mayor velocidad = menos tiempo pero puede afectar calidad.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={settings.printSpeed}
-                    onChange={(e) => setSettings({ ...settings, printSpeed: e.target.value })}
-                    placeholder="50"
-                  />
-                  <span className="text-sm text-muted-foreground">mm/s</span>
                 </div>
               </div>
 
@@ -762,81 +725,41 @@ export default function PrintingCalculatorSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label>Precio Minorista</Label>
+                <Label>Multiplicador de Ganancia</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Multiplicador para ventas al público. Precio final = <strong>(Subtotal + Margen Error) × Multiplicador</strong></p>
+                    <p>Multiplicador para ventas. Precio final = <strong>(Subtotal + Margen Error) × Multiplicador</strong></p>
+                    <p className="mt-2 text-xs">Ejemplo: Si el costo seguro es €10 y el multiplicador es 5, el precio será €50</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center max-w-xs">
                 <Input
                   type="number"
                   step="0.1"
                   min="1"
                   value={settings.profitMultiplierRetail}
                   onChange={(e) => setSettings({ ...settings, profitMultiplierRetail: e.target.value })}
-                  placeholder="1"
+                  placeholder="5"
                 />
                 <span className="text-sm text-muted-foreground">×</span>
               </div>
-              <p className="text-xs text-muted-foreground">Usado por defecto</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Precio Mayorista</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Multiplicador para ventas por mayor. Generalmente menor que el minorista para incentivar compras grandes.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  value={settings.profitMultiplierWholesale}
-                  onChange={(e) => setSettings({ ...settings, profitMultiplierWholesale: e.target.value })}
-                  placeholder="1"
-                />
-                <span className="text-sm text-muted-foreground">×</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Precio Llaveros</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Multiplicador especial para productos pequeños como llaveros. Pueden tener margen mayor por manejo individual.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  value={settings.profitMultiplierKeychains}
-                  onChange={(e) => setSettings({ ...settings, profitMultiplierKeychains: e.target.value })}
-                  placeholder="1"
-                />
-                <span className="text-sm text-muted-foreground">×</span>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Este multiplicador se aplica a todos los precios calculados
+              </p>
+              <Alert className="mt-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>Nota:</strong> Los descuentos por cantidad se aplican <em>después</em> de calcular el precio con este multiplicador.
+                  Puedes configurar descuentos adicionales en la sección "Descuentos por Cantidad".
+                </AlertDescription>
+              </Alert>
             </div>
           </div>
         </CardContent>
@@ -878,89 +801,6 @@ export default function PrintingCalculatorSettings() {
               <p className="text-xs text-muted-foreground">
                 Costo adicional por insumos (pegamento, pintura, etc.)
               </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <h3 className="font-semibold">Parámetros de Estimación</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Altura de Capa</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Grosor de cada capa de impresión. Afecta calidad y tiempo: capas más finas = mejor calidad pero más lento.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  step="0.05"
-                  min="0.1"
-                  max="0.4"
-                  value={settings.layerHeight}
-                  onChange={(e) => setSettings({ ...settings, layerHeight: e.target.value })}
-                  placeholder="0.2"
-                />
-                <span className="text-sm text-muted-foreground">mm</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Velocidad de Impresión</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Velocidad de movimiento del cabezal en mm/s. Se usa para estimar el tiempo total de impresión.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  step="5"
-                  min="20"
-                  max="150"
-                  value={settings.printSpeed}
-                  onChange={(e) => setSettings({ ...settings, printSpeed: e.target.value })}
-                  placeholder="50"
-                />
-                <span className="text-sm text-muted-foreground">mm/s</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Relleno</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Porcentaje de relleno interno. Mayor relleno = pieza más fuerte pero usa más material y tiempo.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  step="5"
-                  min="0"
-                  max="100"
-                  value={settings.infill}
-                  onChange={(e) => setSettings({ ...settings, infill: e.target.value })}
-                  placeholder="20"
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-              </div>
             </div>
           </div>
         </CardContent>

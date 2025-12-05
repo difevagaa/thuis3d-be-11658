@@ -380,14 +380,14 @@ export const analyzeSTLFile = async (
       
       // Nuevos parámetros precisos
       const extrusionWidth = parseFloat(String(settings.find(s => s.setting_key === 'extrusion_width')?.setting_value || '0.45'));
-      const topSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'top_solid_layers')?.setting_value || '5'));
-      const bottomSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'bottom_solid_layers')?.setting_value || '5'));
+      const topSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'top_solid_layers')?.setting_value || '4'));
+      const bottomSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'bottom_solid_layers')?.setting_value || '4'));
       const numberOfPerimeters = parseFloat(String(settings.find(s => s.setting_key === 'number_of_perimeters')?.setting_value || '3'));
       const perimeterSpeed = parseFloat(String(settings.find(s => s.setting_key === 'perimeter_speed')?.setting_value || '40'));
       const infillSpeed = parseFloat(String(settings.find(s => s.setting_key === 'infill_speed')?.setting_value || '60'));
-      const topBottomSpeed = parseFloat(String(settings.find(s => s.setting_key === 'top_bottom_speed')?.setting_value || '40'));
+      const topBottomSpeed = parseFloat(String(settings.find(s => s.setting_key === 'top_bottom_speed')?.setting_value || '30'));
       const firstLayerSpeed = parseFloat(String(settings.find(s => s.setting_key === 'first_layer_speed')?.setting_value || '20'));
-      const travelSpeed = parseFloat(String(settings.find(s => s.setting_key === 'travel_speed')?.setting_value || '150'));
+      const travelSpeed = parseFloat(String(settings.find(s => s.setting_key === 'travel_speed')?.setting_value || '120'));
       const acceleration = parseFloat(String(settings.find(s => s.setting_key === 'acceleration')?.setting_value || '1000'));
       const retractionCountPerLayer = parseFloat(String(settings.find(s => s.setting_key === 'retraction_count_per_layer')?.setting_value || '15'));
       
@@ -756,6 +756,10 @@ export const analyzeSTLFile = async (
         logger.log(`⏱️ Tiempo ajustado por perfil (${calibrationConfidence}): ${originalTime.toFixed(2)}h → ${estimatedTime.toFixed(2)}h`);
       }
       
+      // ============================================================
+      // 🎯 SEPARAR COSTOS FIJOS DE COSTOS VARIABLES
+      // ============================================================
+      
       // 3. COSTO DE ELECTRICIDAD
       const powerConsumptionKw = printerPowerWatts / 1000;
       const printingElectricityCost = estimatedTime * powerConsumptionKw * electricityCostPerKwh;
@@ -764,82 +768,166 @@ export const analyzeSTLFile = async (
       const heatingTime = heatingTimeMins / 60;
       const heatingElectricityCost = heatingTime * heatingConsumptionKw * electricityCostPerKwh;
       
-      const electricityCost = printingElectricityCost + heatingElectricityCost;
+      // FIJO: Calentamiento solo una vez por trabajo
+      // VARIABLE: Costo de impresión por hora
+      const electricityCostFixed = heatingElectricityCost;
+      const electricityCostPerUnit = printingElectricityCost;
       
-      logger.log('⚡ Desglose eléctrico:', {
-        impresión: printingElectricityCost.toFixed(3) + '€',
-        calentamiento: heatingElectricityCost.toFixed(3) + '€',
-        total: electricityCost.toFixed(3) + '€'
+      logger.log('⚡ Desglose eléctrico (fijo vs variable):', {
+        calentamientoFijo: electricityCostFixed.toFixed(3) + '€ (una vez)',
+        impresiónPorPieza: electricityCostPerUnit.toFixed(3) + '€/pieza'
       });
       
       // 4. DESGASTE DE MÁQUINA
       const machineCostPerHour = replacementPartsCost / printerLifespanHours;
-      const machineCost = estimatedTime * machineCostPerHour;
+      const machineCostPerUnit = estimatedTime * machineCostPerHour;
       
-      // 5. SUBTOTAL SIN INSUMOS (costo base)
-      const baseCost = materialCost + electricityCost + machineCost;
+      // ============================================================
+      // 💰 NUEVO SISTEMA DE PRECIOS CON MÚLTIPLES PIEZAS
+      // ============================================================
       
-      // 6. MARGEN DE ERROR (29% - protección contra subcotización)
-      const errorMarginCost = baseCost * (errorMarginPercentage / 100);
+      // 5. COSTOS FIJOS (se cobran una sola vez, no importa la cantidad)
+      const fixedCostsPerJob = electricityCostFixed; // Solo calentamiento inicial
       
-      // 7. SUBTOTAL CON MARGEN DE ERROR (costo seguro)
-      const safeCost = baseCost + errorMarginCost;
+      // 6. COSTOS VARIABLES POR PIEZA
+      const variableCostPerUnit = materialCost + electricityCostPerUnit + machineCostPerUnit;
       
-      // 8. APLICAR MULTIPLICADOR DE GANANCIA
-      // Si profitMultiplier es 0, usar safeCost directamente (precio de costo)
-      // Si profitMultiplier >= 1, aplicar el multiplicador normalmente
-      const retailPrice = profitMultiplier > 0 ? safeCost * profitMultiplier : safeCost;
+      // 7. APLICAR ECONOMÍAS DE ESCALA PARA MÚLTIPLES PIEZAS
+      // Si imprimimos múltiples piezas en el mismo trabajo, compartimos algunos costos:
+      // - Material: lineal (cada pieza usa su material)
+      // - Tiempo: reducción ~10% por pieza adicional (setup compartido, batch printing)
+      // - Electricidad: reducción significativa (no repetimos calentamiento)
       
-      // 9. PROTECCIÓN: Precio mínimo configurado por el administrador
-      // POLÍTICA CORRECTA: Precio mínimo se cobra UNA VEZ, no por unidad
-      const pricePerUnit = retailPrice + suppliesCost;
-      const minimumApplies = pricePerUnit < configuredMinimumPrice;
-      
-      let estimatedTotal: number;
-      let minimumChargedOnce = false;
+      let totalVariableCost = 0;
       
       if (quantity === 1) {
-        // Para 1 unidad: aplicar mínimo si corresponde
-        const totalWithoutSupplies = Math.max(retailPrice, configuredMinimumPrice);
-        estimatedTotal = totalWithoutSupplies + suppliesCost;
-        minimumChargedOnce = minimumApplies;
+        totalVariableCost = variableCostPerUnit;
       } else {
-        // Para múltiples unidades: mínimo solo en la primera
-        if (minimumApplies) {
-          // Primera unidad: precio mínimo + insumos
-          const firstUnitPrice = configuredMinimumPrice + suppliesCost;
-          // Unidades adicionales: solo precio real (sin mínimo)
-          const additionalUnitsPrice = (quantity - 1) * pricePerUnit;
-          estimatedTotal = firstUnitPrice + additionalUnitsPrice;
-          minimumChargedOnce = true;
-        } else {
-          // Precio real está sobre el mínimo: cobrar normal para todas
-          estimatedTotal = pricePerUnit * quantity;
-          minimumChargedOnce = false;
+        // Primera pieza: costo completo
+        totalVariableCost = variableCostPerUnit;
+        
+        // Piezas adicionales: economía de escala del 10%
+        const scaleEconomyFactor = 0.90; // 10% de descuento por batch printing
+        const additionalUnitCost = variableCostPerUnit * scaleEconomyFactor;
+        totalVariableCost += additionalUnitCost * (quantity - 1);
+        
+        logger.log('📦 Economía de escala aplicada:', {
+          primeraUnidad: variableCostPerUnit.toFixed(2) + '€',
+          unidadesAdicionales: `${quantity - 1} × ${additionalUnitCost.toFixed(2)}€ (90% del costo)`,
+          totalVariable: totalVariableCost.toFixed(2) + '€',
+          ahorroPorEscala: ((variableCostPerUnit * quantity - totalVariableCost)).toFixed(2) + '€'
+        });
+      }
+      
+      // 8. COSTO BASE TOTAL (fijo + variable)
+      const baseCost = fixedCostsPerJob + totalVariableCost;
+      
+      // 9. MARGEN DE ERROR (29% - protección contra subcotización)
+      const errorMarginCost = baseCost * (errorMarginPercentage / 100);
+      
+      // 10. SUBTOTAL CON MARGEN DE ERROR (costo seguro)
+      const safeCost = baseCost + errorMarginCost;
+      
+      // 11. APLICAR MULTIPLICADOR DE GANANCIA
+      const retailPrice = profitMultiplier > 0 ? safeCost * profitMultiplier : safeCost;
+      
+      // 12. AGREGAR INSUMOS (se cobra por cada pieza)
+      const totalSuppliesCost = suppliesCost * quantity;
+      const totalBeforeDiscounts = retailPrice + totalSuppliesCost;
+      
+      // ============================================================
+      // 💳 APLICAR DESCUENTOS POR CANTIDAD
+      // ============================================================
+      let quantityDiscountAmount = 0;
+      let quantityDiscountApplied: any = null;
+      
+      if (quantity > 1) {
+        try {
+          const { data: discountTiers } = await supabase
+            .from('quantity_discount_tiers')
+            .select('*')
+            .eq('is_active', true)
+            .order('discount_value', { ascending: false }); // Mayor descuento primero
+          
+          if (discountTiers && discountTiers.length > 0) {
+            // Buscar el descuento aplicable para esta cantidad
+            const applicableTier = discountTiers.find(tier => {
+              const meetsMin = quantity >= tier.min_quantity;
+              const meetsMax = tier.max_quantity === null || quantity <= tier.max_quantity;
+              return meetsMin && meetsMax;
+            });
+            
+            if (applicableTier) {
+              if (applicableTier.discount_type === 'percentage') {
+                quantityDiscountAmount = (totalBeforeDiscounts * applicableTier.discount_value) / 100;
+              } else if (applicableTier.discount_type === 'fixed_amount') {
+                quantityDiscountAmount = applicableTier.discount_value;
+              }
+              
+              quantityDiscountApplied = applicableTier;
+              
+              logger.log('🎁 Descuento por cantidad aplicado:', {
+                nivel: applicableTier.tier_name,
+                cantidad: quantity,
+                tipo: applicableTier.discount_type === 'percentage' ? 'Porcentaje' : 'Monto Fijo',
+                descuento: applicableTier.discount_type === 'percentage' 
+                  ? `${applicableTier.discount_value}%` 
+                  : `€${applicableTier.discount_value}`,
+                montoDescontado: quantityDiscountAmount.toFixed(2) + '€'
+              });
+            }
+          }
+        } catch (error) {
+          logger.error('Error al obtener descuentos por cantidad:', error);
+          // Continuar sin descuentos si hay error
         }
+      }
+      
+      // 13. APLICAR DESCUENTO POR CANTIDAD
+      const totalAfterQuantityDiscount = totalBeforeDiscounts - quantityDiscountAmount;
+      
+      // 14. PROTECCIÓN: Precio mínimo (solo si el total está debajo del mínimo)
+      let estimatedTotal = totalAfterQuantityDiscount;
+      let minimumPriceApplied = false;
+      
+      if (totalAfterQuantityDiscount < configuredMinimumPrice) {
+        estimatedTotal = configuredMinimumPrice;
+        minimumPriceApplied = true;
       }
       
       // Calcular precio efectivo por unidad para display
       const effectivePerUnit = estimatedTotal / quantity;
       
-      logger.log('💰 Cálculo de precio (POLÍTICA CORREGIDA):', {
+      logger.log('💰 Cálculo de precio MEJORADO (con economías de escala):', {
+        cantidad: quantity,
+        '=== COSTOS ===': '',
+        costosFijos: fixedCostsPerJob.toFixed(2) + '€ (una vez)',
+        costosVariables: totalVariableCost.toFixed(2) + '€ (total ' + quantity + ' piezas)',
         costoBase: baseCost.toFixed(2) + '€',
         margenError: errorMarginCost.toFixed(2) + '€ (+' + errorMarginPercentage + '%)',
         costoSeguro: safeCost.toFixed(2) + '€',
         multiplicadorGanancia: profitMultiplier,
+        '=== PRECIO ===': '',
         precioRetail: retailPrice.toFixed(2) + '€',
-        precioMínimoConfig: configuredMinimumPrice.toFixed(2) + '€',
-        insumosAdicionales: suppliesCost.toFixed(2) + '€',
-        precioRealPorUnidad: pricePerUnit.toFixed(2) + '€',
-        cantidad: quantity,
-        ...(quantity > 1 && minimumChargedOnce ? {
-          '🔒 POLÍTICA APLICADA': 'Mínimo cobrado UNA VEZ',
-          primeraUnidad: (configuredMinimumPrice + suppliesCost).toFixed(2) + '€',
-          unidadesAdicionales: `${quantity - 1} × ${pricePerUnit.toFixed(2)}€ = ${((quantity - 1) * pricePerUnit).toFixed(2)}€`
+        insumos: totalSuppliesCost.toFixed(2) + '€ (' + quantity + ' × ' + suppliesCost.toFixed(2) + '€)',
+        subtotalAntesDescuentos: totalBeforeDiscounts.toFixed(2) + '€',
+        ...(quantityDiscountApplied ? {
+          '🎁 DESCUENTO': quantityDiscountApplied.tier_name,
+          tipoDescuento: quantityDiscountApplied.discount_type === 'percentage' ? 'Porcentaje' : 'Fijo',
+          valorDescuento: quantityDiscountApplied.discount_type === 'percentage' 
+            ? `${quantityDiscountApplied.discount_value}%` 
+            : `€${quantityDiscountApplied.discount_value}`,
+          montoDescontado: '-' + quantityDiscountAmount.toFixed(2) + '€',
+          totalDespuésDescuento: totalAfterQuantityDiscount.toFixed(2) + '€'
         } : {}),
-        precioEfectivoPorUnidad: effectivePerUnit.toFixed(2) + '€',
+        precioMínimoConfig: configuredMinimumPrice.toFixed(2) + '€',
         precioFinalTotal: estimatedTotal.toFixed(2) + '€',
-        aplicado: minimumChargedOnce ? '🔒 PRECIO MÍNIMO (UNA VEZ)' : '📊 PRECIO CALCULADO'
+        precioEfectivoPorUnidad: effectivePerUnit.toFixed(2) + '€/unidad',
+        aplicado: minimumPriceApplied 
+          ? '🔒 PRECIO MÍNIMO APLICADO' 
+          : quantityDiscountApplied 
+          ? `🎁 DESCUENTO: ${quantityDiscountApplied.tier_name}` 
+          : '📊 PRECIO CALCULADO'
       });
       
       // Obtener color seleccionado para la vista previa
@@ -890,19 +978,19 @@ export const analyzeSTLFile = async (
         weight,
         dimensions,
         materialCost,
-        electricityCost,
-        machineCost,
+        electricityCost: electricityCostFixed + (electricityCostPerUnit * quantity),
+        machineCost: machineCostPerUnit * quantity,
         errorMarginCost,
-        suppliesCost,
+        suppliesCost: totalSuppliesCost,
         subtotalWithoutSupplies: baseCost,
         estimatedTime,
         estimatedTotal,
         breakdown: {
           materialCost,
-          electricityCost,
-          machineCost,
+          electricityCost: electricityCostFixed + (electricityCostPerUnit * quantity),
+          machineCost: machineCostPerUnit * quantity,
           errorMarginCost,
-          suppliesCost,
+          suppliesCost: totalSuppliesCost,
           subtotal: safeCost,
           total: estimatedTotal
         },
