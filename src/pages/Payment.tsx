@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Banknote } from "lucide-react";
+import { CreditCard, Banknote, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
@@ -19,15 +21,21 @@ import {
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
+import { validateGiftCardCode } from "@/lib/validation";
+import { handleSupabaseError } from "@/lib/errorHandler";
+import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 export default function Payment() {
   const navigate = useNavigate();
-  const { t } = useTranslation(['payment', 'common']);
+  const { t } = useTranslation(['payment', 'common', 'cart']);
   const [shippingInfo, setShippingInfo] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [processing, setProcessing] = useState(false);
   const [shippingCost, setShippingCost] = useState<number>(0);
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
+  const [giftCardCode, setGiftCardCode] = useState("");
+  const [appliedGiftCard, setAppliedGiftCard] = useState<any>(null);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState({
     bank_transfer_enabled: true,
     card_enabled: true,
@@ -128,6 +136,18 @@ export default function Payment() {
     }
   }, [navigate]);
 
+  // Load applied gift card from sessionStorage
+  useEffect(() => {
+    const savedGiftCard = sessionStorage.getItem("applied_gift_card");
+    if (savedGiftCard) {
+      try {
+        setAppliedGiftCard(JSON.parse(savedGiftCard));
+      } catch (e) {
+        logger.error("Error loading gift card:", e);
+      }
+    }
+  }, []);
+
   // Calculate shipping when shipping info and cart items are loaded
   useEffect(() => {
     const calculateShippingCost = async () => {
@@ -202,6 +222,9 @@ export default function Payment() {
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   const calculateTax = () => {
+    const subtotal = calculateSubtotal();
+    const giftCardAmount = calculateGiftCardAmount();
+    
     const taxableAmount = cartItems
       .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
       .reduce((sum, item) => {
@@ -210,17 +233,186 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
+    // Apply gift card proportionally to taxable amount
+    const taxableAfterGiftCard = taxableAmount - (giftCardAmount * (taxableAmount / subtotal));
+    
     // Use tax rate from settings
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((taxableAmount * taxRate).toFixed(2));
+    return Number((Math.max(0, taxableAfterGiftCard) * taxRate).toFixed(2));
   };
 
-  // Total = subtotal + IVA + envío
+  const calculateGiftCardAmount = () => {
+    if (!appliedGiftCard) return 0;
+    const subtotal = calculateSubtotal();
+    // Gift card can only cover up to the subtotal
+    return Math.min(appliedGiftCard.current_balance, subtotal);
+  };
+
+  // Total = subtotal - gift card + IVA + envío
   const calculateTotal = () => {
-    return Number((calculateSubtotal() + calculateTax() + shippingCost).toFixed(2));
+    const subtotal = calculateSubtotal();
+    const giftCardAmount = calculateGiftCardAmount();
+    const tax = calculateTax();
+    return Number(Math.max(0, subtotal - giftCardAmount + tax + shippingCost).toFixed(2));
+  };
+
+  const applyGiftCard = async () => {
+    const validation = validateGiftCardCode(giftCardCode);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+    
+    setGiftCardLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("gift_cards")
+        .select("*")
+        .eq("code", giftCardCode.toUpperCase())
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (error) {
+        handleSupabaseError(error, {
+          toastMessage: t('cart:giftCard.invalid'),
+          context: "Validate Gift Card"
+        });
+        return;
+      }
+
+      if (!data) {
+        toast.error(t('cart:giftCard.invalid'));
+        return;
+      }
+
+      // Check expiration
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error(t('cart:giftCard.expired'));
+        return;
+      }
+
+      if (data.current_balance <= 0) {
+        toast.error(t('cart:giftCard.noBalance'));
+        return;
+      }
+
+      setAppliedGiftCard(data);
+      sessionStorage.setItem("applied_gift_card", JSON.stringify(data));
+      
+      // Send notification about gift card redemption
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
+        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
+        
+        await supabase.rpc('send_notification', {
+          p_user_id: user.id,
+          p_type: 'giftcard_redeemed',
+          p_title: notificationTitle,
+          p_message: notificationMessage,
+          p_link: '/pago'
+        });
+        
+        await triggerNotificationRefresh(user.id);
+      }
+      
+      toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));
+      setGiftCardCode("");
+    } catch (error) {
+      handleSupabaseError(error, {
+        toastMessage: t('cart:giftCard.invalid'),
+        context: "Apply Gift Card"
+      });
+    } finally {
+      setGiftCardLoading(false);
+    }
+  };
+
+  const removeGiftCard = () => {
+    setAppliedGiftCard(null);
+    sessionStorage.removeItem("applied_gift_card");
+    toast.info(t('cart:giftCard.removed'));
+  };
+
+  const processGiftCardOnlyPayment = async () => {
+    setProcessing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t('payment:messages.loginRequired'));
+        navigate("/auth");
+        return;
+      }
+
+      const subtotal = calculateSubtotal();
+      const giftCardAmount = calculateGiftCardAmount();
+      const tax = calculateTax();
+      const total = 0;
+
+      const orderNumber = generateOrderNumber();
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert([{
+          user_id: user.id,
+          order_number: orderNumber,
+          status: "pending",
+          payment_status: "paid",
+          payment_method: "gift_card",
+          subtotal: subtotal,
+          shipping: shippingCost,
+          tax: tax,
+          discount: giftCardAmount,
+          total: total,
+          shipping_info: shippingInfo,
+          notes: `Pedido pagado completamente con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = convertCartToOrderItems(cartItems, order.id);
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      await updateGiftCardBalance(
+        appliedGiftCard.id,
+        appliedGiftCard.current_balance - giftCardAmount
+      );
+
+      localStorage.removeItem("cart");
+      sessionStorage.removeItem("applied_gift_card");
+      const sessionId = sessionStorage.getItem("checkout_session_id");
+      if (sessionId) {
+        await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+        sessionStorage.removeItem("checkout_session_id");
+      }
+
+      toast.success("¡Pedido completado! Pagado con tarjeta de regalo.");
+      navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
+    } catch (error) {
+      logger.error("Error processing gift card payment:", error);
+      toast.error("Error al procesar el pago con tarjeta de regalo");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handlePayment = async (method: string) => {
+    // Check if gift card covers the total amount
+    const total = calculateTotal();
+    const giftCardAmount = calculateGiftCardAmount();
+    
+    // If gift card covers the entire amount, process payment automatically
+    if (appliedGiftCard && total <= 0) {
+      return await processGiftCardOnlyPayment();
+    }
+    
     // Validar método de pago
     if (method !== "bank_transfer" && method !== "card" && method !== "paypal" && method !== "revolut") {
       toast.error(t('payment:messages.invalidPaymentMethod'));
@@ -725,6 +917,15 @@ export default function Payment() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
+                    {appliedGiftCard && (
+                      <div className="flex justify-between text-blue-600">
+                        <span className="flex items-center gap-1">
+                          <Gift className="h-4 w-4" />
+                          Tarjeta de Regalo
+                        </span>
+                        <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Envío</span>
                       <span>€{shippingCost.toFixed(2)}</span>
@@ -767,6 +968,77 @@ export default function Payment() {
 
         {/* Payment Methods */}
         <div className="space-y-4">
+          {/* Gift Card Section */}
+          {!isInvoicePayment && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  Tarjeta de Regalo
+                </CardTitle>
+                <CardDescription>
+                  ¿Tienes una tarjeta de regalo? Aplícala aquí para usar su saldo
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {appliedGiftCard ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{appliedGiftCard.code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Saldo: €{appliedGiftCard.current_balance.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="ml-2">
+                        Quitar
+                      </Button>
+                    </div>
+                    {calculateTotal() <= 0 && (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          ✓ Tu tarjeta de regalo cubre el total de la compra
+                        </p>
+                        <Button
+                          onClick={() => processGiftCardOnlyPayment()}
+                          disabled={processing}
+                          className="w-full mt-3"
+                        >
+                          {processing ? "Procesando..." : "Completar Pedido"}
+                        </Button>
+                      </div>
+                    )}
+                    {calculateTotal() > 0 && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          Saldo restante a pagar: €{calculateTotal().toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Selecciona un método de pago para el saldo restante
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Código de Tarjeta de Regalo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ej: GIFT-XXXX-XXXX"
+                        value={giftCardCode}
+                        onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
+                        disabled={giftCardLoading}
+                      />
+                      <Button onClick={applyGiftCard} disabled={giftCardLoading} variant="outline">
+                        {giftCardLoading ? "Validando..." : "Aplicar"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {paymentConfig.company_info && (
             <Card>
               <CardHeader>
