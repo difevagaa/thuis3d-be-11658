@@ -165,7 +165,15 @@ export default function PageBuilder() {
         e.preventDefault();
         handleRedo();
       }
-      // Escape to deselect section
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasChanges, historyIndex, history]);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedSection(null);
       }
@@ -173,7 +181,7 @@ export default function PageBuilder() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, historyIndex, history, selectedSection]);
+  }, []);
 
   // Save state to history for undo/redo
   const saveToHistory = useCallback((newSections: SectionData[]) => {

@@ -95,13 +95,24 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
 
     // Validate files
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const maxSize = 10 * 1024 * 1024; // 10MB
 
     for (const file of Array.from(files)) {
+      // Check MIME type
       if (!allowedTypes.includes(file.type)) {
         toast.error(`Tipo de archivo no permitido: ${file.name}. Solo se permiten imágenes JPG, PNG, GIF, WebP.`);
         return;
       }
+      
+      // Check file extension
+      const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!allowedExtensions.includes(fileExt)) {
+        toast.error(`Extensión de archivo no permitida: ${file.name}. Solo se permiten .jpg, .png, .gif, .webp`);
+        return;
+      }
+      
+      // Check file size
       if (file.size > maxSize) {
         toast.error(`Archivo demasiado grande: ${file.name}. Máximo 10MB.`);
         return;

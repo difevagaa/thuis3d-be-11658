@@ -3,6 +3,26 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
 
+// Utility function to safely navigate to URL
+const safeNavigate = (url: string) => {
+  if (!url) return;
+  
+  // Remove any potential javascript: or data: URLs
+  const sanitizedUrl = url.trim();
+  try {
+    const parsed = new URL(sanitizedUrl, window.location.origin);
+    // Only allow http, https, and relative URLs
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || sanitizedUrl.startsWith('/')) {
+      window.location.href = sanitizedUrl;
+    }
+  } catch {
+    // If URL parsing fails, treat as relative URL
+    if (sanitizedUrl.startsWith('/')) {
+      window.location.href = sanitizedUrl;
+    }
+  }
+};
+
 interface SectionData {
   id: string;
   section_type: string;
@@ -81,7 +101,7 @@ function HeroSection({ section }: { section: SectionData }) {
         {content?.buttonText && (
           <Button
             size="lg"
-            onClick={() => content?.buttonUrl && (window.location.href = content.buttonUrl)}
+            onClick={() => safeNavigate(content?.buttonUrl || '/')}
             className="text-lg px-8 py-6"
           >
             {content.buttonText}
@@ -183,7 +203,7 @@ function BannerSection({ section }: { section: SectionData }) {
         {content?.description && <p className="text-lg mb-6">{content.description}</p>}
         {content?.buttonText && (
           <Button
-            onClick={() => content?.buttonUrl && (window.location.href = content.buttonUrl)}
+            onClick={() => safeNavigate(content?.buttonUrl || '/')}
           >
             {content.buttonText}
           </Button>
@@ -220,7 +240,7 @@ function CTASection({ section }: { section: SectionData }) {
           <Button
             size="lg"
             variant="secondary"
-            onClick={() => content?.buttonUrl && (window.location.href = content.buttonUrl)}
+            onClick={() => safeNavigate(content?.buttonUrl || '/')}
             className="text-lg px-8 py-6"
           >
             {content.buttonText}
