@@ -166,7 +166,7 @@ export default function PageBuilder() {
         .order('display_order');
 
       if (banners) {
-        banners.forEach((banner: any) => {
+        banners.forEach((banner) => {
           adaptedSections.push({
             id: `banner-${banner.id}`,
             page_id: pageId,
@@ -205,7 +205,7 @@ export default function PageBuilder() {
         .order('display_order');
 
       if (sections) {
-        sections.forEach((section: any) => {
+        sections.forEach((section) => {
           adaptedSections.push({
             id: `section-${section.id}`,
             page_id: pageId,
@@ -252,11 +252,11 @@ export default function PageBuilder() {
           settings: {
             fullWidth: true,
             sourceTable: 'homepage_features',
-            sourceId: 'all'
+            sourceId: null // null indicates this is a collection of features
           },
           content: {
             title: 'Por Qué Elegirnos',
-            features: features.map((f: any) => ({
+            features: features.map((f) => ({
               id: f.id,
               icon: f.icon_name,
               title: f.title,
@@ -278,7 +278,7 @@ export default function PageBuilder() {
         .order('display_order');
 
       if (cards && cards.length > 0) {
-        cards.forEach((card: any) => {
+        cards.forEach((card) => {
           adaptedSections.push({
             id: `card-${card.id}`,
             page_id: pageId,
@@ -446,67 +446,114 @@ export default function PageBuilder() {
         const sourceTable = section.settings.sourceTable;
         const sourceId = section.settings.sourceId;
         
-        // Prepare update data based on the source table
-        let updateData: any = {};
+        if (sourceTable === 'homepage_banners' && sourceId) {
+          // Banner update data
+          const updateData: Partial<{
+            title: string;
+            description: string;
+            image_url: string;
+            link_url: string;
+            title_color: string;
+            text_color: string;
+            height: string;
+            display_style: string;
+            is_active: boolean;
+          }> = {};
 
-        if (sourceTable === 'homepage_banners') {
           if (updates.content) {
-            updateData.title = updates.content.title || section.content.title;
-            updateData.description = updates.content.subtitle || section.content.subtitle;
-            updateData.image_url = updates.content.backgroundImage || section.content.backgroundImage;
-            updateData.link_url = updates.content.buttonUrl || section.content.buttonUrl;
+            if (updates.content.title !== undefined) updateData.title = updates.content.title;
+            if (updates.content.subtitle !== undefined) updateData.description = updates.content.subtitle;
+            if (updates.content.backgroundImage !== undefined) updateData.image_url = updates.content.backgroundImage;
+            if (updates.content.buttonUrl !== undefined) updateData.link_url = updates.content.buttonUrl;
           }
           if (updates.styles) {
-            updateData.title_color = updates.styles.textColor || section.styles?.textColor;
-            updateData.text_color = updates.styles.textColor || section.styles?.textColor;
+            if (updates.styles.textColor !== undefined) {
+              updateData.title_color = updates.styles.textColor;
+              updateData.text_color = updates.styles.textColor;
+            }
           }
           if (updates.settings) {
-            updateData.height = updates.settings.height || section.settings.height;
-            updateData.display_style = updates.settings.fullWidth ? 'fullscreen' : 'card';
+            if (updates.settings.height !== undefined) updateData.height = updates.settings.height;
+            if (updates.settings.fullWidth !== undefined) {
+              updateData.display_style = updates.settings.fullWidth ? 'fullscreen' : 'card';
+            }
           }
-          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
 
-          const { error } = await supabase
-            .from('homepage_banners')
-            .update(updateData)
-            .eq('id', sourceId);
-          
-          if (error) throw error;
+          if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase
+              .from('homepage_banners')
+              .update(updateData)
+              .eq('id', sourceId);
+            
+            if (error) throw error;
+          }
         } 
-        else if (sourceTable === 'homepage_sections') {
-          if (updates.content) {
-            updateData.title = updates.content.title || section.content.title;
-            updateData.subtitle = updates.content.subtitle || section.content.subtitle;
-            updateData.description = updates.content.text || section.content.text;
-            updateData.image_url = updates.content.backgroundImage || section.content.backgroundImage;
-          }
-          if (updates.styles) {
-            updateData.background_color = updates.styles.backgroundColor || section.styles?.backgroundColor;
-          }
-          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+        else if (sourceTable === 'homepage_sections' && sourceId) {
+          // Section update data
+          const updateData: Partial<{
+            title: string;
+            subtitle: string;
+            description: string;
+            image_url: string;
+            background_color: string;
+            is_active: boolean;
+          }> = {};
 
-          const { error } = await supabase
-            .from('homepage_sections')
-            .update(updateData)
-            .eq('id', sourceId);
-          
-          if (error) throw error;
+          if (updates.content) {
+            if (updates.content.title !== undefined) updateData.title = updates.content.title;
+            if (updates.content.subtitle !== undefined) updateData.subtitle = updates.content.subtitle;
+            if (updates.content.text !== undefined) updateData.description = updates.content.text;
+            if (updates.content.backgroundImage !== undefined) updateData.image_url = updates.content.backgroundImage;
+          }
+          if (updates.styles?.backgroundColor !== undefined) {
+            updateData.background_color = updates.styles.backgroundColor;
+          }
+          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
+
+          if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase
+              .from('homepage_sections')
+              .update(updateData)
+              .eq('id', sourceId);
+            
+            if (error) throw error;
+          }
         }
-        else if (sourceTable === 'homepage_quick_access_cards') {
-          if (updates.content) {
-            updateData.title = updates.content.title || section.content.title;
-            updateData.description = updates.content.description || section.content.description;
-            updateData.button_text = updates.content.buttonText || section.content.buttonText;
-            updateData.button_url = updates.content.buttonUrl || section.content.buttonUrl;
-          }
-          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+        else if (sourceTable === 'homepage_quick_access_cards' && sourceId) {
+          // Card update data
+          const updateData: Partial<{
+            title: string;
+            description: string;
+            button_text: string;
+            button_url: string;
+            is_active: boolean;
+          }> = {};
 
-          const { error } = await supabase
-            .from('homepage_quick_access_cards')
-            .update(updateData)
-            .eq('id', sourceId);
-          
-          if (error) throw error;
+          if (updates.content) {
+            if (updates.content.title !== undefined) updateData.title = updates.content.title;
+            if (updates.content.description !== undefined) updateData.description = updates.content.description;
+            if (updates.content.buttonText !== undefined) updateData.button_text = updates.content.buttonText;
+            if (updates.content.buttonUrl !== undefined) updateData.button_url = updates.content.buttonUrl;
+          }
+          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
+
+          if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase
+              .from('homepage_quick_access_cards')
+              .update(updateData)
+              .eq('id', sourceId);
+            
+            if (error) throw error;
+          }
+        }
+        else if (sourceTable === 'homepage_features') {
+          // Features is a collection, only update the section title (content.title)
+          // Individual feature items are edited in the Features admin page
+          // We only update local state here for the title change
+          if (updates.content?.title) {
+            toast.info('El título de la sección se actualiza solo localmente. Las características individuales se editan en la página de administración de Características.');
+          }
         }
       } else {
         // Update page_builder_sections for new sections
