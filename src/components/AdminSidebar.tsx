@@ -6,7 +6,7 @@ import {
   Package, Users, UserCog, Palette, Gift, Tag, Award, MessageSquare, 
   FileCode, BookOpen, Star, Trash2, Percent, TrendingUp, TrendingDown, 
   ChevronDown, ChevronRight, Layers, Shield, Activity, CreditCard, Truck, 
-  HardDrive, Gauge, Box, Image, Globe, Calculator 
+  HardDrive, Gauge, Box, Image, Globe, Calculator, Layout
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -111,6 +111,7 @@ const menuItems: MenuSection[] = [
     icon: FileCode,
     color: "from-indigo-500 to-indigo-600",
     items: [
+      { icon: Layout, label: "Editor de Páginas", url: "/admin/page-builder", color: "text-indigo-600", bgColor: "bg-indigo-600/10 hover:bg-indigo-600/20 border-indigo-600/30" },
       { icon: Palette, label: "Personalizar", url: "/admin/personalizador", color: "text-indigo-500", bgColor: "bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/30" },
       { icon: FileCode, label: "Contenido", url: "/admin/contenido", color: "text-violet-500", bgColor: "bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/30" },
       { icon: BookOpen, label: "Páginas", url: "/admin/pages", color: "text-purple-500", bgColor: "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30" },
