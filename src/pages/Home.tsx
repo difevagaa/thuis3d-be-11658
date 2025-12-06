@@ -15,6 +15,7 @@ import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import Autoplay from "embla-carousel-autoplay";
 import { getBackgroundColorForCurrentMode, isDarkMode } from "@/utils/sectionBackgroundColors";
+import { SectionRenderer, usePageSections } from "@/components/page-builder/SectionRenderer";
 
 // Componente simple para traducir un campo individual de texto
 const TranslatedText = ({
@@ -568,6 +569,9 @@ const Home = () => {
   // Track dark mode state to trigger re-render when mode changes
   const [currentDarkMode, setCurrentDarkMode] = useState(isDarkMode());
   
+  // Load page builder sections for home page
+  const { sections: pageBuilderSections } = usePageSections('home');
+  
   // Listen for theme mode changes to update section background colors
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -993,6 +997,9 @@ const Home = () => {
       
       {/* Render Why Us if features exist but no section exists */}
       {renderWhyUsIfNeeded()}
+
+      {/* Page Builder Sections - Custom editable sections */}
+      <SectionRenderer sections={pageBuilderSections} />
 
       {/* Banners al final de la página */}
       {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}
