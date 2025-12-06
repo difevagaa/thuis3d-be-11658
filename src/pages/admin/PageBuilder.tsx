@@ -30,12 +30,17 @@ import {
   ChevronDown,
   Edit2,
   Copy,
-  EyeOff
+  EyeOff,
+  Monitor,
+  Tablet,
+  Smartphone,
+  HelpCircle
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
 import { PageBuilderSettings } from "@/components/page-builder/PageBuilderSettings";
 import { SectionEditor } from "@/components/page-builder/SectionEditor";
+import { PageBuilderHelp } from "@/components/page-builder/PageBuilderHelp";
 
 interface PageData {
   id: string;
@@ -70,6 +75,10 @@ export default function PageBuilder() {
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [viewportMode, setViewportMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [showHelp, setShowHelp] = useState(false);
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -138,6 +147,68 @@ export default function PageBuilder() {
     }
   }, [selectedPage, loadSections, setSearchParams]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (hasChanges) handleSaveAll();
+      }
+      // Ctrl/Cmd + Z to undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y to redo
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasChanges, historyIndex, history]);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedSection(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Save state to history for undo/redo
+  const saveToHistory = useCallback((newSections: SectionData[]) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(JSON.parse(JSON.stringify(newSections)));
+      return newHistory.slice(-50); // Keep last 50 states
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, 49));
+  }, [historyIndex]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+      setSections(JSON.parse(JSON.stringify(history[historyIndex - 1])));
+      toast.info('Cambio deshecho');
+    }
+  }, [historyIndex, history]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+      setSections(JSON.parse(JSON.stringify(history[historyIndex + 1])));
+      toast.info('Cambio rehecho');
+    }
+  }, [historyIndex, history]);
+
   const handlePageSelect = (page: PageData) => {
     if (hasChanges) {
       if (!confirm('Tienes cambios sin guardar. ¿Deseas continuar?')) {
@@ -176,7 +247,9 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => [...prev, data]);
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
       setSelectedSection(data);
       setHasChanges(true);
       toast.success('Sección añadida');
@@ -195,9 +268,12 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => prev.map(s => 
+      const newSections = sections.map(s => 
         s.id === sectionId ? { ...s, ...updates } : s
-      ));
+      );
+      
+      setSections(newSections);
+      saveToHistory(newSections);
       
       if (selectedSection?.id === sectionId) {
         setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
@@ -221,7 +297,10 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => prev.filter(s => s.id !== sectionId));
+      const newSections = sections.filter(s => s.id !== sectionId);
+      setSections(newSections);
+      saveToHistory(newSections);
+      
       if (selectedSection?.id === sectionId) {
         setSelectedSection(null);
       }
@@ -254,7 +333,9 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => [...prev, data]);
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
       setHasChanges(true);
       toast.success('Sección duplicada');
     } catch (error) {
@@ -277,7 +358,9 @@ export default function PageBuilder() {
           .eq('id', update.id);
       }
 
-      setSections(reorderedSections.map((s, i) => ({ ...s, display_order: i })));
+      const newSections = reorderedSections.map((s, i) => ({ ...s, display_order: i }));
+      setSections(newSections);
+      saveToHistory(newSections);
       setHasChanges(true);
     } catch (error) {
       logger.error('Error reordering sections:', error);
@@ -335,6 +418,14 @@ export default function PageBuilder() {
           <div className="flex items-center gap-2">
             <Layout className="h-5 w-5 text-primary" />
             <span className="font-semibold">Editor de Páginas</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHelp(true)}
+              className="ml-2"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
           </div>
           {selectedPage && (
             <Badge variant="secondary" className="flex items-center gap-1">
@@ -350,6 +441,50 @@ export default function PageBuilder() {
               Cambios sin guardar
             </Badge>
           )}
+          <div className="flex items-center gap-1 border rounded-md p-1">
+            <Button
+              variant={viewportMode === 'desktop' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewportMode('desktop')}
+              className="h-7 px-2"
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewportMode === 'tablet' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewportMode('tablet')}
+              className="h-7 px-2"
+            >
+              <Tablet className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewportMode === 'mobile' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewportMode('mobile')}
+              className="h-7 px-2"
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUndo}
+            disabled={historyIndex <= 0}
+            title="Deshacer (Ctrl+Z)"
+          >
+            <Undo className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRedo}
+            disabled={historyIndex >= history.length - 1}
+            title="Rehacer (Ctrl+Shift+Z)"
+          >
+            <Redo className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={handlePreview}>
             <Eye className="h-4 w-4 mr-1" />
             Vista previa
@@ -358,6 +493,7 @@ export default function PageBuilder() {
             size="sm" 
             onClick={handleSaveAll}
             disabled={saving || !hasChanges}
+            title="Guardar (Ctrl+S)"
           >
             <Save className="h-4 w-4 mr-1" />
             {saving ? 'Guardando...' : 'Guardar'}
@@ -396,18 +532,29 @@ export default function PageBuilder() {
         </div>
 
         {/* Center - Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden bg-muted/30">
           {selectedPage ? (
-            <PageBuilderCanvas
-              sections={sections}
-              selectedSection={selectedSection}
-              onSelectSection={handleSectionSelect}
-              onUpdateSection={handleUpdateSection}
-              onDeleteSection={handleDeleteSection}
-              onDuplicateSection={handleDuplicateSection}
-              onReorderSections={handleReorderSections}
-              previewMode={previewMode}
-            />
+            <div className="flex-1 flex items-start justify-center overflow-auto p-4">
+              <div
+                className="transition-all duration-300 bg-background shadow-xl"
+                style={{
+                  width: viewportMode === 'desktop' ? '100%' : viewportMode === 'tablet' ? '768px' : '375px',
+                  maxWidth: '100%',
+                  minHeight: viewportMode === 'desktop' ? '100%' : '600px'
+                }}
+              >
+                <PageBuilderCanvas
+                  sections={sections}
+                  selectedSection={selectedSection}
+                  onSelectSection={handleSectionSelect}
+                  onUpdateSection={handleUpdateSection}
+                  onDeleteSection={handleDeleteSection}
+                  onDuplicateSection={handleDuplicateSection}
+                  onReorderSections={handleReorderSections}
+                  previewMode={previewMode}
+                />
+              </div>
+            </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <p>Selecciona una página para editar</p>
@@ -422,6 +569,12 @@ export default function PageBuilder() {
           onUpdateSection={handleUpdateSection}
         />
       </div>
+
+      {/* Help Dialog */}
+      <PageBuilderHelp
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
     </div>
   );
 }

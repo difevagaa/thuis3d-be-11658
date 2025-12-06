@@ -15,8 +15,10 @@ import {
   Maximize, 
   AlignLeft, 
   AlignCenter, 
-  AlignRight 
+  AlignRight,
+  Image as ImageIcon
 } from "lucide-react";
+import { MediaLibrary } from "./MediaLibrary";
 
 interface PageBuilderSettingsProps {
   section: any;
@@ -25,6 +27,8 @@ interface PageBuilderSettingsProps {
 
 export function PageBuilderSettings({ section, onUpdate }: PageBuilderSettingsProps) {
   const { t } = useTranslation(['admin', 'common']);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [mediaTargetField, setMediaTargetField] = useState<string>('');
 
   if (!section) {
     return (
@@ -33,6 +37,17 @@ export function PageBuilderSettings({ section, onUpdate }: PageBuilderSettingsPr
       </div>
     );
   }
+
+  const openMediaLibrary = (field: string) => {
+    setMediaTargetField(field);
+    setMediaLibraryOpen(true);
+  };
+
+  const handleMediaSelect = (url: string) => {
+    if (mediaTargetField) {
+      handleContentChange(mediaTargetField, url);
+    }
+  };
 
   const handleStyleChange = (property: string, value: any) => {
     onUpdate({
@@ -164,14 +179,25 @@ export function PageBuilderSettings({ section, onUpdate }: PageBuilderSettingsPr
                     <Label className="text-xs">
                       {section.section_type === 'image' ? 'URL de la imagen' : 'Imagen de fondo'}
                     </Label>
-                    <Input
-                      value={section.content?.backgroundImage || section.content?.imageUrl || ''}
-                      onChange={(e) => {
-                        const key = section.section_type === 'image' ? 'imageUrl' : 'backgroundImage';
-                        handleContentChange(key, e.target.value);
-                      }}
-                      placeholder="https://..."
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={section.content?.backgroundImage || section.content?.imageUrl || ''}
+                        onChange={(e) => {
+                          const key = section.section_type === 'image' ? 'imageUrl' : 'backgroundImage';
+                          handleContentChange(key, e.target.value);
+                        }}
+                        placeholder="https://..."
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openMediaLibrary(section.section_type === 'image' ? 'imageUrl' : 'backgroundImage')}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>
@@ -299,6 +325,13 @@ export function PageBuilderSettings({ section, onUpdate }: PageBuilderSettingsPr
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Media Library Dialog */}
+      <MediaLibrary
+        open={mediaLibraryOpen}
+        onClose={() => setMediaLibraryOpen(false)}
+        onSelect={handleMediaSelect}
+      />
     </div>
   );
 }
