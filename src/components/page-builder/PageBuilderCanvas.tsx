@@ -279,6 +279,45 @@ function SectionPreview({ section }: { section: SectionData }) {
       );
 
     case 'features':
+      const features = section.content?.features || [];
+      return (
+        <div style={styles} className="min-h-[60px] py-4">
+          {section.content?.title && (
+            <h3 className="text-lg font-semibold text-center mb-4" style={{ color: section.styles?.textColor }}>
+              {section.content.title}
+            </h3>
+          )}
+          <div className="grid grid-cols-3 gap-4">
+            {features.length > 0 ? (
+              features.slice(0, 3).map((feature: any, index: number) => (
+                <div key={index} className="text-center">
+                  <Star className="h-6 w-6 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium" style={{ color: section.styles?.textColor }}>
+                    {feature.title}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="text-center">
+                  <Star className="h-6 w-6 mx-auto mb-1 text-primary" />
+                  <p className="text-xs">Característica 1</p>
+                </div>
+                <div className="text-center">
+                  <Star className="h-6 w-6 mx-auto mb-1 text-primary" />
+                  <p className="text-xs">Característica 2</p>
+                </div>
+                <div className="text-center">
+                  <Star className="h-6 w-6 mx-auto mb-1 text-primary" />
+                  <p className="text-xs">Característica 3</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'features-old':
       return (
         <div style={styles} className="min-h-[60px] grid grid-cols-3 gap-4 py-4">
           <div className="text-center">

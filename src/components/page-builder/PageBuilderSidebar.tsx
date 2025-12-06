@@ -419,6 +419,23 @@ export function PageBuilderSidebar({
                   </div>
                 )}
 
+                {selectedSection.section_type === 'features' && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm border-b pb-2">Características</h4>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Título de la sección</Label>
+                      <Input
+                        value={selectedSection.content?.title || ''}
+                        onChange={(e) => handleContentChange('title', e.target.value)}
+                        placeholder="Por Qué Elegirnos"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                      Las características individuales se gestionan desde la sección "Características" en Contenido.
+                    </div>
+                  </div>
+                )}
+
                 {selectedSection.section_type === 'spacer' && (
                   <div className="space-y-4">
                     <h4 className="font-medium text-sm border-b pb-2">Espaciador</h4>
@@ -516,8 +533,8 @@ export function PageBuilderSidebar({
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">Ancho completo</Label>
                     <Switch
-                      checked={selectedSection.styles?.fullWidth || false}
-                      onCheckedChange={(checked) => handleStyleChange('fullWidth', checked)}
+                      checked={selectedSection.settings?.fullWidth || false}
+                      onCheckedChange={(checked) => handleSettingsChange('fullWidth', checked)}
                     />
                   </div>
                 </div>
