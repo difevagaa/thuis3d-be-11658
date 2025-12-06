@@ -431,9 +431,12 @@ export function PageBuilderCanvas({
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-muted/30 border-2 border-dashed border-muted-foreground/30 m-4 rounded-lg">
         <Layout className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium mb-2">Esta página está vacía</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Añade secciones desde el panel derecho para comenzar a diseñar
+        <h3 className="text-lg font-medium mb-2">No hay secciones configuradas</h3>
+        <p className="text-sm text-muted-foreground mb-2 text-center max-w-md px-4">
+          Añade secciones desde el panel derecho para comenzar a diseñar.
+        </p>
+        <p className="text-xs text-muted-foreground text-center max-w-md px-4">
+          Las secciones existentes de la página de inicio aparecerán aquí automáticamente cuando se carguen.
         </p>
       </div>
     );

@@ -89,12 +89,18 @@ function HeroSection({ section }: { section: SectionData }) {
         getTextAlignClass(styles?.textAlign)
       )}>
         {content?.title && (
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+          <h1 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+            style={{ color: styles?.textColor }}
+          >
             {content.title}
           </h1>
         )}
         {content?.subtitle && (
-          <p className="text-lg md:text-xl mb-8 opacity-90">
+          <p 
+            className="text-lg md:text-xl mb-8 opacity-90"
+            style={{ color: styles?.textColor }}
+          >
             {content.subtitle}
           </p>
         )}
@@ -132,10 +138,15 @@ function TextSection({ section }: { section: SectionData }) {
         "max-w-4xl mx-auto prose prose-lg dark:prose-invert",
         getTextAlignClass(styles?.textAlign)
       )}>
-        {content?.title && <h2 className="text-3xl font-bold mb-4">{content.title}</h2>}
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
         {content?.text && (
           <div 
             className="whitespace-pre-wrap"
+            style={{ color: styles?.textColor }}
             dangerouslySetInnerHTML={{ 
               __html: DOMPurify.sanitize(content.text.replace(/\n/g, '<br/>'))
             }}
@@ -192,15 +203,29 @@ function BannerSection({ section }: { section: SectionData }) {
       style={{
         backgroundColor: styles?.backgroundColor || '#f3f4f6',
         color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`,
+        backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
       }}
     >
+      {content?.backgroundImage && (
+        <div className="absolute inset-0 bg-black/30 -z-10" />
+      )}
       <div className={cn(
-        "max-w-3xl mx-auto",
+        "max-w-3xl mx-auto relative z-10",
         getTextAlignClass(styles?.textAlign)
       )}>
-        {content?.title && <h2 className="text-3xl font-bold mb-4">{content.title}</h2>}
-        {content?.description && <p className="text-lg mb-6">{content.description}</p>}
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
+        {content?.description && (
+          <p className="text-lg mb-6" style={{ color: styles?.textColor }}>
+            {content.description}
+          </p>
+        )}
         {content?.buttonText && (
           <Button
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
@@ -234,8 +259,16 @@ function CTASection({ section }: { section: SectionData }) {
         "max-w-3xl mx-auto",
         getTextAlignClass(styles?.textAlign || 'center')
       )}>
-        {content?.title && <h2 className="text-4xl font-bold mb-4">{content.title}</h2>}
-        {content?.description && <p className="text-xl mb-8 opacity-90">{content.description}</p>}
+        {content?.title && (
+          <h2 className="text-4xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
+        {content?.description && (
+          <p className="text-xl mb-8 opacity-90" style={{ color: styles?.textColor }}>
+            {content.description}
+          </p>
+        )}
         {content?.buttonText && (
           <Button
             size="lg"
