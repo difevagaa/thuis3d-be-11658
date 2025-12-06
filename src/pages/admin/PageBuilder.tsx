@@ -239,7 +239,9 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => [...prev, data]);
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
       setSelectedSection(data);
       setHasChanges(true);
       toast.success('Sección añadida');
@@ -258,9 +260,12 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => prev.map(s => 
+      const newSections = sections.map(s => 
         s.id === sectionId ? { ...s, ...updates } : s
-      ));
+      );
+      
+      setSections(newSections);
+      saveToHistory(newSections);
       
       if (selectedSection?.id === sectionId) {
         setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
@@ -284,7 +289,10 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => prev.filter(s => s.id !== sectionId));
+      const newSections = sections.filter(s => s.id !== sectionId);
+      setSections(newSections);
+      saveToHistory(newSections);
+      
       if (selectedSection?.id === sectionId) {
         setSelectedSection(null);
       }
@@ -317,7 +325,9 @@ export default function PageBuilder() {
 
       if (error) throw error;
 
-      setSections(prev => [...prev, data]);
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
       setHasChanges(true);
       toast.success('Sección duplicada');
     } catch (error) {
@@ -340,7 +350,9 @@ export default function PageBuilder() {
           .eq('id', update.id);
       }
 
-      setSections(reorderedSections.map((s, i) => ({ ...s, display_order: i })));
+      const newSections = reorderedSections.map((s, i) => ({ ...s, display_order: i }));
+      setSections(newSections);
+      saveToHistory(newSections);
       setHasChanges(true);
     } catch (error) {
       logger.error('Error reordering sections:', error);

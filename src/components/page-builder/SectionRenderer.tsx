@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import DOMPurify from "dompurify";
 
 interface SectionData {
   id: string;
@@ -115,7 +116,9 @@ function TextSection({ section }: { section: SectionData }) {
         {content?.text && (
           <div 
             className="whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: content.text.replace(/\n/g, '<br/>') }}
+            dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(content.text.replace(/\n/g, '<br/>'))
+            }}
           />
         )}
       </div>
@@ -371,7 +374,7 @@ function CustomSection({ section }: { section: SectionData }) {
       }}
     >
       <div 
-        dangerouslySetInnerHTML={{ __html: content?.html || '' }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content?.html || '') }}
       />
     </section>
   );

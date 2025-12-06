@@ -93,13 +93,28 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Validate files
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    for (const file of Array.from(files)) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Tipo de archivo no permitido: ${file.name}. Solo se permiten imágenes JPG, PNG, GIF, WebP.`);
+        return;
+      }
+      if (file.size > maxSize) {
+        toast.error(`Archivo demasiado grande: ${file.name}. Máximo 10MB.`);
+        return;
+      }
+    }
+
     try {
       setUploading(true);
       const uploadedUrls: string[] = [];
 
       for (const file of Array.from(files)) {
         // Upload to Supabase Storage
-        const fileExt = file.name.split('.').pop();
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `page-builder/${fileName}`;
 
