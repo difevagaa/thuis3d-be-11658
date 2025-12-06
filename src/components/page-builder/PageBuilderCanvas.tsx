@@ -181,22 +181,26 @@ function SectionPreview({ section }: { section: SectionData }) {
   const styles: React.CSSProperties = {
     backgroundColor: section.styles?.backgroundColor || 'transparent',
     color: section.styles?.textColor || 'inherit',
-    textAlign: section.styles?.textAlign || 'left',
+    textAlign: (section.styles?.textAlign as any) || 'left',
     padding: `${section.styles?.padding || 20}px`
   };
 
   switch (section.section_type) {
     case 'hero':
       return (
-        <div style={styles} className="min-h-[120px] flex flex-col items-center justify-center bg-gradient-to-r from-primary/20 to-primary/10">
+        <div style={styles} className="min-h-[120px] flex flex-col items-center justify-center relative">
           {section.content?.backgroundImage && (
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-30"
               style={{ backgroundImage: `url(${section.content.backgroundImage})` }}
             />
           )}
-          <h2 className="text-xl font-bold relative">{section.content?.title || 'Título del Hero'}</h2>
-          <p className="text-sm text-muted-foreground relative">{section.content?.subtitle || 'Subtítulo'}</p>
+          <h2 className="text-xl font-bold relative" style={{ color: section.styles?.textColor }}>
+            {section.content?.title || 'Título del Hero'}
+          </h2>
+          <p className="text-sm relative" style={{ color: section.styles?.textColor, opacity: 0.8 }}>
+            {section.content?.subtitle || 'Subtítulo'}
+          </p>
           {section.content?.buttonText && (
             <span className="mt-2 px-4 py-1.5 bg-primary text-primary-foreground rounded text-sm relative">
               {section.content.buttonText}
@@ -208,8 +212,12 @@ function SectionPreview({ section }: { section: SectionData }) {
     case 'text':
       return (
         <div style={styles} className="min-h-[80px]">
-          <h3 className="font-semibold mb-2">{section.content?.title || 'Título'}</h3>
-          <p className="text-sm text-muted-foreground">{section.content?.text || 'Contenido de texto...'}</p>
+          <h3 className="font-semibold mb-2" style={{ color: section.styles?.textColor }}>
+            {section.content?.title || 'Título'}
+          </h3>
+          <p className="text-sm" style={{ color: section.styles?.textColor, opacity: 0.8 }}>
+            {section.content?.text || 'Contenido de texto...'}
+          </p>
         </div>
       );
 
@@ -239,10 +247,14 @@ function SectionPreview({ section }: { section: SectionData }) {
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }} 
-          className="min-h-[80px] flex flex-col items-center justify-center bg-gradient-to-r from-accent/30 to-accent/10"
+          className="min-h-[80px] flex flex-col items-center justify-center relative"
         >
-          <h3 className="font-semibold">{section.content?.title || 'Banner'}</h3>
-          <p className="text-sm">{section.content?.description || 'Descripción del banner'}</p>
+          <h3 className="font-semibold" style={{ color: section.styles?.textColor }}>
+            {section.content?.title || 'Banner'}
+          </h3>
+          <p className="text-sm" style={{ color: section.styles?.textColor, opacity: 0.9 }}>
+            {section.content?.description || 'Descripción del banner'}
+          </p>
           {section.content?.buttonText && (
             <span className="mt-2 px-3 py-1 bg-primary/80 text-primary-foreground rounded text-xs">
               {section.content.buttonText}
@@ -253,9 +265,13 @@ function SectionPreview({ section }: { section: SectionData }) {
 
     case 'cta':
       return (
-        <div style={styles} className="min-h-[80px] flex flex-col items-center justify-center bg-primary/5">
-          <h3 className="font-semibold">{section.content?.title || '¿Listo para empezar?'}</h3>
-          <p className="text-sm text-muted-foreground">{section.content?.description || ''}</p>
+        <div style={styles} className="min-h-[80px] flex flex-col items-center justify-center">
+          <h3 className="font-semibold" style={{ color: section.styles?.textColor }}>
+            {section.content?.title || '¿Listo para empezar?'}
+          </h3>
+          <p className="text-sm" style={{ color: section.styles?.textColor, opacity: 0.8 }}>
+            {section.content?.description || ''}
+          </p>
           <span className="mt-2 px-4 py-1.5 bg-primary text-primary-foreground rounded text-sm">
             {section.content?.buttonText || 'Llamada a la acción'}
           </span>

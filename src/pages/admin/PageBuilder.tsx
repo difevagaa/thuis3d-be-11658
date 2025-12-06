@@ -122,19 +122,195 @@ export default function PageBuilder() {
 
   const loadSections = useCallback(async (pageId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('page_builder_sections')
-        .select('*')
-        .eq('page_id', pageId)
-        .order('display_order');
+      // First, get the page to know which page we're editing
+      const { data: pageData } = await supabase
+        .from('page_builder_pages')
+        .select('page_key')
+        .eq('id', pageId)
+        .single();
 
-      if (error) throw error;
-      setSections(data || []);
+      if (!pageData) return;
+
+      // For the home page, load existing content from homepage tables
+      if (pageData.page_key === 'home') {
+        const adaptedSections = await loadHomepageContent(pageId);
+        setSections(adaptedSections);
+      } else {
+        // For other pages, load from page_builder_sections
+        const { data, error } = await supabase
+          .from('page_builder_sections')
+          .select('*')
+          .eq('page_id', pageId)
+          .order('display_order');
+
+        if (error) throw error;
+        setSections(data || []);
+      }
     } catch (error) {
       logger.error('Error loading sections:', error);
       toast.error('Error al cargar las secciones');
     }
   }, []);
+
+  // Load and adapt homepage content from existing tables
+  const loadHomepageContent = async (pageId: string) => {
+    const adaptedSections: SectionData[] = [];
+    let order = 0;
+
+    try {
+      // Load homepage banners
+      const { data: banners } = await supabase
+        .from('homepage_banners')
+        .select('*, banner_images(*)')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (banners) {
+        banners.forEach((banner: any) => {
+          adaptedSections.push({
+            id: `banner-${banner.id}`,
+            page_id: pageId,
+            section_type: 'hero',
+            section_name: banner.title || 'Banner',
+            display_order: order++,
+            is_visible: banner.is_active || true,
+            settings: {
+              fullWidth: banner.display_style === 'fullscreen',
+              height: banner.height || '500px',
+              sourceTable: 'homepage_banners',
+              sourceId: banner.id
+            },
+            content: {
+              title: banner.title,
+              subtitle: banner.description,
+              backgroundImage: banner.image_url,
+              buttonText: banner.link_url ? 'Ver más' : '',
+              buttonUrl: banner.link_url
+            },
+            styles: {
+              backgroundColor: 'transparent',
+              textColor: banner.title_color || '#ffffff',
+              padding: 80,
+              textAlign: 'center'
+            }
+          });
+        });
+      }
+
+      // Load homepage sections
+      const { data: sections } = await supabase
+        .from('homepage_sections')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (sections) {
+        sections.forEach((section: any) => {
+          adaptedSections.push({
+            id: `section-${section.id}`,
+            page_id: pageId,
+            section_type: section.image_url ? 'banner' : 'text',
+            section_name: section.title || 'Sección',
+            display_order: order++,
+            is_visible: section.is_active || true,
+            settings: {
+              fullWidth: true,
+              sourceTable: 'homepage_sections',
+              sourceId: section.id
+            },
+            content: {
+              title: section.title,
+              subtitle: section.subtitle,
+              text: section.description,
+              backgroundImage: section.image_url
+            },
+            styles: {
+              backgroundColor: section.background_color || 'transparent',
+              textColor: section.image_url ? '#ffffff' : 'inherit',
+              padding: 60,
+              textAlign: 'center'
+            }
+          });
+        });
+      }
+
+      // Load homepage features
+      const { data: features } = await supabase
+        .from('homepage_features')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (features && features.length > 0) {
+        adaptedSections.push({
+          id: `features-group`,
+          page_id: pageId,
+          section_type: 'features',
+          section_name: 'Características',
+          display_order: order++,
+          is_visible: true,
+          settings: {
+            fullWidth: true,
+            sourceTable: 'homepage_features',
+            sourceId: 'all'
+          },
+          content: {
+            title: 'Por Qué Elegirnos',
+            features: features.map((f: any) => ({
+              id: f.id,
+              icon: f.icon_name,
+              title: f.title,
+              description: f.description
+            }))
+          },
+          styles: {
+            backgroundColor: 'transparent',
+            padding: 60
+          }
+        });
+      }
+
+      // Load homepage quick access cards
+      const { data: cards } = await supabase
+        .from('homepage_quick_access_cards')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (cards && cards.length > 0) {
+        cards.forEach((card: any) => {
+          adaptedSections.push({
+            id: `card-${card.id}`,
+            page_id: pageId,
+            section_type: 'cta',
+            section_name: card.title || 'Tarjeta de acceso rápido',
+            display_order: order++,
+            is_visible: card.is_active || true,
+            settings: {
+              fullWidth: false,
+              sourceTable: 'homepage_quick_access_cards',
+              sourceId: card.id
+            },
+            content: {
+              title: card.title,
+              description: card.description,
+              buttonText: card.button_text,
+              buttonUrl: card.button_url
+            },
+            styles: {
+              backgroundColor: 'transparent',
+              padding: 40
+            }
+          });
+        });
+      }
+
+    } catch (error) {
+      logger.error('Error loading homepage content:', error);
+    }
+
+    return adaptedSections.sort((a, b) => a.display_order - b.display_order);
+  };
 
   useEffect(() => {
     loadPages();
@@ -261,13 +437,88 @@ export default function PageBuilder() {
 
   const handleUpdateSection = async (sectionId: string, updates: Partial<SectionData>) => {
     try {
-      const { error } = await supabase
-        .from('page_builder_sections')
-        .update(updates)
-        .eq('id', sectionId);
+      // Find the section to determine its source
+      const section = sections.find(s => s.id === sectionId);
+      if (!section) return;
 
-      if (error) throw error;
+      // If section has sourceTable, update the original table
+      if (section.settings?.sourceTable) {
+        const sourceTable = section.settings.sourceTable;
+        const sourceId = section.settings.sourceId;
+        
+        // Prepare update data based on the source table
+        let updateData: any = {};
 
+        if (sourceTable === 'homepage_banners') {
+          if (updates.content) {
+            updateData.title = updates.content.title || section.content.title;
+            updateData.description = updates.content.subtitle || section.content.subtitle;
+            updateData.image_url = updates.content.backgroundImage || section.content.backgroundImage;
+            updateData.link_url = updates.content.buttonUrl || section.content.buttonUrl;
+          }
+          if (updates.styles) {
+            updateData.title_color = updates.styles.textColor || section.styles?.textColor;
+            updateData.text_color = updates.styles.textColor || section.styles?.textColor;
+          }
+          if (updates.settings) {
+            updateData.height = updates.settings.height || section.settings.height;
+            updateData.display_style = updates.settings.fullWidth ? 'fullscreen' : 'card';
+          }
+          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+
+          const { error } = await supabase
+            .from('homepage_banners')
+            .update(updateData)
+            .eq('id', sourceId);
+          
+          if (error) throw error;
+        } 
+        else if (sourceTable === 'homepage_sections') {
+          if (updates.content) {
+            updateData.title = updates.content.title || section.content.title;
+            updateData.subtitle = updates.content.subtitle || section.content.subtitle;
+            updateData.description = updates.content.text || section.content.text;
+            updateData.image_url = updates.content.backgroundImage || section.content.backgroundImage;
+          }
+          if (updates.styles) {
+            updateData.background_color = updates.styles.backgroundColor || section.styles?.backgroundColor;
+          }
+          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+
+          const { error } = await supabase
+            .from('homepage_sections')
+            .update(updateData)
+            .eq('id', sourceId);
+          
+          if (error) throw error;
+        }
+        else if (sourceTable === 'homepage_quick_access_cards') {
+          if (updates.content) {
+            updateData.title = updates.content.title || section.content.title;
+            updateData.description = updates.content.description || section.content.description;
+            updateData.button_text = updates.content.buttonText || section.content.buttonText;
+            updateData.button_url = updates.content.buttonUrl || section.content.buttonUrl;
+          }
+          updateData.is_active = updates.is_visible !== undefined ? updates.is_visible : section.is_visible;
+
+          const { error } = await supabase
+            .from('homepage_quick_access_cards')
+            .update(updateData)
+            .eq('id', sourceId);
+          
+          if (error) throw error;
+        }
+      } else {
+        // Update page_builder_sections for new sections
+        const { error } = await supabase
+          .from('page_builder_sections')
+          .update(updates)
+          .eq('id', sectionId);
+
+        if (error) throw error;
+      }
+
+      // Update local state
       const newSections = sections.map(s => 
         s.id === sectionId ? { ...s, ...updates } : s
       );
@@ -280,6 +531,7 @@ export default function PageBuilder() {
       }
       
       setHasChanges(true);
+      toast.success('Sección actualizada');
     } catch (error) {
       logger.error('Error updating section:', error);
       toast.error('Error al actualizar la sección');
