@@ -1745,6 +1745,207 @@ export type Database = {
           },
         ]
       }
+      page_builder_elements: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          display_order: number | null
+          element_type: string
+          id: string
+          is_visible: boolean | null
+          section_id: string
+          styles: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          element_type: string
+          id?: string
+          is_visible?: boolean | null
+          section_id: string
+          styles?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          element_type?: string
+          id?: string
+          is_visible?: boolean | null
+          section_id?: string
+          styles?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_builder_elements_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "page_builder_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_builder_history: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          new_state: Json | null
+          page_id: string
+          previous_state: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          new_state?: Json | null
+          page_id: string
+          previous_state?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          new_state?: Json | null
+          page_id?: string
+          previous_state?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_builder_history_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "page_builder_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_builder_pages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          page_key: string
+          page_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          page_key: string
+          page_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          page_key?: string
+          page_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      page_builder_sections: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_visible: boolean | null
+          page_id: string
+          section_name: string
+          section_type: string
+          settings: Json | null
+          styles: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          page_id: string
+          section_name: string
+          section_type: string
+          settings?: Json | null
+          styles?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          page_id?: string
+          section_name?: string
+          section_type?: string
+          settings?: Json | null
+          styles?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_builder_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "page_builder_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_builder_templates: {
+        Row: {
+          category: string | null
+          config: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          preview_image: string | null
+          template_name: string
+          template_type: string
+        }
+        Insert: {
+          category?: string | null
+          config: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          preview_image?: string | null
+          template_name: string
+          template_type: string
+        }
+        Update: {
+          category?: string | null
+          config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          preview_image?: string | null
+          template_name?: string
+          template_type?: string
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           content: string

@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 interface CartItem {
   id: string;
@@ -394,10 +395,12 @@ export default function PaymentSummary() {
 
         // Enviar notificaciones in-app a todos los administradores
         try {
-          const { data: adminProfiles } = await supabase
-            .from('profiles')
-            .select('id')
+          const { data: adminRoles } = await supabase
+            .from('user_roles')
+            .select('user_id')
             .eq('role', 'admin');
+          
+          const adminProfiles = adminRoles?.map(r => ({ id: r.user_id })) || [];
 
           if (adminProfiles && adminProfiles.length > 0) {
             // Format messages before sending to RPC (don't use t() directly in RPC)
