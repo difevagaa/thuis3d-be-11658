@@ -376,11 +376,11 @@ export default function Payment() {
       if (orderError) throw orderError;
 
       const orderItems = convertCartToOrderItems(cartItems, order.id);
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
+      const insertedItems = await createOrderItems(orderItems);
+      
+      if (insertedItems.length === 0) {
+        throw new Error('Error creating order items');
+      }
 
       await updateGiftCardBalance(
         appliedGiftCard.id,
