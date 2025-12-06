@@ -33,12 +33,14 @@ import {
   EyeOff,
   Monitor,
   Tablet,
-  Smartphone
+  Smartphone,
+  HelpCircle
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
 import { PageBuilderSettings } from "@/components/page-builder/PageBuilderSettings";
 import { SectionEditor } from "@/components/page-builder/SectionEditor";
+import { PageBuilderHelp } from "@/components/page-builder/PageBuilderHelp";
 
 interface PageData {
   id: string;
@@ -76,6 +78,7 @@ export default function PageBuilder() {
   const [viewportMode, setViewportMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [showHelp, setShowHelp] = useState(false);
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -395,6 +398,14 @@ export default function PageBuilder() {
           <div className="flex items-center gap-2">
             <Layout className="h-5 w-5 text-primary" />
             <span className="font-semibold">Editor de Páginas</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHelp(true)}
+              className="ml-2"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
           </div>
           {selectedPage && (
             <Badge variant="secondary" className="flex items-center gap-1">
@@ -538,6 +549,12 @@ export default function PageBuilder() {
           onUpdateSection={handleUpdateSection}
         />
       </div>
+
+      {/* Help Dialog */}
+      <PageBuilderHelp
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
     </div>
   );
 }
