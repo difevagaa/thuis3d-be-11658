@@ -1376,6 +1376,7 @@ export function usePageSections(pageKey: string) {
 
         if (pageError || !page) {
           setSections([]);
+          setLoading(false);
           return;
         }
 
