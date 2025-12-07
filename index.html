@@ -115,11 +115,9 @@
             const fonts = JSON.parse(fontStyles);
             if (fonts.font_heading) {
               root.style.setProperty('--font-heading', '"' + fonts.font_heading + '", serif');
-              document.body.style.setProperty('--font-heading', '"' + fonts.font_heading + '", serif');
             }
             if (fonts.font_body) {
               root.style.setProperty('--font-body', '"' + fonts.font_body + '", sans-serif');
-              document.body.style.fontFamily = '"' + fonts.font_body + '", sans-serif';
             }
             if (fonts.base_font_size) {
               root.style.setProperty('--base-font-size', fonts.base_font_size + 'px');
@@ -138,36 +136,46 @@
             }
           }
           
-          // PRIORIDAD 2: Aplicar colores solo si NO hay paleta profesional
-          const styles = localStorage.getItem('theme_customization');
-          if (styles) {
-            const data = JSON.parse(styles);
-            
-            // Aplicar colores inmediatamente
-            if (data.primary_hsl) root.style.setProperty('--primary', data.primary_hsl);
-            if (data.secondary_hsl) {
-              root.style.setProperty('--secondary', data.secondary_hsl);
-              root.style.setProperty('--sidebar-background', data.secondary_hsl);
+          // PRIORIDAD 2: Aplicar paleta profesional si existe
+          const cachedPalette = localStorage.getItem('selected_palette');
+          if (cachedPalette) {
+            const palette = JSON.parse(cachedPalette);
+            const isDark = root.classList.contains('dark');
+            const theme = isDark ? palette.dark : palette.light;
+            if (theme) {
+              // Apply professional palette colors
+              if (theme.primary) root.style.setProperty('--primary', theme.primary);
+              if (theme.secondary) root.style.setProperty('--secondary', theme.secondary);
+              if (theme.background) root.style.setProperty('--background', theme.background);
+              if (theme.card) root.style.setProperty('--card', theme.card);
             }
-            if (data.background_hsl) root.style.setProperty('--background', data.background_hsl);
-            if (data.home_hero_bg_hsl) root.style.setProperty('--home-hero-bg', data.home_hero_bg_hsl);
-            if (data.card_bg_hsl) root.style.setProperty('--card', data.card_bg_hsl);
-            if (data.border_radius) root.style.setProperty('--radius', data.border_radius);
-            
-            // Aplicar fuentes desde theme_customization solo si NO están en font_customization
-            if (!fontStyles) {
-              if (data.font_heading) {
-                root.style.setProperty('--font-heading', '"' + data.font_heading + '", serif');
-                document.body.style.setProperty('--font-heading', '"' + data.font_heading + '", serif');
-              }
-              if (data.font_body) {
-                root.style.setProperty('--font-body', '"' + data.font_body + '", sans-serif');
-                document.body.style.fontFamily = '"' + data.font_body + '", sans-serif';
+          } else {
+            // PRIORIDAD 3: Si no hay paleta, aplicar colores individuales
+            const styles = localStorage.getItem('theme_customization');
+            if (styles) {
+              const data = JSON.parse(styles);
+              
+              // Aplicar colores inmediatamente
+              if (data.primary_hsl) root.style.setProperty('--primary', data.primary_hsl);
+              if (data.secondary_hsl) root.style.setProperty('--secondary', data.secondary_hsl);
+              if (data.background_hsl) root.style.setProperty('--background', data.background_hsl);
+              if (data.home_hero_bg_hsl) root.style.setProperty('--home-hero-bg', data.home_hero_bg_hsl);
+              if (data.card_bg_hsl) root.style.setProperty('--card', data.card_bg_hsl);
+              if (data.border_radius) root.style.setProperty('--radius', data.border_radius);
+              
+              // Aplicar fuentes desde theme_customization solo si NO están en font_customization
+              if (!fontStyles) {
+                if (data.font_heading) {
+                  root.style.setProperty('--font-heading', '"' + data.font_heading + '", serif');
+                }
+                if (data.font_body) {
+                  root.style.setProperty('--font-body', '"' + data.font_body + '", sans-serif');
+                }
               }
             }
           }
         } catch (e) {
-          console.error('Error loading theme:', e);
+          // Silently fail - page will use default styles
         }
       })();
     </script>
