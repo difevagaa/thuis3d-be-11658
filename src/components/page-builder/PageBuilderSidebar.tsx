@@ -111,6 +111,8 @@ export function PageBuilderSidebar({
 
   const quickAddSections = [
     { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" /> },
+    { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" /> },
+    { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
     { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" /> },
     { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" /> },
     { type: 'gallery', name: 'Galería', icon: <Grid3X3 className="h-5 w-5" /> },
@@ -118,9 +120,18 @@ export function PageBuilderSidebar({
     { type: 'cta', name: 'Llamada a la acción', icon: <MousePointer className="h-5 w-5" /> },
     { type: 'banner', name: 'Banner', icon: <Square className="h-5 w-5" /> },
     { type: 'testimonials', name: 'Testimonios', icon: <MessageSquare className="h-5 w-5" /> },
+    { type: 'video', name: 'Video', icon: <Video className="h-5 w-5" /> },
+    { type: 'form', name: 'Formulario', icon: <Type className="h-5 w-5" /> },
+    { type: 'accordion', name: 'Acordeón', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'tabs', name: 'Pestañas', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'countdown', name: 'Contador', icon: <Type className="h-5 w-5" /> },
+    { type: 'pricing', name: 'Precios', icon: <Star className="h-5 w-5" /> },
+    { type: 'team', name: 'Equipo', icon: <Star className="h-5 w-5" /> },
+    { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" /> },
+    { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" /> },
+    { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" /> },
     { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" /> },
     { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" /> },
-    { type: 'video', name: 'Video', icon: <Video className="h-5 w-5" /> },
     { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" /> }
   ];
 
