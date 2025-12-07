@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,9 +122,9 @@ export default function MyAccount() {
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(loyaltyChannel);
     };
-  }, [location]);
+  }, [location, checkAuth, profile?.id]);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -140,7 +140,7 @@ export default function MyAccount() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   const loadUserData = async (userId: string) => {
     try {

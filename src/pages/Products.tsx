@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +64,7 @@ const Products = () => {
 
   useEffect(() => {
     filterAndSortProducts();
-  }, [products, selectedCategory, selectedMaterial, priceRange, sortBy, searchedByCode]);
+  }, [products, selectedCategory, selectedMaterial, priceRange, sortBy, searchedByCode, filterAndSortProducts]);
 
   const loadData = async () => {
     try {
@@ -168,7 +168,7 @@ const Products = () => {
     toast.info("Búsqueda por código eliminada");
   };
 
-  const filterAndSortProducts = () => {
+  const filterAndSortProducts = useCallback(() => {
     let filtered = [...products];
 
     if (selectedCategory !== "all") {
@@ -190,7 +190,7 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered);
-  };
+  }, [products, selectedCategory, priceRange, sortBy]);
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 lg:py-8">
