@@ -282,6 +282,49 @@ export default function PageBuilder() {
     }
   }, [selectedPage, loadSections, setSearchParams]);
 
+  // Save state to history for undo/redo
+  const saveToHistory = useCallback((newSections: SectionData[]) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(JSON.parse(JSON.stringify(newSections)));
+      return newHistory.slice(-50); // Keep last 50 states
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, 49));
+  }, [historyIndex]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+      setSections(JSON.parse(JSON.stringify(history[historyIndex - 1])));
+      toast.info('Cambio deshecho');
+    }
+  }, [historyIndex, history]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+      setSections(JSON.parse(JSON.stringify(history[historyIndex + 1])));
+      toast.info('Cambio rehecho');
+    }
+  }, [historyIndex, history]);
+
+  const handleSaveAll = useCallback(async () => {
+    setSaving(true);
+    try {
+      // All changes are saved immediately, so just refresh
+      if (selectedPage) {
+        await loadSections(selectedPage.id);
+      }
+      setHasChanges(false);
+      toast.success('Cambios guardados correctamente');
+    } catch (error) {
+      logger.error('Error saving:', error);
+      toast.error('Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedPage, loadSections]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -317,32 +360,6 @@ export default function PageBuilder() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  // Save state to history for undo/redo
-  const saveToHistory = useCallback((newSections: SectionData[]) => {
-    setHistory(prev => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(JSON.parse(JSON.stringify(newSections)));
-      return newHistory.slice(-50); // Keep last 50 states
-    });
-    setHistoryIndex(prev => Math.min(prev + 1, 49));
-  }, [historyIndex]);
-
-  const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      setSections(JSON.parse(JSON.stringify(history[historyIndex - 1])));
-      toast.info('Cambio deshecho');
-    }
-  }, [historyIndex, history]);
-
-  const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      setSections(JSON.parse(JSON.stringify(history[historyIndex + 1])));
-      toast.info('Cambio rehecho');
-    }
-  }, [historyIndex, history]);
 
   const handlePageSelect = (page: PageData) => {
     if (hasChanges) {
@@ -620,23 +637,6 @@ export default function PageBuilder() {
       toast.error('Error al reordenar las secciones');
     }
   };
-
-  const handleSaveAll = useCallback(async () => {
-    setSaving(true);
-    try {
-      // All changes are saved immediately, so just refresh
-      if (selectedPage) {
-        await loadSections(selectedPage.id);
-      }
-      setHasChanges(false);
-      toast.success('Cambios guardados correctamente');
-    } catch (error) {
-      logger.error('Error saving:', error);
-      toast.error('Error al guardar');
-    } finally {
-      setSaving(false);
-    }
-  }, [selectedPage, loadSections]);
 
   const handlePreview = () => {
     if (selectedPage) {
