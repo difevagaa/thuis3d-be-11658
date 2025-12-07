@@ -94,7 +94,7 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
     if (!files || files.length === 0) return;
 
     // Validate files - now supporting both images and videos
-    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
     const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
     

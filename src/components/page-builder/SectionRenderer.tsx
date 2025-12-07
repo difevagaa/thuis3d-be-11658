@@ -8,7 +8,7 @@ import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 
 // Utility function to generate comprehensive inline styles from section styles
-const generateSectionStyles = (styles: any): CSSProperties => {
+const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
   
   const cssStyles: CSSProperties = {};
@@ -108,14 +108,18 @@ const generateSectionStyles = (styles: any): CSSProperties => {
   
   // Filters
   const filters: string[] = [];
-  if (styles.filterBlur) filters.push(`blur(${styles.filterBlur}px)`);
-  if (styles.filterBrightness !== undefined && styles.filterBrightness !== 1) {
-    filters.push(`brightness(${styles.filterBrightness})`);
+  if (styles.filterBlur !== undefined && typeof styles.filterBlur === 'number' && styles.filterBlur >= 0) {
+    filters.push(`blur(${Math.min(styles.filterBlur, 20)}px)`);
   }
-  if (styles.filterContrast !== undefined && styles.filterContrast !== 1) {
-    filters.push(`contrast(${styles.filterContrast})`);
+  if (styles.filterBrightness !== undefined && styles.filterBrightness !== 1 && typeof styles.filterBrightness === 'number') {
+    filters.push(`brightness(${Math.max(0, Math.min(styles.filterBrightness, 2))})`);
   }
-  if (styles.filterGrayscale) filters.push(`grayscale(${styles.filterGrayscale})`);
+  if (styles.filterContrast !== undefined && styles.filterContrast !== 1 && typeof styles.filterContrast === 'number') {
+    filters.push(`contrast(${Math.max(0, Math.min(styles.filterContrast, 2))})`);
+  }
+  if (styles.filterGrayscale !== undefined && typeof styles.filterGrayscale === 'number') {
+    filters.push(`grayscale(${Math.max(0, Math.min(styles.filterGrayscale, 1))})`);
+  }
   if (filters.length > 0) cssStyles.filter = filters.join(' ');
   
   // Background
@@ -212,7 +216,7 @@ interface SectionRendererProps {
 }
 
 // Get responsive classes from styles
-const getResponsiveClasses = (styles: any): string => {
+const getResponsiveClasses = (styles: Record<string, any> | undefined): string => {
   if (!styles) return '';
   
   const classes: string[] = [];
