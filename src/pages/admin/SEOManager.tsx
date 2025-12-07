@@ -632,6 +632,45 @@ export default function SEOManager() {
         }
       }
       
+      // Generate meta tags for custom pages from page builder
+      const { data: customPages, error: customPagesError } = await supabase
+        .from('page_builder_pages')
+        .select('id, page_key, page_name, description')
+        .eq('is_enabled', true);
+      
+      if (!customPagesError && customPages) {
+        for (const customPage of customPages) {
+          const pagePath = `/${customPage.page_key}`;
+          
+          // Check if meta tag exists
+          const { data: existing } = await supabase
+            .from('seo_meta_tags')
+            .select('id')
+            .eq('page_path', pagePath)
+            .maybeSingle();
+          
+          if (!existing) {
+            // Generate meta description from page description
+            const metaDesc = customPage.description && customPage.description.length > 50
+              ? customPage.description.substring(0, 157) + (customPage.description.length > 157 ? '...' : '')
+              : `${customPage.page_name} - Thuis 3D. Servicio profesional de impresión 3D en Bélgica.`;
+            
+            await supabase.from('seo_meta_tags').insert({
+              page_path: pagePath,
+              page_title: `${customPage.page_name} - Thuis 3D`,
+              meta_description: metaDesc,
+              og_title: customPage.page_name,
+              og_description: metaDesc,
+              twitter_title: customPage.page_name,
+              twitter_description: metaDesc,
+              keywords: ['impresión 3d', 'thuis 3d', 'bélgica']
+            });
+            generatedCount++;
+          }
+        }
+      }
+      
+      
       await loadData();
       toast.success(`Meta descripciones: ${generatedCount} nuevas, ${updatedCount} actualizadas`);
       
