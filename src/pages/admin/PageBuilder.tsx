@@ -413,8 +413,52 @@ export default function PageBuilder() {
   
   const handleSaveSection = async (updates: Partial<SectionData>) => {
     if (!editingSection) return;
-    await handleUpdateSection(editingSection.id, updates);
-    setEditingSection(null);
+    
+    console.log('=== SAVING SECTION ===');
+    console.log('Section ID:', editingSection.id);
+    console.log('Updates to save:', updates);
+    
+    try {
+      // Update in database
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .update(updates)
+        .eq('id', editingSection.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Saved to database:', data);
+
+      // Update local state immediately
+      const newSections = sections.map(s => 
+        s.id === editingSection.id ? { ...s, ...updates } : s
+      );
+      
+      setSections(newSections);
+      saveToHistory(newSections);
+      
+      if (selectedSection?.id === editingSection.id) {
+        setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
+      }
+      
+      // Force reload sections to ensure UI is in sync
+      await loadSections(selectedPage!.id);
+      
+      setEditingSection(null);
+      setHasChanges(true);
+      toast.success('Sección guardada correctamente');
+      
+      console.log('=== SECTION SAVED SUCCESSFULLY ===');
+    } catch (error) {
+      logger.error('Error saving section:', error);
+      console.error('=== SAVE FAILED ===', error);
+      toast.error('Error al guardar la sección');
+    }
   };
 
   const handleAddSection = async (templateConfig: any) => {
