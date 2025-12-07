@@ -8,6 +8,9 @@ import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
+// Supabase connection info for diagnostics
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'Not configured';
+
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
@@ -1633,14 +1636,15 @@ export function usePageSections(pageKey: string) {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
-    // Reduced timeout to 2 seconds for faster fallback
+    // Increased timeout to 10 seconds to prevent flickering
+    // If database is slow, wait longer before showing fallback
     timeoutId = setTimeout(() => {
       if (isMounted && loading) {
         console.warn(`⏱️ Loading timeout for page '${pageKey}' - showing fallback content`);
         setLoading(false);
         setSections([]);
       }
-    }, 2000); // 2 second timeout
+    }, 10000); // 10 second timeout - prevents flickering from slow Supabase queries
 
     async function loadSections() {
       try {
@@ -1689,14 +1693,19 @@ export function usePageSections(pageKey: string) {
         }
 
         console.log(`✓ Loading sections for page '${pageKey}' (${page.id})`);
+        console.log(`🔌 Connected to Supabase: ${SUPABASE_URL}`);
 
         // Get sections for this page
+        const sectionsStartTime = performance.now();
         const { data: sectionsData, error: sectionsError } = await supabase
           .from('page_builder_sections')
           .select('*')
           .eq('page_id', page.id)
           .eq('is_visible', true)
           .order('display_order');
+        
+        const sectionsLoadTime = performance.now() - sectionsStartTime;
+        console.log(`⏱️ Sections loaded in ${sectionsLoadTime.toFixed(0)}ms`);
 
         if (sectionsError) {
           console.error(`❌ Error loading sections for page '${pageKey}':`, sectionsError.message);
