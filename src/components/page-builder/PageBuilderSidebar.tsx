@@ -121,6 +121,8 @@ export function PageBuilderSidebar({
   const quickAddSections = [
     { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" /> },
     { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" /> },
+    { type: 'gallery-grid', name: 'Galería de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'blog-carousel', name: 'Carrusel de Blog', icon: <Type className="h-5 w-5" /> },
     { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
     { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" /> },
     { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" /> },
