@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -59,9 +59,9 @@ export default function VisitorAnalytics() {
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, []);
+  }, [loadVisitorData]);
 
-  const loadVisitorData = async () => {
+  const loadVisitorData = useCallback(async () => {
     try {
       // Visitantes activos (últimos 2 minutos Y con is_active=true)
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -134,7 +134,7 @@ export default function VisitorAnalytics() {
     } catch (error) {
       console.error('Error loading visitor data:', error);
     }
-  };
+  }, []);
 
   const calculateAverageSessionTime = (visitors: VisitorSession[]) => {
     if (visitors.length === 0) return 0;
