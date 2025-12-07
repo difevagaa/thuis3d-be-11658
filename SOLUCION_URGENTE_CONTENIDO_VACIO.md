@@ -1,6 +1,20 @@
 # 🚨 SOLUCIÓN URGENTE - CONTENIDO VACÍO
 
-## ❌ PROBLEMA
+## ✅ PROBLEMA SOLUCIONADO: Parpadeo de Conexión
+
+**ACTUALIZACIÓN**: El parpadeo ya está solucionado. Era causado por un timeout muy corto (2 segundos), ahora aumentado a 10 segundos.
+
+### ¿Qué se arregló?
+- ✅ Timeout aumentado de 2s → 10s (evita cambios prematuros entre vacío y contenido)
+- ✅ Diagnósticos agregados para ver tiempos de carga
+- ✅ Confirmado: SOLO Supabase está conectado (no hay conflicto con Lovable)
+
+**Lee `DIAGNOSTICO_CONEXION_BASE_DATOS.md` para detalles técnicos.**
+
+---
+
+## ❌ SI AÚN VES PÁGINAS VACÍAS
+
 Las páginas cargan vacías (sin contenido, solo "carruseles malos") porque:
 - Las tablas de Page Builder existen PERO están **VACÍAS**
 - No hay secciones de contenido en la base de datos
