@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
@@ -700,24 +701,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, userRoles } = useAuth(); // Use centralized auth hook
   
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Get user roles for filtering
-      const { data: { user } } = await supabase.auth.getUser();
-      let userRoles: string[] = [];
-      
-      if (user) {
-        const { data: rolesData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-        userRoles = (rolesData || [])
-          .map(r => String(r.role || '').trim().toLowerCase())
-          .filter(role => role.length > 0);
-      }
       
       // Build query based on settings
       const sortBy = settings?.sortBy || 'created_at';
@@ -737,16 +725,24 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       
       if (error) throw error;
       
-      // Filter by roles
+      // Filter by roles - Fixed logic for correct behavior
       const visibleProducts = (data || []).filter((product: any) => {
         const productRolesList = product.product_roles || [];
         const productRolesNormalized = productRolesList
           .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
           .filter((role: string) => role.length > 0);
         
-        if (productRolesNormalized.length === 0) return true;
-        if (!user || userRoles.length === 0) return false;
+        // If product has NO roles assigned, it's PUBLIC - visible to everyone
+        if (productRolesNormalized.length === 0) {
+          return true;
+        }
         
+        // If product HAS roles but user is NOT logged in, hide the product
+        if (!user || userRoles.length === 0) {
+          return false;
+        }
+        
+        // User is logged in - check if they have at least one required role
         return productRolesNormalized.some((productRole: string) => 
           userRoles.includes(productRole)
         );
@@ -767,7 +763,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     } finally {
       setLoading(false);
     }
-  }, [settings?.sortBy, settings?.sortOrder, settings?.limit]);
+  }, [settings?.sortBy, settings?.sortOrder, settings?.limit, user, userRoles]);
   
   useEffect(() => {
     loadProducts();
