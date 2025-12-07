@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +109,7 @@ export default function PageBuilder() {
   
   // Sidebar visibility state with auto-hide
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   
   // Section editor dialog state
   const [editingSection, setEditingSection] = useState<SectionData | null>(null);
@@ -177,35 +178,34 @@ export default function PageBuilder() {
 
   // Auto-hide sidebar logic
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-    let isMouseOverSidebar = false;
+    const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+    const isMouseOverSidebarRef = useRef(false);
     
     const startHideTimer = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
       
-      timeoutId = setTimeout(() => {
-        if (!isMouseOverSidebar) {
+      timeoutIdRef.current = setTimeout(() => {
+        if (!isMouseOverSidebarRef.current) {
           setSidebarVisible(false);
         }
       }, 5000); // Hide after 5 seconds of inactivity
     };
     
     const handleMouseEnterSidebar = () => {
-      isMouseOverSidebar = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      isMouseOverSidebarRef.current = true;
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
     };
     
     const handleMouseLeaveSidebar = () => {
-      isMouseOverSidebar = false;
+      isMouseOverSidebarRef.current = false;
       startHideTimer();
     };
     
-    // Get sidebar element
-    const sidebarElement = document.querySelector('[data-sidebar="right"]');
+    const sidebarElement = sidebarRef.current;
     
     if (sidebarElement) {
       sidebarElement.addEventListener('mouseenter', handleMouseEnterSidebar);
@@ -216,8 +216,8 @@ export default function PageBuilder() {
     startHideTimer();
     
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
       if (sidebarElement) {
         sidebarElement.removeEventListener('mouseenter', handleMouseEnterSidebar);
@@ -939,7 +939,7 @@ export default function PageBuilder() {
 
           {/* Sidebar */}
           <div
-            data-sidebar="right"
+            ref={sidebarRef}
             className={`absolute inset-0 transition-all duration-300 ease-in-out ${
               sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             }`}
