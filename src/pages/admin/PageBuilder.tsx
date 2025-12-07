@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
+import * as pageBuilderUtils from "@/lib/pageBuilderUtils";
 import {
   Layout,
   Home,
@@ -34,7 +36,14 @@ import {
   Monitor,
   Tablet,
   Smartphone,
-  HelpCircle
+  HelpCircle,
+  Download,
+  Upload,
+  Search,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  Clipboard
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -79,6 +88,11 @@ export default function PageBuilder() {
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // New states for search and filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -318,20 +332,12 @@ export default function PageBuilder() {
 
   const handleDuplicateSection = async (section: SectionData) => {
     try {
-      const newSection = {
-        page_id: section.page_id,
-        section_type: section.section_type,
-        section_name: `${section.section_name} (copia)`,
-        display_order: sections.length,
-        is_visible: section.is_visible,
-        settings: section.settings,
-        content: section.content,
-        styles: section.styles
-      };
-
+      const duplicated = pageBuilderUtils.duplicateSection(section);
+      delete duplicated.id; // Let Supabase generate new ID
+      
       const { data, error } = await supabase
         .from('page_builder_sections')
-        .insert(newSection)
+        .insert(duplicated)
         .select()
         .single();
 
@@ -347,6 +353,129 @@ export default function PageBuilder() {
       toast.error('Error al duplicar la sección');
     }
   };
+
+  const handleCopySection = async (section: SectionData) => {
+    const success = await pageBuilderUtils.copySectionToClipboard(section);
+    if (success) {
+      toast.success('Sección copiada al portapapeles');
+    } else {
+      toast.error('Error al copiar la sección');
+    }
+  };
+
+  const handlePasteSection = async () => {
+    if (!selectedPage) return;
+    
+    const pasted = await pageBuilderUtils.pasteSectionFromClipboard();
+    if (!pasted) {
+      toast.error('No hay sección válida en el portapapeles');
+      return;
+    }
+
+    try {
+      const newSection = {
+        ...pasted,
+        page_id: selectedPage.id,
+        display_order: sections.length
+      };
+      delete newSection.id;
+
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .insert(newSection)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
+      setHasChanges(true);
+      toast.success('Sección pegada');
+    } catch (error) {
+      logger.error('Error pasting section:', error);
+      toast.error('Error al pegar la sección');
+    }
+  };
+
+  const handleExportSection = (section: SectionData) => {
+    pageBuilderUtils.exportSectionAsJSON(section);
+    toast.success('Sección exportada');
+  };
+
+  const handleImportSection = async (file: File) => {
+    if (!selectedPage) return;
+    
+    const imported = await pageBuilderUtils.importSectionFromJSON(file);
+    if (!imported) {
+      toast.error('Archivo JSON inválido');
+      return;
+    }
+
+    try {
+      const newSection = {
+        ...imported,
+        page_id: selectedPage.id,
+        display_order: sections.length
+      };
+      delete newSection.id;
+
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .insert(newSection)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
+      setHasChanges(true);
+      toast.success('Sección importada');
+    } catch (error) {
+      logger.error('Error importing section:', error);
+      toast.error('Error al importar la sección');
+    }
+  };
+
+  const handleMoveSectionUp = async (sectionId: string) => {
+    const reordered = pageBuilderUtils.moveSectionUp(sections, sectionId);
+    await handleReorderSections(reordered);
+  };
+
+  const handleMoveSectionDown = async (sectionId: string) => {
+    const reordered = pageBuilderUtils.moveSectionDown(sections, sectionId);
+    await handleReorderSections(reordered);
+  };
+
+  // Get filtered sections based on search and filters
+  const getFilteredSections = (): SectionData[] => {
+    let filtered = sections;
+    
+    // Apply search
+    if (searchQuery) {
+      filtered = pageBuilderUtils.searchSections(filtered, searchQuery);
+    }
+    
+    // Apply type filter
+    if (filterType && filterType !== 'all') {
+      filtered = pageBuilderUtils.filterSectionsByType(filtered, filterType);
+    }
+    
+    // Apply visibility filter
+    if (filterVisibility !== 'all') {
+      filtered = pageBuilderUtils.filterSectionsByVisibility(filtered, filterVisibility);
+    }
+    
+    return filtered;
+  };
+
+  const filteredSections = getFilteredSections();
+  const sectionTypes = pageBuilderUtils.getUniqueSectionTypes(sections);
+  const sectionCount = pageBuilderUtils.getSectionCountByType(sections);
+
 
   const handleReorderSections = async (reorderedSections: SectionData[]) => {
     const updates = reorderedSections.map((section, index) => ({
