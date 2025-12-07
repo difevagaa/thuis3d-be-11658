@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
@@ -91,6 +93,12 @@ export default function PageBuilder() {
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // Page creation dialog
+  const [showCreatePage, setShowCreatePage] = useState(false);
+  const [newPageName, setNewPageName] = useState('');
+  const [newPageKey, setNewPageKey] = useState('');
+  const [newPageDescription, setNewPageDescription] = useState('');
   
   // New states for search and filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -597,6 +605,97 @@ export default function PageBuilder() {
     }
   };
 
+  const handleCreatePage = async () => {
+    if (!newPageName.trim()) {
+      toast.error('El nombre de la página es requerido');
+      return;
+    }
+
+    try {
+      // Generate page_key from name if not provided
+      const pageKey = newPageKey.trim() || newPageName.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      // Check if page_key already exists
+      const { data: existing } = await supabase
+        .from('page_builder_pages')
+        .select('id')
+        .eq('page_key', pageKey)
+        .single();
+
+      if (existing) {
+        toast.error('Ya existe una página con ese identificador');
+        return;
+      }
+
+      // Create new page
+      const { data: newPage, error } = await supabase
+        .from('page_builder_pages')
+        .insert({
+          page_key: pageKey,
+          page_name: newPageName.trim(),
+          description: newPageDescription.trim() || null,
+          is_enabled: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to pages list and select it
+      setPages(prev => [...prev, newPage]);
+      setSelectedPage(newPage);
+      
+      // Reset form and close dialog
+      setNewPageName('');
+      setNewPageKey('');
+      setNewPageDescription('');
+      setShowCreatePage(false);
+      
+      toast.success(`Página "${newPage.page_name}" creada correctamente`);
+    } catch (error) {
+      logger.error('Error creating page:', error);
+      toast.error('Error al crear la página');
+    }
+  };
+
+  const handleDeletePage = async (page: PageData) => {
+    // Only allow deleting custom pages (not predefined ones)
+    const predefinedPages = ['home', 'products', 'quotes', 'gift-cards', 'blog', 'gallery', 'my-account'];
+    if (predefinedPages.includes(page.page_key)) {
+      toast.error('No se pueden eliminar las páginas predefinidas');
+      return;
+    }
+
+    if (!confirm(`¿Estás seguro de eliminar la página "${page.page_name}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('page_builder_pages')
+        .delete()
+        .eq('id', page.id);
+
+      if (error) throw error;
+
+      // Remove from list
+      setPages(prev => prev.filter(p => p.id !== page.id));
+      
+      // Select another page if this was selected
+      if (selectedPage?.id === page.id) {
+        const remaining = pages.filter(p => p.id !== page.id);
+        setSelectedPage(remaining.length > 0 ? remaining[0] : null);
+      }
+
+      toast.success('Página eliminada correctamente');
+    } catch (error) {
+      logger.error('Error deleting page:', error);
+      toast.error('Error al eliminar la página');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -690,26 +789,54 @@ export default function PageBuilder() {
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Left Sidebar - Pages */}
         <div className="w-40 lg:w-48 flex-shrink-0 border-r bg-muted/30 flex flex-col min-h-0">
-          <div className="p-2 border-b flex-shrink-0">
+          <div className="p-2 border-b flex-shrink-0 flex items-center justify-between">
             <h3 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">Páginas</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => setShowCreatePage(true)}
+              title="Crear nueva página"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
           </div>
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-1.5 space-y-0.5">
-              {pages.map(page => (
-                <button
-                  key={page.id}
-                  onClick={() => handlePageSelect(page)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
-                    selectedPage?.id === page.id 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  <span className="flex-shrink-0">{pageIcons[page.page_key]}</span>
-                  <span className="truncate">{page.page_name}</span>
-                  {!page.is_enabled && <EyeOff className="h-3 w-3 opacity-50 flex-shrink-0 ml-auto" />}
-                </button>
-              ))}
+              {pages.map(page => {
+                const isPredefined = ['home', 'products', 'quotes', 'gift-cards', 'blog', 'gallery', 'my-account'].includes(page.page_key);
+                
+                return (
+                  <div key={page.id} className="group relative">
+                    <button
+                      onClick={() => handlePageSelect(page)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
+                        selectedPage?.id === page.id 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <span className="flex-shrink-0">{pageIcons[page.page_key] || <FileText className="h-4 w-4" />}</span>
+                      <span className="truncate flex-1">{page.page_name}</span>
+                      {!page.is_enabled && <EyeOff className="h-3 w-3 opacity-50 flex-shrink-0" />}
+                    </button>
+                    
+                    {/* Delete button for custom pages */}
+                    {!isPredefined && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePage(page);
+                        }}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/20 rounded"
+                        title="Eliminar página"
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
         </div>
@@ -760,6 +887,58 @@ export default function PageBuilder() {
         open={showHelp}
         onClose={() => setShowHelp(false)}
       />
+
+      {/* Create Page Dialog */}
+      <Dialog open={showCreatePage} onOpenChange={setShowCreatePage}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Crear Nueva Página</DialogTitle>
+            <DialogDescription>
+              Crea una nueva página personalizada para tu sitio web
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="page-name">Nombre de la Página *</Label>
+              <Input
+                id="page-name"
+                placeholder="Ej: Sobre Nosotros"
+                value={newPageName}
+                onChange={(e) => setNewPageName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="page-key">URL / Identificador</Label>
+              <Input
+                id="page-key"
+                placeholder="Ej: sobre-nosotros (dejar vacío para auto-generar)"
+                value={newPageKey}
+                onChange={(e) => setNewPageKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Solo letras, números y guiones. Si se deja vacío, se generará automáticamente del nombre.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="page-description">Descripción (opcional)</Label>
+              <Input
+                id="page-description"
+                placeholder="Descripción breve de la página"
+                value={newPageDescription}
+                onChange={(e) => setNewPageDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreatePage(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreatePage}>
+              Crear Página
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
