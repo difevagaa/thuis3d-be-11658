@@ -99,9 +99,8 @@ export default function PageBuilder() {
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
   
-  // Sidebar auto-hide states
+  // Sidebar visibility state (no auto-hide)
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const sidebarTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
