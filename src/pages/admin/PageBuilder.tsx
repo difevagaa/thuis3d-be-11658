@@ -110,6 +110,8 @@ export default function PageBuilder() {
   // Sidebar visibility state with auto-hide
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const isMouseOverSidebarRef = useRef(false);
   
   // Section editor dialog state
   const [editingSection, setEditingSection] = useState<SectionData | null>(null);
@@ -178,9 +180,6 @@ export default function PageBuilder() {
 
   // Auto-hide sidebar logic
   useEffect(() => {
-    const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-    const isMouseOverSidebarRef = useRef(false);
-    
     const startHideTimer = () => {
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
@@ -229,7 +228,6 @@ export default function PageBuilder() {
   // Manual toggle sidebar
   const toggleSidebar = useCallback(() => {
     setSidebarVisible(prev => !prev);
-    setLastActivity(Date.now());
   }, []);
 
   const pageIcons: Record<string, React.ReactNode> = {
@@ -415,8 +413,52 @@ export default function PageBuilder() {
   
   const handleSaveSection = async (updates: Partial<SectionData>) => {
     if (!editingSection) return;
-    await handleUpdateSection(editingSection.id, updates);
-    setEditingSection(null);
+    
+    console.log('=== SAVING SECTION ===');
+    console.log('Section ID:', editingSection.id);
+    console.log('Updates to save:', updates);
+    
+    try {
+      // Update in database
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .update(updates)
+        .eq('id', editingSection.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Saved to database:', data);
+
+      // Update local state immediately
+      const newSections = sections.map(s => 
+        s.id === editingSection.id ? { ...s, ...updates } : s
+      );
+      
+      setSections(newSections);
+      saveToHistory(newSections);
+      
+      if (selectedSection?.id === editingSection.id) {
+        setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
+      }
+      
+      // Force reload sections to ensure UI is in sync
+      await loadSections(selectedPage!.id);
+      
+      setEditingSection(null);
+      setHasChanges(true);
+      toast.success('Sección guardada correctamente');
+      
+      console.log('=== SECTION SAVED SUCCESSFULLY ===');
+    } catch (error) {
+      logger.error('Error saving section:', error);
+      console.error('=== SAVE FAILED ===', error);
+      toast.error('Error al guardar la sección');
+    }
   };
 
   const handleAddSection = async (templateConfig: any) => {
@@ -456,13 +498,19 @@ export default function PageBuilder() {
 
   const handleUpdateSection = async (sectionId: string, updates: Partial<SectionData>) => {
     try {
+      console.log('PageBuilder: Updating section', { sectionId, updates });
+      
       // Update page_builder_sections directly
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('page_builder_sections')
         .update(updates)
-        .eq('id', sectionId);
+        .eq('id', sectionId)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      console.log('PageBuilder: Section updated in database', data);
 
       // Update local state
       const newSections = sections.map(s => 
@@ -480,6 +528,7 @@ export default function PageBuilder() {
       toast.success('Sección actualizada');
     } catch (error) {
       logger.error('Error updating section:', error);
+      console.error('PageBuilder: Failed to update section', error);
       toast.error('Error al actualizar la sección');
     }
   };

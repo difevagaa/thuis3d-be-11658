@@ -37,6 +37,11 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
   const [localStyles, setLocalStyles] = useState(section.styles || {});
 
   const handleSave = () => {
+    console.log('SectionEditor: Saving section changes', {
+      content: localContent,
+      settings: localSettings,
+      styles: localStyles
+    });
     onUpdate({
       content: localContent,
       settings: localSettings,
