@@ -1,0 +1,319 @@
+/**
+ * Advanced Carousel Component
+ * Supports all carousel configuration options from CarouselSettings
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface CarouselSettings {
+  // Display
+  itemsPerView?: number;
+  itemsPerViewTablet?: number;
+  itemsPerViewMobile?: number;
+  spaceBetween?: number;
+  showNavigation?: boolean;
+  showPagination?: boolean;
+  loop?: boolean;
+  
+  // Timing
+  autoplay?: boolean;
+  autoplayDelay?: number;
+  pauseOnHover?: boolean;
+  stopOnInteraction?: boolean;
+  transitionDuration?: number;
+  effect?: 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip';
+  
+  // Layout
+  direction?: 'horizontal' | 'vertical';
+  carouselPosition?: 'left' | 'center' | 'right';
+  displayMode?: 'carousel' | 'grid' | 'masonry' | 'stack';
+  carouselHeight?: string;
+  carouselWidth?: 'full' | 'container' | 'narrow' | 'wide';
+  centeredSlides?: boolean;
+  freeMode?: boolean;
+  
+  // Advanced
+  lazyLoad?: boolean;
+  keyboardControl?: boolean;
+  mouseWheelControl?: boolean;
+}
+
+interface AdvancedCarouselProps {
+  items: any[];
+  settings?: CarouselSettings;
+  renderItem: (item: any, index: number) => React.ReactNode;
+  className?: string;
+}
+
+export function AdvancedCarousel({ 
+  items, 
+  settings = {}, 
+  renderItem,
+  className 
+}: AdvancedCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Get responsive items per view
+  const getItemsPerView = () => {
+    if (typeof window === 'undefined') return settings.itemsPerView || 3;
+    
+    const width = window.innerWidth;
+    if (width < 640) {
+      return settings.itemsPerViewMobile || 1;
+    } else if (width < 1024) {
+      return settings.itemsPerViewTablet || 2;
+    }
+    return settings.itemsPerView || 3;
+  };
+
+  const [itemsPerView, setItemsPerView] = useState(getItemsPerView());
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerView(getItemsPerView());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [settings]);
+
+  // Calculate max index
+  const maxIndex = Math.max(0, items.length - itemsPerView);
+
+  // Autoplay logic
+  useEffect(() => {
+    if (!settings.autoplay || items.length <= itemsPerView) return;
+
+    const startAutoplay = () => {
+      if (autoplayTimerRef.current) {
+        clearInterval(autoplayTimerRef.current);
+      }
+
+      autoplayTimerRef.current = setInterval(() => {
+        if (settings.pauseOnHover && isHovered) return;
+
+        setCurrentIndex(prev => {
+          if (settings.loop) {
+            return prev >= maxIndex ? 0 : prev + 1;
+          }
+          return Math.min(prev + 1, maxIndex);
+        });
+      }, settings.autoplayDelay || 3000);
+    };
+
+    startAutoplay();
+
+    return () => {
+      if (autoplayTimerRef.current) {
+        clearInterval(autoplayTimerRef.current);
+      }
+    };
+  }, [settings.autoplay, settings.autoplayDelay, settings.pauseOnHover, settings.loop, isHovered, maxIndex, itemsPerView, items.length]);
+
+  // Navigation functions
+  const goToSlide = (index: number) => {
+    if (settings.stopOnInteraction && autoplayTimerRef.current) {
+      clearInterval(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+    setCurrentIndex(Math.max(0, Math.min(index, maxIndex)));
+  };
+
+  const goToPrev = () => {
+    goToSlide(settings.loop && currentIndex === 0 ? maxIndex : currentIndex - 1);
+  };
+
+  const goToNext = () => {
+    goToSlide(settings.loop && currentIndex >= maxIndex ? 0 : currentIndex + 1);
+  };
+
+  // Keyboard control
+  useEffect(() => {
+    if (!settings.keyboardControl) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        goToPrev();
+      } else if (e.key === 'ArrowRight') {
+        goToNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [settings.keyboardControl, currentIndex, maxIndex]);
+
+  // Mouse wheel control
+  useEffect(() => {
+    if (!settings.mouseWheelControl || !carouselRef.current) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.deltaY > 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    };
+
+    const ref = carouselRef.current;
+    ref.addEventListener('wheel', handleWheel, { passive: false });
+    return () => ref.removeEventListener('wheel', handleWheel);
+  }, [settings.mouseWheelControl, currentIndex, maxIndex]);
+
+  // Get container width class
+  const getWidthClass = () => {
+    switch (settings.carouselWidth) {
+      case 'full': return 'w-full';
+      case 'wide': return 'w-[90%] mx-auto';
+      case 'narrow': return 'w-[60%] mx-auto';
+      case 'container':
+      default: return 'w-[80%] mx-auto';
+    }
+  };
+
+  // Get alignment class
+  const getAlignmentClass = () => {
+    switch (settings.carouselPosition) {
+      case 'left': return 'justify-start';
+      case 'right': return 'justify-end';
+      case 'center':
+      default: return 'justify-center';
+    }
+  };
+
+  // Calculate transform based on effect
+  const getTransform = () => {
+    const offset = currentIndex * (100 / itemsPerView);
+    
+    switch (settings.effect) {
+      case 'fade':
+        return '';
+      case 'slide':
+      default:
+        return settings.direction === 'vertical' 
+          ? `translateY(-${offset}%)`
+          : `translateX(-${offset}%)`;
+    }
+  };
+
+  if (items.length === 0) return null;
+
+  // Grid display mode
+  if (settings.displayMode === 'grid') {
+    return (
+      <div className={cn('grid gap-4', className)} style={{
+        gridTemplateColumns: `repeat(${itemsPerView}, minmax(0, 1fr))`,
+        gap: `${settings.spaceBetween || 20}px`
+      }}>
+        {items.map((item, index) => (
+          <div key={index}>{renderItem(item, index)}</div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      ref={carouselRef}
+      className={cn('relative', getWidthClass(), className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        height: settings.carouselHeight || 'auto'
+      }}
+    >
+      {/* Carousel track */}
+      <div className="overflow-hidden">
+        <div 
+          className={cn(
+            'flex transition-transform',
+            settings.direction === 'vertical' ? 'flex-col' : 'flex-row',
+            getAlignmentClass()
+          )}
+          style={{
+            transform: getTransform(),
+            transitionDuration: `${settings.transitionDuration || 600}ms`,
+            gap: `${settings.spaceBetween || 20}px`
+          }}
+        >
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className={cn(
+                'flex-shrink-0',
+                settings.effect === 'fade' && index !== currentIndex && 'opacity-0'
+              )}
+              style={{
+                width: settings.direction === 'vertical' ? '100%' : `calc(${100 / itemsPerView}% - ${(settings.spaceBetween || 20) * (itemsPerView - 1) / itemsPerView}px)`,
+                transitionProperty: settings.effect === 'fade' ? 'opacity' : 'none',
+                transitionDuration: `${settings.transitionDuration || 600}ms`
+              }}
+            >
+              {renderItem(item, index)}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation arrows */}
+      {settings.showNavigation !== false && items.length > itemsPerView && (
+        <>
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 z-10',
+              settings.direction === 'vertical' ? 'left-1/2 -translate-x-1/2 top-0' : 'left-2'
+            )}
+            onClick={goToPrev}
+            disabled={!settings.loop && currentIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 z-10',
+              settings.direction === 'vertical' ? 'left-1/2 -translate-x-1/2 bottom-0 top-auto' : 'right-2'
+            )}
+            onClick={goToNext}
+            disabled={!settings.loop && currentIndex >= maxIndex}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </>
+      )}
+
+      {/* Pagination dots */}
+      {settings.showPagination && items.length > itemsPerView && (
+        <div className={cn(
+          'flex gap-2 mt-4',
+          getAlignmentClass()
+        )}>
+          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+            <button
+              key={index}
+              className={cn(
+                'w-2 h-2 rounded-full transition-all',
+                index === currentIndex 
+                  ? 'bg-primary w-8' 
+                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+              )}
+              onClick={() => goToSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

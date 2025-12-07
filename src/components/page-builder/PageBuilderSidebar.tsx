@@ -110,29 +110,58 @@ export function PageBuilderSidebar({
   };
 
   const quickAddSections = [
-    { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" /> },
-    { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" /> },
-    { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
-    { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" /> },
-    { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" /> },
-    { type: 'gallery', name: 'Galería', icon: <Grid3X3 className="h-5 w-5" /> },
-    { type: 'features', name: 'Características', icon: <Star className="h-5 w-5" /> },
-    { type: 'cta', name: 'Llamada a la acción', icon: <MousePointer className="h-5 w-5" /> },
-    { type: 'banner', name: 'Banner', icon: <Square className="h-5 w-5" /> },
-    { type: 'testimonials', name: 'Testimonios', icon: <MessageSquare className="h-5 w-5" /> },
-    { type: 'video', name: 'Video', icon: <Video className="h-5 w-5" /> },
-    { type: 'form', name: 'Formulario', icon: <Type className="h-5 w-5" /> },
-    { type: 'accordion', name: 'Acordeón', icon: <AlignLeft className="h-5 w-5" /> },
-    { type: 'tabs', name: 'Pestañas', icon: <AlignLeft className="h-5 w-5" /> },
-    { type: 'countdown', name: 'Contador', icon: <Type className="h-5 w-5" /> },
-    { type: 'pricing', name: 'Precios', icon: <Star className="h-5 w-5" /> },
-    { type: 'team', name: 'Equipo', icon: <Star className="h-5 w-5" /> },
-    { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" /> },
-    { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" /> },
-    { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" /> },
-    { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" /> },
-    { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" /> },
-    { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" /> }
+    // Core sections
+    { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" />, preview: '🖼️ Imagen grande + título + botón' },
+    { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" />, preview: '🛍️ [ 📦 📦 📦 → ]' },
+    { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" />, preview: '🖼️ [ ← 🖼️ → ]' },
+    { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" />, preview: '📝 Párrafo de texto' },
+    { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" />, preview: '🖼️ Imagen simple' },
+    { type: 'gallery', name: 'Galería', icon: <Grid3X3 className="h-5 w-5" />, preview: '🖼️🖼️🖼️\n🖼️🖼️🖼️' },
+    { type: 'features', name: 'Características', icon: <Star className="h-5 w-5" />, preview: '✨[icon] Título\nDescripción' },
+    { type: 'cta', name: 'Llamada a la acción', icon: <MousePointer className="h-5 w-5" />, preview: '📣 Título\n[Botón CTA]' },
+    { type: 'banner', name: 'Banner', icon: <Square className="h-5 w-5" />, preview: '🎨 Fondo + Texto + Botón' },
+    { type: 'testimonials', name: 'Testimonios', icon: <MessageSquare className="h-5 w-5" />, preview: '💬 "Testimonio"\n- Cliente' },
+    { type: 'video', name: 'Video', icon: <Video className="h-5 w-5" />, preview: '▶️ Reproductor de video' },
+    { type: 'form', name: 'Formulario', icon: <Type className="h-5 w-5" />, preview: '📋 [____]\n[____]\n[Enviar]' },
+    { type: 'accordion', name: 'Acordeón', icon: <AlignLeft className="h-5 w-5" />, preview: '▼ Pregunta 1\n▶ Pregunta 2' },
+    { type: 'tabs', name: 'Pestañas', icon: <AlignLeft className="h-5 w-5" />, preview: '[Tab1] [Tab2] [Tab3]\nContenido' },
+    { type: 'countdown', name: 'Contador', icon: <Type className="h-5 w-5" />, preview: '⏱️ 5d 12h 30m 45s' },
+    { type: 'pricing', name: 'Precios', icon: <Star className="h-5 w-5" />, preview: '💳 Plan\n€99/mes\n✓ Feature' },
+    { type: 'team', name: 'Equipo', icon: <Star className="h-5 w-5" />, preview: '👤 Nombre\nPuesto' },
+    { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" />, preview: '📊 1000+\nClientes' },
+    { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" />, preview: '📧 [email] [Suscribir]' },
+    { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" />, preview: '📱 [f] [t] [i] [in]' },
+    
+    // NEW: 20+ additional section types
+    { type: 'timeline', name: 'Línea de Tiempo', icon: <AlignLeft className="h-5 w-5" />, preview: '📅 ●━━○━━○\n2020 2021 2022' },
+    { type: 'logos', name: 'Logos / Marcas', icon: <Grid3X3 className="h-5 w-5" />, preview: '[Logo] [Logo] [Logo]\n[Logo] [Logo] [Logo]' },
+    { type: 'faq', name: 'Preguntas Frecuentes', icon: <MessageSquare className="h-5 w-5" />, preview: '❓ Pregunta\n✓ Respuesta' },
+    { type: 'map', name: 'Mapa / Ubicación', icon: <Square className="h-5 w-5" />, preview: '🗺️ Mapa interactivo\n📍 Ubicación' },
+    { type: 'contact-form', name: 'Formulario de Contacto', icon: <Type className="h-5 w-5" />, preview: '📞 Nombre\n📧 Email\n💬 Mensaje' },
+    { type: 'search', name: 'Barra de Búsqueda', icon: <Type className="h-5 w-5" />, preview: '🔍 [Buscar...] 🔎' },
+    { type: 'breadcrumbs', name: 'Breadcrumbs', icon: <AlignLeft className="h-5 w-5" />, preview: 'Inicio > Productos > Item' },
+    { type: 'progress', name: 'Barra de Progreso', icon: <Minus className="h-5 w-5" />, preview: '[████████░░] 80%' },
+    { type: 'alert', name: 'Alerta / Aviso', icon: <MessageSquare className="h-5 w-5" />, preview: '⚠️ Mensaje importante\n[X]' },
+    { type: 'quote', name: 'Cita / Quote', icon: <Type className="h-5 w-5" />, preview: '❝ Cita inspiradora ❞\n- Autor' },
+    { type: 'code-snippet', name: 'Código / Snippet', icon: <Code className="h-5 w-5" />, preview: '</> code {\n  color: blue;\n}' },
+    { type: 'comparison-table', name: 'Tabla Comparativa', icon: <Grid3X3 className="h-5 w-5" />, preview: '│Plan│✓│✗│\n│Pro│✓│✓│' },
+    { type: 'before-after', name: 'Antes/Después', icon: <ImageIcon className="h-5 w-5" />, preview: '🖼️ Antes | 🖼️ Después\n    ↔️ Deslizar' },
+    { type: 'steps', name: 'Pasos / Proceso', icon: <AlignLeft className="h-5 w-5" />, preview: '① Paso 1\n② Paso 2\n③ Paso 3' },
+    { type: 'icon-grid', name: 'Cuadrícula de Iconos', icon: <Grid3X3 className="h-5 w-5" />, preview: '[📦][🚀][💡]\n[🎯][⚡][🔧]' },
+    { type: 'blog-posts', name: 'Posts de Blog', icon: <Type className="h-5 w-5" />, preview: '📰 [Post 1] [Post 2]\n[Post 3] [Post 4]' },
+    { type: 'portfolio', name: 'Portafolio', icon: <Grid3X3 className="h-5 w-5" />, preview: '🎨 [Proyecto 1]\n[Proyecto 2]' },
+    { type: 'interactive-cards', name: 'Tarjetas Interactivas', icon: <Square className="h-5 w-5" />, preview: '🎴 [Hover]\nContenido flip' },
+    { type: 'text-columns', name: 'Columnas de Texto', icon: <AlignLeft className="h-5 w-5" />, preview: '[Col 1] [Col 2] [Col 3]\nTexto  Texto  Texto' },
+    { type: 'media-text', name: 'Media + Texto', icon: <Layout className="h-5 w-5" />, preview: '[🖼️ Media] | Texto\n              contenido' },
+    { type: 'slider-gallery', name: 'Galería Deslizante', icon: <Grid3X3 className="h-5 w-5" />, preview: '🖼️ ← [Galería] →\n• • ○ •' },
+    { type: 'awards', name: 'Premios / Logros', icon: <Star className="h-5 w-5" />, preview: '🏆 Premio 2024\n⭐ Certificado' },
+    { type: 'partners', name: 'Socios / Partners', icon: <Grid3X3 className="h-5 w-5" />, preview: '🤝 [Partner 1]\n[Partner 2]' },
+    { type: 'download', name: 'Descarga / CTA', icon: <MousePointer className="h-5 w-5" />, preview: '📥 Archivo.pdf\n[Descargar]' },
+    
+    // Utility sections
+    { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" />, preview: '━━━━━━━━━━━' },
+    { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" />, preview: '⬜ Espacio vacío' },
+    { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" />, preview: '</> <div>\nHTML custom\n</div>' }
   ];
 
   const handleStyleChange = (property: string, value: any) => {
@@ -192,10 +221,19 @@ export function PageBuilderSidebar({
                   <button
                     key={section.type}
                     onClick={() => onAddSection({ type: section.type, name: section.name })}
-                    className="flex flex-col items-center gap-1 p-2 rounded border border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
+                    className="group relative flex flex-col items-center gap-1 p-2 rounded border border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
+                    title={section.preview}
                   >
                     {section.icon}
                     <span className="text-[10px] text-center leading-tight">{section.name}</span>
+                    
+                    {/* Preview tooltip on hover */}
+                    <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block bg-popover text-popover-foreground rounded-md border p-2 shadow-md min-w-[150px]">
+                      <p className="text-[9px] font-medium mb-1">{section.name}</p>
+                      <pre className="text-[8px] whitespace-pre leading-tight font-mono text-muted-foreground">
+                        {section.preview}
+                      </pre>
+                    </div>
                   </button>
                 ))}
               </div>

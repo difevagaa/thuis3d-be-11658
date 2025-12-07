@@ -703,7 +703,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   
   useEffect(() => {
     loadProducts();
-  }, [content]);
+  }, [content, settings]);
   
   const loadProducts = async () => {
     try {
@@ -781,7 +781,9 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         )}
         style={{
           backgroundColor: styles?.backgroundColor,
-          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+          padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+          marginTop: `${styles?.marginTop || 0}px`,
+          marginBottom: `${styles?.marginBottom || 0}px`
         }}
       >
         <div className="flex justify-center items-center py-12">
@@ -795,16 +797,33 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     return null;
   }
   
+  // Import AdvancedCarousel dynamically
+  const { AdvancedCarousel } = require('./AdvancedCarousel');
+  
   return (
     <section
+      id={settings?.sectionId}
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
+        settings?.customClass
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
+        backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+        backgroundSize: styles?.backgroundSize || 'cover',
+        backgroundPosition: styles?.backgroundPosition || 'center',
+        backgroundAttachment: styles?.backgroundAttachment || 'scroll',
         color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        marginTop: `${styles?.marginTop || 0}px`,
+        marginBottom: `${styles?.marginBottom || 0}px`,
+        minHeight: settings?.minHeight || 'auto',
+        borderRadius: styles?.borderRadius || '0',
+        borderWidth: `${styles?.borderWidth || 0}px`,
+        borderColor: styles?.borderColor,
+        borderStyle: styles?.borderStyle || 'solid',
+        boxShadow: styles?.boxShadow
       }}
     >
       <div className={cn(
@@ -812,39 +831,83 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         getTextAlignClass(styles?.textAlign)
       )}>
         {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+          <h2 
+            className="text-3xl font-bold mb-4" 
+            style={{ 
+              color: styles?.textColor,
+              fontFamily: styles?.fontFamily,
+              fontSize: styles?.fontSize ? `${styles.fontSize}px` : undefined
+            }}
+          >
             {content.title}
           </h2>
         )}
         {content?.subtitle && (
-          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
+          <p 
+            className="text-lg mb-8 opacity-90" 
+            style={{ color: styles?.textColor }}
+          >
             {content.subtitle}
           </p>
         )}
-        <FeaturedProductsCarousel 
-          products={products} 
-          maxVisible={settings?.maxVisible || 4}
+        
+        <AdvancedCarousel
+          items={products}
+          settings={settings}
+          renderItem={(product: any) => (
+            <ProductCard product={product} />
+          )}
         />
       </div>
+      
+      {/* Custom CSS if provided */}
+      {settings?.customCSS && (
+        <style dangerouslySetInnerHTML={{ __html: settings.customCSS }} />
+      )}
     </section>
   );
 }
 
+// Simple Product Card for carousel
+function ProductCard({ product }: { product: any }) {
+  const firstImage = product.images?.[0]?.image_url;
+  
+  return (
+    <a 
+      href={`/producto/${product.id}`}
+      className="block group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+    >
+      <div className="relative h-48 bg-muted flex items-center justify-center overflow-hidden">
+        {firstImage ? (
+          <img 
+            src={firstImage} 
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="text-muted-foreground">Sin imagen</div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          {product.name}
+        </h3>
+        {product.price && (
+          <p className="text-lg font-bold text-primary">
+            €{Number(product.price).toFixed(2)}
+          </p>
+        )}
+      </div>
+    </a>
+  );
+}
+
+// Image Carousel Section
 // Image Carousel Section
 function ImageCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
-  const [currentIndex, setCurrentIndex] = useState(0);
   const images = content?.images || [];
-  
-  useEffect(() => {
-    if (!settings?.autoplay || images.length === 0) return;
-    
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, (settings?.autoplayDelay || 5) * 1000);
-    
-    return () => clearInterval(interval);
-  }, [settings?.autoplay, settings?.autoplayDelay, images.length]);
   
   if (images.length === 0) {
     return (
@@ -853,109 +916,89 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
       </section>
     );
   }
-  
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-  
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
+
+  // Import AdvancedCarousel dynamically
+  const { AdvancedCarousel } = require('./AdvancedCarousel');
   
   return (
     <section
+      id={settings?.sectionId}
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
+        settings?.customClass
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
+        backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+        backgroundSize: styles?.backgroundSize || 'cover',
+        backgroundPosition: styles?.backgroundPosition || 'center',
+        backgroundAttachment: styles?.backgroundAttachment || 'scroll',
         color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        marginTop: `${styles?.marginTop || 0}px`,
+        marginBottom: `${styles?.marginBottom || 0}px`,
+        minHeight: settings?.minHeight || 'auto',
+        borderRadius: styles?.borderRadius || '0',
+        borderWidth: `${styles?.borderWidth || 0}px`,
+        borderColor: styles?.borderColor,
+        borderStyle: styles?.borderStyle || 'solid',
+        boxShadow: styles?.boxShadow
       }}
     >
       <div className={cn(
-        settings?.width === 'full' ? 'w-full' :
-        settings?.width === 'narrow' ? 'max-w-4xl mx-auto' :
-        settings?.width === 'wide' ? 'max-w-7xl mx-auto' :
+        settings?.containerWidth === 'full' ? 'w-full' :
+        settings?.containerWidth === 'narrow' ? 'max-w-4xl mx-auto' :
+        settings?.containerWidth === 'wide' ? 'max-w-7xl mx-auto' :
         'max-w-6xl mx-auto'
       )}>
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}
+            style={{ 
+              color: styles?.textColor,
+              fontFamily: styles?.fontFamily,
+              fontSize: styles?.fontSize ? `${styles.fontSize}px` : undefined
+            }}
+          >
             {content.title}
           </h2>
         )}
         
-        <div 
-          className="relative group"
-          style={{ height: settings?.height || '400px' }}
-        >
-          {/* Main Image */}
-          <div className="relative w-full h-full">
-            {isValidImageUrl(images[currentIndex]?.url) ? (
-              <img
-                src={images[currentIndex]?.url}
-                alt={images[currentIndex]?.alt || `Imagen ${currentIndex + 1}`}
-                className="w-full h-full object-cover rounded-lg"
-                onError={(e) => {
-                  // Fallback to placeholder if image fails to load
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <p className="text-muted-foreground">URL de imagen inválida</p>
-              </div>
-            )}
-            {images[currentIndex]?.caption && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4">
-                <p className="text-center">{images[currentIndex].caption}</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Navigation Arrows */}
-          {settings?.showNavigation !== false && images.length > 1 && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={goToPrevious}
-              >
-                <span className="sr-only">Previous</span>
-                ←
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={goToNext}
-              >
-                <span className="sr-only">Next</span>
-                →
-              </Button>
-            </>
-          )}
-          
-          {/* Pagination Dots */}
-          {settings?.showPagination && images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              {images.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all",
-                    index === currentIndex ? "bg-white w-8" : "bg-white/50"
-                  )}
-                  aria-label={`Go to image ${index + 1}`}
+        <AdvancedCarousel
+          items={images}
+          settings={settings}
+          renderItem={(image: any, index: number) => (
+            <div className="relative w-full" style={{ height: settings?.carouselHeight || '400px' }}>
+              {isValidImageUrl(image?.url) ? (
+                <img
+                  src={image.url}
+                  alt={image.alt || `Imagen ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                  loading={settings?.lazyLoad !== false ? "lazy" : undefined}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                  }}
                 />
-              ))}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+                  <p className="text-muted-foreground">URL de imagen inválida</p>
+                </div>
+              )}
+              {image?.caption && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4 rounded-b-lg">
+                  <p className="text-center">{image.caption}</p>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        />
       </div>
+      
+      {/* Custom CSS if provided */}
+      {settings?.customCSS && (
+        <style dangerouslySetInnerHTML={{ __html: settings.customCSS }} />
+      )}
     </section>
   );
 }

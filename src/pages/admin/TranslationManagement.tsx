@@ -22,6 +22,7 @@ const ENTITY_TYPES = [
   { value: 'colors', label: 'Colores', fields: ['name'], nameField: 'name' },
   { value: 'blog_posts', label: 'Blog Posts', fields: ['title', 'excerpt', 'content'], nameField: 'title' },
   { value: 'pages', label: 'Páginas', fields: ['title', 'content', 'meta_description'], nameField: 'title' },
+  { value: 'page_builder_pages', label: 'Páginas Personalizadas (Editor)', fields: ['page_name', 'description'], nameField: 'page_name' },
   { value: 'legal_pages', label: 'Páginas Legales', fields: ['title', 'content'], nameField: 'title' },
   { value: 'homepage_banners', label: 'Banners', fields: ['title', 'description'], nameField: 'title' },
   { value: 'gallery_items', label: 'Galería', fields: ['title', 'description'], nameField: 'title' },
