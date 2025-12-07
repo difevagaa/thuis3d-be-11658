@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
@@ -6,6 +6,146 @@ import { supabase } from "@/integrations/supabase/client";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
+
+// Utility function to generate comprehensive inline styles from section styles
+const generateSectionStyles = (styles: any): CSSProperties => {
+  if (!styles) return {};
+  
+  const cssStyles: CSSProperties = {};
+  
+  // Colors
+  if (styles.backgroundColor) cssStyles.backgroundColor = styles.backgroundColor;
+  if (styles.textColor) cssStyles.color = styles.textColor;
+  if (styles.borderColor) cssStyles.borderColor = styles.borderColor;
+  
+  // Dimensions
+  if (styles.width) {
+    cssStyles.width = styles.width === 'custom' ? styles.customWidth : styles.width;
+  }
+  if (styles.height) {
+    cssStyles.height = styles.height === 'custom' ? styles.customHeight : styles.height;
+  }
+  if (styles.minWidth) cssStyles.minWidth = styles.minWidth;
+  if (styles.maxWidth) cssStyles.maxWidth = styles.maxWidth;
+  if (styles.minHeight) cssStyles.minHeight = styles.minHeight;
+  if (styles.maxHeight) cssStyles.maxHeight = styles.maxHeight;
+  if (styles.aspectRatio) cssStyles.aspectRatio = styles.aspectRatio;
+  
+  // Spacing
+  if (styles.padding !== undefined) cssStyles.padding = `${styles.padding}px`;
+  if (styles.paddingTop) cssStyles.paddingTop = `${styles.paddingTop}px`;
+  if (styles.paddingRight) cssStyles.paddingRight = `${styles.paddingRight}px`;
+  if (styles.paddingBottom) cssStyles.paddingBottom = `${styles.paddingBottom}px`;
+  if (styles.paddingLeft) cssStyles.paddingLeft = `${styles.paddingLeft}px`;
+  
+  if (styles.marginTop) cssStyles.marginTop = `${styles.marginTop}px`;
+  if (styles.marginRight) cssStyles.marginRight = `${styles.marginRight}px`;
+  if (styles.marginBottom) cssStyles.marginBottom = `${styles.marginBottom}px`;
+  if (styles.marginLeft) cssStyles.marginLeft = `${styles.marginLeft}px`;
+  
+  if (styles.gap) cssStyles.gap = `${styles.gap}px`;
+  
+  // Typography
+  if (styles.fontSize) cssStyles.fontSize = `${styles.fontSize}px`;
+  if (styles.fontWeight) cssStyles.fontWeight = styles.fontWeight;
+  if (styles.lineHeight) cssStyles.lineHeight = styles.lineHeight;
+  if (styles.letterSpacing) cssStyles.letterSpacing = `${styles.letterSpacing}px`;
+  if (styles.textTransform) cssStyles.textTransform = styles.textTransform as any;
+  if (styles.textDecoration) cssStyles.textDecoration = styles.textDecoration;
+  if (styles.fontFamily) cssStyles.fontFamily = styles.fontFamily;
+  if (styles.textAlign) cssStyles.textAlign = styles.textAlign as any;
+  
+  // Borders
+  if (styles.borderWidth) cssStyles.borderWidth = `${styles.borderWidth}px`;
+  if (styles.borderStyle) cssStyles.borderStyle = styles.borderStyle;
+  if (styles.borderRadius) {
+    const radiusMap: Record<string, string> = {
+      'none': '0',
+      'sm': '0.125rem',
+      'md': '0.375rem',
+      'lg': '0.5rem',
+      'full': '9999px'
+    };
+    cssStyles.borderRadius = radiusMap[styles.borderRadius] || styles.borderRadius;
+  }
+  
+  // Box Shadow
+  if (styles.boxShadow && styles.boxShadow !== 'none') {
+    const shadowMap: Record<string, string> = {
+      'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+      'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+      '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+      'inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)'
+    };
+    cssStyles.boxShadow = shadowMap[styles.boxShadow] || styles.boxShadow;
+  }
+  
+  // Text Shadow
+  if (styles.textShadow && styles.textShadow !== 'none') {
+    const shadowMap: Record<string, string> = {
+      'sm': '0 1px 2px rgba(0,0,0,0.3)',
+      'md': '0 2px 4px rgba(0,0,0,0.3)',
+      'lg': '0 4px 8px rgba(0,0,0,0.3)'
+    };
+    cssStyles.textShadow = shadowMap[styles.textShadow] || styles.textShadow;
+  }
+  
+  // Layout
+  if (styles.display) cssStyles.display = styles.display;
+  if (styles.position) cssStyles.position = styles.position as any;
+  if (styles.zIndex) cssStyles.zIndex = styles.zIndex;
+  if (styles.overflow) cssStyles.overflow = styles.overflow as any;
+  
+  // Flexbox
+  if (styles.justifyContent) cssStyles.justifyContent = styles.justifyContent as any;
+  if (styles.alignItems) cssStyles.alignItems = styles.alignItems as any;
+  if (styles.flexDirection) cssStyles.flexDirection = styles.flexDirection as any;
+  
+  // Visual Effects
+  if (styles.opacity !== undefined) cssStyles.opacity = styles.opacity;
+  
+  // Filters
+  const filters: string[] = [];
+  if (styles.filterBlur) filters.push(`blur(${styles.filterBlur}px)`);
+  if (styles.filterBrightness !== undefined && styles.filterBrightness !== 1) {
+    filters.push(`brightness(${styles.filterBrightness})`);
+  }
+  if (styles.filterContrast !== undefined && styles.filterContrast !== 1) {
+    filters.push(`contrast(${styles.filterContrast})`);
+  }
+  if (styles.filterGrayscale) filters.push(`grayscale(${styles.filterGrayscale})`);
+  if (filters.length > 0) cssStyles.filter = filters.join(' ');
+  
+  // Background
+  if (styles.backgroundPosition) cssStyles.backgroundPosition = styles.backgroundPosition;
+  if (styles.backgroundSize) cssStyles.backgroundSize = styles.backgroundSize;
+  if (styles.backgroundRepeat) cssStyles.backgroundRepeat = styles.backgroundRepeat;
+  
+  // Gradient
+  if (styles.backgroundGradient && styles.backgroundGradient !== 'none') {
+    const from = styles.gradientFrom || '#ffffff';
+    const to = styles.gradientTo || '#000000';
+    const gradientMap: Record<string, string> = {
+      'linear-to-r': `linear-gradient(to right, ${from}, ${to})`,
+      'linear-to-b': `linear-gradient(to bottom, ${from}, ${to})`,
+      'linear-to-br': `linear-gradient(to bottom right, ${from}, ${to})`,
+      'radial': `radial-gradient(circle, ${from}, ${to})`
+    };
+    cssStyles.backgroundImage = gradientMap[styles.backgroundGradient];
+  }
+  
+  // Cursor
+  if (styles.cursor) cssStyles.cursor = styles.cursor;
+  
+  // Transition
+  if (styles.transitionDuration) {
+    cssStyles.transition = `all ${styles.transitionDuration}ms ease-in-out`;
+  }
+  
+  return cssStyles;
+};
 
 // Utility function to safely navigate to URL
 const safeNavigate = (url: string) => {
@@ -71,6 +211,36 @@ interface SectionRendererProps {
   className?: string;
 }
 
+// Get responsive classes from styles
+const getResponsiveClasses = (styles: any): string => {
+  if (!styles) return '';
+  
+  const classes: string[] = [];
+  
+  // Mobile hiding
+  if (styles.mobileHidden) classes.push('hidden sm:block');
+  if (styles.tabletHidden) classes.push('sm:hidden lg:block');
+  if (styles.desktopHidden) classes.push('lg:hidden');
+  
+  // Container width
+  if (styles.containerWidth) {
+    const widthMap: Record<string, string> = {
+      'xs': 'max-w-sm',
+      'sm': 'max-w-md',
+      'md': 'max-w-lg',
+      'lg': 'max-w-xl',
+      'xl': 'max-w-2xl',
+      '2xl': 'max-w-4xl',
+      'full': 'w-full'
+    };
+    if (widthMap[styles.containerWidth]) {
+      classes.push(widthMap[styles.containerWidth]);
+    }
+  }
+  
+  return classes.join(' ');
+};
+
 // Get border radius class from style value
 const getBorderRadiusClass = (value: string) => {
   const map: Record<string, string> = {
@@ -93,26 +263,46 @@ const getTextAlignClass = (value: string) => {
   return map[value] || 'text-left';
 };
 
+// Get animation class
+const getAnimationClass = (animation: string) => {
+  if (!animation || animation === 'none') return '';
+  
+  const map: Record<string, string> = {
+    'fade-in': 'animate-fade-in',
+    'slide-up': 'animate-slide-up',
+    'slide-down': 'animate-slide-down',
+    'slide-left': 'animate-slide-left',
+    'slide-right': 'animate-slide-right',
+    'scale': 'animate-scale',
+    'rotate': 'animate-rotate'
+  };
+  return map[animation] || '';
+};
+
 // Hero Section
 function HeroSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
+  const inlineStyles = generateSectionStyles(styles);
+  
+  // Override or merge with specific hero styles
+  const heroStyles: CSSProperties = {
+    ...inlineStyles,
+    backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : inlineStyles.backgroundImage,
+    backgroundSize: inlineStyles.backgroundSize || 'cover',
+    backgroundPosition: inlineStyles.backgroundPosition || 'center',
+    minHeight: inlineStyles.minHeight || settings?.height || '500px',
+  };
   
   return (
     <section
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
-      style={{
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.textColor,
-        padding: `${styles?.padding || 80}px ${styles?.padding ? styles.padding / 2 : 40}px`,
-        backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: settings?.height || '500px'
-      }}
+      style={heroStyles}
     >
       {content?.backgroundImage && (
         <div className="absolute inset-0 bg-black/30" />
@@ -154,18 +344,17 @@ function HeroSection({ section }: { section: SectionData }) {
 // Text Section
 function TextSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
+  const inlineStyles = generateSectionStyles(styles);
   
   return (
     <section
       className={cn(
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
-      style={{
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.textColor,
-        padding: `${styles?.padding || 40}px ${styles?.padding ? styles.padding / 2 : 20}px`
-      }}
+      style={inlineStyles}
     >
       <div className={cn(
         "max-w-4xl mx-auto prose prose-lg dark:prose-invert",
