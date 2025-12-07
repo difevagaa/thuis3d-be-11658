@@ -454,13 +454,19 @@ export default function PageBuilder() {
 
   const handleUpdateSection = async (sectionId: string, updates: Partial<SectionData>) => {
     try {
+      console.log('PageBuilder: Updating section', { sectionId, updates });
+      
       // Update page_builder_sections directly
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('page_builder_sections')
         .update(updates)
-        .eq('id', sectionId);
+        .eq('id', sectionId)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      console.log('PageBuilder: Section updated in database', data);
 
       // Update local state
       const newSections = sections.map(s => 
@@ -478,6 +484,7 @@ export default function PageBuilder() {
       toast.success('Sección actualizada');
     } catch (error) {
       logger.error('Error updating section:', error);
+      console.error('PageBuilder: Failed to update section', error);
       toast.error('Error al actualizar la sección');
     }
   };
