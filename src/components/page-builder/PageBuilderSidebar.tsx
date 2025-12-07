@@ -110,6 +110,7 @@ export function PageBuilderSidebar({
   };
 
   const quickAddSections = [
+    // Core sections
     { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" /> },
     { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" /> },
     { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
@@ -130,6 +131,34 @@ export function PageBuilderSidebar({
     { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" /> },
     { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" /> },
     { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" /> },
+    
+    // NEW: 20+ additional section types
+    { type: 'timeline', name: 'Línea de Tiempo', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'logos', name: 'Logos / Marcas', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'faq', name: 'Preguntas Frecuentes', icon: <MessageSquare className="h-5 w-5" /> },
+    { type: 'map', name: 'Mapa / Ubicación', icon: <Square className="h-5 w-5" /> },
+    { type: 'contact-form', name: 'Formulario de Contacto', icon: <Type className="h-5 w-5" /> },
+    { type: 'search', name: 'Barra de Búsqueda', icon: <Type className="h-5 w-5" /> },
+    { type: 'breadcrumbs', name: 'Breadcrumbs', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'progress', name: 'Barra de Progreso', icon: <Minus className="h-5 w-5" /> },
+    { type: 'alert', name: 'Alerta / Aviso', icon: <MessageSquare className="h-5 w-5" /> },
+    { type: 'quote', name: 'Cita / Quote', icon: <Type className="h-5 w-5" /> },
+    { type: 'code-snippet', name: 'Código / Snippet', icon: <Code className="h-5 w-5" /> },
+    { type: 'comparison-table', name: 'Tabla Comparativa', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'before-after', name: 'Antes/Después', icon: <ImageIcon className="h-5 w-5" /> },
+    { type: 'steps', name: 'Pasos / Proceso', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'icon-grid', name: 'Cuadrícula de Iconos', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'blog-posts', name: 'Posts de Blog', icon: <Type className="h-5 w-5" /> },
+    { type: 'portfolio', name: 'Portafolio', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'interactive-cards', name: 'Tarjetas Interactivas', icon: <Square className="h-5 w-5" /> },
+    { type: 'text-columns', name: 'Columnas de Texto', icon: <AlignLeft className="h-5 w-5" /> },
+    { type: 'media-text', name: 'Media + Texto', icon: <Layout className="h-5 w-5" /> },
+    { type: 'slider-gallery', name: 'Galería Deslizante', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'awards', name: 'Premios / Logros', icon: <Star className="h-5 w-5" /> },
+    { type: 'partners', name: 'Socios / Partners', icon: <Grid3X3 className="h-5 w-5" /> },
+    { type: 'download', name: 'Descarga / CTA', icon: <MousePointer className="h-5 w-5" /> },
+    
+    // Utility sections
     { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" /> },
     { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" /> },
     { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" /> }
