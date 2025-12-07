@@ -621,6 +621,126 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   );
 }
 
+// Image Carousel Section
+function ImageCarouselSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = content?.images || [];
+  
+  useEffect(() => {
+    if (!settings?.autoplay || images.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, (settings?.autoplayDelay || 5) * 1000);
+    
+    return () => clearInterval(interval);
+  }, [settings?.autoplay, settings?.autoplayDelay, images.length]);
+  
+  if (images.length === 0) {
+    return (
+      <section className="container mx-auto py-12">
+        <p className="text-center text-muted-foreground">No hay imágenes configuradas</p>
+      </section>
+    );
+  }
+  
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+  
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+  
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden",
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.textColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className={cn(
+        settings?.width === 'full' ? 'w-full' :
+        settings?.width === 'narrow' ? 'max-w-4xl mx-auto' :
+        settings?.width === 'wide' ? 'max-w-7xl mx-auto' :
+        'max-w-6xl mx-auto'
+      )}>
+        {content?.title && (
+          <h2 className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}>
+            {content.title}
+          </h2>
+        )}
+        
+        <div 
+          className="relative group"
+          style={{ height: settings?.height || '400px' }}
+        >
+          {/* Main Image */}
+          <div className="relative w-full h-full">
+            <img
+              src={images[currentIndex]?.url}
+              alt={images[currentIndex]?.alt || `Imagen ${currentIndex + 1}`}
+              className="w-full h-full object-cover rounded-lg"
+            />
+            {images[currentIndex]?.caption && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4">
+                <p className="text-center">{images[currentIndex].caption}</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Navigation Arrows */}
+          {settings?.showNavigation !== false && images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={goToPrevious}
+              >
+                <span className="sr-only">Previous</span>
+                ←
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={goToNext}
+              >
+                <span className="sr-only">Next</span>
+                →
+              </Button>
+            </>
+          )}
+          
+          {/* Pagination Dots */}
+          {settings?.showPagination && images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all",
+                    index === currentIndex ? "bg-white w-8" : "bg-white/50"
+                  )}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Main renderer component
 function RenderSection({ section }: { section: SectionData }) {
   if (!section.is_visible) return null;
@@ -650,6 +770,8 @@ function RenderSection({ section }: { section: SectionData }) {
       return <VideoSection section={section} />;
     case 'products-carousel':
       return <ProductsCarouselSection section={section} />;
+    case 'image-carousel':
+      return <ImageCarouselSection section={section} />;
     default:
       return null;
   }
