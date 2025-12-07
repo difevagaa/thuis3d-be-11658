@@ -980,29 +980,45 @@ const Home = () => {
   };
 
   return <div className="min-h-screen">
-      {/* Hero Banner with Gradient - Banners de tipo "hero" */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
-        <HeroBanner />
-      </div>
+      {/* Page Builder Sections - If they exist, use them exclusively */}
+      {pageBuilderSections.length > 0 ? (
+        <>
+          {/* Hero Banner with Gradient */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
+            <HeroBanner />
+          </div>
+          
+          {/* Page Builder Sections - Custom editable sections */}
+          <SectionRenderer sections={pageBuilderSections} />
+          
+          {/* Banners al final de la página */}
+          {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}
+        </>
+      ) : (
+        <>
+          {/* Fallback to old homepage_* tables content when no page builder sections */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
+            <HeroBanner />
+          </div>
 
-      {/* Render sections based on display_order or fallback if no sections configured */}
-      {orderedSections.length > 0 
-        ? orderedSections.map((section) => renderSection(section))
-        : renderFallbackSections()
-      }
-      
-      {/* Render Quick Access Cards if they have data but no section exists */}
-      {renderQuickAccessIfNeeded()}
-      
-      {/* Render Why Us if features exist but no section exists */}
-      {renderWhyUsIfNeeded()}
+          {/* Render sections based on display_order or fallback if no sections configured */}
+          {orderedSections.length > 0 
+            ? orderedSections.map((section) => renderSection(section))
+            : renderFallbackSections()
+          }
+          
+          {/* Render Quick Access Cards if they have data but no section exists */}
+          {renderQuickAccessIfNeeded()}
+          
+          {/* Render Why Us if features exist but no section exists */}
+          {renderWhyUsIfNeeded()}
 
-      {/* Page Builder Sections - Custom editable sections */}
-      <SectionRenderer sections={pageBuilderSections} />
-
-      {/* Banners al final de la página */}
-      {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}
+          {/* Banners al final de la página */}
+          {renderBannersSection('bottom', 'bg-gradient-to-t from-muted/20 to-background')}
+        </>
+      )}
     </div>;
 };
 
