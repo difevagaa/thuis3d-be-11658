@@ -351,6 +351,273 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
               </>
             )}
 
+            {section.section_type === 'accordion' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Preguntas Frecuentes"
+                  />
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-medium">Items del acordeón</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newItems = [...(localContent.items || []), {
+                          id: `item-${Date.now()}`,
+                          title: 'Nuevo ítem',
+                          content: 'Contenido del ítem'
+                        }];
+                        updateContent('items', newItems);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Añadir
+                    </Button>
+                  </div>
+                  {(localContent.items || []).map((item: any, index: number) => (
+                    <div key={item.id || index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-xs">Ítem {index + 1}</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            const newItems = localContent.items.filter((_: any, i: number) => i !== index);
+                            updateContent('items', newItems);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={item.title || ''}
+                        onChange={(e) => {
+                          const newItems = [...localContent.items];
+                          newItems[index] = { ...newItems[index], title: e.target.value };
+                          updateContent('items', newItems);
+                        }}
+                        placeholder="Título"
+                        className="text-sm"
+                      />
+                      <Textarea
+                        value={item.content || ''}
+                        onChange={(e) => {
+                          const newItems = [...localContent.items];
+                          newItems[index] = { ...newItems[index], content: e.target.value };
+                          updateContent('items', newItems);
+                        }}
+                        placeholder="Contenido"
+                        rows={3}
+                        className="text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {section.section_type === 'pricing' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Planes y Precios"
+                  />
+                </div>
+                <div className="space-y-4 mt-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-medium">Planes</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newPlans = [...(localContent.plans || []), {
+                          id: `plan-${Date.now()}`,
+                          name: 'Nuevo Plan',
+                          price: '0',
+                          period: 'mes',
+                          features: [],
+                          highlighted: false
+                        }];
+                        updateContent('plans', newPlans);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Añadir Plan
+                    </Button>
+                  </div>
+                  {(localContent.plans || []).map((plan: any, index: number) => (
+                    <div key={plan.id || index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-xs">Plan {index + 1}</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            const newPlans = localContent.plans.filter((_: any, i: number) => i !== index);
+                            updateContent('plans', newPlans);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={plan.name || ''}
+                        onChange={(e) => {
+                          const newPlans = [...localContent.plans];
+                          newPlans[index] = { ...newPlans[index], name: e.target.value };
+                          updateContent('plans', newPlans);
+                        }}
+                        placeholder="Nombre del plan"
+                        className="text-sm"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={plan.price || ''}
+                          onChange={(e) => {
+                            const newPlans = [...localContent.plans];
+                            newPlans[index] = { ...newPlans[index], price: e.target.value };
+                            updateContent('plans', newPlans);
+                          }}
+                          placeholder="Precio"
+                          className="text-sm"
+                        />
+                        <Input
+                          value={plan.period || ''}
+                          onChange={(e) => {
+                            const newPlans = [...localContent.plans];
+                            newPlans[index] = { ...newPlans[index], period: e.target.value };
+                            updateContent('plans', newPlans);
+                          }}
+                          placeholder="Período"
+                          className="text-sm"
+                        />
+                      </div>
+                      <Textarea
+                        value={(plan.features || []).join('\n')}
+                        onChange={(e) => {
+                          const newPlans = [...localContent.plans];
+                          newPlans[index] = { ...newPlans[index], features: e.target.value.split('\n') };
+                          updateContent('plans', newPlans);
+                        }}
+                        placeholder="Características (una por línea)"
+                        rows={3}
+                        className="text-sm"
+                      />
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Plan destacado</Label>
+                        <Switch
+                          checked={plan.highlighted || false}
+                          onCheckedChange={(checked) => {
+                            const newPlans = [...localContent.plans];
+                            newPlans[index] = { ...newPlans[index], highlighted: checked };
+                            updateContent('plans', newPlans);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {section.section_type === 'form' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título del formulario</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Contáctanos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={localContent.description || ''}
+                    onChange={(e) => updateContent('description', e.target.value)}
+                    placeholder="Rellena el formulario y te contactaremos pronto"
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email de destino</Label>
+                  <Input
+                    value={localSettings.targetEmail || ''}
+                    onChange={(e) => updateSettings('targetEmail', e.target.value)}
+                    placeholder="contacto@ejemplo.com"
+                    type="email"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Incluir campo de teléfono</Label>
+                  <Switch
+                    checked={localSettings.includePhone !== false}
+                    onCheckedChange={(checked) => updateSettings('includePhone', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Campo de mensaje obligatorio</Label>
+                  <Switch
+                    checked={localSettings.requireMessage !== false}
+                    onCheckedChange={(checked) => updateSettings('requireMessage', checked)}
+                  />
+                </div>
+              </>
+            )}
+
+            {section.section_type === 'newsletter' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Suscríbete a nuestro newsletter"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={localContent.description || ''}
+                    onChange={(e) => updateContent('description', e.target.value)}
+                    placeholder="Recibe las últimas noticias y ofertas"
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Texto del botón</Label>
+                  <Input
+                    value={localContent.buttonText || ''}
+                    onChange={(e) => updateContent('buttonText', e.target.value)}
+                    placeholder="Suscribirse"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Placeholder del email</Label>
+                  <Input
+                    value={localContent.emailPlaceholder || ''}
+                    onChange={(e) => updateContent('emailPlaceholder', e.target.value)}
+                    placeholder="tu@email.com"
+                  />
+                </div>
+              </>
+            )}
+
             {section.section_type === 'video' && (
               <>
                 <div className="space-y-2">

@@ -741,6 +741,278 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
   );
 }
 
+// Accordion Section
+function AccordionSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [openItems, setOpenItems] = useState<Set<number>>(new Set([0]));
+  
+  const toggleItem = (index: number) => {
+    const newOpenItems = new Set(openItems);
+    if (newOpenItems.has(index)) {
+      newOpenItems.delete(index);
+    } else {
+      newOpenItems.add(index);
+    }
+    setOpenItems(newOpenItems);
+  };
+  
+  return (
+    <section
+      className={cn(
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className="max-w-4xl mx-auto">
+        {content?.title && (
+          <h2 className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}>
+            {content.title}
+          </h2>
+        )}
+        <div className="space-y-4">
+          {(content?.items || []).map((item: any, index: number) => (
+            <div key={index} className="border rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleItem(index)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+              >
+                <span className="font-semibold">{item.title}</span>
+                <span className={cn(
+                  "transition-transform",
+                  openItems.has(index) ? "rotate-180" : ""
+                )}>
+                  ▼
+                </span>
+              </button>
+              {openItems.has(index) && (
+                <div className="p-4 border-t bg-muted/20">
+                  <p className="text-muted-foreground">{item.content}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Pricing Section
+function PricingSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  
+  return (
+    <section
+      className={cn(
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        padding: `${styles?.padding || 80}px ${styles?.padding ? styles.padding / 2 : 40}px`
+      }}
+    >
+      <div className="max-w-7xl mx-auto">
+        {content?.title && (
+          <h2 className={cn("text-3xl font-bold mb-12", getTextAlignClass(styles?.textAlign))}>
+            {content.title}
+          </h2>
+        )}
+        <div className={cn(
+          "grid gap-8",
+          (content?.plans?.length || 0) <= 2 ? "md:grid-cols-2" : "md:grid-cols-3"
+        )}>
+          {(content?.plans || []).map((plan: any, index: number) => (
+            <div
+              key={index}
+              className={cn(
+                "relative rounded-lg border p-8",
+                plan.highlighted ? "border-primary shadow-lg scale-105" : "border-border"
+              )}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                  Destacado
+                </div>
+              )}
+              <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">${plan.price}</span>
+                <span className="text-muted-foreground">/{plan.period}</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {(plan.features || []).filter((f: string) => f.trim()).map((feature: string, i: number) => (
+                  <li key={i} className="flex items-start">
+                    <span className="text-primary mr-2">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="w-full"
+                variant={plan.highlighted ? "default" : "outline"}
+                onClick={() => safeNavigate(plan.buttonUrl || '/contact')}
+              >
+                {plan.buttonText || 'Seleccionar plan'}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Form Section
+function FormSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    
+    // Here you would typically send the form data to your backend
+    // For now, we'll just simulate a submission
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    alert('Formulario enviado. Te contactaremos pronto!');
+    setFormData({ name: '', email: '', phone: '', message: '' });
+    setSubmitting(false);
+  };
+  
+  return (
+    <section
+      className={cn(
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className="max-w-2xl mx-auto">
+        {content?.title && (
+          <h2 className={cn("text-3xl font-bold mb-4", getTextAlignClass(styles?.textAlign))}>
+            {content.title}
+          </h2>
+        )}
+        {content?.description && (
+          <p className="text-muted-foreground mb-8">{content.description}</p>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Nombre *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Tu nombre"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Email *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="tu@email.com"
+            />
+          </div>
+          {settings?.includePhone !== false && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Teléfono</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="+34 600 000 000"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Mensaje {settings?.requireMessage !== false && '*'}
+            </label>
+            <textarea
+              required={settings?.requireMessage !== false}
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Tu mensaje"
+              rows={5}
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? 'Enviando...' : 'Enviar mensaje'}
+          </Button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+// Newsletter Section
+function NewsletterSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    alert('¡Gracias por suscribirte!');
+    setEmail('');
+    setSubmitting(false);
+  };
+  
+  return (
+    <section
+      className={cn(
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor || '#3b82f6',
+        color: styles?.textColor || '#ffffff',
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className="max-w-2xl mx-auto text-center">
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4">{content.title}</h2>
+        )}
+        {content?.description && (
+          <p className="text-lg mb-8 opacity-90">{content.description}</p>
+        )}
+        <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="flex-1 px-4 py-3 rounded-lg text-gray-900"
+            placeholder={content?.emailPlaceholder || 'tu@email.com'}
+          />
+          <Button type="submit" variant="secondary" disabled={submitting} className="px-6">
+            {submitting ? '...' : (content?.buttonText || 'Suscribirse')}
+          </Button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
 // Main renderer component
 function RenderSection({ section }: { section: SectionData }) {
   if (!section.is_visible) return null;
@@ -772,6 +1044,14 @@ function RenderSection({ section }: { section: SectionData }) {
       return <ProductsCarouselSection section={section} />;
     case 'image-carousel':
       return <ImageCarouselSection section={section} />;
+    case 'accordion':
+      return <AccordionSection section={section} />;
+    case 'pricing':
+      return <PricingSection section={section} />;
+    case 'form':
+      return <FormSection section={section} />;
+    case 'newsletter':
+      return <NewsletterSection section={section} />;
     default:
       return null;
   }
