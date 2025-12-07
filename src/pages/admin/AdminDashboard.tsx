@@ -315,14 +315,14 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-full flex items-center justify-center relative flex-shrink-0 ml-1 sm:ml-2" 
+              className="h-16 w-16 rounded-full flex items-center justify-center relative" 
               style={{ 
                 backgroundColor: 'hsl(var(--chart-2) / 0.2)',
                 animation: 'flame 8s ease-in-out infinite'
               }}
             >
               <Users 
-                className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" 
+                className="h-8 w-8" 
                 style={{ 
                   color: 'hsl(var(--chart-2))',
                   animation: 'gentle-swing 16s ease-in-out infinite'
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
               />
               {stats.onlineUsers > 0 && (
                 <div 
-                  className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-success flex items-center justify-center shadow-lg"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-success flex items-center justify-center shadow-lg"
                   style={{
                     animation: 'pulse-slow 3s ease-in-out infinite'
                   }}
