@@ -804,7 +804,7 @@ export default function PageBuilder() {
         </div>
 
         {/* Right Sidebar - Auto-hide after 5 seconds */}
-        <div className="relative">
+        <div className="relative w-56 lg:w-64 flex-shrink-0">
           {/* Toggle Button - Always visible */}
           <Button
             variant="ghost"
@@ -824,7 +824,7 @@ export default function PageBuilder() {
 
           {/* Sidebar with auto-hide */}
           <div
-            className={`transition-all duration-300 ease-in-out ${
+            className={`absolute inset-0 transition-all duration-300 ease-in-out ${
               sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             }`}
             onMouseEnter={handleSidebarInteraction}
