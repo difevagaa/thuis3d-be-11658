@@ -143,16 +143,17 @@ function SortableSectionItem({
           {section.section_type}
         </Badge>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 transition-opacity">
           {onEdit && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
+              variant="default"
+              size="sm"
+              className="h-7 px-2 gap-1"
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              title="Editar opciones completas"
+              title="Abrir editor completo con todas las opciones"
             >
               <Edit2 className="h-3.5 w-3.5" />
+              <span className="text-xs hidden sm:inline">Editar</span>
             </Button>
           )}
           <Button

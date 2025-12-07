@@ -109,8 +109,7 @@ export default function PageBuilder() {
   
   // Sidebar visibility state with auto-hide
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [lastActivity, setLastActivity] = useState(Date.now());
-  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   
   // Section editor dialog state
   const [editingSection, setEditingSection] = useState<SectionData | null>(null);
@@ -179,33 +178,50 @@ export default function PageBuilder() {
 
   // Auto-hide sidebar logic
   useEffect(() => {
-    const resetTimer = () => {
-      setLastActivity(Date.now());
-      setSidebarVisible(true);
-      
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
+    const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+    const isMouseOverSidebarRef = useRef(false);
+    
+    const startHideTimer = () => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
       
-      autoHideTimerRef.current = setTimeout(() => {
-        setSidebarVisible(false);
-      }, 5000); // Hide after 5 seconds
+      timeoutIdRef.current = setTimeout(() => {
+        if (!isMouseOverSidebarRef.current) {
+          setSidebarVisible(false);
+        }
+      }, 5000); // Hide after 5 seconds of inactivity
     };
     
-    // Reset timer on any activity
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keydown', resetTimer);
-    window.addEventListener('click', resetTimer);
+    const handleMouseEnterSidebar = () => {
+      isMouseOverSidebarRef.current = true;
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+    };
     
-    // Initial timer
-    resetTimer();
+    const handleMouseLeaveSidebar = () => {
+      isMouseOverSidebarRef.current = false;
+      startHideTimer();
+    };
+    
+    const sidebarElement = sidebarRef.current;
+    
+    if (sidebarElement) {
+      sidebarElement.addEventListener('mouseenter', handleMouseEnterSidebar);
+      sidebarElement.addEventListener('mouseleave', handleMouseLeaveSidebar);
+    }
+    
+    // Start initial timer
+    startHideTimer();
     
     return () => {
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keydown', resetTimer);
-      window.removeEventListener('click', resetTimer);
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+      if (sidebarElement) {
+        sidebarElement.removeEventListener('mouseenter', handleMouseEnterSidebar);
+        sidebarElement.removeEventListener('mouseleave', handleMouseLeaveSidebar);
       }
     };
   }, []);
@@ -691,80 +707,124 @@ export default function PageBuilder() {
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] bg-background -m-6 w-[calc(100%+3rem)]">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b bg-card gap-2 h-12">
-        <div className="flex items-center gap-2 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="h-8 px-2">
-            <ChevronRight className="h-4 w-4 rotate-180" />
-            <span className="hidden sm:inline ml-1">Admin</span>
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm gap-3 h-14">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="h-8 px-3 gap-1.5">
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">Admin</span>
           </Button>
-          <div className="flex items-center gap-1">
-            <Layout className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="font-medium text-sm hidden md:inline">Editor de Páginas</span>
+          <div className="h-6 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <Layout className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="font-semibold text-base hidden md:inline">Editor de Páginas</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowHelp(true)}
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 p-0"
+            title="Ayuda"
           >
             <HelpCircle className="h-4 w-4" />
           </Button>
           {selectedPage && (
-            <Badge variant="secondary" className="text-xs flex-shrink-0">
+            <Badge variant="secondary" className="text-xs flex items-center gap-1.5 px-2 py-1">
               {pageIcons[selectedPage.page_key]}
-              <span className="ml-1">{selectedPage.page_name}</span>
+              <span className="font-medium">{selectedPage.page_name}</span>
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
-          <div className="hidden sm:flex items-center gap-0.5 border rounded p-0.5">
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
             <Button
               variant={viewportMode === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('desktop')}
-              className="h-6 w-6 p-0"
+              className="h-7 w-7 p-0"
+              title="Vista escritorio"
             >
-              <Monitor className="h-3 w-3" />
+              <Monitor className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={viewportMode === 'tablet' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('tablet')}
-              className="h-6 w-6 p-0"
+              className="h-7 w-7 p-0"
+              title="Vista tablet"
             >
-              <Tablet className="h-3 w-3" />
+              <Tablet className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={viewportMode === 'mobile' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('mobile')}
-              className="h-6 w-6 p-0"
+              className="h-7 w-7 p-0"
+              title="Vista móvil"
             >
-              <Smartphone className="h-3 w-3" />
+              <Smartphone className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleUndo} disabled={historyIndex <= 0} className="h-7 w-7 p-0">
-            <Undo className="h-3 w-3" />
+          
+          <div className="h-6 w-px bg-border hidden lg:block" />
+          
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleUndo} 
+              disabled={historyIndex <= 0} 
+              className="h-8 w-8 p-0"
+              title="Deshacer"
+            >
+              <Undo className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRedo} 
+              disabled={historyIndex >= history.length - 1} 
+              className="h-8 w-8 p-0"
+              title="Rehacer"
+            >
+              <Redo className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          
+          <div className="h-6 w-px bg-border hidden xl:block" />
+          
+          <Button variant="outline" size="sm" onClick={handlePreview} className="h-8 px-3 gap-1.5">
+            <Eye className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline text-xs font-medium">Vista previa</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleRedo} disabled={historyIndex >= history.length - 1} className="h-7 w-7 p-0">
-            <Redo className="h-3 w-3" />
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleTestCurrentSection} 
+            disabled={testing || !selectedSection} 
+            className="h-8 px-3 gap-1.5 hidden xl:flex"
+          >
+            <CheckCircle className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Validar</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePreview} className="h-7 px-2">
-            <Eye className="h-3 w-3" />
-            <span className="hidden lg:inline ml-1 text-xs">Vista previa</span>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRunTests} 
+            disabled={testing || !selectedPage} 
+            className="h-8 px-3 gap-1.5 hidden 2xl:flex"
+          >
+            <TestTube className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{testing ? 'Probando...' : 'Probar Todo'}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleTestCurrentSection} disabled={testing || !selectedSection} className="h-7 px-2">
-            <CheckCircle className="h-3 w-3" />
-            <span className="hidden xl:inline ml-1 text-xs">Validar</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleRunTests} disabled={testing || !selectedPage} className="h-7 px-2">
-            <TestTube className="h-3 w-3" />
-            <span className="hidden xl:inline ml-1 text-xs">{testing ? 'Probando...' : 'Probar Todo'}</span>
-          </Button>
-          <Button size="sm" onClick={handleSaveAll} disabled={saving || !hasChanges} className="h-7 px-2">
-            <Save className="h-3 w-3" />
-            <span className="hidden sm:inline ml-1 text-xs">{saving ? 'Guardando...' : 'Guardar'}</span>
+          
+          <div className="h-6 w-px bg-border" />
+          
+          <Button size="sm" onClick={handleSaveAll} disabled={saving || !hasChanges} className="h-8 px-3 gap-1.5">
+            <Save className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline text-xs font-medium">{saving ? 'Guardando...' : 'Guardar'}</span>
           </Button>
         </div>
       </div>
@@ -772,29 +832,56 @@ export default function PageBuilder() {
       {/* Main Content */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Left Sidebar - Pages */}
-        <div className="w-40 lg:w-48 flex-shrink-0 border-r bg-muted/30 flex flex-col min-h-0">
-          <div className="p-2 border-b flex-shrink-0">
-            <h3 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">Páginas</h3>
+        <div className="w-44 lg:w-52 flex-shrink-0 border-r bg-card flex flex-col min-h-0 shadow-sm">
+          {/* Header */}
+          <div className="px-3 py-3 border-b flex-shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
+            <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+              <Layout className="h-4 w-4 text-primary" />
+              Páginas
+            </h3>
           </div>
+          
+          {/* Pages List */}
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-1.5 space-y-0.5">
+            <div className="p-2 space-y-1">
               {pages.map(page => (
                 <button
                   key={page.id}
                   onClick={() => handlePageSelect(page)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
+                  className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                     selectedPage?.id === page.id 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-muted'
+                      ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]' 
+                      : 'hover:bg-accent hover:shadow-sm active:scale-[0.98]'
                   }`}
                 >
-                  <span className="flex-shrink-0">{pageIcons[page.page_key]}</span>
-                  <span className="truncate">{page.page_name}</span>
-                  {!page.is_enabled && <EyeOff className="h-3 w-3 opacity-50 flex-shrink-0 ml-auto" />}
+                  <span className={`flex-shrink-0 ${
+                    selectedPage?.id === page.id 
+                      ? 'text-primary-foreground' 
+                      : 'text-muted-foreground group-hover:text-primary'
+                  }`}>
+                    {pageIcons[page.page_key]}
+                  </span>
+                  <span className={`truncate text-sm font-medium ${
+                    selectedPage?.id === page.id 
+                      ? 'text-primary-foreground' 
+                      : 'text-foreground'
+                  }`}>
+                    {page.page_name}
+                  </span>
+                  {!page.is_enabled && (
+                    <EyeOff className="h-3.5 w-3.5 opacity-60 flex-shrink-0 ml-auto" />
+                  )}
                 </button>
               ))}
             </div>
           </ScrollArea>
+          
+          {/* Footer Info */}
+          <div className="px-3 py-2 border-t bg-muted/30 flex-shrink-0">
+            <p className="text-[10px] text-muted-foreground text-center">
+              {pages.length} página{pages.length !== 1 ? 's' : ''} disponible{pages.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
 
         {/* Center - Canvas */}
@@ -852,6 +939,7 @@ export default function PageBuilder() {
 
           {/* Sidebar */}
           <div
+            ref={sidebarRef}
             className={`absolute inset-0 transition-all duration-300 ease-in-out ${
               sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             }`}
@@ -860,6 +948,7 @@ export default function PageBuilder() {
               selectedSection={selectedSection}
               onAddSection={handleAddSection}
               onUpdateSection={handleUpdateSection}
+              onEditSection={handleEditSection}
             />
           </div>
         </div>
