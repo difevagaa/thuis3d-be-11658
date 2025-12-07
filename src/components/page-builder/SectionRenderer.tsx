@@ -1634,10 +1634,41 @@ export function usePageSections(pageKey: string) {
 
   useEffect(() => {
     let sectionsChannel: any;
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    // Set a timeout to prevent infinite loading
+    timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn(`Loading timeout for page '${pageKey}' - showing fallback content`);
+        setLoading(false);
+        setSections([]);
+      }
+    }, 5000); // 5 second timeout
 
     async function loadSections() {
       try {
+        // Ensure we have a valid pageKey
+        if (!pageKey || pageKey.trim() === '') {
+          console.warn('Empty pageKey provided to usePageSections');
+          if (isMounted) {
+            setSections([]);
+            setLoading(false);
+          }
+          return;
+        }
+
         const { supabase } = await import("@/integrations/supabase/client");
+        
+        // Verify Supabase client is available
+        if (!supabase) {
+          console.error('Supabase client not available');
+          if (isMounted) {
+            setSections([]);
+            setLoading(false);
+          }
+          return;
+        }
         
         // Get page by key
         const { data: page, error: pageError } = await supabase
@@ -1648,9 +1679,11 @@ export function usePageSections(pageKey: string) {
           .single();
 
         if (pageError || !page) {
-          console.log(`Page '${pageKey}' not found or not enabled`);
-          setSections([]);
-          setLoading(false);
+          console.log(`Page '${pageKey}' not found or not enabled:`, pageError?.message || 'No data');
+          if (isMounted) {
+            setSections([]);
+            setLoading(false);
+          }
           return;
         }
 
@@ -1664,52 +1697,72 @@ export function usePageSections(pageKey: string) {
           .eq('is_visible', true)
           .order('display_order');
 
-        if (sectionsError) throw sectionsError;
+        if (sectionsError) {
+          console.error(`Error loading sections for page '${pageKey}':`, sectionsError);
+          if (isMounted) {
+            setSections([]);
+            setLoading(false);
+          }
+          return;
+        }
         
-        console.log(`Loaded ${sectionsData?.length || 0} sections for page '${pageKey}'`, sectionsData);
-        setSections(sectionsData || []);
-        setLoading(false);
+        console.log(`Loaded ${sectionsData?.length || 0} sections for page '${pageKey}'`);
+        if (isMounted) {
+          setSections(sectionsData || []);
+          setLoading(false);
+        }
 
-        // Subscribe to real-time changes for this page's sections
-        sectionsChannel = supabase
-          .channel(`page-sections-${page.id}`)
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'page_builder_sections',
-            filter: `page_id=eq.${page.id}`
-          }, async (payload) => {
-            console.log(`Real-time update for page '${pageKey}':`, payload);
-            
-            // Reload sections when any change occurs
-            const { data: updatedSections, error } = await supabase
-              .from('page_builder_sections')
-              .select('*')
-              .eq('page_id', page.id)
-              .eq('is_visible', true)
-              .order('display_order');
+        // Subscribe to real-time changes for this page's sections (only if component is still mounted)
+        if (isMounted && page.id) {
+          sectionsChannel = supabase
+            .channel(`page-sections-${page.id}`)
+            .on('postgres_changes', {
+              event: '*',
+              schema: 'public',
+              table: 'page_builder_sections',
+              filter: `page_id=eq.${page.id}`
+            }, async (payload) => {
+              console.log(`Real-time update for page '${pageKey}':`, payload);
               
-            if (!error && updatedSections) {
-              console.log('Refreshed sections:', updatedSections);
-              setSections(updatedSections);
-            }
-          })
-          .subscribe();
+              // Reload sections when any change occurs
+              const { data: updatedSections, error } = await supabase
+                .from('page_builder_sections')
+                .select('*')
+                .eq('page_id', page.id)
+                .eq('is_visible', true)
+                .order('display_order');
+                
+              if (!error && updatedSections && isMounted) {
+                console.log('Refreshed sections:', updatedSections);
+                setSections(updatedSections);
+              }
+            })
+            .subscribe();
+        }
       } catch (error) {
         console.error('Error loading page sections:', error);
-        setSections([]);
-        setLoading(false);
+        if (isMounted) {
+          setSections([]);
+          setLoading(false);
+        }
       }
     }
 
     loadSections();
 
-    // Cleanup subscription
+    // Cleanup subscription and timeout
     return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      
       if (sectionsChannel) {
         const cleanup = async () => {
-          const { supabase } = await import("@/integrations/supabase/client");
-          await supabase.removeChannel(sectionsChannel);
+          try {
+            const { supabase } = await import("@/integrations/supabase/client");
+            await supabase.removeChannel(sectionsChannel);
+          } catch (error) {
+            console.error('Error cleaning up channel:', error);
+          }
         };
         cleanup();
       }
