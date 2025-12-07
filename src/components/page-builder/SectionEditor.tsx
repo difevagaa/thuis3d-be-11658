@@ -58,20 +58,21 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Editar: {section.section_name}</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="content" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="content" className="w-full flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
             <TabsTrigger value="content">Contenido</TabsTrigger>
             <TabsTrigger value="settings">Configuración</TabsTrigger>
             <TabsTrigger value="styles">Estilos</TabsTrigger>
             <TabsTrigger value="advanced">Avanzado</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="content" className="space-y-4 mt-4">
+          <div className="flex-1 overflow-y-auto min-h-0 mt-4">
+            <TabsContent value="content" className="space-y-4 mt-0">
             {/* Content fields based on section type */}
             {section.section_type === 'hero' && (
               <>
@@ -1003,7 +1004,7 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
             )}
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4 mt-4">
+          <TabsContent value="settings" className="space-y-4 mt-0">
             {/* Common Settings for All Sections */}
             <div className="flex items-center justify-between">
               <Label>Ancho completo</Label>
@@ -2052,7 +2053,7 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
             </div>
           </TabsContent>
 
-          <TabsContent value="styles" className="space-y-4 mt-4">
+          <TabsContent value="styles" className="space-y-4 mt-0">
             <div className="space-y-2">
               <Label>Color de fondo</Label>
               <div className="flex gap-2">
@@ -2159,16 +2160,17 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
             </div>
           </TabsContent>
 
-          <TabsContent value="advanced" className="space-y-4 mt-4">
+          <TabsContent value="advanced" className="space-y-4 mt-0">
             <AdvancedSectionSettings
               settings={localSettings}
               onUpdate={updateSettings}
               sectionType={section.section_type}
             />
           </TabsContent>
+          </div>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>

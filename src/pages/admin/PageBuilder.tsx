@@ -164,54 +164,10 @@ export default function PageBuilder() {
     }
   };
 
-  // Auto-hide sidebar functionality
-  const resetSidebarTimer = useCallback(() => {
-    // Clear existing timer
-    if (sidebarTimerRef.current) {
-      clearTimeout(sidebarTimerRef.current);
-    }
-    
-    // Show sidebar
-    setSidebarVisible(true);
-    
-    // Set new timer to hide after 5 seconds
-    sidebarTimerRef.current = setTimeout(() => {
-      setSidebarVisible(false);
-    }, 5000);
-  }, []);
-
-  // Manual toggle sidebar
+  // Manual toggle sidebar (no auto-hide)
   const toggleSidebar = useCallback(() => {
-    if (sidebarTimerRef.current) {
-      clearTimeout(sidebarTimerRef.current);
-      sidebarTimerRef.current = null;
-    }
     setSidebarVisible(prev => !prev);
   }, []);
-
-  // Show sidebar and reset timer when user interacts
-  const handleSidebarInteraction = useCallback(() => {
-    resetSidebarTimer();
-  }, [resetSidebarTimer]);
-
-  // Initialize sidebar auto-hide on mount
-  useEffect(() => {
-    resetSidebarTimer();
-    
-    // Cleanup on unmount
-    return () => {
-      if (sidebarTimerRef.current) {
-        clearTimeout(sidebarTimerRef.current);
-      }
-    };
-  }, [resetSidebarTimer]);
-
-  // Reset timer when selected section changes
-  useEffect(() => {
-    if (selectedSection) {
-      resetSidebarTimer();
-    }
-  }, [selectedSection, resetSidebarTimer]);
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -802,7 +758,7 @@ export default function PageBuilder() {
           )}
         </div>
 
-        {/* Right Sidebar - Auto-hide after 5 seconds */}
+        {/* Right Sidebar - No auto-hide */}
         <div className="relative w-56 lg:w-64 flex-shrink-0">
           {/* Toggle Button - Always visible */}
           <Button
@@ -821,15 +777,11 @@ export default function PageBuilder() {
             )}
           </Button>
 
-          {/* Sidebar with auto-hide */}
+          {/* Sidebar */}
           <div
             className={`absolute inset-0 transition-all duration-300 ease-in-out ${
               sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             }`}
-            onMouseEnter={handleSidebarInteraction}
-            onMouseMove={handleSidebarInteraction}
-            onClick={handleSidebarInteraction}
-            onFocus={handleSidebarInteraction}
           >
             <PageBuilderSidebar
               selectedSection={selectedSection}
