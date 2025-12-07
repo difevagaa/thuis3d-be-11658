@@ -265,7 +265,7 @@ function AdminMenuSection({ section, collapsed }: { section: MenuSection; collap
 }
 
 export function AdminSidebar() {
-  const { state } = useSidebar();
+  const { state, resetAutoHideTimer } = useSidebar();
   const collapsed = state === "collapsed";
   
   return (
@@ -276,7 +276,10 @@ export function AdminSidebar() {
         "bg-gradient-to-b from-background via-background/95 to-muted/20"
       )}
     >
-      <SidebarContent className="py-4 px-2">
+      <SidebarContent 
+        className="py-4 px-2"
+        onClick={resetAutoHideTimer}
+      >
         {/* Logo Header */}
         {!collapsed && (
           <div className="px-2 mb-6">

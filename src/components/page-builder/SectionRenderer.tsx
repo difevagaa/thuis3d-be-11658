@@ -960,6 +960,285 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
   );
 }
 
+// Gallery Grid Section - displays images from gallery_items table
+function GalleryGridSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const loadGalleryItems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const limit = settings?.limit || 12;
+      
+      const { data, error } = await supabase
+        .from('gallery_items')
+        .select('*')
+        .is('deleted_at', null)
+        .order('display_order', { ascending: true })
+        .limit(limit);
+      
+      if (error) throw error;
+      setGalleryItems(data || []);
+    } catch (error) {
+      logger.error('Error loading gallery items:', error);
+      setGalleryItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [settings?.limit]);
+  
+  useEffect(() => {
+    loadGalleryItems();
+  }, [loadGalleryItems]);
+  
+  if (loading) {
+    return (
+      <section
+        className={cn(settings?.fullWidth ? "w-full" : "container mx-auto")}
+        style={{
+          backgroundColor: styles?.backgroundColor,
+          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        }}
+      >
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </section>
+    );
+  }
+  
+  if (galleryItems.length === 0) {
+    return null;
+  }
+  
+  const columns = settings?.columns || 4;
+  const columnsTablet = settings?.columnsTablet || 3;
+  const columnsMobile = settings?.columnsMobile || 2;
+  const gap = settings?.gap || 16;
+  
+  // Validate and sanitize image URLs
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+  
+  return (
+    <section
+      className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.textColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className={cn("max-w-7xl mx-auto", getTextAlignClass(styles?.textAlign))}>
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
+        {content?.subtitle && (
+          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
+            {content.subtitle}
+          </p>
+        )}
+        <div 
+          className={cn(
+            "grid gap-4",
+            `grid-cols-${columnsMobile}`,
+            `md:grid-cols-${columnsTablet}`,
+            `lg:grid-cols-${columns}`
+          )}
+          style={{ gap: `${gap}px` }}
+        >
+          {galleryItems.map((item) => {
+            if (!item.image_url || !isValidUrl(item.image_url)) {
+              return null;
+            }
+            return (
+              <div
+                key={item.id}
+                className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 group cursor-pointer"
+                style={{
+                  aspectRatio: '1 / 1'
+                }}
+              >
+                <img
+                  src={item.image_url}
+                  alt={item.title || 'Gallery item'}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                />
+                {settings?.showTitles && item.title && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-3">
+                    <h3 className="text-sm font-semibold">{item.title}</h3>
+                    {settings?.showDescriptions && item.description && (
+                      <p className="text-xs mt-1 opacity-90">{item.description}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Blog Carousel Section - displays posts from blog_posts table
+function BlogCarouselSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const loadBlogPosts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const sortBy = settings?.sortBy || 'created_at';
+      const sortOrder = settings?.sortOrder || 'desc';
+      const limit = settings?.limit || 6;
+      
+      let query = supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('is_published', true)
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .limit(limit);
+      
+      // Filter by category if specified
+      if (settings?.category) {
+        query = query.eq('category', settings.category);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      setBlogPosts(data || []);
+    } catch (error) {
+      logger.error('Error loading blog posts:', error);
+      setBlogPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [settings?.sortBy, settings?.sortOrder, settings?.limit, settings?.category]);
+  
+  useEffect(() => {
+    loadBlogPosts();
+  }, [loadBlogPosts]);
+  
+  if (loading) {
+    return (
+      <section
+        className={cn(settings?.fullWidth ? "w-full" : "container mx-auto")}
+        style={{
+          backgroundColor: styles?.backgroundColor,
+          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        }}
+      >
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </section>
+    );
+  }
+  
+  if (blogPosts.length === 0) {
+    return null;
+  }
+  
+  const postsPerRow = settings?.postsPerRow || 3;
+  const postsPerRowTablet = settings?.postsPerRowTablet || 2;
+  const postsPerRowMobile = settings?.postsPerRowMobile || 1;
+  
+  // Validate and sanitize URLs
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+  
+  return (
+    <section
+      className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.textColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className={cn("max-w-7xl mx-auto", getTextAlignClass(styles?.textAlign))}>
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
+        {content?.subtitle && (
+          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
+            {content.subtitle}
+          </p>
+        )}
+        <div 
+          className={cn(
+            "grid gap-6",
+            `grid-cols-${postsPerRowMobile}`,
+            `md:grid-cols-${postsPerRowTablet}`,
+            `lg:grid-cols-${postsPerRow}`
+          )}
+        >
+          {blogPosts.map((post) => (
+            <article
+              key={post.id}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+            >
+              {settings?.showFeaturedImage && post.featured_image && isValidUrl(post.featured_image) && (
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={post.featured_image}
+                    alt={post.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">{post.title}</h3>
+                {settings?.showExcerpt && post.excerpt && (
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{post.excerpt}</p>
+                )}
+                <div className="flex flex-wrap gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  {settings?.showDate && post.created_at && (
+                    <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                  )}
+                  {settings?.showAuthor && post.author && (
+                    <span>• {post.author}</span>
+                  )}
+                  {settings?.showCategories && post.category && (
+                    <span className="px-2 py-1 bg-primary/10 text-primary rounded-md">{post.category}</span>
+                  )}
+                </div>
+                {settings?.showReadMore && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`/blog/${post.slug || post.id}`}>Leer más</a>
+                  </Button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Accordion Section
 function AccordionSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
@@ -1279,6 +1558,10 @@ function RenderSection({ section }: { section: SectionData }) {
       return <VideoSection section={section} />;
     case 'products-carousel':
       return <ProductsCarouselSection section={section} />;
+    case 'gallery-grid':
+      return <GalleryGridSection section={section} />;
+    case 'blog-carousel':
+      return <BlogCarouselSection section={section} />;
     case 'image-carousel':
       return <ImageCarouselSection section={section} />;
     case 'accordion':

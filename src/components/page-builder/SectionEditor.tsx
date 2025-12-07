@@ -2546,6 +2546,240 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
               </>
             )}
 
+            {section.section_type === 'gallery-grid' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Galería de Proyectos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subtítulo (opcional)</Label>
+                  <Input
+                    value={localContent.subtitle || ''}
+                    onChange={(e) => updateContent('subtitle', e.target.value)}
+                    placeholder="Explora nuestros trabajos recientes"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Número máximo de items: {localSettings.limit || 12}</Label>
+                  <Slider
+                    value={[localSettings.limit || 12]}
+                    onValueChange={([value]) => updateSettings('limit', value)}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Columnas (Desktop): {localSettings.columns || 4}</Label>
+                  <Slider
+                    value={[localSettings.columns || 4]}
+                    onValueChange={([value]) => updateSettings('columns', value)}
+                    min={1}
+                    max={6}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Columnas (Tablet): {localSettings.columnsTablet || 3}</Label>
+                  <Slider
+                    value={[localSettings.columnsTablet || 3]}
+                    onValueChange={([value]) => updateSettings('columnsTablet', value)}
+                    min={1}
+                    max={4}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Columnas (Móvil): {localSettings.columnsMobile || 2}</Label>
+                  <Slider
+                    value={[localSettings.columnsMobile || 2]}
+                    onValueChange={([value]) => updateSettings('columnsMobile', value)}
+                    min={1}
+                    max={3}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Espaciado (px): {localSettings.gap || 16}</Label>
+                  <Slider
+                    value={[localSettings.gap || 16]}
+                    onValueChange={([value]) => updateSettings('gap', value)}
+                    min={0}
+                    max={50}
+                    step={2}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Habilitar lightbox</Label>
+                  <Switch
+                    checked={localSettings.enableLightbox !== false}
+                    onCheckedChange={(checked) => updateSettings('enableLightbox', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar títulos</Label>
+                  <Switch
+                    checked={localSettings.showTitles !== false}
+                    onCheckedChange={(checked) => updateSettings('showTitles', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar descripciones</Label>
+                  <Switch
+                    checked={localSettings.showDescriptions || false}
+                    onCheckedChange={(checked) => updateSettings('showDescriptions', checked)}
+                  />
+                </div>
+              </>
+            )}
+
+            {section.section_type === 'blog-carousel' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Últimas Noticias"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subtítulo (opcional)</Label>
+                  <Input
+                    value={localContent.subtitle || ''}
+                    onChange={(e) => updateContent('subtitle', e.target.value)}
+                    placeholder="Lee nuestros últimos artículos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Número máximo de posts: {localSettings.limit || 6}</Label>
+                  <Slider
+                    value={[localSettings.limit || 6]}
+                    onValueChange={([value]) => updateSettings('limit', value)}
+                    min={1}
+                    max={20}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoría (opcional)</Label>
+                  <Input
+                    value={localSettings.category || ''}
+                    onChange={(e) => updateSettings('category', e.target.value)}
+                    placeholder="Deja vacío para mostrar todas"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ordenar por</Label>
+                  <Select
+                    value={localSettings.sortBy || 'created_at'}
+                    onValueChange={(value) => updateSettings('sortBy', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created_at">Fecha de creación</SelectItem>
+                      <SelectItem value="updated_at">Última actualización</SelectItem>
+                      <SelectItem value="title">Título</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Orden</Label>
+                  <Select
+                    value={localSettings.sortOrder || 'desc'}
+                    onValueChange={(value) => updateSettings('sortOrder', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascendente</SelectItem>
+                      <SelectItem value="desc">Descendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Posts por fila (Desktop): {localSettings.postsPerRow || 3}</Label>
+                  <Slider
+                    value={[localSettings.postsPerRow || 3]}
+                    onValueChange={([value]) => updateSettings('postsPerRow', value)}
+                    min={1}
+                    max={6}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Posts por fila (Tablet): {localSettings.postsPerRowTablet || 2}</Label>
+                  <Slider
+                    value={[localSettings.postsPerRowTablet || 2]}
+                    onValueChange={([value]) => updateSettings('postsPerRowTablet', value)}
+                    min={1}
+                    max={4}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Posts por fila (Móvil): {localSettings.postsPerRowMobile || 1}</Label>
+                  <Slider
+                    value={[localSettings.postsPerRowMobile || 1]}
+                    onValueChange={([value]) => updateSettings('postsPerRowMobile', value)}
+                    min={1}
+                    max={2}
+                    step={1}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar imagen destacada</Label>
+                  <Switch
+                    checked={localSettings.showFeaturedImage !== false}
+                    onCheckedChange={(checked) => updateSettings('showFeaturedImage', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar extracto</Label>
+                  <Switch
+                    checked={localSettings.showExcerpt !== false}
+                    onCheckedChange={(checked) => updateSettings('showExcerpt', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar autor</Label>
+                  <Switch
+                    checked={localSettings.showAuthor || false}
+                    onCheckedChange={(checked) => updateSettings('showAuthor', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar fecha</Label>
+                  <Switch
+                    checked={localSettings.showDate !== false}
+                    onCheckedChange={(checked) => updateSettings('showDate', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar categorías</Label>
+                  <Switch
+                    checked={localSettings.showCategories || false}
+                    onCheckedChange={(checked) => updateSettings('showCategories', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Mostrar botón "Leer más"</Label>
+                  <Switch
+                    checked={localSettings.showReadMore !== false}
+                    onCheckedChange={(checked) => updateSettings('showReadMore', checked)}
+                  />
+                </div>
+              </>
+            )}
+
             {section.section_type === 'social-media' && (
               <SocialMediaSettings
                 settings={localSettings}
