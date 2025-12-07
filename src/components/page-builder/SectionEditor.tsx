@@ -13,7 +13,8 @@ import {
   Image as ImageIcon, 
   Upload, 
   Link as LinkIcon,
-  X
+  X,
+  Plus
 } from "lucide-react";
 
 interface SectionEditorProps {
@@ -258,6 +259,98 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                       placeholder="/contacto"
                     />
                   </div>
+                </div>
+              </>
+            )}
+
+            {section.section_type === 'features' && (
+              <>
+                <div className="space-y-2 mb-4">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Por Qué Elegirnos"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-medium">Características</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newFeatures = [...(localContent.features || []), {
+                          id: `feature-${Date.now()}`,
+                          icon: '✨',
+                          title: 'Nueva característica',
+                          description: 'Descripción de la característica'
+                        }];
+                        updateContent('features', newFeatures);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Añadir
+                    </Button>
+                  </div>
+                  {(localContent.features || []).map((feature: any, index: number) => (
+                    <div key={feature.id || index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-xs">Característica {index + 1}</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            const newFeatures = localContent.features.filter((_: any, i: number) => i !== index);
+                            updateContent('features', newFeatures);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Input
+                          value={feature.icon || ''}
+                          onChange={(e) => {
+                            const newFeatures = [...localContent.features];
+                            newFeatures[index] = { ...newFeatures[index], icon: e.target.value };
+                            updateContent('features', newFeatures);
+                          }}
+                          placeholder="Icono (emoji o nombre)"
+                          className="text-sm"
+                        />
+                        <Input
+                          value={feature.title || ''}
+                          onChange={(e) => {
+                            const newFeatures = [...localContent.features];
+                            newFeatures[index] = { ...newFeatures[index], title: e.target.value };
+                            updateContent('features', newFeatures);
+                          }}
+                          placeholder="Título"
+                          className="text-sm"
+                        />
+                        <Textarea
+                          value={feature.description || ''}
+                          onChange={(e) => {
+                            const newFeatures = [...localContent.features];
+                            newFeatures[index] = { ...newFeatures[index], description: e.target.value };
+                            updateContent('features', newFeatures);
+                          }}
+                          placeholder="Descripción"
+                          rows={2}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {(!localContent.features || localContent.features.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No hay características. Haz clic en "Añadir" para crear una.
+                    </p>
+                  )}
                 </div>
               </>
             )}
