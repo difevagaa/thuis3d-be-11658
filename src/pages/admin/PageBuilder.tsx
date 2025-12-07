@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
+import * as pageBuilderUtils from "@/lib/pageBuilderUtils";
+import * as sectionTesting from "@/lib/sectionTesting";
 import {
   Layout,
   Home,
@@ -34,7 +37,16 @@ import {
   Monitor,
   Tablet,
   Smartphone,
-  HelpCircle
+  HelpCircle,
+  Download,
+  Upload,
+  Search,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  Clipboard,
+  TestTube,
+  CheckCircle
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -79,6 +91,74 @@ export default function PageBuilder() {
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // New states for search and filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
+  const [testing, setTesting] = useState(false);
+
+  // Test all sections
+  const handleRunTests = async () => {
+    if (!selectedPage) {
+      toast.error('Selecciona una página primero');
+      return;
+    }
+
+    setTesting(true);
+    toast.info('Ejecutando pruebas comprehensivas...');
+
+    try {
+      const results = await sectionTesting.runComprehensiveTests(selectedPage.id);
+      const report = sectionTesting.generateTestReport(results);
+      
+      console.log(report);
+      
+      // Count totals
+      let totalPassed = 0;
+      let totalTested = 0;
+      let hasErrors = false;
+      
+      Object.values(results).forEach(result => {
+        totalPassed += result.passed;
+        totalTested += result.tested;
+        if (!result.success) hasErrors = true;
+      });
+      
+      if (hasErrors) {
+        toast.error(`Pruebas completadas: ${totalPassed}/${totalTested} pasaron. Ver consola para detalles.`);
+      } else {
+        toast.success(`✅ Todas las pruebas pasaron: ${totalPassed}/${totalTested}`);
+      }
+    } catch (error) {
+      logger.error('Error running tests:', error);
+      toast.error('Error ejecutando pruebas');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  // Test current section
+  const handleTestCurrentSection = async () => {
+    if (!selectedSection) {
+      toast.error('Selecciona una sección primero');
+      return;
+    }
+
+    setTesting(true);
+    
+    try {
+      const success = await sectionTesting.testSectionSave(selectedSection);
+      if (success) {
+        toast.success('✅ Sección validada correctamente');
+      }
+    } catch (error) {
+      logger.error('Error testing section:', error);
+      toast.error('Error validando sección');
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -122,195 +202,20 @@ export default function PageBuilder() {
 
   const loadSections = useCallback(async (pageId: string) => {
     try {
-      // First, get the page to know which page we're editing
-      const { data: pageData } = await supabase
-        .from('page_builder_pages')
-        .select('page_key')
-        .eq('id', pageId)
-        .single();
+      // Load from page_builder_sections for all pages
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .select('*')
+        .eq('page_id', pageId)
+        .order('display_order');
 
-      if (!pageData) return;
-
-      // For the home page, load existing content from homepage tables
-      if (pageData.page_key === 'home') {
-        const adaptedSections = await loadHomepageContent(pageId);
-        setSections(adaptedSections);
-      } else {
-        // For other pages, load from page_builder_sections
-        const { data, error } = await supabase
-          .from('page_builder_sections')
-          .select('*')
-          .eq('page_id', pageId)
-          .order('display_order');
-
-        if (error) throw error;
-        setSections(data || []);
-      }
+      if (error) throw error;
+      setSections(data || []);
     } catch (error) {
       logger.error('Error loading sections:', error);
       toast.error('Error al cargar las secciones');
     }
   }, []);
-
-  // Load and adapt homepage content from existing tables
-  const loadHomepageContent = async (pageId: string) => {
-    const adaptedSections: SectionData[] = [];
-    let order = 0;
-
-    try {
-      // Load homepage banners
-      const { data: banners } = await supabase
-        .from('homepage_banners')
-        .select('*, banner_images(*)')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (banners) {
-        banners.forEach((banner) => {
-          adaptedSections.push({
-            id: `banner-${banner.id}`,
-            page_id: pageId,
-            section_type: 'hero',
-            section_name: banner.title || 'Banner',
-            display_order: order++,
-            is_visible: banner.is_active || true,
-            settings: {
-              fullWidth: banner.display_style === 'fullscreen',
-              height: banner.height || '500px',
-              sourceTable: 'homepage_banners',
-              sourceId: banner.id
-            },
-            content: {
-              title: banner.title,
-              subtitle: banner.description,
-              backgroundImage: banner.image_url,
-              buttonText: banner.link_url ? 'Ver más' : '',
-              buttonUrl: banner.link_url
-            },
-            styles: {
-              backgroundColor: 'transparent',
-              textColor: banner.title_color || '#ffffff',
-              padding: 80,
-              textAlign: 'center'
-            }
-          });
-        });
-      }
-
-      // Load homepage sections
-      const { data: sections } = await supabase
-        .from('homepage_sections')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (sections) {
-        sections.forEach((section) => {
-          adaptedSections.push({
-            id: `section-${section.id}`,
-            page_id: pageId,
-            section_type: section.image_url ? 'banner' : 'text',
-            section_name: section.title || 'Sección',
-            display_order: order++,
-            is_visible: section.is_active || true,
-            settings: {
-              fullWidth: true,
-              sourceTable: 'homepage_sections',
-              sourceId: section.id
-            },
-            content: {
-              title: section.title,
-              subtitle: section.subtitle,
-              text: section.description,
-              backgroundImage: section.image_url
-            },
-            styles: {
-              backgroundColor: section.background_color || 'transparent',
-              textColor: section.image_url ? '#ffffff' : 'inherit',
-              padding: 60,
-              textAlign: 'center'
-            }
-          });
-        });
-      }
-
-      // Load homepage features
-      const { data: features } = await supabase
-        .from('homepage_features')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (features && features.length > 0) {
-        adaptedSections.push({
-          id: `features-group`,
-          page_id: pageId,
-          section_type: 'features',
-          section_name: 'Características',
-          display_order: order++,
-          is_visible: true,
-          settings: {
-            fullWidth: true,
-            sourceTable: 'homepage_features',
-            sourceId: null // null indicates this is a collection of features
-          },
-          content: {
-            title: 'Por Qué Elegirnos',
-            features: features.map((f) => ({
-              id: f.id,
-              icon: f.icon_name,
-              title: f.title,
-              description: f.description
-            }))
-          },
-          styles: {
-            backgroundColor: 'transparent',
-            padding: 60
-          }
-        });
-      }
-
-      // Load homepage quick access cards
-      const { data: cards } = await supabase
-        .from('homepage_quick_access_cards')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (cards && cards.length > 0) {
-        cards.forEach((card) => {
-          adaptedSections.push({
-            id: `card-${card.id}`,
-            page_id: pageId,
-            section_type: 'cta',
-            section_name: card.title || 'Tarjeta de acceso rápido',
-            display_order: order++,
-            is_visible: card.is_active || true,
-            settings: {
-              fullWidth: false,
-              sourceTable: 'homepage_quick_access_cards',
-              sourceId: card.id
-            },
-            content: {
-              title: card.title,
-              description: card.description,
-              buttonText: card.button_text,
-              buttonUrl: card.button_url
-            },
-            styles: {
-              backgroundColor: 'transparent',
-              padding: 40
-            }
-          });
-        });
-      }
-
-    } catch (error) {
-      logger.error('Error loading homepage content:', error);
-    }
-
-    return adaptedSections.sort((a, b) => a.display_order - b.display_order);
-  };
 
   useEffect(() => {
     loadPages();
@@ -437,133 +342,13 @@ export default function PageBuilder() {
 
   const handleUpdateSection = async (sectionId: string, updates: Partial<SectionData>) => {
     try {
-      // Find the section to determine its source
-      const section = sections.find(s => s.id === sectionId);
-      if (!section) return;
+      // Update page_builder_sections directly
+      const { error } = await supabase
+        .from('page_builder_sections')
+        .update(updates)
+        .eq('id', sectionId);
 
-      // If section has sourceTable, update the original table
-      if (section.settings?.sourceTable) {
-        const sourceTable = section.settings.sourceTable;
-        const sourceId = section.settings.sourceId;
-        
-        if (sourceTable === 'homepage_banners' && sourceId) {
-          // Banner update data
-          const updateData: Partial<{
-            title: string;
-            description: string;
-            image_url: string;
-            link_url: string;
-            title_color: string;
-            text_color: string;
-            height: string;
-            display_style: string;
-            is_active: boolean;
-          }> = {};
-
-          if (updates.content) {
-            if (updates.content.title !== undefined) updateData.title = updates.content.title;
-            if (updates.content.subtitle !== undefined) updateData.description = updates.content.subtitle;
-            if (updates.content.backgroundImage !== undefined) updateData.image_url = updates.content.backgroundImage;
-            if (updates.content.buttonUrl !== undefined) updateData.link_url = updates.content.buttonUrl;
-          }
-          if (updates.styles) {
-            if (updates.styles.textColor !== undefined) {
-              updateData.title_color = updates.styles.textColor;
-              updateData.text_color = updates.styles.textColor;
-            }
-          }
-          if (updates.settings) {
-            if (updates.settings.height !== undefined) updateData.height = updates.settings.height;
-            if (updates.settings.fullWidth !== undefined) {
-              updateData.display_style = updates.settings.fullWidth ? 'fullscreen' : 'card';
-            }
-          }
-          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
-
-          if (Object.keys(updateData).length > 0) {
-            const { error } = await supabase
-              .from('homepage_banners')
-              .update(updateData)
-              .eq('id', sourceId);
-            
-            if (error) throw error;
-          }
-        } 
-        else if (sourceTable === 'homepage_sections' && sourceId) {
-          // Section update data
-          const updateData: Partial<{
-            title: string;
-            subtitle: string;
-            description: string;
-            image_url: string;
-            background_color: string;
-            is_active: boolean;
-          }> = {};
-
-          if (updates.content) {
-            if (updates.content.title !== undefined) updateData.title = updates.content.title;
-            if (updates.content.subtitle !== undefined) updateData.subtitle = updates.content.subtitle;
-            if (updates.content.text !== undefined) updateData.description = updates.content.text;
-            if (updates.content.backgroundImage !== undefined) updateData.image_url = updates.content.backgroundImage;
-          }
-          if (updates.styles?.backgroundColor !== undefined) {
-            updateData.background_color = updates.styles.backgroundColor;
-          }
-          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
-
-          if (Object.keys(updateData).length > 0) {
-            const { error } = await supabase
-              .from('homepage_sections')
-              .update(updateData)
-              .eq('id', sourceId);
-            
-            if (error) throw error;
-          }
-        }
-        else if (sourceTable === 'homepage_quick_access_cards' && sourceId) {
-          // Card update data
-          const updateData: Partial<{
-            title: string;
-            description: string;
-            button_text: string;
-            button_url: string;
-            is_active: boolean;
-          }> = {};
-
-          if (updates.content) {
-            if (updates.content.title !== undefined) updateData.title = updates.content.title;
-            if (updates.content.description !== undefined) updateData.description = updates.content.description;
-            if (updates.content.buttonText !== undefined) updateData.button_text = updates.content.buttonText;
-            if (updates.content.buttonUrl !== undefined) updateData.button_url = updates.content.buttonUrl;
-          }
-          if (updates.is_visible !== undefined) updateData.is_active = updates.is_visible;
-
-          if (Object.keys(updateData).length > 0) {
-            const { error } = await supabase
-              .from('homepage_quick_access_cards')
-              .update(updateData)
-              .eq('id', sourceId);
-            
-            if (error) throw error;
-          }
-        }
-        else if (sourceTable === 'homepage_features') {
-          // Features is a collection, only update the section title (content.title)
-          // Individual feature items are edited in the Features admin page
-          // We only update local state here for the title change
-          if (updates.content?.title) {
-            toast.info('El título de la sección se actualiza solo localmente. Las características individuales se editan en la página de administración de Características.');
-          }
-        }
-      } else {
-        // Update page_builder_sections for new sections
-        const { error } = await supabase
-          .from('page_builder_sections')
-          .update(updates)
-          .eq('id', sectionId);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       // Update local state
       const newSections = sections.map(s => 
@@ -613,20 +398,12 @@ export default function PageBuilder() {
 
   const handleDuplicateSection = async (section: SectionData) => {
     try {
-      const newSection = {
-        page_id: section.page_id,
-        section_type: section.section_type,
-        section_name: `${section.section_name} (copia)`,
-        display_order: sections.length,
-        is_visible: section.is_visible,
-        settings: section.settings,
-        content: section.content,
-        styles: section.styles
-      };
-
+      const duplicated = pageBuilderUtils.duplicateSection(section);
+      delete duplicated.id; // Let Supabase generate new ID
+      
       const { data, error } = await supabase
         .from('page_builder_sections')
-        .insert(newSection)
+        .insert(duplicated)
         .select()
         .single();
 
@@ -642,6 +419,129 @@ export default function PageBuilder() {
       toast.error('Error al duplicar la sección');
     }
   };
+
+  const handleCopySection = async (section: SectionData) => {
+    const success = await pageBuilderUtils.copySectionToClipboard(section);
+    if (success) {
+      toast.success('Sección copiada al portapapeles');
+    } else {
+      toast.error('Error al copiar la sección');
+    }
+  };
+
+  const handlePasteSection = async () => {
+    if (!selectedPage) return;
+    
+    const pasted = await pageBuilderUtils.pasteSectionFromClipboard();
+    if (!pasted) {
+      toast.error('No hay sección válida en el portapapeles');
+      return;
+    }
+
+    try {
+      const newSection = {
+        ...pasted,
+        page_id: selectedPage.id,
+        display_order: sections.length
+      };
+      delete newSection.id;
+
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .insert(newSection)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
+      setHasChanges(true);
+      toast.success('Sección pegada');
+    } catch (error) {
+      logger.error('Error pasting section:', error);
+      toast.error('Error al pegar la sección');
+    }
+  };
+
+  const handleExportSection = (section: SectionData) => {
+    pageBuilderUtils.exportSectionAsJSON(section);
+    toast.success('Sección exportada');
+  };
+
+  const handleImportSection = async (file: File) => {
+    if (!selectedPage) return;
+    
+    const imported = await pageBuilderUtils.importSectionFromJSON(file);
+    if (!imported) {
+      toast.error('Archivo JSON inválido');
+      return;
+    }
+
+    try {
+      const newSection = {
+        ...imported,
+        page_id: selectedPage.id,
+        display_order: sections.length
+      };
+      delete newSection.id;
+
+      const { data, error } = await supabase
+        .from('page_builder_sections')
+        .insert(newSection)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSections = [...sections, data];
+      setSections(newSections);
+      saveToHistory(newSections);
+      setHasChanges(true);
+      toast.success('Sección importada');
+    } catch (error) {
+      logger.error('Error importing section:', error);
+      toast.error('Error al importar la sección');
+    }
+  };
+
+  const handleMoveSectionUp = async (sectionId: string) => {
+    const reordered = pageBuilderUtils.moveSectionUp(sections, sectionId);
+    await handleReorderSections(reordered);
+  };
+
+  const handleMoveSectionDown = async (sectionId: string) => {
+    const reordered = pageBuilderUtils.moveSectionDown(sections, sectionId);
+    await handleReorderSections(reordered);
+  };
+
+  // Get filtered sections based on search and filters
+  const getFilteredSections = (): SectionData[] => {
+    let filtered = sections;
+    
+    // Apply search
+    if (searchQuery) {
+      filtered = pageBuilderUtils.searchSections(filtered, searchQuery);
+    }
+    
+    // Apply type filter
+    if (filterType && filterType !== 'all') {
+      filtered = pageBuilderUtils.filterSectionsByType(filtered, filterType);
+    }
+    
+    // Apply visibility filter
+    if (filterVisibility !== 'all') {
+      filtered = pageBuilderUtils.filterSectionsByVisibility(filtered, filterVisibility);
+    }
+    
+    return filtered;
+  };
+
+  const filteredSections = getFilteredSections();
+  const sectionTypes = pageBuilderUtils.getUniqueSectionTypes(sections);
+  const sectionCount = pageBuilderUtils.getSectionCountByType(sections);
+
 
   const handleReorderSections = async (reorderedSections: SectionData[]) => {
     const updates = reorderedSections.map((section, index) => ({
@@ -787,6 +687,26 @@ export default function PageBuilder() {
           <Button variant="outline" size="sm" onClick={handlePreview}>
             <Eye className="h-4 w-4 mr-1" />
             Vista previa
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={handleTestCurrentSection}
+            disabled={testing || !selectedSection}
+            title="Validar sección actual"
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Validar
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={handleRunTests}
+            disabled={testing || !selectedPage}
+            title="Ejecutar todas las pruebas"
+          >
+            <TestTube className="h-4 w-4 mr-1" />
+            {testing ? 'Probando...' : 'Probar Todo'}
           </Button>
           <Button 
             size="sm" 

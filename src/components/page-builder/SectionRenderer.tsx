@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
+import { supabase } from "@/integrations/supabase/client";
+import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
+import { logger } from "@/lib/logger";
 
 // Utility function to safely navigate to URL
 const safeNavigate = (url: string) => {
@@ -469,6 +472,155 @@ function VideoSection({ section }: { section: SectionData }) {
   );
 }
 
+// Products Carousel Section
+function ProductsCarouselSection({ section }: { section: SectionData }) {
+  const { content, styles, settings } = section;
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    loadProducts();
+  }, [content]);
+  
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      
+      // Get user roles for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let userRoles: string[] = [];
+      
+      if (user) {
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        userRoles = (rolesData || [])
+          .map(r => String(r.role || '').trim().toLowerCase())
+          .filter(role => role.length > 0);
+      }
+      
+      // Build query based on settings
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          images:product_images(image_url, display_order),
+          product_roles(role)
+        `)
+        .is('deleted_at', null);
+      
+      // Apply filters from settings
+      if (settings?.category) {
+        query = query.eq('category', settings.category);
+      }
+      
+      if (settings?.featured) {
+        query = query.eq('is_featured', true);
+      }
+      
+      // Apply sorting
+      const sortBy = settings?.sortBy || 'created_at';
+      const sortOrder = settings?.sortOrder || 'desc';
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      
+      // Apply limit
+      const limit = settings?.limit || 10;
+      query = query.limit(limit);
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      // Filter by roles
+      const visibleProducts = (data || []).filter((product: any) => {
+        const productRolesList = product.product_roles || [];
+        const productRolesNormalized = productRolesList
+          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
+          .filter((role: string) => role.length > 0);
+        
+        if (productRolesNormalized.length === 0) return true;
+        if (!user || userRoles.length === 0) return false;
+        
+        return productRolesNormalized.some((productRole: string) => 
+          userRoles.includes(productRole)
+        );
+      });
+      
+      // Sort images
+      const productsWithSortedImages = visibleProducts.map(product => ({
+        ...product,
+        images: product.images?.sort((a: any, b: any) => 
+          a.display_order - b.display_order
+        ) || []
+      }));
+      
+      setProducts(productsWithSortedImages);
+    } catch (error) {
+      logger.error('Error loading products for carousel:', error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <section
+        className={cn(
+          settings?.fullWidth ? "w-full" : "container mx-auto",
+        )}
+        style={{
+          backgroundColor: styles?.backgroundColor,
+          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        }}
+      >
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </section>
+    );
+  }
+  
+  if (products.length === 0) {
+    return null;
+  }
+  
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden",
+        settings?.fullWidth ? "w-full" : "container mx-auto",
+      )}
+      style={{
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.textColor,
+        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+      }}
+    >
+      <div className={cn(
+        "max-w-7xl mx-auto",
+        getTextAlignClass(styles?.textAlign)
+      )}>
+        {content?.title && (
+          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+            {content.title}
+          </h2>
+        )}
+        {content?.subtitle && (
+          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
+            {content.subtitle}
+          </p>
+        )}
+        <FeaturedProductsCarousel 
+          products={products} 
+          maxVisible={settings?.maxVisible || 4}
+        />
+      </div>
+    </section>
+  );
+}
+
 // Main renderer component
 function RenderSection({ section }: { section: SectionData }) {
   if (!section.is_visible) return null;
@@ -496,6 +648,8 @@ function RenderSection({ section }: { section: SectionData }) {
       return <CustomSection section={section} />;
     case 'video':
       return <VideoSection section={section} />;
+    case 'products-carousel':
+      return <ProductsCarouselSection section={section} />;
     default:
       return null;
   }
