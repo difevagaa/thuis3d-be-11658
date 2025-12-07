@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,7 +33,109 @@ export default function VisitorAnalytics() {
   const [pageData, setPageData] = useState<any[]>([]);
   const [deviceData, setDeviceData] = useState<any[]>([]);
 
-  // Helper functions
+  useEffect(() => {
+    loadVisitorData();
+    
+    // Suscribirse a cambios en tiempo real
+    const channel = supabase
+      .channel('visitor-analytics')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'visitor_sessions'
+        },
+        () => {
+          loadVisitorData();
+        }
+      )
+      .subscribe();
+
+    // Actualizar cada 30 segundos
+    const interval = setInterval(loadVisitorData, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const loadVisitorData = async () => {
+    try {
+      // Visitantes activos (últimos 2 minutos Y con is_active=true)
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: active, error: activeError } = await supabase
+        .from('visitor_sessions')
+        .select('*')
+        .eq('is_active', true)
+        .gte('last_seen_at', twoMinutesAgo)
+        .is('deleted_at', null)
+        .order('last_seen_at', { ascending: false });
+
+      if (activeError) {
+        console.error('❌ Error loading active visitors:', activeError);
+      }
+
+      setActiveVisitors(active || []);
+
+      // Visitantes recientes (últimas 24 horas, no eliminados)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: recent, error: recentError } = await supabase
+        .from('visitor_sessions')
+        .select('*')
+        .gte('created_at', oneDayAgo)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (recentError) {
+        console.error('❌ Error loading recent visitors:', recentError);
+      }
+
+      setRecentVisitors(recent || []);
+
+      // Estadísticas
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const { data: allVisitors } = await supabase
+        .from('visitor_sessions')
+        .select('*');
+
+      const todayVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= today);
+      const weekVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= weekAgo);
+      const monthVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= monthAgo);
+
+      setStats({
+        totalToday: todayVisitors.length,
+        totalThisWeek: weekVisitors.length,
+        totalThisMonth: monthVisitors.length,
+        averageSessionTime: calculateAverageSessionTime(allVisitors || []),
+        totalPageViews: allVisitors?.length || 0,
+      });
+
+      // Datos por hora (últimas 24 horas)
+      const hourlyStats = calculateHourlyStats(recent || []);
+      setHourlyData(hourlyStats);
+
+      // Datos por página (filtrar deleted_at)
+      const activeVisitors = (allVisitors || []).filter(v => !v.deleted_at);
+      const pageStats = calculatePageStats(activeVisitors);
+      setPageData(pageStats);
+
+      // Datos por dispositivo (usar device_type si existe)
+      const deviceStats = calculateDeviceStats(activeVisitors);
+      setDeviceData(deviceStats);
+
+    } catch (error) {
+      console.error('Error loading visitor data:', error);
+    }
+  };
+
   const calculateAverageSessionTime = (visitors: VisitorSession[]) => {
     if (visitors.length === 0) return 0;
     
@@ -111,109 +213,6 @@ export default function VisitorAnalytics() {
       { name: 'Tablet', value: deviceCounts.tablet, color: '#ffc658' }
     ].filter(d => d.value > 0); // Solo mostrar dispositivos con visitas
   };
-
-  const loadVisitorData = useCallback(async () => {
-    try {
-      // Visitantes activos (últimos 2 minutos Y con is_active=true)
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-      const { data: active, error: activeError } = await supabase
-        .from('visitor_sessions')
-        .select('*')
-        .eq('is_active', true)
-        .gte('last_seen_at', twoMinutesAgo)
-        .is('deleted_at', null)
-        .order('last_seen_at', { ascending: false });
-
-      if (activeError) {
-        console.error('❌ Error loading active visitors:', activeError);
-      }
-
-      setActiveVisitors(active || []);
-
-      // Visitantes recientes (últimas 24 horas, no eliminados)
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: recent, error: recentError } = await supabase
-        .from('visitor_sessions')
-        .select('*')
-        .gte('created_at', oneDayAgo)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (recentError) {
-        console.error('❌ Error loading recent visitors:', recentError);
-      }
-
-      setRecentVisitors(recent || []);
-
-      // Estadísticas
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-      const { data: allVisitors } = await supabase
-        .from('visitor_sessions')
-        .select('*');
-
-      const todayVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= today);
-      const weekVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= weekAgo);
-      const monthVisitors = (allVisitors || []).filter(v => new Date(v.created_at) >= monthAgo);
-
-      setStats({
-        totalToday: todayVisitors.length,
-        totalThisWeek: weekVisitors.length,
-        totalThisMonth: monthVisitors.length,
-        averageSessionTime: calculateAverageSessionTime(allVisitors || []),
-        totalPageViews: allVisitors?.length || 0,
-      });
-
-      // Datos por hora (últimas 24 horas)
-      const hourlyStats = calculateHourlyStats(recent || []);
-      setHourlyData(hourlyStats);
-
-      // Datos por página (filtrar deleted_at)
-      const activeVisitors = (allVisitors || []).filter(v => !v.deleted_at);
-      const pageStats = calculatePageStats(activeVisitors);
-      setPageData(pageStats);
-
-      // Datos por dispositivo (usar device_type si existe)
-      const deviceStats = calculateDeviceStats(activeVisitors);
-      setDeviceData(deviceStats);
-
-    } catch (error) {
-      console.error('Error loading visitor data:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadVisitorData();
-    
-    // Suscribirse a cambios en tiempo real
-    const channel = supabase
-      .channel('visitor-analytics')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visitor_sessions'
-        },
-        () => {
-          loadVisitorData();
-        }
-      )
-      .subscribe();
-
-    // Actualizar cada 30 segundos
-    const interval = setInterval(loadVisitorData, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
-  }, [loadVisitorData]);
 
   const getTimeSince = (date: string) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);

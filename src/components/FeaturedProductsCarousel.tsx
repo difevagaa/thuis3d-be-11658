@@ -98,12 +98,20 @@ export default function FeaturedProductsCarousel({
   const { t } = useTranslation('home');
   const [rotationKey, setRotationKey] = useState(0);
 
-  // Get random products only once or when manually refreshed
-  // Remove auto-rotation to prevent flickering
+  // Get random products on each rotation
   const visibleProducts = useMemo(() => {
     return getRandomProducts(products, maxVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rotationKey intentionally triggers re-randomization
   }, [products, maxVisible, rotationKey]);
+
+  // Auto-rotate every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRotationKey(prev => prev + 1);
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleRotate = () => {
     setRotationKey(prev => prev + 1);

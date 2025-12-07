@@ -31,11 +31,7 @@ import {
   AlignRight,
   Bold,
   Italic,
-  Underline,
-  Share2,
-  Timer,
-  BarChart3,
-  Edit2
+  Underline
 } from "lucide-react";
 
 interface SectionTemplate {
@@ -51,7 +47,6 @@ interface PageBuilderSidebarProps {
   selectedSection: any;
   onAddSection: (config: any) => void;
   onUpdateSection: (sectionId: string, updates: any) => void;
-  onEditSection?: (section: any) => void;
 }
 
 const sectionTypeIcons: Record<string, React.ReactNode> = {
@@ -67,17 +62,13 @@ const sectionTypeIcons: Record<string, React.ReactNode> = {
   'spacer': <Square className="h-4 w-4" />,
   'custom': <Code className="h-4 w-4" />,
   'video': <Video className="h-4 w-4" />,
-  'text-image': <Layout className="h-4 w-4" />,
-  'social-media': <Share2 className="h-4 w-4" />,
-  'counter': <Timer className="h-4 w-4" />,
-  'stats': <BarChart3 className="h-4 w-4" />
+  'text-image': <Layout className="h-4 w-4" />
 };
 
 export function PageBuilderSidebar({ 
   selectedSection, 
   onAddSection, 
-  onUpdateSection,
-  onEditSection 
+  onUpdateSection 
 }: PageBuilderSidebarProps) {
   const { t } = useTranslation(['admin', 'common']);
   const [templates, setTemplates] = useState<SectionTemplate[]>([]);
@@ -121,14 +112,11 @@ export function PageBuilderSidebar({
   const quickAddSections = [
     { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" /> },
     { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" /> },
-    { type: 'gallery-grid', name: 'Galería de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
-    { type: 'blog-carousel', name: 'Carrusel de Blog', icon: <Type className="h-5 w-5" /> },
     { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" /> },
     { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" /> },
     { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" /> },
     { type: 'gallery', name: 'Galería', icon: <Grid3X3 className="h-5 w-5" /> },
     { type: 'features', name: 'Características', icon: <Star className="h-5 w-5" /> },
-    { type: 'stats', name: 'Estadísticas', icon: <BarChart3 className="h-5 w-5" /> },
     { type: 'cta', name: 'Llamada a la acción', icon: <MousePointer className="h-5 w-5" /> },
     { type: 'banner', name: 'Banner', icon: <Square className="h-5 w-5" /> },
     { type: 'testimonials', name: 'Testimonios', icon: <MessageSquare className="h-5 w-5" /> },
@@ -136,11 +124,12 @@ export function PageBuilderSidebar({
     { type: 'form', name: 'Formulario', icon: <Type className="h-5 w-5" /> },
     { type: 'accordion', name: 'Acordeón', icon: <AlignLeft className="h-5 w-5" /> },
     { type: 'tabs', name: 'Pestañas', icon: <AlignLeft className="h-5 w-5" /> },
-    { type: 'counter', name: 'Contador', icon: <Timer className="h-5 w-5" /> },
+    { type: 'countdown', name: 'Contador', icon: <Type className="h-5 w-5" /> },
     { type: 'pricing', name: 'Precios', icon: <Star className="h-5 w-5" /> },
     { type: 'team', name: 'Equipo', icon: <Star className="h-5 w-5" /> },
+    { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" /> },
     { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" /> },
-    { type: 'social-media', name: 'Redes Sociales', icon: <Share2 className="h-5 w-5" /> },
+    { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" /> },
     { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" /> },
     { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" /> },
     { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" /> }
@@ -193,7 +182,7 @@ export function PageBuilderSidebar({
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <ScrollArea className="flex-1 min-h-0">
           <TabsContent value="add" className="m-0 p-2 space-y-3">
             {/* Quick Add Sections */}
             <div>
@@ -238,23 +227,6 @@ export function PageBuilderSidebar({
           <TabsContent value="settings" className="m-0 p-4 space-y-6">
             {selectedSection ? (
               <>
-                {/* Open Full Editor Button */}
-                {onEditSection && (
-                  <div className="rounded-lg bg-primary/10 border-2 border-primary/20 p-3">
-                    <Button
-                      onClick={() => onEditSection(selectedSection)}
-                      className="w-full gap-2"
-                      variant="default"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                      Abrir Editor Completo
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Accede a todas las opciones avanzadas (30+ configuraciones)
-                    </p>
-                  </div>
-                )}
-
                 {/* Section Name */}
                 <div className="space-y-2">
                   <Label className="text-xs">Nombre de la sección</Label>

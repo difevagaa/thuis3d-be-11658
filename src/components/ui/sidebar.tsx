@@ -18,7 +18,6 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
-const SIDEBAR_AUTO_HIDE_DELAY = 5000; // 5 seconds
 
 type SidebarContext = {
   state: "expanded" | "collapsed";
@@ -28,7 +27,6 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
-  resetAutoHideTimer: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
@@ -52,7 +50,6 @@ const SidebarProvider = React.forwardRef<
 >(({ defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props }, ref) => {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
-  const autoHideTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -72,36 +69,6 @@ const SidebarProvider = React.forwardRef<
     },
     [setOpenProp, open],
   );
-
-  // Reset auto-hide timer
-  const resetAutoHideTimer = React.useCallback(() => {
-    // Clear existing timer
-    if (autoHideTimerRef.current) {
-      clearTimeout(autoHideTimerRef.current);
-    }
-    
-    // Only set auto-hide timer if sidebar is open and not on mobile
-    if (open && !isMobile) {
-      autoHideTimerRef.current = setTimeout(() => {
-        setOpen(false);
-      }, SIDEBAR_AUTO_HIDE_DELAY);
-    }
-  }, [open, isMobile, setOpen]);
-
-  // Initialize auto-hide timer when sidebar opens
-  React.useEffect(() => {
-    if (open && !isMobile) {
-      const timer = setTimeout(() => {
-        setOpen(false);
-      }, SIDEBAR_AUTO_HIDE_DELAY);
-      
-      autoHideTimerRef.current = timer;
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [open, isMobile, setOpen]);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
@@ -134,9 +101,8 @@ const SidebarProvider = React.forwardRef<
       openMobile,
       setOpenMobile,
       toggleSidebar,
-      resetAutoHideTimer,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, resetAutoHideTimer],
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
   );
 
   return (
@@ -170,7 +136,7 @@ const Sidebar = React.forwardRef<
     collapsible?: "offcanvas" | "icon" | "none";
   }
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
-  const { isMobile, state, openMobile, setOpenMobile, setOpen, resetAutoHideTimer } = useSidebar();
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
   if (collapsible === "none") {
     return (
@@ -213,19 +179,6 @@ const Sidebar = React.forwardRef<
       data-variant={variant}
       data-side={side}
     >
-      {/* Activation bar when collapsed */}
-      {state === "collapsed" && (
-        <div
-          className={cn(
-            "fixed inset-y-0 z-50 w-1 bg-primary/60 hover:w-2 hover:bg-primary transition-all duration-200 cursor-pointer",
-            side === "left" ? "left-0" : "right-0"
-          )}
-          onMouseEnter={() => setOpen(true)}
-          role="button"
-          aria-label="Mostrar menú lateral"
-        />
-      )}
-      
       {/* This is what handles the sidebar gap on desktop */}
       <div
         className={cn(
@@ -249,8 +202,6 @@ const Sidebar = React.forwardRef<
             : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,
         )}
-        onMouseMove={resetAutoHideTimer}
-        onMouseEnter={resetAutoHideTimer}
         {...props}
       >
         <div
@@ -682,5 +633,5 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
-  useSidebar, // eslint-disable-line react-refresh/only-export-components
+  useSidebar,
 };

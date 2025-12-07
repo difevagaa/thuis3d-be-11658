@@ -1,81 +1,137 @@
-import { useTranslation } from "react-i18next";
-import { SectionRenderer, usePageSections } from "@/components/page-builder/SectionRenderer";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Play } from "lucide-react";
+import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
+import { useTranslation } from "react-i18next";
+import { RichTextDisplay } from "@/components/RichTextDisplay";
+
+interface GalleryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  media_url: string;
+  media_type: 'image' | 'video';
+  display_order: number;
+}
 
 export default function Gallery() {
   const { t } = useTranslation('gallery');
-  
-  // Load page builder sections for gallery page
-  const { sections: pageBuilderSections, loading } = usePageSections('gallery');
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
+
+  const loadGalleryItems = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gallery_items')
+        .select('*')
+        .eq('is_published', true)
+        .is('deleted_at', null)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setItems((data || []) as GalleryItem[]);
+    } catch (error) {
+      console.error('Error loading gallery:', error);
+      toast.error(t('errorLoading', { defaultValue: 'Error al cargar la galería' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    loadGalleryItems();
+  }, [loadGalleryItems]);
+
+  const handleVideoPlay = (itemId: string) => {
+    setPlayingVideos(prev => new Set(prev).add(itemId));
+  };
+
+  const handleVideoPause = (itemId: string) => {
+    setPlayingVideos(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(itemId);
+      return newSet;
+    });
+  };
+
 
   return (
     <>
       <SEOHead 
-        title={t('title', { defaultValue: 'Galería' })}
-        description={t('seoDescription', { defaultValue: 'Explora nuestra galería de proyectos y trabajos realizados' })}
+        title={t('title')}
+        description={t('seoDescription')}
       />
       
-      <div className="min-h-screen">
-        {/* Render all content from Page Builder Sections */}
-        {pageBuilderSections.length > 0 ? (
-          <SectionRenderer sections={pageBuilderSections} />
-        ) : (
-          /* Default content when no sections are configured */
-          <>
-            <div className="bg-gradient-to-b from-gray-50 to-white py-16">
-              <div className="container mx-auto px-4 text-center">
-                <h1 className="text-4xl font-bold mb-4">Galería de Proyectos</h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Explora algunos de los proyectos que hemos realizado para nuestros clientes
-                </p>
-              </div>
-            </div>
+      <div className="container mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8">
+        <div className="max-w-4xl mx-auto mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6 text-center">{t('title')}</h1>
+          
+          <Card className="bg-muted/50 border-primary/20">
+            <CardContent className="pt-4 md:pt-6 px-3 md:px-6">
+              <p className="text-xs md:text-sm text-muted-foreground text-center leading-relaxed">
+                <strong className="text-foreground">{t('legalTitle')}</strong><br />
+                {t('legalText')}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-            <div className="container mx-auto px-4 py-16">
-              <div className="max-w-3xl mx-auto text-center">
-                <h2 className="text-2xl font-bold mb-4">Nuestros Trabajos</h2>
-                <p className="text-muted-foreground mb-8">
-                  Cada proyecto es único y representa nuestro compromiso con la excelencia. 
-                  Trabajamos en estrecha colaboración con nuestros clientes para asegurar que 
-                  cada pieza cumpla con sus expectativas y especificaciones.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h3 className="font-semibold mb-2">Prototipos Funcionales</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Piezas técnicas para validación de diseños y pruebas de concepto
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h3 className="font-semibold mb-2">Modelos Arquitectónicos</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Maquetas a escala para presentación de proyectos
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h3 className="font-semibold mb-2">Piezas de Repuesto</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Componentes de reemplazo y piezas personalizadas
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h3 className="font-semibold mb-2">Arte y Decoración</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Esculturas y piezas decorativas únicas
-                    </p>
-                  </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">{t('loading')}</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">{t('empty')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {items.map((item) => (
+              <Card key={item.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+                <div className="relative aspect-square bg-muted">
+                  {item.media_type === 'image' ? (
+                    <img
+                      src={item.media_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={item.media_url}
+                        className="w-full h-full object-cover"
+                        controls
+                        preload="metadata"
+                        onPlay={() => handleVideoPlay(item.id)}
+                        onPause={() => handleVideoPause(item.id)}
+                        onEnded={() => handleVideoPause(item.id)}
+                      />
+                      {!playingVideos.has(item.id) && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+                          <Play className="w-16 h-16 text-white opacity-80" />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-          </>
+                
+                <CardContent className="p-3 md:p-4">
+                  <h3 className="font-semibold text-base md:text-lg mb-1 md:mb-2">{item.title}</h3>
+                  {item.description && (
+                    <RichTextDisplay 
+                      content={item.description} 
+                      className="text-xs md:text-sm text-muted-foreground line-clamp-2 md:line-clamp-3 [&_p]:mb-0"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,7 +134,7 @@ export default function Payment() {
         setCartItems([]);
       }
     }
-  }, [navigate, loadShippingInfo, t]);
+  }, [navigate]);
 
   // Load applied gift card from sessionStorage
   useEffect(() => {
@@ -178,9 +178,9 @@ export default function Payment() {
     };
 
     calculateShippingCost();
-  }, [shippingInfo, cartItems, calculateShipping, calculateSubtotal]);
+  }, [shippingInfo, cartItems]);
 
-  const loadShippingInfo = useCallback(async () => {
+  const loadShippingInfo = async () => {
     try {
       // Get session ID from session storage
       const sessionId = sessionStorage.getItem("checkout_session_id");
@@ -208,17 +208,17 @@ export default function Payment() {
       logger.error("Error loading shipping info:", error);
       navigate("/informacion-envio");
     }
-  }, [t, navigate]);
+  };
 
   // Calcular subtotal (precio sin IVA)
-  const calculateSubtotal = useCallback(() => {
+  const calculateSubtotal = () => {
     const subtotal = cartItems.reduce((sum, item) => {
       const itemPrice = Number(item.price) || 0;
       const itemQuantity = Number(item.quantity) || 1;
       return sum + (itemPrice * itemQuantity);
     }, 0);
     return subtotal;
-  }, [cartItems]);
+  };
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   const calculateTax = () => {

@@ -41,7 +41,7 @@ export default function Quotes() {
   // Inicializar sin colores disponibles
   useEffect(() => {
     filterColorsByMaterial(null);
-  }, [filterColorsByMaterial]);
+  }, []);
 
   useEffect(() => {
     loadData();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, CSSProperties } from "react";
+import { useState, useEffect, CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
@@ -6,10 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-
-// Supabase connection info for diagnostics
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'Not configured';
 
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
@@ -165,7 +161,7 @@ const safeNavigate = (url: string) => {
   // Only allow http, https, and relative URLs starting with /
   if (sanitizedUrl.startsWith('/')) {
     // Validate it's a clean relative URL
-    if (/^\/[a-zA-Z0-9\-_/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
+    if (/^\/[a-zA-Z0-9\-_\/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
       window.location.href = sanitizedUrl;
     }
     return;
@@ -704,11 +700,28 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, userRoles } = useAuth(); // Use centralized auth hook
   
-  const loadProducts = useCallback(async () => {
+  useEffect(() => {
+    loadProducts();
+  }, [content]);
+  
+  const loadProducts = async () => {
     try {
       setLoading(true);
+      
+      // Get user roles for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let userRoles: string[] = [];
+      
+      if (user) {
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        userRoles = (rolesData || [])
+          .map(r => String(r.role || '').trim().toLowerCase())
+          .filter(role => role.length > 0);
+      }
       
       // Build query based on settings
       const sortBy = settings?.sortBy || 'created_at';
@@ -728,24 +741,16 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       
       if (error) throw error;
       
-      // Filter by roles - Fixed logic for correct behavior
+      // Filter by roles
       const visibleProducts = (data || []).filter((product: any) => {
         const productRolesList = product.product_roles || [];
         const productRolesNormalized = productRolesList
           .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
           .filter((role: string) => role.length > 0);
         
-        // If product has NO roles assigned, it's PUBLIC - visible to everyone
-        if (productRolesNormalized.length === 0) {
-          return true;
-        }
+        if (productRolesNormalized.length === 0) return true;
+        if (!user || userRoles.length === 0) return false;
         
-        // If product HAS roles but user is NOT logged in, hide the product
-        if (!user || userRoles.length === 0) {
-          return false;
-        }
-        
-        // User is logged in - check if they have at least one required role
         return productRolesNormalized.some((productRole: string) => 
           userRoles.includes(productRole)
         );
@@ -766,11 +771,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     } finally {
       setLoading(false);
     }
-  }, [settings?.sortBy, settings?.sortOrder, settings?.limit, user, userRoles]);
-  
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+  };
   
   if (loading) {
     return (
@@ -953,315 +954,6 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Gallery Grid Section - displays images from gallery_items table
-function GalleryGridSection({ section }: { section: SectionData }) {
-  const { content, styles, settings } = section;
-  const [galleryItems, setGalleryItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const loadGalleryItems = useCallback(async () => {
-    try {
-      setLoading(true);
-      const limit = settings?.limit || 12;
-      
-      const { data, error } = await supabase
-        .from('gallery_items')
-        .select('*')
-        .eq('is_published', true)
-        .is('deleted_at', null)
-        .order('display_order', { ascending: true })
-        .limit(limit);
-      
-      if (error) throw error;
-      setGalleryItems(data || []);
-    } catch (error) {
-      logger.error('Error loading gallery items:', error);
-      setGalleryItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [settings?.limit]);
-  
-  useEffect(() => {
-    loadGalleryItems();
-  }, [loadGalleryItems]);
-  
-  if (loading) {
-    return (
-      <section
-        className={cn(settings?.fullWidth ? "w-full" : "container mx-auto")}
-        style={{
-          backgroundColor: styles?.backgroundColor,
-          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
-        }}
-      >
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </section>
-    );
-  }
-  
-  if (galleryItems.length === 0) {
-    return null;
-  }
-  
-  const columns = settings?.columns || 4;
-  const columnsTablet = settings?.columnsTablet || 3;
-  const columnsMobile = settings?.columnsMobile || 2;
-  const gap = settings?.gap || 16;
-  
-  // Static class mapping for grid columns (Tailwind requires static classes)
-  const getGridColsClass = (cols: number, breakpoint: '' | 'md:' | 'lg:' = '') => {
-    const classMap: Record<string, string> = {
-      '1': `${breakpoint}grid-cols-1`,
-      '2': `${breakpoint}grid-cols-2`,
-      '3': `${breakpoint}grid-cols-3`,
-      '4': `${breakpoint}grid-cols-4`,
-      '5': `${breakpoint}grid-cols-5`,
-      '6': `${breakpoint}grid-cols-6`,
-    };
-    return classMap[String(cols)] || `${breakpoint}grid-cols-4`;
-  };
-  
-  // Validate and sanitize image URLs
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url);
-      return url.startsWith('http://') || url.startsWith('https://');
-    } catch {
-      return false;
-    }
-  };
-  
-  return (
-    <section
-      className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
-      style={{
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
-      }}
-    >
-      <div className={cn("max-w-7xl mx-auto", getTextAlignClass(styles?.textAlign))}>
-        {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
-            {content.title}
-          </h2>
-        )}
-        {content?.subtitle && (
-          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
-            {content.subtitle}
-          </p>
-        )}
-        <div 
-          className={cn(
-            "grid gap-4",
-            getGridColsClass(columnsMobile),
-            getGridColsClass(columnsTablet, 'md:'),
-            getGridColsClass(columns, 'lg:')
-          )}
-          style={{ gap: `${gap}px` }}
-        >
-          {galleryItems.map((item) => {
-            // Use media_url instead of image_url to match database schema
-            const mediaUrl = item.media_url || item.image_url;
-            const mediaType = item.media_type || 'image';
-            
-            if (!mediaUrl || !isValidUrl(mediaUrl)) {
-              return null;
-            }
-            
-            return (
-              <div
-                key={item.id}
-                className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 group cursor-pointer"
-                style={{
-                  aspectRatio: '1 / 1'
-                }}
-              >
-                {mediaType === 'video' ? (
-                  <video
-                    src={mediaUrl}
-                    className="w-full h-full object-cover"
-                    controls
-                    loop
-                    muted
-                    playsInline
-                  />
-                ) : (
-                  <img
-                    src={mediaUrl}
-                    alt={item.title || 'Gallery item'}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                )}
-                {settings?.showTitles && item.title && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-3">
-                    <h3 className="text-sm font-semibold">{item.title}</h3>
-                    {settings?.showDescriptions && item.description && (
-                      <p className="text-xs mt-1 opacity-90">{item.description}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Blog Carousel Section - displays posts from blog_posts table
-function BlogCarouselSection({ section }: { section: SectionData }) {
-  const { content, styles, settings } = section;
-  const [blogPosts, setBlogPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const loadBlogPosts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const sortBy = settings?.sortBy || 'created_at';
-      const sortOrder = settings?.sortOrder || 'desc';
-      const limit = settings?.limit || 6;
-      
-      let query = supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('is_published', true)
-        .order(sortBy, { ascending: sortOrder === 'asc' })
-        .limit(limit);
-      
-      // Filter by category if specified
-      if (settings?.category) {
-        query = query.eq('category', settings.category);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      setBlogPosts(data || []);
-    } catch (error) {
-      logger.error('Error loading blog posts:', error);
-      setBlogPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [settings?.sortBy, settings?.sortOrder, settings?.limit, settings?.category]);
-  
-  useEffect(() => {
-    loadBlogPosts();
-  }, [loadBlogPosts]);
-  
-  if (loading) {
-    return (
-      <section
-        className={cn(settings?.fullWidth ? "w-full" : "container mx-auto")}
-        style={{
-          backgroundColor: styles?.backgroundColor,
-          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
-        }}
-      >
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </section>
-    );
-  }
-  
-  if (blogPosts.length === 0) {
-    return null;
-  }
-  
-  const postsPerRow = settings?.postsPerRow || 3;
-  const postsPerRowTablet = settings?.postsPerRowTablet || 2;
-  const postsPerRowMobile = settings?.postsPerRowMobile || 1;
-  
-  // Validate and sanitize URLs
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url);
-      return url.startsWith('http://') || url.startsWith('https://');
-    } catch {
-      return false;
-    }
-  };
-  
-  return (
-    <section
-      className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
-      style={{
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
-      }}
-    >
-      <div className={cn("max-w-7xl mx-auto", getTextAlignClass(styles?.textAlign))}>
-        {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
-            {content.title}
-          </h2>
-        )}
-        {content?.subtitle && (
-          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
-            {content.subtitle}
-          </p>
-        )}
-        <div 
-          className={cn(
-            "grid gap-6",
-            `grid-cols-${postsPerRowMobile}`,
-            `md:grid-cols-${postsPerRowTablet}`,
-            `lg:grid-cols-${postsPerRow}`
-          )}
-        >
-          {blogPosts.map((post) => (
-            <article
-              key={post.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-            >
-              {settings?.showFeaturedImage && post.featured_image && isValidUrl(post.featured_image) && (
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={post.featured_image}
-                    alt={post.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-              )}
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-                {settings?.showExcerpt && post.excerpt && (
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{post.excerpt}</p>
-                )}
-                <div className="flex flex-wrap gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {settings?.showDate && post.created_at && (
-                    <span>{new Date(post.created_at).toLocaleDateString()}</span>
-                  )}
-                  {settings?.showAuthor && post.author && (
-                    <span>• {post.author}</span>
-                  )}
-                  {settings?.showCategories && post.category && (
-                    <span className="px-2 py-1 bg-primary/10 text-primary rounded-md">{post.category}</span>
-                  )}
-                </div>
-                {settings?.showReadMore && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`/blog/${post.slug || post.id}`}>Leer más</a>
-                  </Button>
-                )}
-              </div>
-            </article>
-          ))}
         </div>
       </div>
     </section>
@@ -1587,10 +1279,6 @@ function RenderSection({ section }: { section: SectionData }) {
       return <VideoSection section={section} />;
     case 'products-carousel':
       return <ProductsCarouselSection section={section} />;
-    case 'gallery-grid':
-      return <GalleryGridSection section={section} />;
-    case 'blog-carousel':
-      return <BlogCarouselSection section={section} />;
     case 'image-carousel':
       return <ImageCarouselSection section={section} />;
     case 'accordion':
@@ -1626,163 +1314,48 @@ export function SectionRenderer({ sections, className }: SectionRendererProps) {
 }
 
 // Hook to load page sections
-// eslint-disable-next-line react-refresh/only-export-components
 export function usePageSections(pageKey: string) {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let sectionsChannel: any;
-    let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
-
-    // Increased timeout to 10 seconds to prevent flickering
-    // If database is slow, wait longer before showing fallback
-    timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
-        console.warn(`⏱️ Loading timeout for page '${pageKey}' - showing fallback content`);
-        setLoading(false);
-        setSections([]);
-      }
-    }, 10000); // 10 second timeout - prevents flickering from slow Supabase queries
-
     async function loadSections() {
       try {
-        // Ensure we have a valid pageKey
-        if (!pageKey || pageKey.trim() === '') {
-          console.warn('⚠️ Empty pageKey provided to usePageSections');
-          if (isMounted) {
-            setSections([]);
-            setLoading(false);
-            clearTimeout(timeoutId);
-          }
-          return;
-        }
-
         const { supabase } = await import("@/integrations/supabase/client");
         
-        // Verify Supabase client is available
-        if (!supabase) {
-          console.error('❌ Supabase client not available');
-          if (isMounted) {
-            setSections([]);
-            setLoading(false);
-            clearTimeout(timeoutId);
-          }
-          return;
-        }
-        
-        // Get page by key with timeout protection
-        const pagePromise = supabase
+        // Get page by key
+        const { data: page, error: pageError } = await supabase
           .from('page_builder_pages')
           .select('id')
           .eq('page_key', pageKey)
           .eq('is_enabled', true)
           .single();
 
-        const { data: page, error: pageError } = await pagePromise;
-
         if (pageError || !page) {
-          console.log(`📄 Page '${pageKey}' not found or not enabled:`, pageError?.message || 'No data');
-          if (isMounted) {
-            setSections([]);
-            setLoading(false);
-            clearTimeout(timeoutId);
-          }
+          setSections([]);
           return;
         }
 
-        console.log(`✓ Loading sections for page '${pageKey}' (${page.id})`);
-        console.log(`🔌 Connected to Supabase: ${SUPABASE_URL}`);
-
         // Get sections for this page
-        const sectionsStartTime = performance.now();
         const { data: sectionsData, error: sectionsError } = await supabase
           .from('page_builder_sections')
           .select('*')
           .eq('page_id', page.id)
           .eq('is_visible', true)
           .order('display_order');
-        
-        const sectionsLoadTime = performance.now() - sectionsStartTime;
-        console.log(`⏱️ Sections loaded in ${sectionsLoadTime.toFixed(0)}ms`);
 
-        if (sectionsError) {
-          console.error(`❌ Error loading sections for page '${pageKey}':`, sectionsError.message);
-          if (isMounted) {
-            setSections([]);
-            setLoading(false);
-            clearTimeout(timeoutId);
-          }
-          return;
-        }
-        
-        console.log(`✓ Loaded ${sectionsData?.length || 0} sections for page '${pageKey}'`);
-        if (isMounted) {
-          setSections(sectionsData || []);
-          setLoading(false);
-          clearTimeout(timeoutId);
-        }
-
-        // Subscribe to real-time changes for this page's sections (only if component is still mounted)
-        if (isMounted && page.id) {
-          sectionsChannel = supabase
-            .channel(`page-sections-${page.id}`)
-            .on('postgres_changes', {
-              event: '*',
-              schema: 'public',
-              table: 'page_builder_sections',
-              filter: `page_id=eq.${page.id}`
-            }, async (payload) => {
-              console.log(`🔄 Real-time update for page '${pageKey}':`, payload);
-              
-              // Reload sections when any change occurs
-              const { data: updatedSections, error } = await supabase
-                .from('page_builder_sections')
-                .select('*')
-                .eq('page_id', page.id)
-                .eq('is_visible', true)
-                .order('display_order');
-                
-              if (!error && updatedSections && isMounted) {
-                console.log('✓ Refreshed sections:', updatedSections);
-                setSections(updatedSections);
-              }
-            })
-            .subscribe();
-        }
+        if (sectionsError) throw sectionsError;
+        setSections(sectionsData || []);
       } catch (error) {
-        // Network errors (fetch failed, etc.) will be caught here
-        console.error('❌ Network or database error:', error instanceof Error ? error.message : 'Unknown error');
-        if (isMounted) {
-          setSections([]);
-          setLoading(false);
-          clearTimeout(timeoutId);
-        }
+        console.error('Error loading page sections:', error);
+        setSections([]);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadSections();
-
-    // Cleanup subscription and timeout
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      
-      if (sectionsChannel) {
-        const cleanup = async () => {
-          try {
-            const { supabase } = await import("@/integrations/supabase/client");
-            await supabase.removeChannel(sectionsChannel);
-          } catch (error) {
-            console.error('Error cleaning up channel:', error);
-          }
-        };
-        cleanup();
-      }
-    };
   }, [pageKey]);
 
   return { sections, loading };
 }
-

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,10 +16,13 @@ export const useTranslatedContent = (
   const [content, setContent] = useState<TranslatedContent>({});
   const [loading, setLoading] = useState(false);
 
-  // Memoize the serialized original content to avoid unnecessary re-renders
-  const originalContentStr = useMemo(() => JSON.stringify(originalContent), [originalContent]);
+  useEffect(() => {
+    loadTranslations();
+    // We intentionally depend on the base language code to avoid issues with
+    // regional variants like "en-US", "nl-BE", etc.
+  }, [i18n.language, entityId, entityType, JSON.stringify(originalContent)]);
 
-  const loadTranslations = useCallback(async () => {
+  const loadTranslations = async () => {
     // Normalise language code so that "en-US" → "en", "nl-BE" → "nl", etc.
     const baseLang = i18n.language.split('-')[0];
 
@@ -71,11 +74,7 @@ export const useTranslatedContent = (
     } finally {
       setLoading(false);
     }
-  }, [i18n.language, entityId, entityType, fields, originalContent]);
-
-  useEffect(() => {
-    loadTranslations();
-  }, [loadTranslations]);
+  };
 
   return { content, loading };
 };

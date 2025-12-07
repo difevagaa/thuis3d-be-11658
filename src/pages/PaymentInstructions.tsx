@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,7 @@ export default function PaymentInstructions() {
   const [realOrderNumber, setRealOrderNumber] = useState(orderNumber);
 
 
-  const createPendingOrder = useCallback(async () => {
+  const createPendingOrder = async () => {
     try {
       setCreatingOrder(true);
       
@@ -184,7 +184,7 @@ export default function PaymentInstructions() {
     } finally {
       setCreatingOrder(false);
     }
-  }, [navigate, t]);
+  };
 
   useEffect(() => {
     if (!orderNumber || !method) {
@@ -197,7 +197,7 @@ export default function PaymentInstructions() {
     if (isPending && method === "bank_transfer" && !isInvoicePayment) {
       createPendingOrder();
     }
-  }, [orderNumber, method, navigate, isPending, isInvoicePayment, createPendingOrder]);
+  }, [orderNumber, method, navigate, isPending, isInvoicePayment]);
 
   const loadPaymentConfig = async () => {
     try {

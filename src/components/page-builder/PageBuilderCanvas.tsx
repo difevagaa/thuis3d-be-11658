@@ -58,7 +58,6 @@ interface PageBuilderCanvasProps {
   sections: SectionData[];
   selectedSection: SectionData | null;
   onSelectSection: (section: SectionData) => void;
-  onEditSection?: (section: SectionData) => void;
   onUpdateSection: (sectionId: string, updates: any) => void;
   onDeleteSection: (sectionId: string) => void;
   onDuplicateSection: (section: SectionData) => void;
@@ -85,7 +84,6 @@ function SortableSectionItem({
   section, 
   isSelected, 
   onSelect, 
-  onEdit,
   onDelete,
   onDuplicate,
   onToggleVisibility
@@ -93,7 +91,6 @@ function SortableSectionItem({
   section: SectionData;
   isSelected: boolean;
   onSelect: () => void;
-  onEdit?: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onToggleVisibility: () => void;
@@ -143,19 +140,7 @@ function SortableSectionItem({
           {section.section_type}
         </Badge>
 
-        <div className="flex items-center gap-1 transition-opacity">
-          {onEdit && (
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 px-2 gap-1"
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              title="Abrir editor completo con todas las opciones"
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-              <span className="text-xs hidden sm:inline">Editar</span>
-            </Button>
-          )}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="icon"
@@ -293,7 +278,7 @@ function SectionPreview({ section }: { section: SectionData }) {
         </div>
       );
 
-    case 'features': {
+    case 'features':
       const features = section.content?.features || [];
       return (
         <div style={styles} className="min-h-[60px] py-4">
@@ -331,7 +316,6 @@ function SectionPreview({ section }: { section: SectionData }) {
           </div>
         </div>
       );
-    }
 
     case 'features-old':
       return (
@@ -419,7 +403,6 @@ export function PageBuilderCanvas({
   sections,
   selectedSection,
   onSelectSection,
-  onEditSection,
   onUpdateSection,
   onDeleteSection,
   onDuplicateSection,
@@ -477,7 +460,6 @@ export function PageBuilderCanvas({
                 section={section}
                 isSelected={selectedSection?.id === section.id}
                 onSelect={() => onSelectSection(section)}
-                onEdit={onEditSection ? () => onEditSection(section) : undefined}
                 onDelete={() => onDeleteSection(section.id)}
                 onDuplicate={() => onDuplicateSection(section)}
                 onToggleVisibility={() => onUpdateSection(section.id, { is_visible: !section.is_visible })}

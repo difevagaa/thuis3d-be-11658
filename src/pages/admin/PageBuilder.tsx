@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,6 @@ import {
   Trash2,
   GripVertical,
   ChevronRight,
-  ChevronLeft,
   ChevronDown,
   Edit2,
   Copy,
@@ -47,15 +46,7 @@ import {
   ArrowDown,
   Clipboard,
   TestTube,
-  CheckCircle,
-  Shield,
-  Cookie,
-  Scale,
-  Truck,
-  RotateCcw,
-  Info,
-  Mail,
-  HelpCircleIcon
+  CheckCircle
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -106,15 +97,6 @@ export default function PageBuilder() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
-  
-  // Sidebar visibility state with auto-hide
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-  const isMouseOverSidebarRef = useRef(false);
-  
-  // Section editor dialog state
-  const [editingSection, setEditingSection] = useState<SectionData | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -178,58 +160,6 @@ export default function PageBuilder() {
     }
   };
 
-  // Auto-hide sidebar logic
-  useEffect(() => {
-    const startHideTimer = () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-      
-      timeoutIdRef.current = setTimeout(() => {
-        if (!isMouseOverSidebarRef.current) {
-          setSidebarVisible(false);
-        }
-      }, 5000); // Hide after 5 seconds of inactivity
-    };
-    
-    const handleMouseEnterSidebar = () => {
-      isMouseOverSidebarRef.current = true;
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-    };
-    
-    const handleMouseLeaveSidebar = () => {
-      isMouseOverSidebarRef.current = false;
-      startHideTimer();
-    };
-    
-    const sidebarElement = sidebarRef.current;
-    
-    if (sidebarElement) {
-      sidebarElement.addEventListener('mouseenter', handleMouseEnterSidebar);
-      sidebarElement.addEventListener('mouseleave', handleMouseLeaveSidebar);
-    }
-    
-    // Start initial timer
-    startHideTimer();
-    
-    return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-      if (sidebarElement) {
-        sidebarElement.removeEventListener('mouseenter', handleMouseEnterSidebar);
-        sidebarElement.removeEventListener('mouseleave', handleMouseLeaveSidebar);
-      }
-    };
-  }, []);
-  
-  // Manual toggle sidebar
-  const toggleSidebar = useCallback(() => {
-    setSidebarVisible(prev => !prev);
-  }, []);
-
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
     'products': <ShoppingBag className="h-4 w-4" />,
@@ -237,18 +167,7 @@ export default function PageBuilder() {
     'gift-cards': <Gift className="h-4 w-4" />,
     'blog': <BookOpen className="h-4 w-4" />,
     'gallery': <ImageIcon className="h-4 w-4" />,
-    'my-account': <User className="h-4 w-4" />,
-    // Legal pages
-    'privacy-policy': <Shield className="h-4 w-4" />,
-    'terms-of-service': <Scale className="h-4 w-4" />,
-    'cookies-policy': <Cookie className="h-4 w-4" />,
-    'legal-notice': <FileText className="h-4 w-4" />,
-    'shipping-policy': <Truck className="h-4 w-4" />,
-    'return-policy': <RotateCcw className="h-4 w-4" />,
-    // Additional pages
-    'about-us': <Info className="h-4 w-4" />,
-    'contact': <Mail className="h-4 w-4" />,
-    'faq': <HelpCircleIcon className="h-4 w-4" />
+    'my-account': <User className="h-4 w-4" />
   };
 
   const loadPages = useCallback(async () => {
@@ -309,6 +228,42 @@ export default function PageBuilder() {
     }
   }, [selectedPage, loadSections, setSearchParams]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (hasChanges) handleSaveAll();
+      }
+      // Ctrl/Cmd + Z to undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y to redo
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasChanges, historyIndex, history]);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedSection(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Save state to history for undo/redo
   const saveToHistory = useCallback((newSections: SectionData[]) => {
     setHistory(prev => {
@@ -335,59 +290,6 @@ export default function PageBuilder() {
     }
   }, [historyIndex, history]);
 
-  const handleSaveAll = useCallback(async () => {
-    setSaving(true);
-    try {
-      // All changes are saved immediately, so just refresh
-      if (selectedPage) {
-        await loadSections(selectedPage.id);
-      }
-      setHasChanges(false);
-      toast.success('Cambios guardados correctamente');
-    } catch (error) {
-      logger.error('Error saving:', error);
-      toast.error('Error al guardar');
-    } finally {
-      setSaving(false);
-    }
-  }, [selectedPage, loadSections]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + S to save
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (hasChanges) handleSaveAll();
-      }
-      // Ctrl/Cmd + Z to undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      }
-      // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y to redo
-      if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, handleSaveAll, handleUndo, handleRedo]);
-
-  // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSelectedSection(null);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   const handlePageSelect = (page: PageData) => {
     if (hasChanges) {
       if (!confirm('Tienes cambios sin guardar. ¿Deseas continuar?')) {
@@ -401,64 +303,6 @@ export default function PageBuilder() {
 
   const handleSectionSelect = (section: SectionData) => {
     setSelectedSection(section);
-  };
-  
-  const handleEditSection = (section: SectionData) => {
-    setEditingSection(section);
-  };
-  
-  const handleCloseEditor = () => {
-    setEditingSection(null);
-  };
-  
-  const handleSaveSection = async (updates: Partial<SectionData>) => {
-    if (!editingSection) return;
-    
-    console.log('=== SAVING SECTION ===');
-    console.log('Section ID:', editingSection.id);
-    console.log('Updates to save:', updates);
-    
-    try {
-      // Update in database
-      const { data, error } = await supabase
-        .from('page_builder_sections')
-        .update(updates)
-        .eq('id', editingSection.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
-
-      console.log('Saved to database:', data);
-
-      // Update local state immediately
-      const newSections = sections.map(s => 
-        s.id === editingSection.id ? { ...s, ...updates } : s
-      );
-      
-      setSections(newSections);
-      saveToHistory(newSections);
-      
-      if (selectedSection?.id === editingSection.id) {
-        setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
-      }
-      
-      // Force reload sections to ensure UI is in sync
-      await loadSections(selectedPage!.id);
-      
-      setEditingSection(null);
-      setHasChanges(true);
-      toast.success('Sección guardada correctamente');
-      
-      console.log('=== SECTION SAVED SUCCESSFULLY ===');
-    } catch (error) {
-      logger.error('Error saving section:', error);
-      console.error('=== SAVE FAILED ===', error);
-      toast.error('Error al guardar la sección');
-    }
   };
 
   const handleAddSection = async (templateConfig: any) => {
@@ -498,19 +342,13 @@ export default function PageBuilder() {
 
   const handleUpdateSection = async (sectionId: string, updates: Partial<SectionData>) => {
     try {
-      console.log('PageBuilder: Updating section', { sectionId, updates });
-      
       // Update page_builder_sections directly
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('page_builder_sections')
         .update(updates)
-        .eq('id', sectionId)
-        .select()
-        .single();
+        .eq('id', sectionId);
 
       if (error) throw error;
-
-      console.log('PageBuilder: Section updated in database', data);
 
       // Update local state
       const newSections = sections.map(s => 
@@ -528,7 +366,6 @@ export default function PageBuilder() {
       toast.success('Sección actualizada');
     } catch (error) {
       logger.error('Error updating section:', error);
-      console.error('PageBuilder: Failed to update section', error);
       toast.error('Error al actualizar la sección');
     }
   };
@@ -730,6 +567,21 @@ export default function PageBuilder() {
     }
   };
 
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      // All changes are saved immediately, so just refresh
+      await loadSections(selectedPage!.id);
+      setHasChanges(false);
+      toast.success('Cambios guardados correctamente');
+    } catch (error) {
+      logger.error('Error saving:', error);
+      toast.error('Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handlePreview = () => {
     if (selectedPage) {
       const previewUrls: Record<string, string> = {
@@ -756,124 +608,80 @@ export default function PageBuilder() {
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] bg-background -m-6 w-[calc(100%+3rem)]">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm gap-3 h-14">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="h-8 px-3 gap-1.5">
-            <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Admin</span>
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b bg-card gap-2 h-12">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="h-8 px-2">
+            <ChevronRight className="h-4 w-4 rotate-180" />
+            <span className="hidden sm:inline ml-1">Admin</span>
           </Button>
-          <div className="h-6 w-px bg-border hidden sm:block" />
-          <div className="flex items-center gap-2">
-            <Layout className="h-5 w-5 text-primary flex-shrink-0" />
-            <span className="font-semibold text-base hidden md:inline">Editor de Páginas</span>
+          <div className="flex items-center gap-1">
+            <Layout className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="font-medium text-sm hidden md:inline">Editor de Páginas</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowHelp(true)}
-            className="h-8 w-8 p-0"
-            title="Ayuda"
+            className="h-7 w-7 p-0"
           >
             <HelpCircle className="h-4 w-4" />
           </Button>
           {selectedPage && (
-            <Badge variant="secondary" className="text-xs flex items-center gap-1.5 px-2 py-1">
+            <Badge variant="secondary" className="text-xs flex-shrink-0">
               {pageIcons[selectedPage.page_key]}
-              <span className="font-medium">{selectedPage.page_name}</span>
+              <span className="ml-1">{selectedPage.page_name}</span>
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
+        <div className="flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-0.5 border rounded p-0.5">
             <Button
               variant={viewportMode === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('desktop')}
-              className="h-7 w-7 p-0"
-              title="Vista escritorio"
+              className="h-6 w-6 p-0"
             >
-              <Monitor className="h-3.5 w-3.5" />
+              <Monitor className="h-3 w-3" />
             </Button>
             <Button
               variant={viewportMode === 'tablet' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('tablet')}
-              className="h-7 w-7 p-0"
-              title="Vista tablet"
+              className="h-6 w-6 p-0"
             >
-              <Tablet className="h-3.5 w-3.5" />
+              <Tablet className="h-3 w-3" />
             </Button>
             <Button
               variant={viewportMode === 'mobile' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('mobile')}
-              className="h-7 w-7 p-0"
-              title="Vista móvil"
+              className="h-6 w-6 p-0"
             >
-              <Smartphone className="h-3.5 w-3.5" />
+              <Smartphone className="h-3 w-3" />
             </Button>
           </div>
-          
-          <div className="h-6 w-px bg-border hidden lg:block" />
-          
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleUndo} 
-              disabled={historyIndex <= 0} 
-              className="h-8 w-8 p-0"
-              title="Deshacer"
-            >
-              <Undo className="h-3.5 w-3.5" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRedo} 
-              disabled={historyIndex >= history.length - 1} 
-              className="h-8 w-8 p-0"
-              title="Rehacer"
-            >
-              <Redo className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          
-          <div className="h-6 w-px bg-border hidden xl:block" />
-          
-          <Button variant="outline" size="sm" onClick={handlePreview} className="h-8 px-3 gap-1.5">
-            <Eye className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline text-xs font-medium">Vista previa</span>
+          <Button variant="outline" size="sm" onClick={handleUndo} disabled={historyIndex <= 0} className="h-7 w-7 p-0">
+            <Undo className="h-3 w-3" />
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleTestCurrentSection} 
-            disabled={testing || !selectedSection} 
-            className="h-8 px-3 gap-1.5 hidden xl:flex"
-          >
-            <CheckCircle className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">Validar</span>
+          <Button variant="outline" size="sm" onClick={handleRedo} disabled={historyIndex >= history.length - 1} className="h-7 w-7 p-0">
+            <Redo className="h-3 w-3" />
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRunTests} 
-            disabled={testing || !selectedPage} 
-            className="h-8 px-3 gap-1.5 hidden 2xl:flex"
-          >
-            <TestTube className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">{testing ? 'Probando...' : 'Probar Todo'}</span>
+          <Button variant="outline" size="sm" onClick={handlePreview} className="h-7 px-2">
+            <Eye className="h-3 w-3" />
+            <span className="hidden lg:inline ml-1 text-xs">Vista previa</span>
           </Button>
-          
-          <div className="h-6 w-px bg-border" />
-          
-          <Button size="sm" onClick={handleSaveAll} disabled={saving || !hasChanges} className="h-8 px-3 gap-1.5">
-            <Save className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline text-xs font-medium">{saving ? 'Guardando...' : 'Guardar'}</span>
+          <Button variant="outline" size="sm" onClick={handleTestCurrentSection} disabled={testing || !selectedSection} className="h-7 px-2">
+            <CheckCircle className="h-3 w-3" />
+            <span className="hidden xl:inline ml-1 text-xs">Validar</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleRunTests} disabled={testing || !selectedPage} className="h-7 px-2">
+            <TestTube className="h-3 w-3" />
+            <span className="hidden xl:inline ml-1 text-xs">{testing ? 'Probando...' : 'Probar Todo'}</span>
+          </Button>
+          <Button size="sm" onClick={handleSaveAll} disabled={saving || !hasChanges} className="h-7 px-2">
+            <Save className="h-3 w-3" />
+            <span className="hidden sm:inline ml-1 text-xs">{saving ? 'Guardando...' : 'Guardar'}</span>
           </Button>
         </div>
       </div>
@@ -881,56 +689,29 @@ export default function PageBuilder() {
       {/* Main Content */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Left Sidebar - Pages */}
-        <div className="w-44 lg:w-52 flex-shrink-0 border-r bg-card flex flex-col min-h-0 shadow-sm">
-          {/* Header */}
-          <div className="px-3 py-3 border-b flex-shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
-            <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-              <Layout className="h-4 w-4 text-primary" />
-              Páginas
-            </h3>
+        <div className="w-40 lg:w-48 flex-shrink-0 border-r bg-muted/30 flex flex-col min-h-0">
+          <div className="p-2 border-b flex-shrink-0">
+            <h3 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">Páginas</h3>
           </div>
-          
-          {/* Pages List */}
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-2 space-y-1">
+            <div className="p-1.5 space-y-0.5">
               {pages.map(page => (
                 <button
                   key={page.id}
                   onClick={() => handlePageSelect(page)}
-                  className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
                     selectedPage?.id === page.id 
-                      ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]' 
-                      : 'hover:bg-accent hover:shadow-sm active:scale-[0.98]'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'hover:bg-muted'
                   }`}
                 >
-                  <span className={`flex-shrink-0 ${
-                    selectedPage?.id === page.id 
-                      ? 'text-primary-foreground' 
-                      : 'text-muted-foreground group-hover:text-primary'
-                  }`}>
-                    {pageIcons[page.page_key]}
-                  </span>
-                  <span className={`truncate text-sm font-medium ${
-                    selectedPage?.id === page.id 
-                      ? 'text-primary-foreground' 
-                      : 'text-foreground'
-                  }`}>
-                    {page.page_name}
-                  </span>
-                  {!page.is_enabled && (
-                    <EyeOff className="h-3.5 w-3.5 opacity-60 flex-shrink-0 ml-auto" />
-                  )}
+                  <span className="flex-shrink-0">{pageIcons[page.page_key]}</span>
+                  <span className="truncate">{page.page_name}</span>
+                  {!page.is_enabled && <EyeOff className="h-3 w-3 opacity-50 flex-shrink-0 ml-auto" />}
                 </button>
               ))}
             </div>
           </ScrollArea>
-          
-          {/* Footer Info */}
-          <div className="px-3 py-2 border-t bg-muted/30 flex-shrink-0">
-            <p className="text-[10px] text-muted-foreground text-center">
-              {pages.length} página{pages.length !== 1 ? 's' : ''} disponible{pages.length !== 1 ? 's' : ''}
-            </p>
-          </div>
         </div>
 
         {/* Center - Canvas */}
@@ -950,7 +731,6 @@ export default function PageBuilder() {
                     sections={sections}
                     selectedSection={selectedSection}
                     onSelectSection={handleSectionSelect}
-                    onEditSection={handleEditSection}
                     onUpdateSection={handleUpdateSection}
                     onDeleteSection={handleDeleteSection}
                     onDuplicateSection={handleDuplicateSection}
@@ -967,40 +747,12 @@ export default function PageBuilder() {
           )}
         </div>
 
-        {/* Right Sidebar - No auto-hide */}
-        <div className="relative w-56 lg:w-64 flex-shrink-0">
-          {/* Toggle Button - Always visible */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSidebar}
-            className={`absolute top-2 z-50 transition-all duration-300 ${
-              sidebarVisible ? '-left-10' : 'left-2'
-            }`}
-            title={sidebarVisible ? 'Ocultar panel' : 'Mostrar panel'}
-          >
-            {sidebarVisible ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
-
-          {/* Sidebar */}
-          <div
-            ref={sidebarRef}
-            className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-              sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
-            }`}
-          >
-            <PageBuilderSidebar
-              selectedSection={selectedSection}
-              onAddSection={handleAddSection}
-              onUpdateSection={handleUpdateSection}
-              onEditSection={handleEditSection}
-            />
-          </div>
-        </div>
+        {/* Right Sidebar */}
+        <PageBuilderSidebar
+          selectedSection={selectedSection}
+          onAddSection={handleAddSection}
+          onUpdateSection={handleUpdateSection}
+        />
       </div>
 
       {/* Help Dialog */}
@@ -1008,15 +760,6 @@ export default function PageBuilder() {
         open={showHelp}
         onClose={() => setShowHelp(false)}
       />
-      
-      {/* Section Editor Dialog */}
-      {editingSection && (
-        <SectionEditor
-          section={editingSection}
-          onUpdate={handleSaveSection}
-          onClose={handleCloseEditor}
-        />
-      )}
     </div>
   );
 }
