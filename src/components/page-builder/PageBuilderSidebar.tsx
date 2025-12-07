@@ -188,7 +188,7 @@ export function PageBuilderSidebar({
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <TabsContent value="add" className="m-0 p-2 space-y-3">
             {/* Quick Add Sections */}
             <div>

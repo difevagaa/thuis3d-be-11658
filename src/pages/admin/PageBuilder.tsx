@@ -107,8 +107,13 @@ export default function PageBuilder() {
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
   
-  // Sidebar visibility state (no auto-hide)
+  // Sidebar visibility state with auto-hide
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Section editor dialog state
+  const [editingSection, setEditingSection] = useState<SectionData | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -172,9 +177,43 @@ export default function PageBuilder() {
     }
   };
 
-  // Manual toggle sidebar (no auto-hide)
+  // Auto-hide sidebar logic
+  useEffect(() => {
+    const resetTimer = () => {
+      setLastActivity(Date.now());
+      setSidebarVisible(true);
+      
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+      }
+      
+      autoHideTimerRef.current = setTimeout(() => {
+        setSidebarVisible(false);
+      }, 5000); // Hide after 5 seconds
+    };
+    
+    // Reset timer on any activity
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    window.addEventListener('click', resetTimer);
+    
+    // Initial timer
+    resetTimer();
+    
+    return () => {
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      window.removeEventListener('click', resetTimer);
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+      }
+    };
+  }, []);
+  
+  // Manual toggle sidebar
   const toggleSidebar = useCallback(() => {
     setSidebarVisible(prev => !prev);
+    setLastActivity(Date.now());
   }, []);
 
   const pageIcons: Record<string, React.ReactNode> = {
@@ -348,6 +387,20 @@ export default function PageBuilder() {
 
   const handleSectionSelect = (section: SectionData) => {
     setSelectedSection(section);
+  };
+  
+  const handleEditSection = (section: SectionData) => {
+    setEditingSection(section);
+  };
+  
+  const handleCloseEditor = () => {
+    setEditingSection(null);
+  };
+  
+  const handleSaveSection = async (updates: Partial<SectionData>) => {
+    if (!editingSection) return;
+    await handleUpdateSection(editingSection.id, updates);
+    setEditingSection(null);
   };
 
   const handleAddSection = async (templateConfig: any) => {
@@ -761,6 +814,7 @@ export default function PageBuilder() {
                     sections={sections}
                     selectedSection={selectedSection}
                     onSelectSection={handleSectionSelect}
+                    onEditSection={handleEditSection}
                     onUpdateSection={handleUpdateSection}
                     onDeleteSection={handleDeleteSection}
                     onDuplicateSection={handleDuplicateSection}
@@ -816,6 +870,15 @@ export default function PageBuilder() {
         open={showHelp}
         onClose={() => setShowHelp(false)}
       />
+      
+      {/* Section Editor Dialog */}
+      {editingSection && (
+        <SectionEditor
+          section={editingSection}
+          onUpdate={handleSaveSection}
+          onClose={handleCloseEditor}
+        />
+      )}
     </div>
   );
 }

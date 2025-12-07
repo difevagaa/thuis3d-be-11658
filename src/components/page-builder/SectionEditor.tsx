@@ -1454,17 +1454,716 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
               </div>
             )}
 
+            {section.section_type === 'divider' && (
+              <>
+                <FieldWithHelp
+                  label="Estilo del separador"
+                  help="Tipo de separador a mostrar: línea visible, espacio transparente o gradiente decorativo."
+                >
+                  <Select
+                    value={localSettings.dividerStyle || 'line'}
+                    onValueChange={(value) => updateSettings('dividerStyle', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="line">Línea sólida</SelectItem>
+                      <SelectItem value="dashed">Línea discontinua</SelectItem>
+                      <SelectItem value="dotted">Línea punteada</SelectItem>
+                      <SelectItem value="double">Línea doble</SelectItem>
+                      <SelectItem value="gradient">Gradiente</SelectItem>
+                      <SelectItem value="space">Solo espacio</SelectItem>
+                      <SelectItem value="pattern">Con patrón</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                {localSettings.dividerStyle !== 'space' && (
+                  <>
+                    <FieldWithHelp
+                      label="Grosor de la línea (px)"
+                      help="Altura de la línea divisoria en píxeles."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {localSettings.thickness || 1}px
+                        </div>
+                        <Slider
+                          value={[localSettings.thickness || 1]}
+                          onValueChange={([value]) => updateSettings('thickness', value)}
+                          min={1}
+                          max={20}
+                          step={1}
+                        />
+                      </div>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Color de la línea"
+                      help="Color principal de la línea divisoria."
+                    >
+                      <Input
+                        type="color"
+                        value={localSettings.lineColor || '#e0e0e0'}
+                        onChange={(e) => updateSettings('lineColor', e.target.value)}
+                        className="h-10 cursor-pointer"
+                      />
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                {localSettings.dividerStyle === 'gradient' && (
+                  <FieldWithHelp
+                    label="Color secundario del gradiente"
+                    help="Color de transición para el efecto de gradiente."
+                  >
+                    <Input
+                      type="color"
+                      value={localSettings.gradientColor || '#ffffff'}
+                      onChange={(e) => updateSettings('gradientColor', e.target.value)}
+                      className="h-10 cursor-pointer"
+                    />
+                  </FieldWithHelp>
+                )}
+
+                <FieldWithHelp
+                  label="Altura del separador (px)"
+                  help="Altura total del espacio que ocupa el separador incluyendo márgenes."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.height || 40}px
+                    </div>
+                    <Slider
+                      value={[localSettings.height || 40]}
+                      onValueChange={([value]) => updateSettings('height', value)}
+                      min={10}
+                      max={300}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Ancho de la línea"
+                  help="Qué tan ancha es la línea respecto al contenedor."
+                >
+                  <Select
+                    value={localSettings.width || '100%'}
+                    onValueChange={(value) => updateSettings('width', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25%">25% (Muy corta)</SelectItem>
+                      <SelectItem value="50%">50% (Corta)</SelectItem>
+                      <SelectItem value="75%">75% (Mediana)</SelectItem>
+                      <SelectItem value="100%">100% (Completa)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Alineación de la línea"
+                  help="Posición horizontal de la línea."
+                >
+                  <Select
+                    value={localSettings.alignment || 'center'}
+                    onValueChange={(value) => updateSettings('alignment', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Izquierda</SelectItem>
+                      <SelectItem value="center">Centro</SelectItem>
+                      <SelectItem value="right">Derecha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Margen superior (px)"
+                  help="Espacio adicional arriba del separador."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.marginTop || 0}px
+                    </div>
+                    <Slider
+                      value={[localSettings.marginTop || 0]}
+                      onValueChange={([value]) => updateSettings('marginTop', value)}
+                      min={0}
+                      max={200}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Margen inferior (px)"
+                  help="Espacio adicional debajo del separador."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.marginBottom || 0}px
+                    </div>
+                    <Slider
+                      value={[localSettings.marginBottom || 0]}
+                      onValueChange={([value]) => updateSettings('marginBottom', value)}
+                      min={0}
+                      max={200}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                {localSettings.dividerStyle === 'pattern' && (
+                  <>
+                    <FieldWithHelp
+                      label="Tipo de patrón"
+                      help="Patrón decorativo para la línea."
+                    >
+                      <Select
+                        value={localSettings.patternType || 'dots'}
+                        onValueChange={(value) => updateSettings('patternType', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dots">Puntos</SelectItem>
+                          <SelectItem value="waves">Ondas</SelectItem>
+                          <SelectItem value="zigzag">Zigzag</SelectItem>
+                          <SelectItem value="diamonds">Diamantes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Tamaño del patrón (px)"
+                      help="Tamaño de los elementos del patrón."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {localSettings.patternSize || 8}px
+                        </div>
+                        <Slider
+                          value={[localSettings.patternSize || 8]}
+                          onValueChange={([value]) => updateSettings('patternSize', value)}
+                          min={4}
+                          max={32}
+                          step={2}
+                        />
+                      </div>
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Añadir icono decorativo"
+                  help="Coloca un icono en el centro del separador."
+                >
+                  <Switch
+                    checked={localSettings.showIcon || false}
+                    onCheckedChange={(checked) => updateSettings('showIcon', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.showIcon && (
+                  <>
+                    <FieldWithHelp
+                      label="Icono/Emoji"
+                      help="Carácter o emoji a mostrar (ejemplo: ✦, ◆, ★, •)"
+                    >
+                      <Input
+                        value={localContent.icon || '✦'}
+                        onChange={(e) => updateContent('icon', e.target.value)}
+                        placeholder="✦"
+                        maxLength={3}
+                      />
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Tamaño del icono"
+                      help="Tamaño del icono decorativo."
+                    >
+                      <Select
+                        value={localSettings.iconSize || 'medium'}
+                        onValueChange={(value) => updateSettings('iconSize', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Pequeño</SelectItem>
+                          <SelectItem value="medium">Mediano</SelectItem>
+                          <SelectItem value="large">Grande</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Color del icono"
+                      help="Color del icono decorativo."
+                    >
+                      <Input
+                        type="color"
+                        value={localSettings.iconColor || '#666666'}
+                        onChange={(e) => updateSettings('iconColor', e.target.value)}
+                        className="h-10 cursor-pointer"
+                      />
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Añadir sombra"
+                  help="Agrega una sombra sutil a la línea para darle profundidad."
+                >
+                  <Switch
+                    checked={localSettings.addShadow || false}
+                    onCheckedChange={(checked) => updateSettings('addShadow', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.addShadow && (
+                  <FieldWithHelp
+                    label="Intensidad de sombra"
+                    help="Visibilidad de la sombra."
+                  >
+                    <Select
+                      value={localSettings.shadowIntensity || 'subtle'}
+                      onValueChange={(value) => updateSettings('shadowIntensity', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="subtle">Sutil</SelectItem>
+                        <SelectItem value="medium">Media</SelectItem>
+                        <SelectItem value="strong">Fuerte</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldWithHelp>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Animación de entrada"
+                  help="La línea aparece con animación al hacer scroll."
+                >
+                  <Switch
+                    checked={localSettings.animateIn || false}
+                    onCheckedChange={(checked) => updateSettings('animateIn', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.animateIn && (
+                  <>
+                    <FieldWithHelp
+                      label="Tipo de animación"
+                      help="Cómo aparece el separador."
+                    >
+                      <Select
+                        value={localSettings.animationType || 'expand'}
+                        onValueChange={(value) => updateSettings('animationType', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fade">Aparecer</SelectItem>
+                          <SelectItem value="expand">Expandir desde centro</SelectItem>
+                          <SelectItem value="slide-left">Deslizar desde izquierda</SelectItem>
+                          <SelectItem value="slide-right">Deslizar desde derecha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Duración de animación (segundos)"
+                      help="Velocidad de la animación."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {localSettings.animationDuration || 0.5}s
+                        </div>
+                        <Slider
+                          value={[localSettings.animationDuration || 0.5]}
+                          onValueChange={([value]) => updateSettings('animationDuration', value)}
+                          min={0.1}
+                          max={3}
+                          step={0.1}
+                        />
+                      </div>
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                <FieldWithHelp
+                  label="Opacidad de la línea"
+                  help="Transparencia de la línea divisoria."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {Math.round((localSettings.opacity || 1) * 100)}%
+                    </div>
+                    <Slider
+                      value={[(localSettings.opacity || 1) * 100]}
+                      onValueChange={([value]) => updateSettings('opacity', value / 100)}
+                      min={0}
+                      max={100}
+                      step={5}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Radio de bordes (px)"
+                  help="Redondeo de las esquinas de la línea."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.borderRadius || 0}px
+                    </div>
+                    <Slider
+                      value={[localSettings.borderRadius || 0]}
+                      onValueChange={([value]) => updateSettings('borderRadius', value)}
+                      min={0}
+                      max={20}
+                      step={1}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Responsive en móvil"
+                  help="Ajustar automáticamente el separador en dispositivos móviles."
+                >
+                  <Switch
+                    checked={localSettings.responsive !== false}
+                    onCheckedChange={(checked) => updateSettings('responsive', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.responsive && (
+                  <>
+                    <FieldWithHelp
+                      label="Grosor en móvil (px)"
+                      help="Grosor de la línea en pantallas pequeñas."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {localSettings.mobileThickness || localSettings.thickness || 1}px
+                        </div>
+                        <Slider
+                          value={[localSettings.mobileThickness || localSettings.thickness || 1]}
+                          onValueChange={([value]) => updateSettings('mobileThickness', value)}
+                          min={1}
+                          max={10}
+                          step={1}
+                        />
+                      </div>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Altura en móvil (px)"
+                      help="Altura total del separador en móvil."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {localSettings.mobileHeight || localSettings.height || 40}px
+                        </div>
+                        <Slider
+                          value={[localSettings.mobileHeight || localSettings.height || 40]}
+                          onValueChange={([value]) => updateSettings('mobileHeight', value)}
+                          min={10}
+                          max={150}
+                          step={10}
+                        />
+                      </div>
+                    </FieldWithHelp>
+                  </>
+                )}
+              </>
+            )}
+
             {section.section_type === 'spacer' && (
-              <div className="space-y-4">
-                <Label>Altura del espaciador: {localSettings.height || 60}px</Label>
-                <Slider
-                  value={[localSettings.height || 60]}
-                  onValueChange={([value]) => updateSettings('height', value)}
-                  min={20}
-                  max={300}
-                  step={10}
-                />
-              </div>
+              <>
+                <FieldWithHelp
+                  label="Altura del espaciador (px)"
+                  help="Altura del espacio vertical en píxeles."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.height || 60}px
+                    </div>
+                    <Slider
+                      value={[localSettings.height || 60]}
+                      onValueChange={([value]) => updateSettings('height', value)}
+                      min={10}
+                      max={500}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Altura en tablet (px)"
+                  help="Altura del espaciador en pantallas medianas."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.tabletHeight || localSettings.height || 60}px
+                    </div>
+                    <Slider
+                      value={[localSettings.tabletHeight || localSettings.height || 60]}
+                      onValueChange={([value]) => updateSettings('tabletHeight', value)}
+                      min={10}
+                      max={300}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Altura en móvil (px)"
+                  help="Altura del espaciador en pantallas pequeñas."
+                >
+                  <div className="space-y-2">
+                    <div className="text-sm text-right text-muted-foreground">
+                      {localSettings.mobileHeight || localSettings.height || 60}px
+                    </div>
+                    <Slider
+                      value={[localSettings.mobileHeight || localSettings.height || 60]}
+                      onValueChange={([value]) => updateSettings('mobileHeight', value)}
+                      min={10}
+                      max={200}
+                      step={10}
+                    />
+                  </div>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Color de fondo"
+                  help="Color de fondo del espaciador (transparente por defecto)."
+                >
+                  <Input
+                    type="color"
+                    value={localStyles.backgroundColor || '#ffffff'}
+                    onChange={(e) => updateStyles('backgroundColor', e.target.value)}
+                    className="h-10 cursor-pointer"
+                  />
+                </FieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Fondo transparente"
+                  help="Hacer el fondo completamente transparente."
+                >
+                  <Switch
+                    checked={localSettings.transparent !== false}
+                    onCheckedChange={(checked) => updateSettings('transparent', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Añadir gradiente de fondo"
+                  help="Aplicar un gradiente de color al espaciador."
+                >
+                  <Switch
+                    checked={localSettings.useGradient || false}
+                    onCheckedChange={(checked) => updateSettings('useGradient', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.useGradient && (
+                  <>
+                    <FieldWithHelp
+                      label="Color inicial del gradiente"
+                      help="Primer color del gradiente."
+                    >
+                      <Input
+                        type="color"
+                        value={localSettings.gradientStart || '#ffffff'}
+                        onChange={(e) => updateSettings('gradientStart', e.target.value)}
+                        className="h-10 cursor-pointer"
+                      />
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Color final del gradiente"
+                      help="Segundo color del gradiente."
+                    >
+                      <Input
+                        type="color"
+                        value={localSettings.gradientEnd || '#f0f0f0'}
+                        onChange={(e) => updateSettings('gradientEnd', e.target.value)}
+                        className="h-10 cursor-pointer"
+                      />
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Dirección del gradiente"
+                      help="Orientación del gradiente."
+                    >
+                      <Select
+                        value={localSettings.gradientDirection || 'to bottom'}
+                        onValueChange={(value) => updateSettings('gradientDirection', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="to bottom">Arriba a abajo</SelectItem>
+                          <SelectItem value="to top">Abajo a arriba</SelectItem>
+                          <SelectItem value="to right">Izquierda a derecha</SelectItem>
+                          <SelectItem value="to left">Derecha a izquierda</SelectItem>
+                          <SelectItem value="to bottom right">Diagonal ↘</SelectItem>
+                          <SelectItem value="to bottom left">Diagonal ↙</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Añadir patrón de fondo"
+                  help="Aplicar un patrón decorativo al espaciador."
+                >
+                  <Switch
+                    checked={localSettings.usePattern || false}
+                    onCheckedChange={(checked) => updateSettings('usePattern', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.usePattern && (
+                  <>
+                    <FieldWithHelp
+                      label="Tipo de patrón"
+                      help="Patrón decorativo para el fondo."
+                    >
+                      <Select
+                        value={localSettings.patternType || 'dots'}
+                        onValueChange={(value) => updateSettings('patternType', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dots">Puntos</SelectItem>
+                          <SelectItem value="grid">Cuadrícula</SelectItem>
+                          <SelectItem value="stripes">Rayas</SelectItem>
+                          <SelectItem value="waves">Ondas</SelectItem>
+                          <SelectItem value="zigzag">Zigzag</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Tamaño del patrón"
+                      help="Escala de los elementos del patrón."
+                    >
+                      <Select
+                        value={localSettings.patternSize || 'medium'}
+                        onValueChange={(value) => updateSettings('patternSize', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Pequeño</SelectItem>
+                          <SelectItem value="medium">Mediano</SelectItem>
+                          <SelectItem value="large">Grande</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Color del patrón"
+                      help="Color de los elementos del patrón."
+                    >
+                      <Input
+                        type="color"
+                        value={localSettings.patternColor || '#e0e0e0'}
+                        onChange={(e) => updateSettings('patternColor', e.target.value)}
+                        className="h-10 cursor-pointer"
+                      />
+                    </FieldWithHelp>
+
+                    <FieldWithHelp
+                      label="Opacidad del patrón (%)"
+                      help="Transparencia del patrón."
+                    >
+                      <div className="space-y-2">
+                        <div className="text-sm text-right text-muted-foreground">
+                          {Math.round((localSettings.patternOpacity || 0.5) * 100)}%
+                        </div>
+                        <Slider
+                          value={[(localSettings.patternOpacity || 0.5) * 100]}
+                          onValueChange={([value]) => updateSettings('patternOpacity', value / 100)}
+                          min={0}
+                          max={100}
+                          step={5}
+                        />
+                      </div>
+                    </FieldWithHelp>
+                  </>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Ocultar en móvil"
+                  help="No mostrar este espaciador en dispositivos móviles."
+                >
+                  <Switch
+                    checked={localSettings.hideOnMobile || false}
+                    onCheckedChange={(checked) => updateSettings('hideOnMobile', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Ocultar en tablet"
+                  help="No mostrar este espaciador en tablets."
+                >
+                  <Switch
+                    checked={localSettings.hideOnTablet || false}
+                    onCheckedChange={(checked) => updateSettings('hideOnTablet', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Ocultar en desktop"
+                  help="No mostrar este espaciador en pantallas grandes."
+                >
+                  <Switch
+                    checked={localSettings.hideOnDesktop || false}
+                    onCheckedChange={(checked) => updateSettings('hideOnDesktop', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <FieldWithHelp
+                  label="ID personalizado"
+                  help="Identificador único para anclas o navegación."
+                >
+                  <Input
+                    value={localSettings.customId || ''}
+                    onChange={(e) => updateSettings('customId', e.target.value)}
+                    placeholder="mi-seccion"
+                  />
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Clase CSS personalizada"
+                  help="Clases CSS adicionales para estilizado avanzado."
+                >
+                  <Input
+                    value={localSettings.customClass || ''}
+                    onChange={(e) => updateSettings('customClass', e.target.value)}
+                    placeholder="mi-clase custom-spacer"
+                  />
+                </FieldWithHelp>
+              </>
             )}
 
             {section.section_type === 'products-carousel' && (
