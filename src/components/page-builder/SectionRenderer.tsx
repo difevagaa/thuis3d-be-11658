@@ -1314,6 +1314,7 @@ export function SectionRenderer({ sections, className }: SectionRendererProps) {
 }
 
 // Hook to load page sections
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePageSections(pageKey: string) {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState(true);
