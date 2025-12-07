@@ -91,15 +91,17 @@ const SidebarProvider = React.forwardRef<
   // Initialize auto-hide timer when sidebar opens
   React.useEffect(() => {
     if (open && !isMobile) {
-      resetAutoHideTimer();
+      const timer = setTimeout(() => {
+        setOpen(false);
+      }, SIDEBAR_AUTO_HIDE_DELAY);
+      
+      autoHideTimerRef.current = timer;
+      
+      return () => {
+        clearTimeout(timer);
+      };
     }
-    
-    return () => {
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-      }
-    };
-  }, [open, isMobile, resetAutoHideTimer]);
+  }, [open, isMobile, setOpen]);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {

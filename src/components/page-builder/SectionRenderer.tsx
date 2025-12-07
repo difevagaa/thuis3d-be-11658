@@ -1017,6 +1017,16 @@ function GalleryGridSection({ section }: { section: SectionData }) {
   const columnsMobile = settings?.columnsMobile || 2;
   const gap = settings?.gap || 16;
   
+  // Validate and sanitize image URLs
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+  
   return (
     <section
       className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
@@ -1038,49 +1048,45 @@ function GalleryGridSection({ section }: { section: SectionData }) {
           </p>
         )}
         <div 
-          className="grid"
-          style={{
-            gridTemplateColumns: `repeat(${columnsMobile}, 1fr)`,
-            gap: `${gap}px`
-          }}
+          className={cn(
+            "grid gap-4",
+            `grid-cols-${columnsMobile}`,
+            `md:grid-cols-${columnsTablet}`,
+            `lg:grid-cols-${columns}`
+          )}
+          style={{ gap: `${gap}px` }}
         >
-          {galleryItems.map((item) => (
-            <div
-              key={item.id}
-              className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 group cursor-pointer"
-              style={{
-                aspectRatio: '1 / 1'
-              }}
-            >
-              <img
-                src={item.image_url}
-                alt={item.title || 'Gallery item'}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-              {settings?.showTitles && item.title && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-3">
-                  <h3 className="text-sm font-semibold">{item.title}</h3>
-                  {settings?.showDescriptions && item.description && (
-                    <p className="text-xs mt-1 opacity-90">{item.description}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+          {galleryItems.map((item) => {
+            if (!item.image_url || !isValidUrl(item.image_url)) {
+              return null;
+            }
+            return (
+              <div
+                key={item.id}
+                className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 group cursor-pointer"
+                style={{
+                  aspectRatio: '1 / 1'
+                }}
+              >
+                <img
+                  src={item.image_url}
+                  alt={item.title || 'Gallery item'}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                />
+                {settings?.showTitles && item.title && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-3">
+                    <h3 className="text-sm font-semibold">{item.title}</h3>
+                    {settings?.showDescriptions && item.description && (
+                      <p className="text-xs mt-1 opacity-90">{item.description}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
-      <style jsx>{`
-        @media (min-width: 768px) {
-          div[style*="grid-template-columns"] {
-            grid-template-columns: repeat(${columnsTablet}, 1fr) !important;
-          }
-        }
-        @media (min-width: 1024px) {
-          div[style*="grid-template-columns"] {
-            grid-template-columns: repeat(${columns}, 1fr) !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
@@ -1150,6 +1156,16 @@ function BlogCarouselSection({ section }: { section: SectionData }) {
   const postsPerRowTablet = settings?.postsPerRowTablet || 2;
   const postsPerRowMobile = settings?.postsPerRowMobile || 1;
   
+  // Validate and sanitize URLs
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+  
   return (
     <section
       className={cn("relative overflow-hidden", settings?.fullWidth ? "w-full" : "container mx-auto")}
@@ -1171,22 +1187,25 @@ function BlogCarouselSection({ section }: { section: SectionData }) {
           </p>
         )}
         <div 
-          className="grid gap-6"
-          style={{
-            gridTemplateColumns: `repeat(${postsPerRowMobile}, 1fr)`
-          }}
+          className={cn(
+            "grid gap-6",
+            `grid-cols-${postsPerRowMobile}`,
+            `md:grid-cols-${postsPerRowTablet}`,
+            `lg:grid-cols-${postsPerRow}`
+          )}
         >
           {blogPosts.map((post) => (
             <article
               key={post.id}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
             >
-              {settings?.showFeaturedImage && post.featured_image && (
+              {settings?.showFeaturedImage && post.featured_image && isValidUrl(post.featured_image) && (
                 <div className="relative h-48 overflow-hidden">
                   <img
                     src={post.featured_image}
                     alt={post.title}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
                   />
                 </div>
               )}
@@ -1216,18 +1235,6 @@ function BlogCarouselSection({ section }: { section: SectionData }) {
           ))}
         </div>
       </div>
-      <style jsx>{`
-        @media (min-width: 768px) {
-          div[style*="grid-template-columns"] {
-            grid-template-columns: repeat(${postsPerRowTablet}, 1fr) !important;
-          }
-        }
-        @media (min-width: 1024px) {
-          div[style*="grid-template-columns"] {
-            grid-template-columns: repeat(${postsPerRow}, 1fr) !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
