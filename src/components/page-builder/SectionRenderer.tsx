@@ -1637,23 +1637,24 @@ export function usePageSections(pageKey: string) {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
-    // Set a timeout to prevent infinite loading
+    // Reduced timeout to 2 seconds for faster fallback
     timeoutId = setTimeout(() => {
       if (isMounted && loading) {
-        console.warn(`Loading timeout for page '${pageKey}' - showing fallback content`);
+        console.warn(`⏱️ Loading timeout for page '${pageKey}' - showing fallback content`);
         setLoading(false);
         setSections([]);
       }
-    }, 5000); // 5 second timeout
+    }, 2000); // 2 second timeout
 
     async function loadSections() {
       try {
         // Ensure we have a valid pageKey
         if (!pageKey || pageKey.trim() === '') {
-          console.warn('Empty pageKey provided to usePageSections');
+          console.warn('⚠️ Empty pageKey provided to usePageSections');
           if (isMounted) {
             setSections([]);
             setLoading(false);
+            clearTimeout(timeoutId);
           }
           return;
         }
@@ -1662,32 +1663,36 @@ export function usePageSections(pageKey: string) {
         
         // Verify Supabase client is available
         if (!supabase) {
-          console.error('Supabase client not available');
+          console.error('❌ Supabase client not available');
           if (isMounted) {
             setSections([]);
             setLoading(false);
+            clearTimeout(timeoutId);
           }
           return;
         }
         
-        // Get page by key
-        const { data: page, error: pageError } = await supabase
+        // Get page by key with timeout protection
+        const pagePromise = supabase
           .from('page_builder_pages')
           .select('id')
           .eq('page_key', pageKey)
           .eq('is_enabled', true)
           .single();
 
+        const { data: page, error: pageError } = await pagePromise;
+
         if (pageError || !page) {
-          console.log(`Page '${pageKey}' not found or not enabled:`, pageError?.message || 'No data');
+          console.log(`📄 Page '${pageKey}' not found or not enabled:`, pageError?.message || 'No data');
           if (isMounted) {
             setSections([]);
             setLoading(false);
+            clearTimeout(timeoutId);
           }
           return;
         }
 
-        console.log(`Loading sections for page '${pageKey}' (${page.id})`);
+        console.log(`✓ Loading sections for page '${pageKey}' (${page.id})`);
 
         // Get sections for this page
         const { data: sectionsData, error: sectionsError } = await supabase
@@ -1698,18 +1703,20 @@ export function usePageSections(pageKey: string) {
           .order('display_order');
 
         if (sectionsError) {
-          console.error(`Error loading sections for page '${pageKey}':`, sectionsError);
+          console.error(`❌ Error loading sections for page '${pageKey}':`, sectionsError.message);
           if (isMounted) {
             setSections([]);
             setLoading(false);
+            clearTimeout(timeoutId);
           }
           return;
         }
         
-        console.log(`Loaded ${sectionsData?.length || 0} sections for page '${pageKey}'`);
+        console.log(`✓ Loaded ${sectionsData?.length || 0} sections for page '${pageKey}'`);
         if (isMounted) {
           setSections(sectionsData || []);
           setLoading(false);
+          clearTimeout(timeoutId);
         }
 
         // Subscribe to real-time changes for this page's sections (only if component is still mounted)
@@ -1722,7 +1729,7 @@ export function usePageSections(pageKey: string) {
               table: 'page_builder_sections',
               filter: `page_id=eq.${page.id}`
             }, async (payload) => {
-              console.log(`Real-time update for page '${pageKey}':`, payload);
+              console.log(`🔄 Real-time update for page '${pageKey}':`, payload);
               
               // Reload sections when any change occurs
               const { data: updatedSections, error } = await supabase
@@ -1733,20 +1740,46 @@ export function usePageSections(pageKey: string) {
                 .order('display_order');
                 
               if (!error && updatedSections && isMounted) {
-                console.log('Refreshed sections:', updatedSections);
+                console.log('✓ Refreshed sections:', updatedSections);
                 setSections(updatedSections);
               }
             })
             .subscribe();
         }
       } catch (error) {
-        console.error('Error loading page sections:', error);
+        // Network errors (fetch failed, etc.) will be caught here
+        console.error('❌ Network or database error:', error instanceof Error ? error.message : 'Unknown error');
         if (isMounted) {
           setSections([]);
           setLoading(false);
+          clearTimeout(timeoutId);
         }
       }
     }
+
+    loadSections();
+
+    // Cleanup subscription and timeout
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      
+      if (sectionsChannel) {
+        const cleanup = async () => {
+          try {
+            const { supabase } = await import("@/integrations/supabase/client");
+            await supabase.removeChannel(sectionsChannel);
+          } catch (error) {
+            console.error('Error cleaning up channel:', error);
+          }
+        };
+        cleanup();
+      }
+    };
+  }, [pageKey]);
+
+  return { sections, loading };
+}
 
     loadSections();
 
