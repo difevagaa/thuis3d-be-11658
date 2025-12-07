@@ -93,28 +93,36 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate files
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate files - now supporting both images and videos
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+    
+    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const allowedVideoExtensions = ['.mp4', '.webm', '.ogg'];
+    const allowedExtensions = [...allowedImageExtensions, ...allowedVideoExtensions];
+    
+    const maxSize = 50 * 1024 * 1024; // 50MB for videos, will check per file
 
     for (const file of Array.from(files)) {
       // Check MIME type
       if (!allowedTypes.includes(file.type)) {
-        toast.error(`Tipo de archivo no permitido: ${file.name}. Solo se permiten imágenes JPG, PNG, GIF, WebP.`);
+        toast.error(`Tipo de archivo no permitido: ${file.name}. Solo se permiten imágenes (JPG, PNG, GIF, WebP) y videos (MP4, WebM, OGG).`);
         return;
       }
       
       // Check file extension
       const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
       if (!allowedExtensions.includes(fileExt)) {
-        toast.error(`Extensión de archivo no permitida: ${file.name}. Solo se permiten .jpg, .png, .gif, .webp`);
+        toast.error(`Extensión de archivo no permitida: ${file.name}.`);
         return;
       }
       
-      // Check file size
-      if (file.size > maxSize) {
-        toast.error(`Archivo demasiado grande: ${file.name}. Máximo 10MB.`);
+      // Check file size - images 10MB, videos 50MB
+      const isVideo = allowedVideoTypes.includes(file.type);
+      const sizeLimit = isVideo ? maxSize : 10 * 1024 * 1024;
+      if (file.size > sizeLimit) {
+        toast.error(`Archivo demasiado grande: ${file.name}. Máximo ${isVideo ? '50MB' : '10MB'}.`);
         return;
       }
     }
@@ -127,7 +135,8 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
         // Upload to Supabase Storage
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `page-builder/${fileName}`;
+        const isVideo = allowedVideoTypes.includes(file.type);
+        const filePath = `page-builder/${isVideo ? 'videos' : 'images'}/${fileName}`;
 
         const { error: uploadError, data } = await supabase.storage
           .from('product-images')
@@ -287,20 +296,34 @@ export function MediaLibrary({ open, onClose, onSelect, allowMultiple = false }:
                     {uploading ? 'Subiendo...' : 'Haz clic para seleccionar archivos'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Soporta JPG, PNG, GIF, WebP (máx. 10MB por archivo)
+                    Imágenes: JPG, PNG, GIF, WebP (máx. 10MB)
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    Videos: MP4, WebM, OGG (máx. 50MB)
+                  </p>
+                  {allowMultiple && (
+                    <p className="text-xs text-primary font-medium">
+                      Puedes seleccionar múltiples archivos
+                    </p>
+                  )}
                 </div>
               </Label>
               <Input
                 id="file-upload"
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple={allowMultiple}
                 onChange={handleFileUpload}
                 disabled={uploading}
                 className="hidden"
               />
             </div>
+            {uploading && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>Subiendo archivos...</span>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="url" className="space-y-4">
