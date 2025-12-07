@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,7 +81,7 @@ export default function TranslationManagement() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadData, loadQueue]);
 
   // Load entities when entity type changes
   useEffect(() => {
@@ -97,9 +97,9 @@ export default function TranslationManagement() {
     }
   }, [selectedEntityId, selectedEntityType]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     await Promise.all([loadStats(), loadQueue(), loadSettings()]);
-  };
+  }, [loadStats, loadQueue, loadSettings]);
 
   const loadEntities = async (entityType: string) => {
     setContentLoading(true);
@@ -264,7 +264,7 @@ export default function TranslationManagement() {
     });
   };
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const { data: translations } = await supabase
         .from('translations')
@@ -287,9 +287,9 @@ export default function TranslationManagement() {
     } catch (error) {
       logger.error('Error loading stats:', error);
     }
-  };
+  }, []);
 
-  const loadQueue = async () => {
+  const loadQueue = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('translation_queue')
@@ -302,9 +302,9 @@ export default function TranslationManagement() {
     } catch (error) {
       logger.error('Error loading queue:', error);
     }
-  };
+  }, []);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('translation_settings')
@@ -320,7 +320,7 @@ export default function TranslationManagement() {
     } catch (error) {
       logger.error('Error loading settings:', error);
     }
-  };
+  }, []);
 
   const enqueueAllContent = async () => {
     setLoading(true);
