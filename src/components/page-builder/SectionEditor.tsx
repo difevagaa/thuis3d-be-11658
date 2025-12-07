@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { CarouselSettings } from "./CarouselSettings";
 import { URLSelector } from "./URLSelector";
+import { EnhancedSectionOptions } from "./EnhancedSectionOptions";
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -872,92 +873,108 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <Label>Ancho completo</Label>
-              <Switch
-                checked={localSettings.fullWidth || false}
-                onCheckedChange={(checked) => updateSettings('fullWidth', checked)}
-              />
+            {/* Section-specific settings */}
+            <div className="space-y-4 pb-4 border-b">
+              <h4 className="font-semibold text-sm">Configuración Específica</h4>
+              
+              <div className="flex items-center justify-between">
+                <Label>Ancho completo</Label>
+                <Switch
+                  checked={localSettings.fullWidth || false}
+                  onCheckedChange={(checked) => updateSettings('fullWidth', checked)}
+                />
+              </div>
+
+              {section.section_type === 'gallery' && (
+                <div className="space-y-2">
+                  <Label>Columnas</Label>
+                  <Select
+                    value={String(localSettings.columns || 4)}
+                    onValueChange={(value) => updateSettings('columns', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 columnas</SelectItem>
+                      <SelectItem value="3">3 columnas</SelectItem>
+                      <SelectItem value="4">4 columnas</SelectItem>
+                      <SelectItem value="5">5 columnas</SelectItem>
+                      <SelectItem value="6">6 columnas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {section.section_type === 'features' && (
+                <div className="space-y-2">
+                  <Label>Columnas de características</Label>
+                  <Select
+                    value={String(localSettings.columns || 3)}
+                    onValueChange={(value) => updateSettings('columns', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 columnas</SelectItem>
+                      <SelectItem value="3">3 columnas</SelectItem>
+                      <SelectItem value="4">4 columnas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {section.section_type === 'hero' && (
+                <div className="space-y-2">
+                  <Label>Altura del hero</Label>
+                  <Select
+                    value={localSettings.height || '80vh'}
+                    onValueChange={(value) => updateSettings('height', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="50vh">Pequeño (50%)</SelectItem>
+                      <SelectItem value="70vh">Mediano (70%)</SelectItem>
+                      <SelectItem value="80vh">Grande (80%)</SelectItem>
+                      <SelectItem value="100vh">Pantalla completa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Efecto de animación</Label>
+                <Select
+                  value={localSettings.animation || 'none'}
+                  onValueChange={(value) => updateSettings('animation', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin animación</SelectItem>
+                    <SelectItem value="fade-in">Aparecer</SelectItem>
+                    <SelectItem value="slide-up">Deslizar hacia arriba</SelectItem>
+                    <SelectItem value="slide-left">Deslizar desde izquierda</SelectItem>
+                    <SelectItem value="scale">Escalar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {section.section_type === 'gallery' && (
-              <div className="space-y-2">
-                <Label>Columnas</Label>
-                <Select
-                  value={String(localSettings.columns || 4)}
-                  onValueChange={(value) => updateSettings('columns', parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2 columnas</SelectItem>
-                    <SelectItem value="3">3 columnas</SelectItem>
-                    <SelectItem value="4">4 columnas</SelectItem>
-                    <SelectItem value="5">5 columnas</SelectItem>
-                    <SelectItem value="6">6 columnas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {section.section_type === 'features' && (
-              <div className="space-y-2">
-                <Label>Columnas de características</Label>
-                <Select
-                  value={String(localSettings.columns || 3)}
-                  onValueChange={(value) => updateSettings('columns', parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2 columnas</SelectItem>
-                    <SelectItem value="3">3 columnas</SelectItem>
-                    <SelectItem value="4">4 columnas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {section.section_type === 'hero' && (
-              <div className="space-y-2">
-                <Label>Altura del hero</Label>
-                <Select
-                  value={localSettings.height || '80vh'}
-                  onValueChange={(value) => updateSettings('height', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="50vh">Pequeño (50%)</SelectItem>
-                    <SelectItem value="70vh">Mediano (70%)</SelectItem>
-                    <SelectItem value="80vh">Grande (80%)</SelectItem>
-                    <SelectItem value="100vh">Pantalla completa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Efecto de animación</Label>
-              <Select
-                value={localSettings.animation || 'none'}
-                onValueChange={(value) => updateSettings('animation', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin animación</SelectItem>
-                  <SelectItem value="fade-in">Aparecer</SelectItem>
-                  <SelectItem value="slide-up">Deslizar hacia arriba</SelectItem>
-                  <SelectItem value="slide-left">Deslizar desde izquierda</SelectItem>
-                  <SelectItem value="scale">Escalar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Enhanced Section Options - 40+ common options */}
+            <EnhancedSectionOptions
+              sectionType={section.section_type}
+              settings={localSettings}
+              styles={localStyles}
+              content={localContent}
+              onUpdateSettings={updateSettings}
+              onUpdateStyles={updateStyles}
+              onUpdateContent={updateContent}
+            />
           </TabsContent>
 
           <TabsContent value="styles" className="space-y-4 mt-4">
