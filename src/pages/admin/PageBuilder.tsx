@@ -47,7 +47,15 @@ import {
   ArrowDown,
   Clipboard,
   TestTube,
-  CheckCircle
+  CheckCircle,
+  Shield,
+  Cookie,
+  Scale,
+  Truck,
+  RotateCcw,
+  Info,
+  Mail,
+  HelpCircleIcon
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -176,7 +184,18 @@ export default function PageBuilder() {
     'gift-cards': <Gift className="h-4 w-4" />,
     'blog': <BookOpen className="h-4 w-4" />,
     'gallery': <ImageIcon className="h-4 w-4" />,
-    'my-account': <User className="h-4 w-4" />
+    'my-account': <User className="h-4 w-4" />,
+    // Legal pages
+    'privacy-policy': <Shield className="h-4 w-4" />,
+    'terms-of-service': <Scale className="h-4 w-4" />,
+    'cookies-policy': <Cookie className="h-4 w-4" />,
+    'legal-notice': <FileText className="h-4 w-4" />,
+    'shipping-policy': <Truck className="h-4 w-4" />,
+    'return-policy': <RotateCcw className="h-4 w-4" />,
+    // Additional pages
+    'about-us': <Info className="h-4 w-4" />,
+    'contact': <Mail className="h-4 w-4" />,
+    'faq': <HelpCircleIcon className="h-4 w-4" />
   };
 
   const loadPages = useCallback(async () => {
