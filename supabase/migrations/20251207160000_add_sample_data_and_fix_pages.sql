@@ -128,7 +128,7 @@ VALUES
     'Descubre cómo funciona la tecnología de impresión 3D y sus principales aplicaciones en la industria moderna.',
     'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=1200',
     true,
-    NOW() - INTERVAL ''7 days''
+    NOW() - INTERVAL '7 days'
   ),
   (
     'Materiales de Impresión 3D: Guía Completa',
@@ -137,7 +137,7 @@ VALUES
     'Guía completa sobre los materiales más utilizados en impresión 3D y sus aplicaciones específicas.',
     'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200',
     true,
-    NOW() - INTERVAL ''5 days''
+    NOW() - INTERVAL '5 days'
   ),
   (
     'Consejos para Diseñar Modelos Optimizados',
@@ -146,7 +146,7 @@ VALUES
     'Aprende a diseñar modelos 3D optimizados para obtener los mejores resultados de impresión.',
     'https://images.unsplash.com/photo-1581092918484-8313e1f339a4?w=1200',
     true,
-    NOW() - INTERVAL ''3 days''
+    NOW() - INTERVAL '3 days'
   ),
   (
     'Aplicaciones Médicas de la Impresión 3D',
@@ -155,7 +155,7 @@ VALUES
     'Descubre cómo la impresión 3D está revolucionando la medicina moderna con aplicaciones innovadoras.',
     'https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=1200',
     true,
-    NOW() - INTERVAL ''1 day''
+    NOW() - INTERVAL '1 day'
   )
 ON CONFLICT DO NOTHING;
 
