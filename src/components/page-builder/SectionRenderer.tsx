@@ -974,6 +974,7 @@ function GalleryGridSection({ section }: { section: SectionData }) {
       const { data, error } = await supabase
         .from('gallery_items')
         .select('*')
+        .eq('is_published', true)
         .is('deleted_at', null)
         .order('display_order', { ascending: true })
         .limit(limit);
@@ -1017,6 +1018,19 @@ function GalleryGridSection({ section }: { section: SectionData }) {
   const columnsMobile = settings?.columnsMobile || 2;
   const gap = settings?.gap || 16;
   
+  // Static class mapping for grid columns (Tailwind requires static classes)
+  const getGridColsClass = (cols: number, breakpoint: '' | 'md:' | 'lg:' = '') => {
+    const classMap: Record<string, string> = {
+      '1': `${breakpoint}grid-cols-1`,
+      '2': `${breakpoint}grid-cols-2`,
+      '3': `${breakpoint}grid-cols-3`,
+      '4': `${breakpoint}grid-cols-4`,
+      '5': `${breakpoint}grid-cols-5`,
+      '6': `${breakpoint}grid-cols-6`,
+    };
+    return classMap[String(cols)] || `${breakpoint}grid-cols-4`;
+  };
+  
   // Validate and sanitize image URLs
   const isValidUrl = (url: string) => {
     try {
@@ -1050,16 +1064,21 @@ function GalleryGridSection({ section }: { section: SectionData }) {
         <div 
           className={cn(
             "grid gap-4",
-            `grid-cols-${columnsMobile}`,
-            `md:grid-cols-${columnsTablet}`,
-            `lg:grid-cols-${columns}`
+            getGridColsClass(columnsMobile),
+            getGridColsClass(columnsTablet, 'md:'),
+            getGridColsClass(columns, 'lg:')
           )}
           style={{ gap: `${gap}px` }}
         >
           {galleryItems.map((item) => {
-            if (!item.image_url || !isValidUrl(item.image_url)) {
+            // Use media_url instead of image_url to match database schema
+            const mediaUrl = item.media_url || item.image_url;
+            const mediaType = item.media_type || 'image';
+            
+            if (!mediaUrl || !isValidUrl(mediaUrl)) {
               return null;
             }
+            
             return (
               <div
                 key={item.id}
@@ -1068,12 +1087,23 @@ function GalleryGridSection({ section }: { section: SectionData }) {
                   aspectRatio: '1 / 1'
                 }}
               >
-                <img
-                  src={item.image_url}
-                  alt={item.title || 'Gallery item'}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  loading="lazy"
-                />
+                {mediaType === 'video' ? (
+                  <video
+                    src={mediaUrl}
+                    className="w-full h-full object-cover"
+                    controls
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={mediaUrl}
+                    alt={item.title || 'Gallery item'}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                )}
                 {settings?.showTitles && item.title && (
                   <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-3">
                     <h3 className="text-sm font-semibold">{item.title}</h3>
