@@ -47,7 +47,15 @@ import {
   ArrowDown,
   Clipboard,
   TestTube,
-  CheckCircle
+  CheckCircle,
+  Shield,
+  Cookie,
+  Scale,
+  Truck,
+  RotateCcw,
+  Info,
+  Mail,
+  HelpCircleIcon
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -99,9 +107,8 @@ export default function PageBuilder() {
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
   
-  // Sidebar auto-hide states
+  // Sidebar visibility state (no auto-hide)
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const sidebarTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -165,54 +172,10 @@ export default function PageBuilder() {
     }
   };
 
-  // Auto-hide sidebar functionality
-  const resetSidebarTimer = useCallback(() => {
-    // Clear existing timer
-    if (sidebarTimerRef.current) {
-      clearTimeout(sidebarTimerRef.current);
-    }
-    
-    // Show sidebar
-    setSidebarVisible(true);
-    
-    // Set new timer to hide after 5 seconds
-    sidebarTimerRef.current = setTimeout(() => {
-      setSidebarVisible(false);
-    }, 5000);
-  }, []);
-
-  // Manual toggle sidebar
+  // Manual toggle sidebar (no auto-hide)
   const toggleSidebar = useCallback(() => {
-    if (sidebarTimerRef.current) {
-      clearTimeout(sidebarTimerRef.current);
-      sidebarTimerRef.current = null;
-    }
     setSidebarVisible(prev => !prev);
   }, []);
-
-  // Show sidebar and reset timer when user interacts
-  const handleSidebarInteraction = useCallback(() => {
-    resetSidebarTimer();
-  }, [resetSidebarTimer]);
-
-  // Initialize sidebar auto-hide on mount
-  useEffect(() => {
-    resetSidebarTimer();
-    
-    // Cleanup on unmount
-    return () => {
-      if (sidebarTimerRef.current) {
-        clearTimeout(sidebarTimerRef.current);
-      }
-    };
-  }, [resetSidebarTimer]);
-
-  // Reset timer when selected section changes
-  useEffect(() => {
-    if (selectedSection) {
-      resetSidebarTimer();
-    }
-  }, [selectedSection, resetSidebarTimer]);
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -221,7 +184,18 @@ export default function PageBuilder() {
     'gift-cards': <Gift className="h-4 w-4" />,
     'blog': <BookOpen className="h-4 w-4" />,
     'gallery': <ImageIcon className="h-4 w-4" />,
-    'my-account': <User className="h-4 w-4" />
+    'my-account': <User className="h-4 w-4" />,
+    // Legal pages
+    'privacy-policy': <Shield className="h-4 w-4" />,
+    'terms-of-service': <Scale className="h-4 w-4" />,
+    'cookies-policy': <Cookie className="h-4 w-4" />,
+    'legal-notice': <FileText className="h-4 w-4" />,
+    'shipping-policy': <Truck className="h-4 w-4" />,
+    'return-policy': <RotateCcw className="h-4 w-4" />,
+    // Additional pages
+    'about-us': <Info className="h-4 w-4" />,
+    'contact': <Mail className="h-4 w-4" />,
+    'faq': <HelpCircleIcon className="h-4 w-4" />
   };
 
   const loadPages = useCallback(async () => {
@@ -803,7 +777,7 @@ export default function PageBuilder() {
           )}
         </div>
 
-        {/* Right Sidebar - Auto-hide after 5 seconds */}
+        {/* Right Sidebar - No auto-hide */}
         <div className="relative w-56 lg:w-64 flex-shrink-0">
           {/* Toggle Button - Always visible */}
           <Button
@@ -822,15 +796,11 @@ export default function PageBuilder() {
             )}
           </Button>
 
-          {/* Sidebar with auto-hide */}
+          {/* Sidebar */}
           <div
             className={`absolute inset-0 transition-all duration-300 ease-in-out ${
               sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             }`}
-            onMouseEnter={handleSidebarInteraction}
-            onMouseMove={handleSidebarInteraction}
-            onClick={handleSidebarInteraction}
-            onFocus={handleSidebarInteraction}
           >
             <PageBuilderSidebar
               selectedSection={selectedSection}

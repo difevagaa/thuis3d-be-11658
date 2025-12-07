@@ -1,47 +1,30 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
-  LayoutGrid, 
-  ImageIcon, 
   Link2, 
-  Layers, 
-  CreditCard, 
-  Award,
+  Settings2,
   Home,
-  Settings2
+  ArrowRight,
+  Info,
+  Layout
 } from "lucide-react";
-import HomepageBanners from "./content/HomepageBanners";
 import FooterLinks from "./content/FooterLinks";
-import HomepageSections from "./content/HomepageSections";
-import HomepageQuickAccessCards from "./content/HomepageQuickAccessCards";
-import HomepageFeatures from "./content/HomepageFeatures";
 
 export default function ContentManagement() {
-  const [activeTab, setActiveTab] = useState("sections");
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("info");
 
   const tabItems = [
     {
-      id: "sections",
-      label: "Secciones",
-      icon: LayoutGrid,
-      description: "Gestiona las secciones de la página de inicio",
-      badge: null
-    },
-    {
-      id: "cards",
-      label: "Tarjetas",
-      icon: CreditCard,
-      description: "Tarjetas de acceso rápido y características",
-      badge: "2 tipos"
-    },
-    {
-      id: "banners",
-      label: "Banners",
-      icon: ImageIcon,
-      description: "Banners y sliders del hero",
-      badge: null
+      id: "info",
+      label: "Información",
+      icon: Info,
+      description: "Información sobre la gestión de contenido"
     },
     {
       id: "footer",
@@ -75,7 +58,7 @@ export default function ContentManagement() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Modern Tab Navigation */}
         <div className="border rounded-lg p-1 bg-muted/30 mb-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 bg-transparent h-auto">
+          <TabsList className="grid w-full grid-cols-2 gap-1 bg-transparent h-auto">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -97,89 +80,87 @@ export default function ContentManagement() {
           </TabsList>
         </div>
         
-        {/* Sections Tab */}
-        <TabsContent value="sections" className="space-y-4">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Secciones de la Página</CardTitle>
-              </div>
+        {/* Information Tab */}
+        <TabsContent value="info" className="space-y-4">
+          <Alert>
+            <Layout className="h-4 w-4" />
+            <AlertTitle>Editor de Páginas Unificado</AlertTitle>
+            <AlertDescription className="space-y-3 mt-2">
+              <p>
+                Las secciones, banners y tarjetas de la página de inicio ahora se gestionan desde el <strong>Editor de Páginas</strong> unificado.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                El nuevo editor permite gestionar TODO el contenido de TODAS las páginas del sitio desde un solo lugar, 
+                con más de 116 opciones de personalización por sección.
+              </p>
+              <Button 
+                onClick={() => navigate('/admin/page-builder?page=home')}
+                className="mt-2"
+              >
+                <Layout className="h-4 w-4 mr-2" />
+                Ir al Editor de Páginas
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>¿Qué puedo editar en el Editor de Páginas?</CardTitle>
               <CardDescription>
-                Configura títulos, subtítulos y orden de las secciones principales
+                El Editor de Páginas te permite gestionar contenido de todas las páginas
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <HomepageSections />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Cards Tab - Unified View for Quick Access and Features */}
-        <TabsContent value="cards" className="space-y-6">
-          {/* Sub-tabs for card types */}
-          <Tabs defaultValue="quick-access" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="quick-access" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Tarjetas de Acceso Rápido
-              </TabsTrigger>
-              <TabsTrigger value="features" className="flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                ¿Por Qué Elegirnos?
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="quick-access">
-              <Card className="border-none shadow-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Tarjetas de Acceso Rápido</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Tarjetas con enlaces directos a las secciones más importantes (catálogo, presupuestos, etc.)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HomepageQuickAccessCards />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="features">
-              <Card className="border-none shadow-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Características "¿Por Qué Elegirnos?"</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Destaca los beneficios y valores de tu negocio
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HomepageFeatures />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-        
-        {/* Banners Tab */}
-        <TabsContent value="banners" className="space-y-4">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Banners Hero</CardTitle>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Home className="h-4 w-4 text-primary" />
+                    Páginas Principales
+                  </h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground ml-6">
+                    <li>• Inicio (Home)</li>
+                    <li>• Productos</li>
+                    <li>• Cotizaciones</li>
+                    <li>• Tarjetas Regalo</li>
+                    <li>• Blog</li>
+                    <li>• Galería</li>
+                    <li>• Mi Cuenta</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-primary" />
+                    Páginas Legales
+                  </h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground ml-6">
+                    <li>• Política de Privacidad</li>
+                    <li>• Términos y Condiciones</li>
+                    <li>• Política de Cookies</li>
+                    <li>• Aviso Legal</li>
+                    <li>• Política de Envíos</li>
+                    <li>• Política de Devoluciones</li>
+                    <li>• Sobre Nosotros</li>
+                    <li>• Contacto</li>
+                    <li>• Preguntas Frecuentes</li>
+                  </ul>
+                </div>
               </div>
-              <CardDescription>
-                Gestiona los banners y sliders de la sección principal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HomepageBanners />
+
+              <div className="pt-4 border-t">
+                <h4 className="font-semibold mb-2">Tipos de Secciones Disponibles</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Hero', 'Banners', 'Texto', 'Imágenes', 'Galería', 
+                    'Carrusel de Productos', 'Carrusel de Imágenes', 'Características',
+                    'Testimonios', 'Precios', 'Formularios', 'CTA', 'Acordeón',
+                    'Contador', 'Estadísticas', 'Video', 'Redes Sociales', 'Espaciador'
+                  ].map((section) => (
+                    <Badge key={section} variant="secondary">{section}</Badge>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
