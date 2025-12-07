@@ -401,6 +401,97 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                 />
               </div>
             )}
+
+            {section.section_type === 'products-carousel' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Título de la sección</Label>
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Productos Destacados"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subtítulo (opcional)</Label>
+                  <Input
+                    value={localContent.subtitle || ''}
+                    onChange={(e) => updateContent('subtitle', e.target.value)}
+                    placeholder="Descubre nuestros mejores productos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoría (opcional)</Label>
+                  <Input
+                    value={localSettings.category || ''}
+                    onChange={(e) => updateSettings('category', e.target.value)}
+                    placeholder="Deja vacío para mostrar todas"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Solo productos destacados</Label>
+                  <Switch
+                    checked={localSettings.featured || false}
+                    onCheckedChange={(checked) => updateSettings('featured', checked)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ordenar por</Label>
+                  <Select
+                    value={localSettings.sortBy || 'created_at'}
+                    onValueChange={(value) => updateSettings('sortBy', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created_at">Más recientes</SelectItem>
+                      <SelectItem value="name">Nombre</SelectItem>
+                      <SelectItem value="price">Precio</SelectItem>
+                      <SelectItem value="popularity">Popularidad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Orden</Label>
+                  <Select
+                    value={localSettings.sortOrder || 'desc'}
+                    onValueChange={(value) => updateSettings('sortOrder', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascendente</SelectItem>
+                      <SelectItem value="desc">Descendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Límite de productos: {localSettings.limit || 10}</Label>
+                  <Slider
+                    value={[localSettings.limit || 10]}
+                    onValueChange={([value]) => updateSettings('limit', value)}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Productos visibles: {localSettings.maxVisible || 4}</Label>
+                  <Slider
+                    value={[localSettings.maxVisible || 4]}
+                    onValueChange={([value]) => updateSettings('maxVisible', value)}
+                    min={1}
+                    max={6}
+                    step={1}
+                  />
+                </div>
+              </>
+            )}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 mt-4">
