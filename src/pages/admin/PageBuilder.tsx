@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import * as pageBuilderUtils from "@/lib/pageBuilderUtils";
+import * as sectionTesting from "@/lib/sectionTesting";
 import {
   Layout,
   Home,
@@ -43,7 +44,9 @@ import {
   Filter,
   ArrowUp,
   ArrowDown,
-  Clipboard
+  Clipboard,
+  TestTube,
+  CheckCircle
 } from "lucide-react";
 import { PageBuilderSidebar } from "@/components/page-builder/PageBuilderSidebar";
 import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
@@ -93,6 +96,69 @@ export default function PageBuilder() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
+  const [testing, setTesting] = useState(false);
+
+  // Test all sections
+  const handleRunTests = async () => {
+    if (!selectedPage) {
+      toast.error('Selecciona una página primero');
+      return;
+    }
+
+    setTesting(true);
+    toast.info('Ejecutando pruebas comprehensivas...');
+
+    try {
+      const results = await sectionTesting.runComprehensiveTests(selectedPage.id);
+      const report = sectionTesting.generateTestReport(results);
+      
+      console.log(report);
+      
+      // Count totals
+      let totalPassed = 0;
+      let totalTested = 0;
+      let hasErrors = false;
+      
+      Object.values(results).forEach(result => {
+        totalPassed += result.passed;
+        totalTested += result.tested;
+        if (!result.success) hasErrors = true;
+      });
+      
+      if (hasErrors) {
+        toast.error(`Pruebas completadas: ${totalPassed}/${totalTested} pasaron. Ver consola para detalles.`);
+      } else {
+        toast.success(`✅ Todas las pruebas pasaron: ${totalPassed}/${totalTested}`);
+      }
+    } catch (error) {
+      logger.error('Error running tests:', error);
+      toast.error('Error ejecutando pruebas');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  // Test current section
+  const handleTestCurrentSection = async () => {
+    if (!selectedSection) {
+      toast.error('Selecciona una sección primero');
+      return;
+    }
+
+    setTesting(true);
+    
+    try {
+      const success = await sectionTesting.testSectionSave(selectedSection);
+      if (success) {
+        toast.success('✅ Sección validada correctamente');
+      }
+    } catch (error) {
+      logger.error('Error testing section:', error);
+      toast.error('Error validando sección');
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -621,6 +687,26 @@ export default function PageBuilder() {
           <Button variant="outline" size="sm" onClick={handlePreview}>
             <Eye className="h-4 w-4 mr-1" />
             Vista previa
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={handleTestCurrentSection}
+            disabled={testing || !selectedSection}
+            title="Validar sección actual"
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Validar
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={handleRunTests}
+            disabled={testing || !selectedPage}
+            title="Ejecutar todas las pruebas"
+          >
+            <TestTube className="h-4 w-4 mr-1" />
+            {testing ? 'Probando...' : 'Probar Todo'}
           </Button>
           <Button 
             size="sm" 
