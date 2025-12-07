@@ -34,7 +34,8 @@ import {
   Underline,
   Share2,
   Timer,
-  BarChart3
+  BarChart3,
+  Edit2
 } from "lucide-react";
 
 interface SectionTemplate {
@@ -50,6 +51,7 @@ interface PageBuilderSidebarProps {
   selectedSection: any;
   onAddSection: (config: any) => void;
   onUpdateSection: (sectionId: string, updates: any) => void;
+  onEditSection?: (section: any) => void;
 }
 
 const sectionTypeIcons: Record<string, React.ReactNode> = {
@@ -74,7 +76,8 @@ const sectionTypeIcons: Record<string, React.ReactNode> = {
 export function PageBuilderSidebar({ 
   selectedSection, 
   onAddSection, 
-  onUpdateSection 
+  onUpdateSection,
+  onEditSection 
 }: PageBuilderSidebarProps) {
   const { t } = useTranslation(['admin', 'common']);
   const [templates, setTemplates] = useState<SectionTemplate[]>([]);
@@ -233,6 +236,23 @@ export function PageBuilderSidebar({
           <TabsContent value="settings" className="m-0 p-4 space-y-6">
             {selectedSection ? (
               <>
+                {/* Open Full Editor Button */}
+                {onEditSection && (
+                  <div className="rounded-lg bg-primary/10 border-2 border-primary/20 p-3">
+                    <Button
+                      onClick={() => onEditSection(selectedSection)}
+                      className="w-full gap-2"
+                      variant="default"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Abrir Editor Completo
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Accede a todas las opciones avanzadas (30+ configuraciones)
+                    </p>
+                  </div>
+                )}
+
                 {/* Section Name */}
                 <div className="space-y-2">
                   <Label className="text-xs">Nombre de la sección</Label>

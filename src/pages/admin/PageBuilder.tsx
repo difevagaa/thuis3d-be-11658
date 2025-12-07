@@ -860,6 +860,7 @@ export default function PageBuilder() {
               selectedSection={selectedSection}
               onAddSection={handleAddSection}
               onUpdateSection={handleUpdateSection}
+              onEditSection={handleEditSection}
             />
           </div>
         </div>
