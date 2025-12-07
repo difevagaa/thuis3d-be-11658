@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,7 +101,7 @@ export default function PageBuilder() {
   
   // Sidebar auto-hide states
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [sidebarTimer, setSidebarTimer] = useState<NodeJS.Timeout | null>(null);
+  const sidebarTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -168,29 +168,27 @@ export default function PageBuilder() {
   // Auto-hide sidebar functionality
   const resetSidebarTimer = useCallback(() => {
     // Clear existing timer
-    if (sidebarTimer) {
-      clearTimeout(sidebarTimer);
+    if (sidebarTimerRef.current) {
+      clearTimeout(sidebarTimerRef.current);
     }
     
     // Show sidebar
     setSidebarVisible(true);
     
     // Set new timer to hide after 5 seconds
-    const timer = setTimeout(() => {
+    sidebarTimerRef.current = setTimeout(() => {
       setSidebarVisible(false);
     }, 5000);
-    
-    setSidebarTimer(timer);
-  }, [sidebarTimer]);
+  }, []);
 
   // Manual toggle sidebar
-  const toggleSidebar = () => {
-    if (sidebarTimer) {
-      clearTimeout(sidebarTimer);
-      setSidebarTimer(null);
+  const toggleSidebar = useCallback(() => {
+    if (sidebarTimerRef.current) {
+      clearTimeout(sidebarTimerRef.current);
+      sidebarTimerRef.current = null;
     }
     setSidebarVisible(prev => !prev);
-  };
+  }, []);
 
   // Show sidebar and reset timer when user interacts
   const handleSidebarInteraction = useCallback(() => {
@@ -203,11 +201,11 @@ export default function PageBuilder() {
     
     // Cleanup on unmount
     return () => {
-      if (sidebarTimer) {
-        clearTimeout(sidebarTimer);
+      if (sidebarTimerRef.current) {
+        clearTimeout(sidebarTimerRef.current);
       }
     };
-  }, []);
+  }, [resetSidebarTimer]);
 
   // Reset timer when selected section changes
   useEffect(() => {
@@ -306,7 +304,7 @@ export default function PageBuilder() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, historyIndex, history]);
+  }, [hasChanges, handleSaveAll, handleUndo, handleRedo]);
 
   // Escape key handler
   useEffect(() => {
@@ -623,11 +621,13 @@ export default function PageBuilder() {
     }
   };
 
-  const handleSaveAll = async () => {
+  const handleSaveAll = useCallback(async () => {
     setSaving(true);
     try {
       // All changes are saved immediately, so just refresh
-      await loadSections(selectedPage!.id);
+      if (selectedPage) {
+        await loadSections(selectedPage.id);
+      }
       setHasChanges(false);
       toast.success('Cambios guardados correctamente');
     } catch (error) {
@@ -636,7 +636,7 @@ export default function PageBuilder() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [selectedPage, loadSections]);
 
   const handlePreview = () => {
     if (selectedPage) {
