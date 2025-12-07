@@ -110,6 +110,8 @@ export default function PageBuilder() {
   // Sidebar visibility state with auto-hide
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const isMouseOverSidebarRef = useRef(false);
   
   // Section editor dialog state
   const [editingSection, setEditingSection] = useState<SectionData | null>(null);
@@ -178,9 +180,6 @@ export default function PageBuilder() {
 
   // Auto-hide sidebar logic
   useEffect(() => {
-    const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-    const isMouseOverSidebarRef = useRef(false);
-    
     const startHideTimer = () => {
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
@@ -229,7 +228,6 @@ export default function PageBuilder() {
   // Manual toggle sidebar
   const toggleSidebar = useCallback(() => {
     setSidebarVisible(prev => !prev);
-    setLastActivity(Date.now());
   }, []);
 
   const pageIcons: Record<string, React.ReactNode> = {
