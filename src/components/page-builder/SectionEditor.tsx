@@ -651,37 +651,338 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
 
             {section.section_type === 'image' && (
               <>
-                <div className="space-y-2">
-                  <Label>URL de la imagen</Label>
+                <FieldWithHelp
+                  label="URL de la imagen"
+                  help="Dirección web de la imagen a mostrar. Puedes subir imágenes o usar URLs externas."
+                  required
+                >
                   <Input
                     value={localContent.imageUrl || ''}
                     onChange={(e) => updateContent('imageUrl', e.target.value)}
                     placeholder="https://..."
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Texto alternativo</Label>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Título de la imagen"
+                  help="Título opcional que aparece encima o debajo de la imagen."
+                >
+                  <Input
+                    value={localContent.title || ''}
+                    onChange={(e) => updateContent('title', e.target.value)}
+                    placeholder="Título de la imagen"
+                  />
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Descripción/Caption"
+                  help="Texto descriptivo que aparece como pie de foto debajo de la imagen."
+                >
+                  <Textarea
+                    value={localContent.caption || ''}
+                    onChange={(e) => updateContent('caption', e.target.value)}
+                    placeholder="Descripción de la imagen..."
+                    rows={2}
+                  />
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Texto alternativo (ALT)"
+                  help="Descripción para accesibilidad y SEO. Importante para usuarios con discapacidad visual y motores de búsqueda."
+                  required
+                >
                   <Input
                     value={localContent.altText || ''}
                     onChange={(e) => updateContent('altText', e.target.value)}
                     placeholder="Descripción de la imagen"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Enlace (opcional)</Label>
-                  <Input
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Enlace de destino (opcional)"
+                  help="Cuando se hace clic en la imagen, redirige a esta URL."
+                >
+                  <URLSelector
                     value={localContent.linkUrl || ''}
-                    onChange={(e) => updateContent('linkUrl', e.target.value)}
+                    onChange={(value) => updateContent('linkUrl', value)}
+                    label=""
                     placeholder="/productos"
                   />
-                </div>
+                </FieldWithHelp>
+
+                {localContent.linkUrl && (
+                  <SwitchFieldWithHelp
+                    label="Abrir en nueva pestaña"
+                    help="El enlace se abre en una nueva ventana del navegador."
+                  >
+                    <Switch
+                      checked={localSettings.openInNewTab || false}
+                      onCheckedChange={(checked) => updateSettings('openInNewTab', checked)}
+                    />
+                  </SwitchFieldWithHelp>
+                )}
+
+                <FieldWithHelp
+                  label="Tamaño de la imagen"
+                  help="Cómo se ajusta la imagen en su contenedor."
+                >
+                  <Select
+                    value={localSettings.imageSize || 'cover'}
+                    onValueChange={(value) => updateSettings('imageSize', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Tamaño original</SelectItem>
+                      <SelectItem value="cover">Cubrir (crop)</SelectItem>
+                      <SelectItem value="contain">Contener (fit)</SelectItem>
+                      <SelectItem value="fill">Rellenar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Posición de la imagen"
+                  help="Dónde se posiciona la imagen dentro de su contenedor."
+                >
+                  <Select
+                    value={localSettings.imagePosition || 'center'}
+                    onValueChange={(value) => updateSettings('imagePosition', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="center">Centro</SelectItem>
+                      <SelectItem value="top">Arriba</SelectItem>
+                      <SelectItem value="bottom">Abajo</SelectItem>
+                      <SelectItem value="left">Izquierda</SelectItem>
+                      <SelectItem value="right">Derecha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Alineación horizontal"
+                  help="Cómo se alinea la imagen en la página."
+                >
+                  <Select
+                    value={localSettings.imageAlign || 'center'}
+                    onValueChange={(value) => updateSettings('imageAlign', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Izquierda</SelectItem>
+                      <SelectItem value="center">Centro</SelectItem>
+                      <SelectItem value="right">Derecha</SelectItem>
+                      <SelectItem value="full">Ancho completo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Ancho de la imagen"
+                  help="Ancho máximo de la imagen en la página."
+                >
+                  <Select
+                    value={localSettings.imageWidth || 'large'}
+                    onValueChange={(value) => updateSettings('imageWidth', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Pequeño (400px)</SelectItem>
+                      <SelectItem value="medium">Mediano (600px)</SelectItem>
+                      <SelectItem value="large">Grande (800px)</SelectItem>
+                      <SelectItem value="xlarge">Extra grande (1000px)</SelectItem>
+                      <SelectItem value="full">Ancho completo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Altura de la imagen"
+                  help="Altura fija de la imagen. 'Auto' mantiene la proporción original."
+                >
+                  <Input
+                    value={localSettings.imageHeight || 'auto'}
+                    onChange={(e) => updateSettings('imageHeight', e.target.value)}
+                    placeholder="auto, 400px, 50vh"
+                  />
+                </FieldWithHelp>
+
+                <FieldWithHelp
+                  label="Bordes redondeados"
+                  help="Radio de los bordes de la imagen."
+                >
+                  <Select
+                    value={localSettings.borderRadius || 'none'}
+                    onValueChange={(value) => updateSettings('borderRadius', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin bordes</SelectItem>
+                      <SelectItem value="sm">Pequeño</SelectItem>
+                      <SelectItem value="md">Mediano</SelectItem>
+                      <SelectItem value="lg">Grande</SelectItem>
+                      <SelectItem value="full">Circular</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Añadir sombra"
+                  help="Agrega una sombra sutil alrededor de la imagen para darle profundidad."
+                >
+                  <Switch
+                    checked={localSettings.addShadow !== false}
+                    onCheckedChange={(checked) => updateSettings('addShadow', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.addShadow && (
+                  <FieldWithHelp
+                    label="Intensidad de sombra"
+                    help="Tamaño y visibilidad de la sombra."
+                  >
+                    <Select
+                      value={localSettings.shadowSize || 'md'}
+                      onValueChange={(value) => updateSettings('shadowSize', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sm">Pequeña</SelectItem>
+                        <SelectItem value="md">Mediana</SelectItem>
+                        <SelectItem value="lg">Grande</SelectItem>
+                        <SelectItem value="xl">Extra grande</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldWithHelp>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Efecto hover"
+                  help="La imagen se agranda ligeramente al pasar el mouse sobre ella."
+                >
+                  <Switch
+                    checked={localSettings.hoverEffect || false}
+                    onCheckedChange={(checked) => updateSettings('hoverEffect', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.hoverEffect && (
+                  <FieldWithHelp
+                    label="Tipo de efecto hover"
+                    help="Cómo reacciona la imagen al pasar el mouse."
+                  >
+                    <Select
+                      value={localSettings.hoverType || 'zoom'}
+                      onValueChange={(value) => updateSettings('hoverType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="zoom">Zoom in</SelectItem>
+                        <SelectItem value="lift">Elevar</SelectItem>
+                        <SelectItem value="brightness">Brillo</SelectItem>
+                        <SelectItem value="grayscale">Blanco y negro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldWithHelp>
+                )}
+
+                <SwitchFieldWithHelp
+                  label="Lazy loading"
+                  help="La imagen se carga solo cuando está visible en pantalla. Mejora la velocidad de carga."
+                >
+                  <Switch
+                    checked={localSettings.lazyLoad !== false}
+                    onCheckedChange={(checked) => updateSettings('lazyLoad', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Lightbox al hacer clic"
+                  help="Al hacer clic, la imagen se abre en tamaño grande en una ventana modal."
+                >
+                  <Switch
+                    checked={localSettings.enableLightbox || false}
+                    onCheckedChange={(checked) => updateSettings('enableLightbox', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                <SwitchFieldWithHelp
+                  label="Animación de entrada"
+                  help="La imagen aparece con una animación cuando se hace scroll hasta ella."
+                >
+                  <Switch
+                    checked={localSettings.animateIn !== false}
+                    onCheckedChange={(checked) => updateSettings('animateIn', checked)}
+                  />
+                </SwitchFieldWithHelp>
+
+                {localSettings.animateIn && (
+                  <FieldWithHelp
+                    label="Tipo de animación"
+                    help="Cómo aparece la imagen."
+                  >
+                    <Select
+                      value={localSettings.animationType || 'fade-up'}
+                      onValueChange={(value) => updateSettings('animationType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fade">Aparecer</SelectItem>
+                        <SelectItem value="fade-up">Desde abajo</SelectItem>
+                        <SelectItem value="fade-down">Desde arriba</SelectItem>
+                        <SelectItem value="fade-left">Desde izquierda</SelectItem>
+                        <SelectItem value="fade-right">Desde derecha</SelectItem>
+                        <SelectItem value="zoom-in">Zoom in</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldWithHelp>
+                )}
+
+                <FieldWithHelp
+                  label="Filtro de imagen"
+                  help="Aplica un filtro visual a la imagen."
+                >
+                  <Select
+                    value={localSettings.filter || 'none'}
+                    onValueChange={(value) => updateSettings('filter', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin filtro</SelectItem>
+                      <SelectItem value="grayscale">Blanco y negro</SelectItem>
+                      <SelectItem value="sepia">Sepia (vintage)</SelectItem>
+                      <SelectItem value="brightness">Más brillo</SelectItem>
+                      <SelectItem value="contrast">Más contraste</SelectItem>
+                      <SelectItem value="blur">Desenfoque suave</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldWithHelp>
+
                 {localContent.imageUrl && (
-                  <div className="mt-4">
-                    <Label className="text-xs text-muted-foreground">Vista previa</Label>
+                  <div className="mt-4 pt-4 border-t">
+                    <Label className="text-xs text-muted-foreground mb-2 block">Vista previa</Label>
                     <img 
                       src={localContent.imageUrl} 
                       alt="Preview" 
-                      className="mt-2 max-h-[200px] rounded border"
+                      className="mt-2 max-h-[200px] rounded border mx-auto"
                     />
                   </div>
                 )}
