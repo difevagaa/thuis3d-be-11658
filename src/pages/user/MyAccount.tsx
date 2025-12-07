@@ -40,6 +40,69 @@ export default function MyAccount() {
   const [showCouponNotification, setShowCouponNotification] = useState(false);
   const [newCouponNotification, setNewCouponNotification] = useState<any>(null);
 
+  const loadUserData = async (userId: string) => {
+    try {
+      const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
+      
+      const [ordersRes, quotesRes, messagesRes, pointsRes, giftCardsRes, invoicesRes, rewardsRes, redemptionsRes, couponsRes] = await Promise.all([
+        supabase.from("orders").select("*").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("quotes").select("*").or(`user_id.eq.${userId},customer_email.eq.${profileData?.email || ""}`).is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("messages").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_points").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
+      ]);
+
+      setProfile(profileData);
+      setOrders(ordersRes.data || []);
+      setQuotes(quotesRes.data || []);
+      setMessages(messagesRes.data || []);
+      setLoyaltyPoints(pointsRes.data?.points_balance || 0);
+      setLifetimePoints(pointsRes.data?.lifetime_points || 0);
+      setGiftCards(giftCardsRes.data || []);
+      setInvoices(invoicesRes.data || []);
+      setAvailableRewards(rewardsRes.data || []);
+      setMyRedemptions(redemptionsRes.data || []);
+      setAvailableCoupons(couponsRes.data || []);
+      
+      // Cargar cupones canjeados directamente desde loyalty_redemptions
+      const userCoupons = redemptionsRes.data?.map(redemption => ({
+        id: redemption.id,
+        code: redemption.coupon_code,
+        discount_type: 'percentage', // Default, idealmente obtenerlo del cupón original
+        discount_value: 10, // Default
+        created_at: redemption.created_at,
+        status: redemption.status,
+        reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
+      })) || [];
+      
+      setMyCoupons(userCoupons);
+    } catch (error) {
+      logger.error("Error loading user data:", error);
+    }
+  };
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        i18nToast.error("error.unauthorized");
+        navigate("/auth");
+        return;
+      }
+
+      await loadUserData(user.id);
+    } catch (error) {
+      i18nToast.error("error.general");
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
   useEffect(() => {
     checkAuth();
 
@@ -123,69 +186,6 @@ export default function MyAccount() {
       supabase.removeChannel(loyaltyChannel);
     };
   }, [location, checkAuth, profile?.id]);
-
-  const checkAuth = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        i18nToast.error("error.unauthorized");
-        navigate("/auth");
-        return;
-      }
-
-      await loadUserData(user.id);
-    } catch (error) {
-      i18nToast.error("error.general");
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
-
-  const loadUserData = async (userId: string) => {
-    try {
-      const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
-      
-      const [ordersRes, quotesRes, messagesRes, pointsRes, giftCardsRes, invoicesRes, rewardsRes, redemptionsRes, couponsRes] = await Promise.all([
-        supabase.from("orders").select("*").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
-        supabase.from("quotes").select("*").or(`user_id.eq.${userId},customer_email.eq.${profileData?.email || ""}`).is("deleted_at", null).order("created_at", { ascending: false }),
-        supabase.from("messages").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("loyalty_points").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
-        supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
-        supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
-      ]);
-
-      setProfile(profileData);
-      setOrders(ordersRes.data || []);
-      setQuotes(quotesRes.data || []);
-      setMessages(messagesRes.data || []);
-      setLoyaltyPoints(pointsRes.data?.points_balance || 0);
-      setLifetimePoints(pointsRes.data?.lifetime_points || 0);
-      setGiftCards(giftCardsRes.data || []);
-      setInvoices(invoicesRes.data || []);
-      setAvailableRewards(rewardsRes.data || []);
-      setMyRedemptions(redemptionsRes.data || []);
-      setAvailableCoupons(couponsRes.data || []);
-      
-      // Cargar cupones canjeados directamente desde loyalty_redemptions
-      const userCoupons = redemptionsRes.data?.map(redemption => ({
-        id: redemption.id,
-        code: redemption.coupon_code,
-        discount_type: 'percentage', // Default, idealmente obtenerlo del cupón original
-        discount_value: 10, // Default
-        created_at: redemption.created_at,
-        status: redemption.status,
-        reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
-      })) || [];
-      
-      setMyCoupons(userCoupons);
-    } catch (error) {
-      logger.error("Error loading user data:", error);
-    }
-  };
 
   const updateProfile = async () => {
     try {
