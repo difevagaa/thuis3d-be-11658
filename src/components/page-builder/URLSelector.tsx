@@ -75,10 +75,10 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
       const { data: categories } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('is_active', true);
+        .is('deleted_at', null);
 
-      if (categories) {
-        categories.forEach(category => {
+      if (categories && Array.isArray(categories)) {
+        categories.forEach((category: { id: string; name: string }) => {
           urlList.push({
             label: `Categoría: ${category.name}`,
             value: `/products?category=${category.id}`,
@@ -95,12 +95,12 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
       const { data: products } = await supabase
         .from('products')
         .select('id, name')
-        .eq('is_active', true)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(20);
 
-      if (products) {
-        products.forEach(product => {
+      if (products && Array.isArray(products)) {
+        products.forEach((product: { id: string; name: string }) => {
           urlList.push({
             label: `Producto: ${product.name}`,
             value: `/product/${product.id}`,

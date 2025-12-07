@@ -169,9 +169,9 @@ export function PageBuilderSidebar({
   };
 
   return (
-    <div className="w-80 border-l bg-card flex flex-col">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="w-full justify-start rounded-none border-b px-2">
+    <div className="w-72 flex-shrink-0 border-l bg-card flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="w-full justify-start rounded-none border-b px-2 flex-shrink-0">
           <TabsTrigger value="add" className="text-xs">
             <Plus className="h-3 w-3 mr-1" />
             Añadir
@@ -182,7 +182,7 @@ export function PageBuilderSidebar({
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1"  style={{ height: 'calc(100vh - 120px)' }}>
           <TabsContent value="add" className="m-0 p-4 space-y-4">
             {/* Quick Add Sections */}
             <div>

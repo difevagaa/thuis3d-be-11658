@@ -724,34 +724,20 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       }
       
       // Build query based on settings
-      let query = supabase
+      const sortBy = settings?.sortBy || 'created_at';
+      const sortOrder = settings?.sortOrder || 'desc';
+      const limit = settings?.limit || 10;
+      
+      const { data, error } = await supabase
         .from('products')
         .select(`
           *,
           images:product_images(image_url, display_order),
           product_roles(role)
         `)
-        .is('deleted_at', null);
-      
-      // Apply filters from settings
-      if (settings?.category) {
-        query = query.eq('category', settings.category);
-      }
-      
-      if (settings?.featured) {
-        query = query.eq('is_featured', true);
-      }
-      
-      // Apply sorting
-      const sortBy = settings?.sortBy || 'created_at';
-      const sortOrder = settings?.sortOrder || 'desc';
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-      
-      // Apply limit
-      const limit = settings?.limit || 10;
-      query = query.limit(limit);
-      
-      const { data, error } = await query;
+        .is('deleted_at', null)
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .limit(limit);
       
       if (error) throw error;
       

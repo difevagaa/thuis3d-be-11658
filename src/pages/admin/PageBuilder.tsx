@@ -54,7 +54,7 @@ import { PageBuilderSettings } from "@/components/page-builder/PageBuilderSettin
 import { SectionEditor } from "@/components/page-builder/SectionEditor";
 import { PageBuilderHelp } from "@/components/page-builder/PageBuilderHelp";
 
-interface PageData {
+export interface PageData {
   id: string;
   page_key: string;
   page_name: string;
@@ -62,7 +62,7 @@ interface PageData {
   is_enabled: boolean;
 }
 
-interface SectionData {
+export interface SectionData {
   id: string;
   page_id: string;
   section_type: string;
@@ -606,46 +606,46 @@ export default function PageBuilder() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
-        <div className="flex items-center gap-4">
+    <div className="flex flex-col bg-background" style={{ height: 'calc(100vh - 4rem)', marginTop: '-1.5rem', marginLeft: '-1.5rem', marginRight: '-1.5rem', width: 'calc(100% + 3rem)' }}>
+      {/* Header - scrollable and responsive */}
+      <div className="flex-shrink-0 flex flex-wrap items-center justify-between px-4 py-2 border-b bg-card gap-2 min-h-[48px]">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => navigate('/admin')}>
             <ChevronRight className="h-4 w-4 rotate-180 mr-1" />
             Admin
           </Button>
           <div className="flex items-center gap-2">
             <Layout className="h-5 w-5 text-primary" />
-            <span className="font-semibold">Editor de Páginas</span>
+            <span className="font-semibold text-sm">Editor de Páginas</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowHelp(true)}
-              className="ml-2"
+              className="p-1 h-8 w-8"
             >
               <HelpCircle className="h-4 w-4" />
             </Button>
           </div>
           {selectedPage && (
-            <Badge variant="secondary" className="flex items-center gap-1">
+            <Badge variant="secondary" className="flex items-center gap-1 text-xs">
               {pageIcons[selectedPage.page_key]}
               {selectedPage.page_name}
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 flex-wrap">
           {hasChanges && (
-            <Badge variant="outline" className="text-orange-500 border-orange-500">
-              Cambios sin guardar
+            <Badge variant="outline" className="text-orange-500 border-orange-500 text-xs">
+              Sin guardar
             </Badge>
           )}
-          <div className="flex items-center gap-1 border rounded-md p-1">
+          <div className="flex items-center gap-0.5 border rounded-md p-0.5">
             <Button
               variant={viewportMode === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('desktop')}
-              className="h-7 px-2"
+              className="h-7 w-7 p-0"
             >
               <Monitor className="h-4 w-4" />
             </Button>
@@ -653,7 +653,7 @@ export default function PageBuilder() {
               variant={viewportMode === 'tablet' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('tablet')}
-              className="h-7 px-2"
+              className="h-7 w-7 p-0"
             >
               <Tablet className="h-4 w-4" />
             </Button>
@@ -661,7 +661,7 @@ export default function PageBuilder() {
               variant={viewportMode === 'mobile' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewportMode('mobile')}
-              className="h-7 px-2"
+              className="h-7 w-7 p-0"
             >
               <Smartphone className="h-4 w-4" />
             </Button>
@@ -672,6 +672,7 @@ export default function PageBuilder() {
             onClick={handleUndo}
             disabled={historyIndex <= 0}
             title="Deshacer (Ctrl+Z)"
+            className="h-8 w-8 p-0"
           >
             <Undo className="h-4 w-4" />
           </Button>
@@ -681,12 +682,13 @@ export default function PageBuilder() {
             onClick={handleRedo}
             disabled={historyIndex >= history.length - 1}
             title="Rehacer (Ctrl+Shift+Z)"
+            className="h-8 w-8 p-0"
           >
             <Redo className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePreview}>
+          <Button variant="outline" size="sm" onClick={handlePreview} className="h-8 text-xs px-2">
             <Eye className="h-4 w-4 mr-1" />
-            Vista previa
+            <span className="hidden sm:inline">Vista previa</span>
           </Button>
           <Button 
             variant="outline"
@@ -694,9 +696,10 @@ export default function PageBuilder() {
             onClick={handleTestCurrentSection}
             disabled={testing || !selectedSection}
             title="Validar sección actual"
+            className="h-8 text-xs px-2"
           >
             <CheckCircle className="h-4 w-4 mr-1" />
-            Validar
+            <span className="hidden sm:inline">Validar</span>
           </Button>
           <Button 
             variant="outline"
@@ -704,28 +707,30 @@ export default function PageBuilder() {
             onClick={handleRunTests}
             disabled={testing || !selectedPage}
             title="Ejecutar todas las pruebas"
+            className="h-8 text-xs px-2"
           >
             <TestTube className="h-4 w-4 mr-1" />
-            {testing ? 'Probando...' : 'Probar Todo'}
+            <span className="hidden md:inline">{testing ? 'Probando...' : 'Probar Todo'}</span>
           </Button>
           <Button 
             size="sm" 
             onClick={handleSaveAll}
             disabled={saving || !hasChanges}
             title="Guardar (Ctrl+S)"
+            className="h-8 text-xs px-3"
           >
             <Save className="h-4 w-4 mr-1" />
-            {saving ? 'Guardando...' : 'Guardar'}
+            <span className="hidden sm:inline">{saving ? 'Guardando...' : 'Guardar'}</span>
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Sidebar - Pages */}
-        <div className="w-64 border-r bg-muted/30 flex flex-col">
-          <div className="p-3 border-b">
-            <h3 className="font-medium text-sm text-muted-foreground">PÁGINAS</h3>
+        <div className="w-48 flex-shrink-0 border-r bg-muted/30 flex flex-col overflow-hidden">
+          <div className="p-3 border-b flex-shrink-0">
+            <h3 className="font-medium text-xs text-muted-foreground uppercase">Páginas</h3>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
@@ -740,9 +745,9 @@ export default function PageBuilder() {
                   }`}
                 >
                   {pageIcons[page.page_key]}
-                  <span className="flex-1">{page.page_name}</span>
+                  <span className="flex-1 truncate text-xs">{page.page_name}</span>
                   {!page.is_enabled && (
-                    <EyeOff className="h-3 w-3 opacity-50" />
+                    <EyeOff className="h-3 w-3 opacity-50 flex-shrink-0" />
                   )}
                 </button>
               ))}
@@ -751,29 +756,31 @@ export default function PageBuilder() {
         </div>
 
         {/* Center - Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-muted/30">
+        <div className="flex-1 flex flex-col overflow-hidden bg-muted/30 min-w-0">
           {selectedPage ? (
-            <div className="flex-1 flex items-start justify-center overflow-auto p-4">
-              <div
-                className="transition-all duration-300 bg-background shadow-xl"
-                style={{
-                  width: viewportMode === 'desktop' ? '100%' : viewportMode === 'tablet' ? '768px' : '375px',
-                  maxWidth: '100%',
-                  minHeight: viewportMode === 'desktop' ? '100%' : '600px'
-                }}
-              >
-                <PageBuilderCanvas
-                  sections={sections}
-                  selectedSection={selectedSection}
-                  onSelectSection={handleSectionSelect}
-                  onUpdateSection={handleUpdateSection}
-                  onDeleteSection={handleDeleteSection}
-                  onDuplicateSection={handleDuplicateSection}
-                  onReorderSections={handleReorderSections}
-                  previewMode={previewMode}
-                />
+            <ScrollArea className="flex-1">
+              <div className="flex items-start justify-center p-4 min-h-full">
+                <div
+                  className="transition-all duration-300 bg-background shadow-xl"
+                  style={{
+                    width: viewportMode === 'desktop' ? '100%' : viewportMode === 'tablet' ? '768px' : '375px',
+                    maxWidth: '100%',
+                    minHeight: '600px'
+                  }}
+                >
+                  <PageBuilderCanvas
+                    sections={sections}
+                    selectedSection={selectedSection}
+                    onSelectSection={handleSectionSelect}
+                    onUpdateSection={handleUpdateSection}
+                    onDeleteSection={handleDeleteSection}
+                    onDuplicateSection={handleDuplicateSection}
+                    onReorderSections={handleReorderSections}
+                    previewMode={previewMode}
+                  />
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <p>Selecciona una página para editar</p>
