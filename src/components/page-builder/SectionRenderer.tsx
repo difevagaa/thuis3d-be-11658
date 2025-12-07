@@ -5,6 +5,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 
 // Utility function to safely navigate to URL
 const safeNavigate = (url: string) => {
@@ -875,13 +876,21 @@ function FormSection({ section }: { section: SectionData }) {
     e.preventDefault();
     setSubmitting(true);
     
-    // Here you would typically send the form data to your backend
-    // For now, we'll just simulate a submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    alert('Formulario enviado. Te contactaremos pronto!');
-    setFormData({ name: '', email: '', phone: '', message: '' });
-    setSubmitting(false);
+    try {
+      // TODO: Integrate with backend API or Supabase Edge Function
+      // Example: await supabase.functions.invoke('send-contact-form', { body: formData });
+      
+      // Simulate submission for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Formulario enviado. Te contactaremos pronto!');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (error) {
+      logger.error('Error submitting form:', error);
+      toast.error('Error al enviar el formulario. Por favor, intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
   };
   
   return (
@@ -970,11 +979,21 @@ function NewsletterSection({ section }: { section: SectionData }) {
     e.preventDefault();
     setSubmitting(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    alert('¡Gracias por suscribirte!');
-    setEmail('');
-    setSubmitting(false);
+    try {
+      // TODO: Integrate with newsletter service or backend
+      // Example: await supabase.functions.invoke('subscribe-newsletter', { body: { email } });
+      
+      // Simulate submission for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('¡Gracias por suscribirte!');
+      setEmail('');
+    } catch (error) {
+      logger.error('Error subscribing to newsletter:', error);
+      toast.error('Error al suscribirse. Por favor, intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
   };
   
   return (

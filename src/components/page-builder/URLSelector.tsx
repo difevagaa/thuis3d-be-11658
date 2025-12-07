@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 import { Check, ChevronsUpDown, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -130,7 +131,8 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
         });
       }
     } catch (error) {
-      // Blog table might not exist, ignore
+      // Blog table might not exist yet in all environments, this is expected
+      logger.error('Blog posts table not available:', error);
     }
 
     setUrls(urlList);
@@ -278,7 +280,12 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
           <Button
             variant="outline"
             size="icon"
-            onClick={() => window.open(customUrl, '_blank')}
+            onClick={() => {
+              const win = window.open(customUrl, '_blank');
+              if (win) {
+                win.opener = null;
+              }
+            }}
             title="Abrir en nueva pestaña"
           >
             <ExternalLink className="h-4 w-4" />
