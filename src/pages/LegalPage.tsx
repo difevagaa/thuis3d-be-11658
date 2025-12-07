@@ -1,68 +1,81 @@
-import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import DOMPurify from "dompurify";
+import { SectionRenderer, usePageSections } from "@/components/page-builder/SectionRenderer";
+import { SEOHead } from "@/components/SEOHead";
+
+// Map URL type parameter to page_key
+const typeToPageKeyMap: Record<string, string> = {
+  'privacy': 'privacy-policy',
+  'privacy-policy': 'privacy-policy',
+  'terms': 'terms-of-service',
+  'terms-of-service': 'terms-of-service',
+  'cookies': 'cookies-policy',
+  'cookies-policy': 'cookies-policy',
+  'legal': 'legal-notice',
+  'legal-notice': 'legal-notice',
+  'shipping': 'shipping-policy',
+  'shipping-policy': 'shipping-policy',
+  'returns': 'return-policy',
+  'return-policy': 'return-policy',
+};
+
+// Map page_key to display title
+const pageTitles: Record<string, string> = {
+  'privacy-policy': 'Política de Privacidad',
+  'terms-of-service': 'Términos y Condiciones',
+  'cookies-policy': 'Política de Cookies',
+  'legal-notice': 'Aviso Legal',
+  'shipping-policy': 'Política de Envíos',
+  'return-policy': 'Política de Devoluciones',
+};
 
 export default function LegalPage() {
   const { type } = useParams();
-  const [page, setPage] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadPage = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("legal_pages")
-        .select("*")
-        .eq("page_type", type)
-        .eq("is_published", true)
-        .maybeSingle();
-
-      if (error) throw error;
-      setPage(data);
-    } catch (error) {
-      console.error("Error loading legal page:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [type]);
-
-  useEffect(() => {
-    loadPage();
-  }, [loadPage]);
+  
+  // Get the page_key from the URL type parameter
+  const pageKey = type ? typeToPageKeyMap[type] : undefined;
+  
+  // Load page builder sections for the legal page
+  const { sections: pageBuilderSections, loading } = usePageSections(pageKey || '');
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center">Cargando...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!page) {
+  // If no valid page key or no sections found
+  if (!pageKey || pageBuilderSections.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <Card>
-          <CardContent className="p-12 text-center">
-            <h1 className="text-3xl font-bold mb-4">Página no encontrada</h1>
-            <p className="text-muted-foreground">La página legal que buscas no existe o no está publicada.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <SEOHead 
+          title="Página no encontrada"
+          description="La página legal que buscas no existe"
+        />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="text-3xl font-bold mb-4">Página no encontrada</h1>
+          <p className="text-muted-foreground mb-8">
+            La página legal que buscas no existe o no está publicada.
+          </p>
+        </div>
+      </>
     );
   }
+
+  const pageTitle = pageTitles[pageKey] || 'Página Legal';
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <Card>
-        <CardContent className="p-8">
-          <h1 className="text-4xl font-bold mb-6">{page.title}</h1>
-          <div 
-            className="prose prose-lg max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
-          />
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <SEOHead 
+        title={pageTitle}
+        description={`Consulta nuestra ${pageTitle.toLowerCase()}`}
+      />
+      
+      <div className="min-h-screen">
+        {/* Render all content from Page Builder Sections */}
+        <SectionRenderer sections={pageBuilderSections} />
+      </div>
+    </>
   );
 }

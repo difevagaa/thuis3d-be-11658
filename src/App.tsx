@@ -95,6 +95,9 @@ const PageBuilder = lazy(() => import("./pages/admin/PageBuilder"));
 
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
+import Contact from "./pages/Contact";
+import AboutUs from "./pages/AboutUs";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -143,6 +146,9 @@ const App = () => {
             <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
             <Route path="/tarjetas-regalo" element={<Layout><GiftCard /></Layout>} />
             <Route path="/galeria" element={<Layout><Gallery /></Layout>} />
+            <Route path="/contacto" element={<Layout><Contact /></Layout>} />
+            <Route path="/sobre-nosotros" element={<Layout><AboutUs /></Layout>} />
+            <Route path="/preguntas-frecuentes" element={<Layout><FAQ /></Layout>} />
             <Route path="/pago-instrucciones" element={<Layout><PaymentInstructions /></Layout>} />
             <Route path="/pago-tarjeta" element={<Layout><CardPaymentPage /></Layout>} />
             <Route path="/pago-revolut" element={<Layout><RevolutPaymentPage /></Layout>} />
