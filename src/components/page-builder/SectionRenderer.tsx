@@ -1,4 +1,4 @@
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect, useCallback, CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
@@ -161,7 +161,7 @@ const safeNavigate = (url: string) => {
   // Only allow http, https, and relative URLs starting with /
   if (sanitizedUrl.startsWith('/')) {
     // Validate it's a clean relative URL
-    if (/^\/[a-zA-Z0-9\-_\/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
+    if (/^\/[a-zA-Z0-9\-_/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
       window.location.href = sanitizedUrl;
     }
     return;
@@ -701,11 +701,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    loadProducts();
-  }, [content]);
-  
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -771,7 +767,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [settings?.sortBy, settings?.sortOrder, settings?.limit]);
+  
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
   
   if (loading) {
     return (
