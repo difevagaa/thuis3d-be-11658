@@ -58,6 +58,7 @@ interface PageBuilderCanvasProps {
   sections: SectionData[];
   selectedSection: SectionData | null;
   onSelectSection: (section: SectionData) => void;
+  onEditSection?: (section: SectionData) => void;
   onUpdateSection: (sectionId: string, updates: any) => void;
   onDeleteSection: (sectionId: string) => void;
   onDuplicateSection: (section: SectionData) => void;
@@ -84,6 +85,7 @@ function SortableSectionItem({
   section, 
   isSelected, 
   onSelect, 
+  onEdit,
   onDelete,
   onDuplicate,
   onToggleVisibility
@@ -91,6 +93,7 @@ function SortableSectionItem({
   section: SectionData;
   isSelected: boolean;
   onSelect: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onToggleVisibility: () => void;
@@ -141,6 +144,17 @@ function SortableSectionItem({
         </Badge>
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              title="Editar opciones completas"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -404,6 +418,7 @@ export function PageBuilderCanvas({
   sections,
   selectedSection,
   onSelectSection,
+  onEditSection,
   onUpdateSection,
   onDeleteSection,
   onDuplicateSection,
@@ -461,6 +476,7 @@ export function PageBuilderCanvas({
                 section={section}
                 isSelected={selectedSection?.id === section.id}
                 onSelect={() => onSelectSection(section)}
+                onEdit={onEditSection ? () => onEditSection(section) : undefined}
                 onDelete={() => onDeleteSection(section.id)}
                 onDuplicate={() => onDuplicateSection(section)}
                 onToggleVisibility={() => onUpdateSection(section.id, { is_visible: !section.is_visible })}
