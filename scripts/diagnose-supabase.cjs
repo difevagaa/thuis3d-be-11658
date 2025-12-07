@@ -73,9 +73,13 @@ function loadEnv() {
   return env;
 }
 
-// Make HTTP request to Supabase
-function makeRequest(url, headers) {
+// Make HTTP request to Supabase with timeout
+function makeRequest(url, headers, timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`Request timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+    
     https.get(url, { headers }, (res) => {
       let data = '';
       
@@ -84,6 +88,7 @@ function makeRequest(url, headers) {
       });
       
       res.on('end', () => {
+        clearTimeout(timeout);
         try {
           resolve({
             statusCode: res.statusCode,
@@ -96,7 +101,10 @@ function makeRequest(url, headers) {
           });
         }
       });
-    }).on('error', reject);
+    }).on('error', (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
   });
 }
 
@@ -133,7 +141,11 @@ async function diagnose() {
   }
   
   if (supabaseKey) {
-    logSuccess(`Publishable Key: ${supabaseKey.substring(0, 20)}...`);
+    // Mask the key for security - only show first 10 and last 5 characters
+    const maskedKey = supabaseKey.length > 20 
+      ? `${supabaseKey.substring(0, 10)}...${supabaseKey.substring(supabaseKey.length - 5)}`
+      : `${supabaseKey.substring(0, 5)}...`;
+    logSuccess(`Publishable Key: ${maskedKey}`);
   } else {
     logError('VITE_SUPABASE_PUBLISHABLE_KEY not found in .env');
     return;

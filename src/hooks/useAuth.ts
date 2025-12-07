@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -49,9 +49,15 @@ export function useAuth(): UseAuthReturn {
         // Load user roles if authenticated
         if (initialSession?.user) {
           await loadUserRoles(initialSession.user.id);
+        } else {
+          // Ensure empty roles array is set when no user
+          setUserRoles([]);
+          setIsAdmin(false);
         }
       } catch (error) {
         logger.error('Error initializing auth:', error);
+        setUserRoles([]);
+        setIsAdmin(false);
       } finally {
         setLoading(false);
       }
@@ -113,30 +119,44 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
-  return {
-    user,
-    session,
-    loading,
-    isAuthenticated: !!user,
-    isAdmin,
-    userRoles,
-  };
+  // Memoize return value to prevent unnecessary re-renders
+  return useMemo(
+    () => ({
+      user,
+      session,
+      loading,
+      isAuthenticated: !!user,
+      isAdmin,
+      userRoles,
+    }),
+    [user, session, loading, isAdmin, userRoles]
+  );
 }
 
 /**
  * Hook to check if user has specific role(s)
  * 
  * @param requiredRoles - Role(s) to check for (string or array of strings)
+ * @param authState - Optional: Pass auth state from useAuth() to avoid duplicate subscriptions
  * @returns true if user has at least one of the required roles
  * 
  * @example
  * ```tsx
+ * // Option 1: Simple usage (creates own subscription)
  * const hasAccess = useHasRole(['admin', 'editor']);
- * const isVIP = useHasRole('vip');
+ * 
+ * // Option 2: Share auth state (better performance)
+ * const auth = useAuth();
+ * const hasAccess = useHasRole(['admin', 'editor'], auth);
  * ```
  */
-export function useHasRole(requiredRoles: string | string[]): boolean {
-  const { userRoles, loading } = useAuth();
+export function useHasRole(
+  requiredRoles: string | string[],
+  authState?: Pick<UseAuthReturn, 'userRoles' | 'loading'>
+): boolean {
+  // Use provided auth state or create own subscription
+  const ownAuth = useAuth();
+  const { userRoles, loading } = authState ?? ownAuth;
   
   if (loading) return false;
   
