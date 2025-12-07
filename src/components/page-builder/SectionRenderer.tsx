@@ -703,7 +703,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   
   useEffect(() => {
     loadProducts();
-  }, [content]);
+  }, [content, settings]);
   
   const loadProducts = async () => {
     try {
@@ -781,7 +781,9 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         )}
         style={{
           backgroundColor: styles?.backgroundColor,
-          padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+          padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+          marginTop: `${styles?.marginTop || 0}px`,
+          marginBottom: `${styles?.marginBottom || 0}px`
         }}
       >
         <div className="flex justify-center items-center py-12">
@@ -795,16 +797,33 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     return null;
   }
   
+  // Import AdvancedCarousel dynamically
+  const { AdvancedCarousel } = require('./AdvancedCarousel');
+  
   return (
     <section
+      id={settings?.sectionId}
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
+        settings?.customClass
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
+        backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+        backgroundSize: styles?.backgroundSize || 'cover',
+        backgroundPosition: styles?.backgroundPosition || 'center',
+        backgroundAttachment: styles?.backgroundAttachment || 'scroll',
         color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        marginTop: `${styles?.marginTop || 0}px`,
+        marginBottom: `${styles?.marginBottom || 0}px`,
+        minHeight: settings?.minHeight || 'auto',
+        borderRadius: styles?.borderRadius || '0',
+        borderWidth: `${styles?.borderWidth || 0}px`,
+        borderColor: styles?.borderColor,
+        borderStyle: styles?.borderStyle || 'solid',
+        boxShadow: styles?.boxShadow
       }}
     >
       <div className={cn(
@@ -812,21 +831,75 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         getTextAlignClass(styles?.textAlign)
       )}>
         {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+          <h2 
+            className="text-3xl font-bold mb-4" 
+            style={{ 
+              color: styles?.textColor,
+              fontFamily: styles?.fontFamily,
+              fontSize: styles?.fontSize ? `${styles.fontSize}px` : undefined
+            }}
+          >
             {content.title}
           </h2>
         )}
         {content?.subtitle && (
-          <p className="text-lg mb-8 opacity-90" style={{ color: styles?.textColor }}>
+          <p 
+            className="text-lg mb-8 opacity-90" 
+            style={{ color: styles?.textColor }}
+          >
             {content.subtitle}
           </p>
         )}
-        <FeaturedProductsCarousel 
-          products={products} 
-          maxVisible={settings?.maxVisible || 4}
+        
+        <AdvancedCarousel
+          items={products}
+          settings={settings}
+          renderItem={(product: any) => (
+            <ProductCard product={product} />
+          )}
         />
       </div>
+      
+      {/* Custom CSS if provided */}
+      {settings?.customCSS && (
+        <style dangerouslySetInnerHTML={{ __html: settings.customCSS }} />
+      )}
     </section>
+  );
+}
+
+// Simple Product Card for carousel
+function ProductCard({ product }: { product: any }) {
+  const firstImage = product.images?.[0]?.image_url;
+  
+  return (
+    <a 
+      href={`/producto/${product.id}`}
+      className="block group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+    >
+      <div className="relative h-48 bg-muted flex items-center justify-center overflow-hidden">
+        {firstImage ? (
+          <img 
+            src={firstImage} 
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="text-muted-foreground">Sin imagen</div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          {product.name}
+        </h3>
+        {product.price && (
+          <p className="text-lg font-bold text-primary">
+            €{Number(product.price).toFixed(2)}
+          </p>
+        )}
+      </div>
+    </a>
   );
 }
 

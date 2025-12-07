@@ -163,14 +163,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
   
   return (
     <div className="min-h-screen flex w-full bg-background">
