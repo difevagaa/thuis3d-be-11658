@@ -13,17 +13,46 @@ const safeNavigate = (url: string) => {
   
   // Remove any potential javascript: or data: URLs
   const sanitizedUrl = url.trim();
+  
+  // Only allow http, https, and relative URLs starting with /
+  if (sanitizedUrl.startsWith('/')) {
+    // Validate it's a clean relative URL
+    if (/^\/[a-zA-Z0-9\-_\/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
+      window.location.href = sanitizedUrl;
+    }
+    return;
+  }
+  
   try {
     const parsed = new URL(sanitizedUrl, window.location.origin);
-    // Only allow http, https, and relative URLs
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || sanitizedUrl.startsWith('/')) {
+    // Only allow http and https protocols
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
       window.location.href = sanitizedUrl;
     }
   } catch {
-    // If URL parsing fails, treat as relative URL
-    if (sanitizedUrl.startsWith('/')) {
-      window.location.href = sanitizedUrl;
+    // Invalid URL, do nothing
+    logger.error('Invalid URL attempted:', sanitizedUrl);
+  }
+};
+
+// Utility function to validate image URL
+const isValidImageUrl = (url: string): boolean => {
+  if (!url) return false;
+  
+  try {
+    const parsed = new URL(url, window.location.origin);
+    // Only allow http and https
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
     }
+    // Check for common image extensions
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const hasValidExt = validExtensions.some(ext => 
+      parsed.pathname.toLowerCase().endsWith(ext)
+    );
+    return hasValidExt || parsed.pathname.includes('/'); // Allow paths without extensions
+  } catch {
+    return false;
   }
 };
 
@@ -684,11 +713,21 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
         >
           {/* Main Image */}
           <div className="relative w-full h-full">
-            <img
-              src={images[currentIndex]?.url}
-              alt={images[currentIndex]?.alt || `Imagen ${currentIndex + 1}`}
-              className="w-full h-full object-cover rounded-lg"
-            />
+            {isValidImageUrl(images[currentIndex]?.url) ? (
+              <img
+                src={images[currentIndex]?.url}
+                alt={images[currentIndex]?.alt || `Imagen ${currentIndex + 1}`}
+                className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <p className="text-muted-foreground">URL de imagen inválida</p>
+              </div>
+            )}
             {images[currentIndex]?.caption && (
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4">
                 <p className="text-center">{images[currentIndex].caption}</p>

@@ -161,9 +161,10 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
               aria-expanded={open}
               className="w-[200px] justify-between"
             >
-              {value && urls.find((url) => url.value === value)
-                ? urls.find((url) => url.value === value)?.label
-                : "Seleccionar..."}
+              {(() => {
+                const selectedUrl = urls.find((url) => url.value === value);
+                return selectedUrl ? selectedUrl.label : "Seleccionar...";
+              })()}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -281,10 +282,7 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
             variant="outline"
             size="icon"
             onClick={() => {
-              const win = window.open(customUrl, '_blank');
-              if (win) {
-                win.opener = null;
-              }
+              window.open(customUrl, '_blank', 'noopener,noreferrer');
             }}
             title="Abrir en nueva pestaña"
           >
