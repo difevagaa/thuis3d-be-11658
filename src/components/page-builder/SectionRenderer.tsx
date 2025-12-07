@@ -1781,26 +1781,3 @@ export function usePageSections(pageKey: string) {
   return { sections, loading };
 }
 
-    loadSections();
-
-    // Cleanup subscription and timeout
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      
-      if (sectionsChannel) {
-        const cleanup = async () => {
-          try {
-            const { supabase } = await import("@/integrations/supabase/client");
-            await supabase.removeChannel(sectionsChannel);
-          } catch (error) {
-            console.error('Error cleaning up channel:', error);
-          }
-        };
-        cleanup();
-      }
-    };
-  }, [pageKey]);
-
-  return { sections, loading };
-}
