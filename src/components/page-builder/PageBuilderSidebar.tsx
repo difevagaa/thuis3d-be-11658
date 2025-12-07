@@ -169,33 +169,33 @@ export function PageBuilderSidebar({
   };
 
   return (
-    <div className="w-72 flex-shrink-0 border-l bg-card flex flex-col overflow-hidden">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="w-full justify-start rounded-none border-b px-2 flex-shrink-0">
-          <TabsTrigger value="add" className="text-xs">
+    <div className="w-56 lg:w-64 flex-shrink-0 border-l bg-card flex flex-col min-h-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <TabsList className="w-full justify-start rounded-none border-b px-1 flex-shrink-0 h-9">
+          <TabsTrigger value="add" className="text-xs h-7 px-2">
             <Plus className="h-3 w-3 mr-1" />
             Añadir
           </TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs" disabled={!selectedSection}>
+          <TabsTrigger value="settings" className="text-xs h-7 px-2" disabled={!selectedSection}>
             <Palette className="h-3 w-3 mr-1" />
             Configurar
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1"  style={{ height: 'calc(100vh - 120px)' }}>
-          <TabsContent value="add" className="m-0 p-4 space-y-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <TabsContent value="add" className="m-0 p-2 space-y-3">
             {/* Quick Add Sections */}
             <div>
-              <h4 className="font-medium text-sm mb-3">Añadir Sección</h4>
-              <div className="grid grid-cols-2 gap-2">
+              <h4 className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Añadir Sección</h4>
+              <div className="grid grid-cols-2 gap-1">
                 {quickAddSections.map(section => (
                   <button
                     key={section.type}
                     onClick={() => onAddSection({ type: section.type, name: section.name })}
-                    className="flex flex-col items-center gap-2 p-3 rounded-lg border border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
+                    className="flex flex-col items-center gap-1 p-2 rounded border border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
                   >
                     {section.icon}
-                    <span className="text-xs text-center">{section.name}</span>
+                    <span className="text-[10px] text-center leading-tight">{section.name}</span>
                   </button>
                 ))}
               </div>
