@@ -31,7 +31,10 @@ import {
   AlignRight,
   Bold,
   Italic,
-  Underline
+  Underline,
+  Share2,
+  Timer,
+  BarChart3
 } from "lucide-react";
 
 interface SectionTemplate {
@@ -62,7 +65,10 @@ const sectionTypeIcons: Record<string, React.ReactNode> = {
   'spacer': <Square className="h-4 w-4" />,
   'custom': <Code className="h-4 w-4" />,
   'video': <Video className="h-4 w-4" />,
-  'text-image': <Layout className="h-4 w-4" />
+  'text-image': <Layout className="h-4 w-4" />,
+  'social-media': <Share2 className="h-4 w-4" />,
+  'counter': <Timer className="h-4 w-4" />,
+  'stats': <BarChart3 className="h-4 w-4" />
 };
 
 export function PageBuilderSidebar({ 
