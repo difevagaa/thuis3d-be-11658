@@ -3,7 +3,18 @@
  * 50 functional utilities for the page builder without creating new tables
  */
 
-import { SectionData } from '@/pages/admin/PageBuilder';
+// Define SectionData locally to avoid circular dependency
+export interface SectionData {
+  id: string;
+  page_id: string;
+  section_type: string;
+  section_name: string;
+  display_order: number;
+  is_visible: boolean;
+  settings: any;
+  content: any;
+  styles: any;
+}
 
 // ============================================
 // 1-15: Editor and Section Manipulation

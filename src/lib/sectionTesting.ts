@@ -385,10 +385,14 @@ export async function testOptionPersistence(sectionId: string, option: string, v
     }
 
     // Update option
+    const sectionSettings = typeof section.settings === 'object' && section.settings !== null 
+      ? section.settings 
+      : {};
+    
     const updated = {
       ...section,
       settings: {
-        ...section.settings,
+        ...sectionSettings,
         [option]: value
       }
     };
