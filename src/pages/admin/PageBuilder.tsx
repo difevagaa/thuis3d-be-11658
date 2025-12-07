@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,7 @@ import {
   Trash2,
   GripVertical,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   Edit2,
   Copy,
@@ -97,6 +98,10 @@ export default function PageBuilder() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
+  
+  // Sidebar auto-hide states
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const sidebarTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -159,6 +164,55 @@ export default function PageBuilder() {
       setTesting(false);
     }
   };
+
+  // Auto-hide sidebar functionality
+  const resetSidebarTimer = useCallback(() => {
+    // Clear existing timer
+    if (sidebarTimerRef.current) {
+      clearTimeout(sidebarTimerRef.current);
+    }
+    
+    // Show sidebar
+    setSidebarVisible(true);
+    
+    // Set new timer to hide after 5 seconds
+    sidebarTimerRef.current = setTimeout(() => {
+      setSidebarVisible(false);
+    }, 5000);
+  }, []);
+
+  // Manual toggle sidebar
+  const toggleSidebar = useCallback(() => {
+    if (sidebarTimerRef.current) {
+      clearTimeout(sidebarTimerRef.current);
+      sidebarTimerRef.current = null;
+    }
+    setSidebarVisible(prev => !prev);
+  }, []);
+
+  // Show sidebar and reset timer when user interacts
+  const handleSidebarInteraction = useCallback(() => {
+    resetSidebarTimer();
+  }, [resetSidebarTimer]);
+
+  // Initialize sidebar auto-hide on mount
+  useEffect(() => {
+    resetSidebarTimer();
+    
+    // Cleanup on unmount
+    return () => {
+      if (sidebarTimerRef.current) {
+        clearTimeout(sidebarTimerRef.current);
+      }
+    };
+  }, [resetSidebarTimer]);
+
+  // Reset timer when selected section changes
+  useEffect(() => {
+    if (selectedSection) {
+      resetSidebarTimer();
+    }
+  }, [selectedSection, resetSidebarTimer]);
 
   const pageIcons: Record<string, React.ReactNode> = {
     'home': <Home className="h-4 w-4" />,
@@ -250,7 +304,7 @@ export default function PageBuilder() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, historyIndex, history]);
+  }, [hasChanges, handleSaveAll, handleUndo, handleRedo]);
 
   // Escape key handler
   useEffect(() => {
@@ -567,11 +621,13 @@ export default function PageBuilder() {
     }
   };
 
-  const handleSaveAll = async () => {
+  const handleSaveAll = useCallback(async () => {
     setSaving(true);
     try {
       // All changes are saved immediately, so just refresh
-      await loadSections(selectedPage!.id);
+      if (selectedPage) {
+        await loadSections(selectedPage.id);
+      }
       setHasChanges(false);
       toast.success('Cambios guardados correctamente');
     } catch (error) {
@@ -580,7 +636,7 @@ export default function PageBuilder() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [selectedPage, loadSections]);
 
   const handlePreview = () => {
     if (selectedPage) {
@@ -747,12 +803,42 @@ export default function PageBuilder() {
           )}
         </div>
 
-        {/* Right Sidebar */}
-        <PageBuilderSidebar
-          selectedSection={selectedSection}
-          onAddSection={handleAddSection}
-          onUpdateSection={handleUpdateSection}
-        />
+        {/* Right Sidebar - Auto-hide after 5 seconds */}
+        <div className="relative">
+          {/* Toggle Button - Always visible */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className={`absolute top-2 z-50 transition-all duration-300 ${
+              sidebarVisible ? '-left-10' : 'left-2'
+            }`}
+            title={sidebarVisible ? 'Ocultar panel' : 'Mostrar panel'}
+          >
+            {sidebarVisible ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* Sidebar with auto-hide */}
+          <div
+            className={`transition-all duration-300 ease-in-out ${
+              sidebarVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
+            }`}
+            onMouseEnter={handleSidebarInteraction}
+            onMouseMove={handleSidebarInteraction}
+            onClick={handleSidebarInteraction}
+            onFocus={handleSidebarInteraction}
+          >
+            <PageBuilderSidebar
+              selectedSection={selectedSection}
+              onAddSection={handleAddSection}
+              onUpdateSection={handleUpdateSection}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Help Dialog */}

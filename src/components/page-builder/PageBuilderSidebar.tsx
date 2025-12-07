@@ -31,7 +31,10 @@ import {
   AlignRight,
   Bold,
   Italic,
-  Underline
+  Underline,
+  Share2,
+  Timer,
+  BarChart3
 } from "lucide-react";
 
 interface SectionTemplate {
@@ -62,7 +65,10 @@ const sectionTypeIcons: Record<string, React.ReactNode> = {
   'spacer': <Square className="h-4 w-4" />,
   'custom': <Code className="h-4 w-4" />,
   'video': <Video className="h-4 w-4" />,
-  'text-image': <Layout className="h-4 w-4" />
+  'text-image': <Layout className="h-4 w-4" />,
+  'social-media': <Share2 className="h-4 w-4" />,
+  'counter': <Timer className="h-4 w-4" />,
+  'stats': <BarChart3 className="h-4 w-4" />
 };
 
 export function PageBuilderSidebar({ 
@@ -117,6 +123,7 @@ export function PageBuilderSidebar({
     { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" /> },
     { type: 'gallery', name: 'Galería', icon: <Grid3X3 className="h-5 w-5" /> },
     { type: 'features', name: 'Características', icon: <Star className="h-5 w-5" /> },
+    { type: 'stats', name: 'Estadísticas', icon: <BarChart3 className="h-5 w-5" /> },
     { type: 'cta', name: 'Llamada a la acción', icon: <MousePointer className="h-5 w-5" /> },
     { type: 'banner', name: 'Banner', icon: <Square className="h-5 w-5" /> },
     { type: 'testimonials', name: 'Testimonios', icon: <MessageSquare className="h-5 w-5" /> },
@@ -124,12 +131,11 @@ export function PageBuilderSidebar({
     { type: 'form', name: 'Formulario', icon: <Type className="h-5 w-5" /> },
     { type: 'accordion', name: 'Acordeón', icon: <AlignLeft className="h-5 w-5" /> },
     { type: 'tabs', name: 'Pestañas', icon: <AlignLeft className="h-5 w-5" /> },
-    { type: 'countdown', name: 'Contador', icon: <Type className="h-5 w-5" /> },
+    { type: 'counter', name: 'Contador', icon: <Timer className="h-5 w-5" /> },
     { type: 'pricing', name: 'Precios', icon: <Star className="h-5 w-5" /> },
     { type: 'team', name: 'Equipo', icon: <Star className="h-5 w-5" /> },
-    { type: 'stats', name: 'Estadísticas', icon: <Star className="h-5 w-5" /> },
     { type: 'newsletter', name: 'Newsletter', icon: <Type className="h-5 w-5" /> },
-    { type: 'social', name: 'Redes Sociales', icon: <Star className="h-5 w-5" /> },
+    { type: 'social-media', name: 'Redes Sociales', icon: <Share2 className="h-5 w-5" /> },
     { type: 'divider', name: 'Separador', icon: <Minus className="h-5 w-5" /> },
     { type: 'spacer', name: 'Espaciador', icon: <Square className="h-5 w-5" /> },
     { type: 'custom', name: 'HTML Personalizado', icon: <Code className="h-5 w-5" /> }
