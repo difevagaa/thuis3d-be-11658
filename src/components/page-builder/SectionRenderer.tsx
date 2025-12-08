@@ -838,8 +838,26 @@ function GallerySection({ section }: { section: SectionData }) {
   const galleryFilter = settings?.galleryFilter || false;
   const galleryLoadMore = settings?.galleryLoadMore || false;
   
-  // Grid column classes - static mapping for Tailwind
-  const gridColsClasses = `grid-cols-${galleryColumnsMobile} md:grid-cols-${galleryColumnsTablet} lg:grid-cols-${galleryColumns}`;
+  // Grid column classes - static mapping for Tailwind to ensure classes are included in build
+  const gridColsMap: Record<string, string> = {
+    '1-1-1': 'grid-cols-1',
+    '2-2-1': 'grid-cols-1 md:grid-cols-2',
+    '2-2-2': 'grid-cols-2 md:grid-cols-2',
+    '3-2-1': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    '3-2-2': 'grid-cols-2 md:grid-cols-2 lg:grid-cols-3',
+    '3-3-1': 'grid-cols-1 md:grid-cols-3 lg:grid-cols-3',
+    '3-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-3',
+    '3-3-3': 'grid-cols-3 md:grid-cols-3 lg:grid-cols-3',
+    '4-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+    '4-3-1': 'grid-cols-1 md:grid-cols-3 lg:grid-cols-4',
+    '4-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-4',
+    '5-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
+    '6-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
+    '6-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6',
+    '8-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-8'
+  };
+  const gridColsKey = `${galleryColumns}-${galleryColumnsTablet}-${galleryColumnsMobile}`;
+  const gridColsClasses = gridColsMap[gridColsKey] || gridColsMap['4-3-2'];
   
   // Hover effect classes
   const hoverEffectClasses: Record<string, string> = {
@@ -1396,10 +1414,7 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
                 key={idx}
                 src={image?.url}
                 alt={`Thumbnail ${idx + 1}`}
-                className="w-16 h-16 object-cover rounded cursor-pointer hover:ring-2 ring-primary transition-all"
-                onClick={() => {
-                  // Could implement thumbnail click navigation here
-                }}
+                className="w-16 h-16 object-cover rounded hover:ring-2 ring-primary transition-all"
               />
             ))}
           </div>

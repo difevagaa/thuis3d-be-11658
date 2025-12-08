@@ -65,7 +65,7 @@ export function EnhancedSectionOptions({
       
       <ImageUploadField
         label="Imagen de fondo"
-        help="Imagen de fondo para el hero (subir archivo o URL)"
+        helpText="Imagen de fondo para el hero (subir archivo o URL)"
         value={content.backgroundImage || ''}
         onChange={(value) => onUpdateContent('backgroundImage', value)}
       />
@@ -606,7 +606,7 @@ export function EnhancedSectionOptions({
       
       <ImageUploadField
         label="Imagen de fondo del banner"
-        help="Imagen de fondo (subir archivo o URL)"
+        helpText="Imagen de fondo (subir archivo o URL)"
         value={content.backgroundImage || ''}
         onChange={(value) => onUpdateContent('backgroundImage', value)}
       />
