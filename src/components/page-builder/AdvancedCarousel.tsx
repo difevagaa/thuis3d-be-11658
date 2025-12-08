@@ -87,9 +87,12 @@ export function AdvancedCarousel({
   // Calculate max index
   const maxIndex = Math.max(0, items.length - itemsPerView);
 
-  // Autoplay logic
+  // Autoplay logic - delay is in seconds, convert to ms
   useEffect(() => {
     if (!settings.autoplay || items.length <= itemsPerView) return;
+    
+    // Convert delay to milliseconds (minimum 2000ms to prevent rapid flickering)
+    const delayMs = Math.max(((settings.autoplayDelay || 4) * 1000), 2000);
 
     const startAutoplay = () => {
       if (autoplayTimerRef.current) {
@@ -105,7 +108,7 @@ export function AdvancedCarousel({
           }
           return Math.min(prev + 1, maxIndex);
         });
-      }, settings.autoplayDelay || 3000);
+      }, delayMs);
     };
 
     startAutoplay();

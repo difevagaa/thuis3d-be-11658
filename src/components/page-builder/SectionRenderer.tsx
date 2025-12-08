@@ -289,14 +289,25 @@ function HeroSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const inlineStyles = generateSectionStyles(styles);
   
+  // Calculate padding - ensure enough space from navbar
+  const paddingTop = styles?.paddingTop || styles?.paddingY || 150;
+  const paddingBottom = styles?.paddingBottom || styles?.paddingY || 100;
+  
   // Override or merge with specific hero styles
   const heroStyles: CSSProperties = {
     ...inlineStyles,
     backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : inlineStyles.backgroundImage,
     backgroundSize: inlineStyles.backgroundSize || 'cover',
     backgroundPosition: inlineStyles.backgroundPosition || 'center',
-    minHeight: inlineStyles.minHeight || settings?.height || '500px',
+    minHeight: settings?.minHeight || settings?.height || '85vh',
+    paddingTop: `${paddingTop}px`,
+    paddingBottom: `${paddingBottom}px`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   };
+  
+  const overlayOpacity = settings?.overlayOpacity || 0.4;
   
   return (
     <section
@@ -310,24 +321,27 @@ function HeroSection({ section }: { section: SectionData }) {
       style={heroStyles}
     >
       {content?.backgroundImage && (
-        <div className="absolute inset-0 bg-black/30" />
+        <div 
+          className="absolute inset-0" 
+          style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})` }}
+        />
       )}
       <div className={cn(
-        "relative z-10 max-w-4xl mx-auto",
-        getTextAlignClass(styles?.textAlign)
+        "relative z-10 max-w-4xl mx-auto px-4",
+        getTextAlignClass(styles?.textAlign || 'center')
       )}>
         {content?.title && (
           <h1 
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-            style={{ color: styles?.textColor }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 drop-shadow-lg"
+            style={{ color: styles?.textColor || '#ffffff' }}
           >
             {content.title}
           </h1>
         )}
         {content?.subtitle && (
           <p 
-            className="text-lg md:text-xl mb-8 opacity-90"
-            style={{ color: styles?.textColor }}
+            className="text-lg md:text-xl lg:text-2xl mb-10 opacity-95 max-w-3xl mx-auto drop-shadow-md"
+            style={{ color: styles?.textColor || '#ffffff' }}
           >
             {content.subtitle}
           </p>
@@ -336,7 +350,7 @@ function HeroSection({ section }: { section: SectionData }) {
           <Button
             size="lg"
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
-            className="text-lg px-8 py-6"
+            className="text-lg px-10 py-7 font-semibold shadow-xl hover:scale-105 transition-transform"
           >
             {content.buttonText}
           </Button>
@@ -420,42 +434,62 @@ function ImageSection({ section }: { section: SectionData }) {
 function BannerSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   
+  const overlayOpacity = settings?.overlayOpacity || 0.5;
+  const paddingY = styles?.paddingY || styles?.padding || 80;
+  const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
+  const marginTop = styles?.marginTop || 60;
+  const marginBottom = styles?.marginBottom || 40;
+  
   return (
     <section
       className={cn(
-        "relative",
+        "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
         getBorderRadiusClass(styles?.borderRadius)
       )}
       style={{
-        backgroundColor: styles?.backgroundColor || '#f3f4f6',
-        color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`,
+        backgroundColor: styles?.backgroundColor || 'hsl(var(--primary))',
+        color: styles?.textColor || '#ffffff',
+        padding: `${paddingY}px ${paddingX}px`,
+        marginTop: `${marginTop}px`,
+        marginBottom: `${marginBottom}px`,
         backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
       {content?.backgroundImage && (
-        <div className="absolute inset-0 bg-black/30 -z-10" />
+        <div 
+          className="absolute inset-0 z-0" 
+          style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})` }}
+        />
       )}
       <div className={cn(
         "max-w-3xl mx-auto relative z-10",
-        getTextAlignClass(styles?.textAlign)
+        getTextAlignClass(styles?.textAlign || 'center')
       )}>
         {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+          <h2 
+            className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 drop-shadow-lg" 
+            style={{ color: styles?.textColor || '#ffffff' }}
+          >
             {content.title}
           </h2>
         )}
         {content?.description && (
-          <p className="text-lg mb-6" style={{ color: styles?.textColor }}>
+          <p 
+            className="text-lg md:text-xl mb-6 opacity-95 drop-shadow-md" 
+            style={{ color: styles?.textColor || '#ffffff' }}
+          >
             {content.description}
           </p>
         )}
         {content?.buttonText && (
           <Button
+            variant="secondary"
+            size="lg"
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
+            className="text-lg px-8 py-6 font-semibold shadow-lg hover:scale-105 transition-transform"
           >
             {content.buttonText}
           </Button>
@@ -469,6 +503,9 @@ function BannerSection({ section }: { section: SectionData }) {
 function CTASection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   
+  const paddingY = styles?.paddingY || styles?.padding || 100;
+  const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
+  
   return (
     <section
       className={cn(
@@ -477,9 +514,11 @@ function CTASection({ section }: { section: SectionData }) {
         getBorderRadiusClass(styles?.borderRadius)
       )}
       style={{
-        backgroundColor: styles?.backgroundColor || '#3b82f6',
+        backgroundColor: styles?.backgroundColor || 'hsl(var(--primary))',
         color: styles?.textColor || '#ffffff',
-        padding: `${styles?.padding || 80}px ${styles?.padding ? styles.padding / 2 : 40}px`
+        padding: `${paddingY}px ${paddingX}px`,
+        marginTop: `${styles?.marginTop || 60}px`,
+        marginBottom: `${styles?.marginBottom || 60}px`
       }}
     >
       <div className={cn(
@@ -487,12 +526,18 @@ function CTASection({ section }: { section: SectionData }) {
         getTextAlignClass(styles?.textAlign || 'center')
       )}>
         {content?.title && (
-          <h2 className="text-4xl font-bold mb-4" style={{ color: styles?.textColor }}>
+          <h2 
+            className="text-3xl md:text-4xl font-bold mb-6 drop-shadow-lg" 
+            style={{ color: styles?.textColor || '#ffffff' }}
+          >
             {content.title}
           </h2>
         )}
         {content?.description && (
-          <p className="text-xl mb-8 opacity-90" style={{ color: styles?.textColor }}>
+          <p 
+            className="text-lg md:text-xl mb-10 opacity-95 max-w-2xl mx-auto" 
+            style={{ color: styles?.textColor || '#ffffff' }}
+          >
             {content.description}
           </p>
         )}
@@ -501,7 +546,7 @@ function CTASection({ section }: { section: SectionData }) {
             size="lg"
             variant="secondary"
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
-            className="text-lg px-8 py-6"
+            className="text-lg px-10 py-7 font-semibold shadow-lg hover:scale-105 transition-transform"
           >
             {content.buttonText}
           </Button>
@@ -516,6 +561,9 @@ function FeaturesSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const columns = settings?.columns || 3;
   
+  const paddingY = styles?.paddingY || styles?.padding || 80;
+  const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
+  
   return (
     <section
       className={cn(
@@ -525,30 +573,42 @@ function FeaturesSection({ section }: { section: SectionData }) {
       style={{
         backgroundColor: styles?.backgroundColor,
         color: styles?.textColor,
-        padding: `${styles?.padding || 60}px ${styles?.padding ? styles.padding / 2 : 30}px`
+        padding: `${paddingY}px ${paddingX}px`,
+        marginTop: `${styles?.marginTop || 0}px`,
+        marginBottom: `${styles?.marginBottom || 0}px`
       }}
     >
       <div className="max-w-6xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-12", getTextAlignClass(styles?.textAlign))}>
+          <h2 className={cn(
+            "text-3xl md:text-4xl font-bold mb-12",
+            "text-center" // Always center the title
+          )}>
             {content.title}
           </h2>
         )}
         <div className={cn(
           "grid gap-8",
-          columns === 2 && "md:grid-cols-2",
-          columns === 3 && "md:grid-cols-3",
-          columns === 4 && "md:grid-cols-4"
+          columns === 2 && "grid-cols-1 md:grid-cols-2",
+          columns === 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+          columns === 4 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
         )}>
           {content?.features?.map((feature: any, index: number) => (
-            <div key={index} className="text-center">
+            <div 
+              key={index} 
+              className="text-center p-6 rounded-lg bg-card/50 hover:bg-card transition-colors"
+            >
               {feature.icon && (
-                <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center rounded-lg bg-primary/10">
-                  <span className="text-2xl">{feature.icon}</span>
+                <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-xl bg-primary/10">
+                  <span className="text-3xl">{feature.icon}</span>
                 </div>
               )}
-              {feature.title && <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>}
-              {feature.description && <p className="text-muted-foreground">{feature.description}</p>}
+              {feature.title && (
+                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+              )}
+              {feature.description && (
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+              )}
             </div>
           ))}
         </div>
@@ -902,10 +962,12 @@ function ProductCard({ product }: { product: any }) {
 }
 
 // Image Carousel Section
-// Image Carousel Section
 function ImageCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const images = content?.images || [];
+  
+  const paddingY = styles?.paddingY || styles?.padding || 80;
+  const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
   
   if (images.length === 0) {
     return (
@@ -930,15 +992,11 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
         backgroundPosition: styles?.backgroundPosition || 'center',
         backgroundAttachment: styles?.backgroundAttachment || 'scroll',
         color: styles?.textColor,
-        padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        padding: `${paddingY}px ${paddingX}px`,
         marginTop: `${styles?.marginTop || 0}px`,
         marginBottom: `${styles?.marginBottom || 0}px`,
         minHeight: settings?.minHeight || 'auto',
-        borderRadius: styles?.borderRadius || '0',
-        borderWidth: `${styles?.borderWidth || 0}px`,
-        borderColor: styles?.borderColor,
-        borderStyle: styles?.borderStyle || 'solid',
-        boxShadow: styles?.boxShadow
+        borderRadius: styles?.borderRadius || '0'
       }}
     >
       <div className={cn(
@@ -949,51 +1007,62 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
       )}>
         {content?.title && (
           <h2 
-            className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}
+            className={cn("text-3xl md:text-4xl font-bold mb-4", getTextAlignClass(styles?.textAlign || 'center'))}
             style={{ 
               color: styles?.textColor,
-              fontFamily: styles?.fontFamily,
-              fontSize: styles?.fontSize ? `${styles.fontSize}px` : undefined
+              fontFamily: styles?.fontFamily
             }}
           >
             {content.title}
           </h2>
         )}
+        {content?.subtitle && (
+          <p 
+            className={cn("text-lg text-muted-foreground mb-8", getTextAlignClass(styles?.textAlign || 'center'))}
+          >
+            {content.subtitle}
+          </p>
+        )}
         
         <AdvancedCarousel
           items={images}
-          settings={settings}
+          settings={{
+            ...settings,
+            itemsPerView: settings?.itemsPerView || 4,
+            itemsPerViewTablet: settings?.itemsPerViewTablet || 2,
+            itemsPerViewMobile: settings?.itemsPerViewMobile || 1,
+            spaceBetween: settings?.gap || 20,
+            showPagination: settings?.showDots !== false
+          }}
           renderItem={(image: any, index: number) => (
-            <div className="relative w-full" style={{ height: settings?.carouselHeight || '400px' }}>
+            <div 
+              className="relative w-full group cursor-pointer" 
+              style={{ height: settings?.carouselHeight || '280px' }}
+            >
               {isValidImageUrl(image?.url) ? (
                 <img
                   src={image.url}
                   alt={image.alt || `Imagen ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg"
+                  className="w-full h-full object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]"
                   loading={settings?.lazyLoad !== false ? "lazy" : undefined}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
                   }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+                <div className="w-full h-full flex items-center justify-center bg-muted rounded-xl">
                   <p className="text-muted-foreground">URL de imagen inválida</p>
                 </div>
               )}
               {image?.caption && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4 rounded-b-lg">
-                  <p className="text-center">{image.caption}</p>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white p-4 rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-center text-sm font-medium">{image.caption}</p>
                 </div>
               )}
             </div>
           )}
         />
       </div>
-      
-      {/* Custom CSS if provided */}
-      {settings?.customCSS && (
-        <style dangerouslySetInnerHTML={{ __html: settings.customCSS }} />
-      )}
     </section>
   );
 }
