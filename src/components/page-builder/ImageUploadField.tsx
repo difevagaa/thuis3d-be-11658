@@ -30,7 +30,7 @@ export function ImageUploadField({
   value,
   onChange,
   helpText,
-  bucket = "page-builder-images",
+  bucket = "product-images",
   maxSizeMB = 5,
   acceptedFormats = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]
 }: ImageUploadFieldProps) {
