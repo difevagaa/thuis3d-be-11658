@@ -823,14 +823,49 @@ function FeaturesSection({ section }: { section: SectionData }) {
 // Gallery Section
 function GallerySection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
-  const columns = settings?.columns || 4;
-  const gap = settings?.gap || 16;
+  
+  // Gallery-specific settings with defaults
+  const galleryLayout = settings?.galleryLayout || 'grid';
+  const galleryColumns = settings?.galleryColumns || 4;
+  const galleryColumnsTablet = settings?.galleryColumnsTablet || 3;
+  const galleryColumnsMobile = settings?.galleryColumnsMobile || 2;
+  const galleryGap = settings?.galleryGap || 16;
+  const galleryAspectRatio = settings?.galleryAspectRatio || 'auto';
+  const galleryLightbox = settings?.galleryLightbox !== false;
+  const galleryLazyLoad = settings?.galleryLazyLoad !== false;
+  const galleryShowCaptions = settings?.galleryShowCaptions || false;
+  const galleryHoverEffect = settings?.galleryHoverEffect || 'zoom';
+  const galleryFilter = settings?.galleryFilter || false;
+  const galleryLoadMore = settings?.galleryLoadMore || false;
+  
+  // Grid column classes - static mapping for Tailwind
+  const gridColsClasses = `grid-cols-${galleryColumnsMobile} md:grid-cols-${galleryColumnsTablet} lg:grid-cols-${galleryColumns}`;
+  
+  // Hover effect classes
+  const hoverEffectClasses: Record<string, string> = {
+    'none': '',
+    'zoom': 'hover:scale-110',
+    'overlay': 'hover:opacity-80',
+    'lift': 'hover:-translate-y-2',
+    'blur': 'hover:blur-sm'
+  };
+  
+  // Aspect ratio classes
+  const aspectRatioClasses: Record<string, string> = {
+    'auto': '',
+    '1/1': 'aspect-square',
+    '4/3': 'aspect-[4/3]',
+    '16/9': 'aspect-video',
+    '3/2': 'aspect-[3/2]'
+  };
   
   return (
     <section
       className={cn(
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
@@ -843,26 +878,80 @@ function GallerySection({ section }: { section: SectionData }) {
             {content.title}
           </h2>
         )}
+        
+        {/* Filter buttons (if enabled) */}
+        {galleryFilter && content?.categories && (
+          <div className="flex flex-wrap gap-2 mb-6 justify-center">
+            <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">
+              Todos
+            </button>
+            {content.categories.map((cat: string, idx: number) => (
+              <button 
+                key={idx}
+                className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div 
           className={cn(
             "grid",
-            columns === 2 && "md:grid-cols-2",
-            columns === 3 && "md:grid-cols-3",
-            columns === 4 && "md:grid-cols-4",
-            columns === 5 && "md:grid-cols-5"
+            gridColsClasses
           )}
-          style={{ gap: `${gap}px` }}
+          style={{ gap: `${galleryGap}px` }}
         >
-          {content?.images?.map((image: string, index: number) => (
-            <div key={index} className="overflow-hidden rounded-lg">
-              <img
-                src={image}
-                alt={`Gallery ${index + 1}`}
-                className="w-full h-auto hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          ))}
+          {content?.images?.map((image: any, index: number) => {
+            const imageUrl = typeof image === 'string' ? image : image.url;
+            const imageCaption = typeof image === 'object' ? image.caption : '';
+            const imageAlt = typeof image === 'object' ? image.alt : `Gallery ${index + 1}`;
+            
+            return (
+              <div 
+                key={index} 
+                className={cn(
+                  "overflow-hidden rounded-lg relative group",
+                  aspectRatioClasses[galleryAspectRatio]
+                )}
+              >
+                <img
+                  src={imageUrl}
+                  alt={imageAlt}
+                  loading={galleryLazyLoad ? 'lazy' : 'eager'}
+                  className={cn(
+                    "w-full h-full object-cover transition-all duration-300",
+                    hoverEffectClasses[galleryHoverEffect],
+                    galleryLightbox && "cursor-pointer"
+                  )}
+                  onClick={() => {
+                    if (galleryLightbox) {
+                      // Simple lightbox implementation (could be enhanced)
+                      window.open(imageUrl, '_blank');
+                    }
+                  }}
+                />
+                
+                {/* Caption overlay */}
+                {galleryShowCaptions && imageCaption && (
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                    <p className="text-white text-sm">{imageCaption}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+        
+        {/* Load more button (if enabled) */}
+        {galleryLoadMore && (
+          <div className="text-center mt-8">
+            <Button variant="outline" size="lg">
+              Cargar más imágenes
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1169,6 +1258,18 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const images = content?.images || [];
   
+  // Image carousel specific settings with defaults
+  const imageCarouselPerView = settings?.imageCarouselPerView || settings?.itemsPerView || 3;
+  const imageCarouselHeight = settings?.imageCarouselHeight || 400;
+  const imageCarouselFit = settings?.imageCarouselFit || 'cover';
+  const imageCarouselShowCaptions = settings?.imageCarouselShowCaptions !== false;
+  const imageCarouselAutoplay = settings?.imageCarouselAutoplay || false;
+  const imageCarouselAutoplaySpeed = settings?.imageCarouselAutoplaySpeed || 4;
+  const imageCarouselKenBurns = settings?.imageCarouselKenBurns || false;
+  const imageCarouselThumbnails = settings?.imageCarouselThumbnails || false;
+  const imageCarouselLightbox = settings?.imageCarouselLightbox !== false;
+  const imageCarouselTransition = settings?.imageCarouselTransition || 'slide';
+  
   const paddingY = styles?.paddingY || styles?.padding || 80;
   const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
   
@@ -1186,7 +1287,9 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        settings?.customClass
+        settings?.customClass,
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
@@ -1231,22 +1334,41 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
           items={images}
           settings={{
             ...settings,
-            itemsPerView: settings?.itemsPerView || 4,
+            itemsPerView: imageCarouselPerView,
             itemsPerViewTablet: settings?.itemsPerViewTablet || 2,
             itemsPerViewMobile: settings?.itemsPerViewMobile || 1,
             spaceBetween: settings?.gap || 20,
-            showPagination: settings?.showDots !== false
+            showPagination: settings?.showDots !== false,
+            autoplay: imageCarouselAutoplay,
+            autoplayDelay: (imageCarouselAutoplaySpeed || 4) * 1000,
+            effect: imageCarouselTransition,
+            loop: settings?.loop !== false
           }}
           renderItem={(image: any, index: number) => (
             <div 
-              className="relative w-full group cursor-pointer" 
-              style={{ height: settings?.carouselHeight || '280px' }}
+              className={cn(
+                "relative w-full group",
+                imageCarouselLightbox && "cursor-pointer"
+              )}
+              style={{ height: `${imageCarouselHeight}px` }}
+              onClick={() => {
+                if (imageCarouselLightbox) {
+                  window.open(image?.url, '_blank');
+                }
+              }}
             >
               {isValidImageUrl(image?.url) ? (
                 <img
                   src={image.url}
                   alt={image.alt || `Imagen ${index + 1}`}
-                  className="w-full h-full object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]"
+                  className={cn(
+                    "w-full h-full rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300",
+                    imageCarouselKenBurns && imageCarouselAutoplay && "group-hover:scale-110",
+                    "group-hover:scale-[1.02]"
+                  )}
+                  style={{
+                    objectFit: imageCarouselFit as any
+                  }}
                   loading={settings?.lazyLoad !== false ? "lazy" : undefined}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
@@ -1257,7 +1379,7 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
                   <p className="text-muted-foreground">URL de imagen inválida</p>
                 </div>
               )}
-              {image?.caption && (
+              {imageCarouselShowCaptions && image?.caption && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white p-4 rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <p className="text-center text-sm font-medium">{image.caption}</p>
                 </div>
@@ -1265,6 +1387,23 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
             </div>
           )}
         />
+        
+        {/* Thumbnails navigation (if enabled) */}
+        {imageCarouselThumbnails && images.length > 1 && (
+          <div className="flex gap-2 mt-4 justify-center overflow-x-auto">
+            {images.map((image: any, idx: number) => (
+              <img
+                key={idx}
+                src={image?.url}
+                alt={`Thumbnail ${idx + 1}`}
+                className="w-16 h-16 object-cover rounded cursor-pointer hover:ring-2 ring-primary transition-all"
+                onClick={() => {
+                  // Could implement thumbnail click navigation here
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
