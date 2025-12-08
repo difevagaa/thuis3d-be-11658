@@ -105,6 +105,13 @@ export default function PageBuilder() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterVisibility, setFilterVisibility] = useState<boolean | 'all'>('all');
   const [testing, setTesting] = useState(false);
+  
+  // Enhanced UX states
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [recentlyEdited, setRecentlyEdited] = useState<string[]>([]);
+  const [copiedSection, setCopiedSection] = useState<SectionData | null>(null);
+  const [autoSave, setAutoSave] = useState(true);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Test all sections
   const handleRunTests = async () => {
@@ -370,7 +377,14 @@ export default function PageBuilder() {
         setSelectedSection(prev => prev ? { ...prev, ...updates } : null);
       }
       
+      // Track recently edited
+      setRecentlyEdited(prev => {
+        const updated = [sectionId, ...prev.filter(id => id !== sectionId)].slice(0, 5);
+        return updated;
+      });
+      
       setHasChanges(true);
+      setLastSaved(new Date());
       toast.success('Sección actualizada');
     } catch (error) {
       logger.error('Error updating section:', error);

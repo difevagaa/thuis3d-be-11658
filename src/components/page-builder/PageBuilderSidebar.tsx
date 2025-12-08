@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { productCarouselTemplates, getCarouselTemplateOptions } from "@/lib/productCarouselTemplates";
 import {
   Plus,
   Layout,
@@ -31,7 +32,8 @@ import {
   AlignRight,
   Bold,
   Italic,
-  Underline
+  Underline,
+  Package
 } from "lucide-react";
 
 interface SectionTemplate {
@@ -112,7 +114,30 @@ export function PageBuilderSidebar({
   const quickAddSections = [
     // Core sections
     { type: 'hero', name: 'Hero Banner', icon: <Layout className="h-5 w-5" />, preview: '🖼️ Imagen grande + título + botón' },
-    { type: 'products-carousel', name: 'Carrusel de Productos', icon: <Square className="h-5 w-5" />, preview: '🛍️ [ 📦 📦 📦 → ]' },
+    
+    // 10 TIPOS DE CARRUSELES DE PRODUCTOS
+    ...productCarouselTemplates.map(template => ({
+      type: 'products-carousel',
+      name: template.name,
+      icon: <Package className="h-5 w-5" />,
+      preview: `${template.icon} ${template.description}`,
+      carouselTemplate: template.id,
+      config: {
+        settings: template.settings,
+        content: {
+          title: template.name,
+          subtitle: template.description,
+          category: 'all',
+          limit: template.settings.itemsPerView * 3
+        },
+        styles: {
+          backgroundColor: '#ffffff',
+          padding: 80,
+          ...template.styles
+        }
+      }
+    })),
+    
     { type: 'image-carousel', name: 'Carrusel de Imágenes', icon: <Grid3X3 className="h-5 w-5" />, preview: '🖼️ [ ← 🖼️ → ]' },
     { type: 'text', name: 'Texto', icon: <Type className="h-5 w-5" />, preview: '📝 Párrafo de texto' },
     { type: 'image', name: 'Imagen', icon: <ImageIcon className="h-5 w-5" />, preview: '🖼️ Imagen simple' },
@@ -217,20 +242,24 @@ export function PageBuilderSidebar({
             <div>
               <h4 className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Añadir Sección</h4>
               <div className="grid grid-cols-2 gap-1">
-                {quickAddSections.map(section => (
+                {quickAddSections.map((section, index) => (
                   <button
-                    key={section.type}
-                    onClick={() => onAddSection({ type: section.type, name: section.name })}
+                    key={`${section.type}-${index}`}
+                    onClick={() => onAddSection(
+                      section.config ? 
+                      { type: section.type, name: section.name, ...section.config } :
+                      { type: section.type, name: section.name }
+                    )}
                     className="group relative flex flex-col items-center gap-1 p-2 rounded border border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
                     title={section.preview}
                   >
                     {section.icon}
-                    <span className="text-[10px] text-center leading-tight">{section.name}</span>
+                    <span className="text-[10px] text-center leading-tight line-clamp-2">{section.name}</span>
                     
                     {/* Preview tooltip on hover */}
-                    <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block bg-popover text-popover-foreground rounded-md border p-2 shadow-md min-w-[150px]">
+                    <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block bg-popover text-popover-foreground rounded-md border p-2 shadow-md min-w-[150px] max-w-[200px]">
                       <p className="text-[9px] font-medium mb-1">{section.name}</p>
-                      <pre className="text-[8px] whitespace-pre leading-tight font-mono text-muted-foreground">
+                      <pre className="text-[8px] whitespace-pre-wrap leading-tight font-mono text-muted-foreground">
                         {section.preview}
                       </pre>
                     </div>
