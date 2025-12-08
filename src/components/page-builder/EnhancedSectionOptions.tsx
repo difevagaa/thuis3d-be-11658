@@ -1,6 +1,7 @@
 /**
- * Enhanced Section Options - Provides 30+ configuration options for each section type
+ * Enhanced Section Options - Provides 40+ configuration options for each section type
  * This component is used by SectionEditor to render comprehensive customization options
+ * Each section type now has specific additional options beyond the common 46 base options
  */
 
 import { 
@@ -10,6 +11,7 @@ import {
   SliderFieldWithHelp,
   TextareaFieldWithHelp 
 } from "./FieldWithHelp";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface EnhancedOptionsProps {
   sectionType: string;
@@ -31,9 +33,888 @@ export function EnhancedSectionOptions({
   onUpdateContent
 }: EnhancedOptionsProps) {
   
+  // Render section-specific options based on section type
+  const renderSectionSpecificOptions = () => {
+    switch (sectionType) {
+      case 'hero':
+        return renderHeroOptions();
+      case 'features':
+        return renderFeaturesOptions();
+      case 'products-carousel':
+        return renderProductsCarouselOptions();
+      case 'image-carousel':
+        return renderImageCarouselOptions();
+      case 'banner':
+      case 'cta':
+        return renderBannerOptions();
+      case 'gallery':
+        return renderGalleryOptions();
+      case 'text':
+        return renderTextOptions();
+      default:
+        return null;
+    }
+  };
+
+  // Hero Section Specific Options (10+ additional options)
+  const renderHeroOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Hero/Banner Principal
+      </h5>
+      
+      <ImageUploadField
+        label="Imagen de fondo"
+        helpText="Imagen de fondo para el hero (subir archivo o URL)"
+        value={content.backgroundImage || ''}
+        onChange={(value) => onUpdateContent('backgroundImage', value)}
+      />
+
+      <SelectFieldWithHelp
+        label="Posición del contenido"
+        help="Dónde colocar el texto del hero"
+        value={settings.heroContentPosition || 'center'}
+        onChange={(value) => onUpdateSettings('heroContentPosition', value)}
+        options={[
+          { value: 'top-left', label: 'Superior izquierda' },
+          { value: 'top-center', label: 'Superior centro' },
+          { value: 'top-right', label: 'Superior derecha' },
+          { value: 'center-left', label: 'Centro izquierda' },
+          { value: 'center', label: 'Centro' },
+          { value: 'center-right', label: 'Centro derecha' },
+          { value: 'bottom-left', label: 'Inferior izquierda' },
+          { value: 'bottom-center', label: 'Inferior centro' },
+          { value: 'bottom-right', label: 'Inferior derecha' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Opacidad del overlay"
+        help="Capa oscura sobre la imagen para mejorar legibilidad (0-100%)"
+        value={settings.heroOverlayOpacity || 50}
+        onChange={(value) => onUpdateSettings('heroOverlayOpacity', value)}
+        min={0}
+        max={100}
+        step={5}
+      />
+
+      <FieldWithHelp
+        label="Color del overlay"
+        help="Color de la capa sobre la imagen de fondo"
+        value={settings.heroOverlayColor || '#000000'}
+        onChange={(value) => onUpdateSettings('heroOverlayColor', value)}
+        placeholder="#000000"
+        type="color"
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del título"
+        help="Tamaño de fuente del título principal en píxeles"
+        value={settings.heroTitleSize || 48}
+        onChange={(value) => onUpdateSettings('heroTitleSize', value)}
+        min={24}
+        max={120}
+        step={4}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del subtítulo"
+        help="Tamaño de fuente del subtítulo en píxeles"
+        value={settings.heroSubtitleSize || 20}
+        onChange={(value) => onUpdateSettings('heroSubtitleSize', value)}
+        min={14}
+        max={48}
+        step={2}
+      />
+
+      <SelectFieldWithHelp
+        label="Estilo del botón"
+        help="Diseño visual del botón de acción"
+        value={settings.heroButtonStyle || 'primary'}
+        onChange={(value) => onUpdateSettings('heroButtonStyle', value)}
+        options={[
+          { value: 'primary', label: 'Principal (relleno)' },
+          { value: 'secondary', label: 'Secundario' },
+          { value: 'outline', label: 'Contorno' },
+          { value: 'ghost', label: 'Fantasma' },
+          { value: 'link', label: 'Enlace simple' }
+        ]}
+      />
+
+      <SelectFieldWithHelp
+        label="Tamaño del botón"
+        help="Tamaño del botón de llamada a la acción"
+        value={settings.heroButtonSize || 'default'}
+        onChange={(value) => onUpdateSettings('heroButtonSize', value)}
+        options={[
+          { value: 'sm', label: 'Pequeño' },
+          { value: 'default', label: 'Normal' },
+          { value: 'lg', label: 'Grande' },
+          { value: 'xl', label: 'Extra grande' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Efecto parallax"
+        help="Imagen de fondo se mueve más lento que el scroll"
+        checked={settings.heroParallax || false}
+        onCheckedChange={(checked) => onUpdateSettings('heroParallax', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Video de fondo"
+        help="Usar video en lugar de imagen (URL debe ser de video)"
+        checked={settings.heroVideoBackground || false}
+        onCheckedChange={(checked) => onUpdateSettings('heroVideoBackground', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Pantalla completa"
+        help="El hero ocupa toda la altura de la ventana"
+        checked={settings.heroFullHeight || false}
+        onCheckedChange={(checked) => onUpdateSettings('heroFullHeight', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Efecto de entrada del texto"
+        help="Animación al aparecer el texto del hero"
+        value={settings.heroTextAnimation || 'fade-in'}
+        onChange={(value) => onUpdateSettings('heroTextAnimation', value)}
+        options={[
+          { value: 'none', label: 'Sin animación' },
+          { value: 'fade-in', label: 'Aparecer gradualmente' },
+          { value: 'slide-up', label: 'Deslizar hacia arriba' },
+          { value: 'slide-down', label: 'Deslizar hacia abajo' },
+          { value: 'zoom-in', label: 'Acercar' },
+          { value: 'typewriter', label: 'Máquina de escribir' }
+        ]}
+      />
+    </div>
+  );
+
+  // Features Section Options (10+ additional options)
+  const renderFeaturesOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Características/Features
+      </h5>
+      
+      <SliderFieldWithHelp
+        label="Número de columnas"
+        help="Cuántas características mostrar por fila"
+        value={settings.featuresColumns || 3}
+        onChange={(value) => onUpdateSettings('featuresColumns', value)}
+        min={1}
+        max={6}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Espaciado entre cards"
+        help="Espacio entre tarjetas de características en píxeles"
+        value={settings.featuresGap || 24}
+        onChange={(value) => onUpdateSettings('featuresGap', value)}
+        min={0}
+        max={64}
+        step={4}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del icono"
+        help="Tamaño de los iconos de las características en píxeles"
+        value={settings.featuresIconSize || 48}
+        onChange={(value) => onUpdateSettings('featuresIconSize', value)}
+        min={24}
+        max={96}
+        step={4}
+      />
+
+      <FieldWithHelp
+        label="Color de los iconos"
+        help="Color de los iconos de características"
+        value={settings.featuresIconColor || '#3b82f6'}
+        onChange={(value) => onUpdateSettings('featuresIconColor', value)}
+        type="color"
+      />
+
+      <SelectFieldWithHelp
+        label="Estilo de las tarjetas"
+        help="Diseño visual de cada característica"
+        value={settings.featuresCardStyle || 'default'}
+        onChange={(value) => onUpdateSettings('featuresCardStyle', value)}
+        options={[
+          { value: 'default', label: 'Predeterminado' },
+          { value: 'bordered', label: 'Con borde' },
+          { value: 'shadowed', label: 'Con sombra' },
+          { value: 'filled', label: 'Relleno' },
+          { value: 'minimal', label: 'Minimalista' }
+        ]}
+      />
+
+      <SelectFieldWithHelp
+        label="Alineación de contenido"
+        help="Alineación del texto en cada tarjeta"
+        value={settings.featuresAlignment || 'center'}
+        onChange={(value) => onUpdateSettings('featuresAlignment', value)}
+        options={[
+          { value: 'left', label: 'Izquierda' },
+          { value: 'center', label: 'Centro' },
+          { value: 'right', label: 'Derecha' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del título de característica"
+        help="Tamaño de fuente del título en píxeles"
+        value={settings.featuresTitleSize || 20}
+        onChange={(value) => onUpdateSettings('featuresTitleSize', value)}
+        min={14}
+        max={32}
+        step={2}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño de descripción"
+        help="Tamaño de fuente de la descripción en píxeles"
+        value={settings.featuresDescSize || 14}
+        onChange={(value) => onUpdateSettings('featuresDescSize', value)}
+        min={12}
+        max={20}
+        step={1}
+      />
+
+      <SwitchFieldWithHelp
+        label="Efecto hover en tarjetas"
+        help="Aplicar efecto al pasar el mouse sobre características"
+        checked={settings.featuresHoverEffect || true}
+        onCheckedChange={(checked) => onUpdateSettings('featuresHoverEffect', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Tipo de efecto hover"
+        help="Qué efecto aplicar al pasar el mouse"
+        value={settings.featuresHoverType || 'lift'}
+        onChange={(value) => onUpdateSettings('featuresHoverType', value)}
+        options={[
+          { value: 'none', label: 'Ninguno' },
+          { value: 'lift', label: 'Elevar' },
+          { value: 'scale', label: 'Agrandar' },
+          { value: 'glow', label: 'Resplandor' },
+          { value: 'tilt', label: 'Inclinar' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Animación en scroll"
+        help="Animar características al hacer scroll"
+        checked={settings.featuresScrollAnimation || true}
+        onCheckedChange={(checked) => onUpdateSettings('featuresScrollAnimation', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Posición del icono"
+        help="Dónde ubicar el icono respecto al texto"
+        value={settings.featuresIconPosition || 'top'}
+        onChange={(value) => onUpdateSettings('featuresIconPosition', value)}
+        options={[
+          { value: 'top', label: 'Arriba' },
+          { value: 'left', label: 'Izquierda' },
+          { value: 'right', label: 'Derecha' }
+        ]}
+      />
+    </div>
+  );
+
+  // Products Carousel Options (15+ additional options)
+  const renderProductsCarouselOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Carrusel de Productos
+      </h5>
+      
+      <SliderFieldWithHelp
+        label="Productos por vista (Desktop)"
+        help="Cuántos productos mostrar simultáneamente en desktop"
+        value={settings.carouselProductsPerView || 4}
+        onChange={(value) => onUpdateSettings('carouselProductsPerView', value)}
+        min={1}
+        max={8}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Productos por vista (Tablet)"
+        help="Cuántos productos mostrar en tablets"
+        value={settings.carouselProductsPerViewTablet || 3}
+        onChange={(value) => onUpdateSettings('carouselProductsPerViewTablet', value)}
+        min={1}
+        max={6}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Productos por vista (Móvil)"
+        help="Cuántos productos mostrar en móviles"
+        value={settings.carouselProductsPerViewMobile || 1}
+        onChange={(value) => onUpdateSettings('carouselProductsPerViewMobile', value)}
+        min={1}
+        max={4}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Espaciado entre productos"
+        help="Espacio entre productos en el carrusel (px)"
+        value={settings.carouselGap || 16}
+        onChange={(value) => onUpdateSettings('carouselGap', value)}
+        min={0}
+        max={64}
+        step={4}
+      />
+
+      <SliderFieldWithHelp
+        label="Altura de imágenes de producto"
+        help="Altura de las imágenes de productos en píxeles"
+        value={settings.carouselImageHeight || 250}
+        onChange={(value) => onUpdateSettings('carouselImageHeight', value)}
+        min={150}
+        max={500}
+        step={10}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del título del producto"
+        help="Tamaño de fuente del nombre del producto"
+        value={settings.carouselTitleSize || 16}
+        onChange={(value) => onUpdateSettings('carouselTitleSize', value)}
+        min={12}
+        max={28}
+        step={2}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del precio"
+        help="Tamaño de fuente del precio del producto"
+        value={settings.carouselPriceSize || 18}
+        onChange={(value) => onUpdateSettings('carouselPriceSize', value)}
+        min={12}
+        max={32}
+        step={2}
+      />
+
+      <SwitchFieldWithHelp
+        label="Auto-reproducción"
+        help="El carrusel avanza automáticamente"
+        checked={settings.carouselAutoplay || false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselAutoplay', checked)}
+      />
+
+      <SliderFieldWithHelp
+        label="Velocidad de auto-reproducción"
+        help="Segundos entre cada cambio automático"
+        value={settings.carouselAutoplaySpeed || 3}
+        onChange={(value) => onUpdateSettings('carouselAutoplaySpeed', value)}
+        min={1}
+        max={10}
+        step={0.5}
+      />
+
+      <SwitchFieldWithHelp
+        label="Loop infinito"
+        help="Volver al inicio al llegar al final"
+        checked={settings.carouselLoop !== false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselLoop', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar flechas de navegación"
+        help="Mostrar botones de anterior/siguiente"
+        checked={settings.carouselShowArrows !== false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselShowArrows', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar puntos de paginación"
+        help="Mostrar indicadores de posición debajo"
+        checked={settings.carouselShowDots || false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselShowDots', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Efecto de transición"
+        help="Tipo de animación al cambiar de producto"
+        value={settings.carouselTransition || 'slide'}
+        onChange={(value) => onUpdateSettings('carouselTransition', value)}
+        options={[
+          { value: 'slide', label: 'Deslizar' },
+          { value: 'fade', label: 'Desvanecer' },
+          { value: 'cube', label: 'Cubo 3D' },
+          { value: 'coverflow', label: 'Coverflow' },
+          { value: 'flip', label: 'Voltear' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Velocidad de transición"
+        help="Duración de la animación en milisegundos"
+        value={settings.carouselTransitionSpeed || 600}
+        onChange={(value) => onUpdateSettings('carouselTransitionSpeed', value)}
+        min={200}
+        max={2000}
+        step={100}
+      />
+
+      <SwitchFieldWithHelp
+        label="Centrar diapositivas"
+        help="Centrar el producto activo en el carrusel"
+        checked={settings.carouselCentered || false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselCentered', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Fuente de productos"
+        help="De dónde obtener los productos a mostrar"
+        value={settings.productsSource || 'featured'}
+        onChange={(value) => onUpdateSettings('productsSource', value)}
+        options={[
+          { value: 'featured', label: 'Productos destacados' },
+          { value: 'recent', label: 'Más recientes' },
+          { value: 'bestsellers', label: 'Más vendidos' },
+          { value: 'category', label: 'Por categoría' },
+          { value: 'custom', label: 'Selección manual' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Límite de productos"
+        help="Número máximo de productos a mostrar"
+        value={settings.productsLimit || 12}
+        onChange={(value) => onUpdateSettings('productsLimit', value)}
+        min={1}
+        max={50}
+        step={1}
+      />
+    </div>
+  );
+
+  // Image Carousel Options (similar to products carousel)
+  const renderImageCarouselOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Carrusel de Imágenes
+      </h5>
+      
+      <SliderFieldWithHelp
+        label="Imágenes por vista (Desktop)"
+        help="Cuántas imágenes mostrar simultáneamente"
+        value={settings.imageCarouselPerView || 3}
+        onChange={(value) => onUpdateSettings('imageCarouselPerView', value)}
+        min={1}
+        max={6}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Altura de las imágenes"
+        help="Altura de las imágenes en el carrusel (px)"
+        value={settings.imageCarouselHeight || 400}
+        onChange={(value) => onUpdateSettings('imageCarouselHeight', value)}
+        min={200}
+        max={800}
+        step={50}
+      />
+
+      <SelectFieldWithHelp
+        label="Ajuste de imagen"
+        help="Cómo se ajustan las imágenes al contenedor"
+        value={settings.imageCarouselFit || 'cover'}
+        onChange={(value) => onUpdateSettings('imageCarouselFit', value)}
+        options={[
+          { value: 'cover', label: 'Cubrir (crop)' },
+          { value: 'contain', label: 'Contener (completa)' },
+          { value: 'fill', label: 'Rellenar (estirar)' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar captions"
+        help="Mostrar descripciones sobre las imágenes"
+        checked={settings.imageCarouselShowCaptions !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselShowCaptions', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Auto-reproducción"
+        help="Avanzar automáticamente las imágenes"
+        checked={settings.imageCarouselAutoplay || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselAutoplay', checked)}
+      />
+
+      <SliderFieldWithHelp
+        label="Velocidad de auto-reproducción"
+        help="Segundos entre cada cambio"
+        value={settings.imageCarouselAutoplaySpeed || 4}
+        onChange={(value) => onUpdateSettings('imageCarouselAutoplaySpeed', value)}
+        min={1}
+        max={15}
+        step={0.5}
+      />
+
+      <SwitchFieldWithHelp
+        label="Efecto ken burns"
+        help="Zoom sutil en las imágenes durante el autoplay"
+        checked={settings.imageCarouselKenBurns || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselKenBurns', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Miniaturas de navegación"
+        help="Mostrar miniaturas debajo para navegar"
+        checked={settings.imageCarouselThumbnails || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselThumbnails', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Lightbox al hacer clic"
+        help="Abrir imagen en pantalla completa al hacer clic"
+        checked={settings.imageCarouselLightbox !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselLightbox', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Efecto de transición"
+        help="Tipo de animación entre imágenes"
+        value={settings.imageCarouselTransition || 'slide'}
+        onChange={(value) => onUpdateSettings('imageCarouselTransition', value)}
+        options={[
+          { value: 'slide', label: 'Deslizar' },
+          { value: 'fade', label: 'Desvanecer' },
+          { value: 'cube', label: 'Cubo 3D' },
+          { value: 'flip', label: 'Voltear' },
+          { value: 'cards', label: 'Cartas' }
+        ]}
+      />
+    </div>
+  );
+
+  // Banner/CTA Options (10+ additional options)
+  const renderBannerOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Banner/CTA
+      </h5>
+      
+      <ImageUploadField
+        label="Imagen de fondo del banner"
+        helpText="Imagen de fondo (subir archivo o URL)"
+        value={content.backgroundImage || ''}
+        onChange={(value) => onUpdateContent('backgroundImage', value)}
+      />
+
+      <SliderFieldWithHelp
+        label="Altura del banner"
+        help="Altura del banner en píxeles"
+        value={settings.bannerHeight || 300}
+        onChange={(value) => onUpdateSettings('bannerHeight', value)}
+        min={150}
+        max={800}
+        step={50}
+      />
+
+      <SelectFieldWithHelp
+        label="Alineación del contenido"
+        help="Posición del texto dentro del banner"
+        value={settings.bannerContentAlign || 'center'}
+        onChange={(value) => onUpdateSettings('bannerContentAlign', value)}
+        options={[
+          { value: 'left', label: 'Izquierda' },
+          { value: 'center', label: 'Centro' },
+          { value: 'right', label: 'Derecha' }
+        ]}
+      />
+
+      <FieldWithHelp
+        label="Color del overlay"
+        help="Capa de color sobre la imagen de fondo"
+        value={settings.bannerOverlayColor || '#000000'}
+        onChange={(value) => onUpdateSettings('bannerOverlayColor', value)}
+        type="color"
+      />
+
+      <SliderFieldWithHelp
+        label="Opacidad del overlay"
+        help="Transparencia de la capa de color (0-100%)"
+        value={settings.bannerOverlayOpacity || 40}
+        onChange={(value) => onUpdateSettings('bannerOverlayOpacity', value)}
+        min={0}
+        max={100}
+        step={5}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del título"
+        help="Tamaño de fuente del título del banner"
+        value={settings.bannerTitleSize || 32}
+        onChange={(value) => onUpdateSettings('bannerTitleSize', value)}
+        min={20}
+        max={72}
+        step={4}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño del texto"
+        help="Tamaño de fuente de la descripción"
+        value={settings.bannerTextSize || 16}
+        onChange={(value) => onUpdateSettings('bannerTextSize', value)}
+        min={12}
+        max={28}
+        step={2}
+      />
+
+      <SelectFieldWithHelp
+        label="Estilo del botón"
+        help="Diseño visual del botón CTA"
+        value={settings.bannerButtonStyle || 'primary'}
+        onChange={(value) => onUpdateSettings('bannerButtonStyle', value)}
+        options={[
+          { value: 'primary', label: 'Principal' },
+          { value: 'secondary', label: 'Secundario' },
+          { value: 'outline', label: 'Contorno' },
+          { value: 'ghost', label: 'Fantasma' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Banner fijo (sticky)"
+        help="El banner permanece visible al hacer scroll"
+        checked={settings.bannerSticky || false}
+        onCheckedChange={(checked) => onUpdateSettings('bannerSticky', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Banner desechable"
+        help="Permite cerrar el banner (útil para anuncios)"
+        checked={settings.bannerDismissible || false}
+        onCheckedChange={(checked) => onUpdateSettings('bannerDismissible', checked)}
+      />
+    </div>
+  );
+
+  // Gallery Options (10+ additional options)
+  const renderGalleryOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Galería
+      </h5>
+      
+      <SelectFieldWithHelp
+        label="Diseño de galería"
+        help="Tipo de layout para mostrar las imágenes"
+        value={settings.galleryLayout || 'grid'}
+        onChange={(value) => onUpdateSettings('galleryLayout', value)}
+        options={[
+          { value: 'grid', label: 'Cuadrícula regular' },
+          { value: 'masonry', label: 'Masonry (Pinterest)' },
+          { value: 'justified', label: 'Justificado' },
+          { value: 'carousel', label: 'Carrusel' },
+          { value: 'slider', label: 'Slider pantalla completa' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Columnas (Desktop)"
+        help="Número de columnas en la galería"
+        value={settings.galleryColumns || 4}
+        onChange={(value) => onUpdateSettings('galleryColumns', value)}
+        min={2}
+        max={8}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Columnas (Tablet)"
+        help="Número de columnas en tablets"
+        value={settings.galleryColumnsTablet || 3}
+        onChange={(value) => onUpdateSettings('galleryColumnsTablet', value)}
+        min={2}
+        max={6}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Columnas (Móvil)"
+        help="Número de columnas en móviles"
+        value={settings.galleryColumnsMobile || 2}
+        onChange={(value) => onUpdateSettings('galleryColumnsMobile', value)}
+        min={1}
+        max={3}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Espaciado entre imágenes"
+        help="Espacio entre imágenes en píxeles"
+        value={settings.galleryGap || 16}
+        onChange={(value) => onUpdateSettings('galleryGap', value)}
+        min={0}
+        max={48}
+        step={4}
+      />
+
+      <SelectFieldWithHelp
+        label="Relación de aspecto"
+        help="Proporción de las imágenes en la galería"
+        value={settings.galleryAspectRatio || 'auto'}
+        onChange={(value) => onUpdateSettings('galleryAspectRatio', value)}
+        options={[
+          { value: 'auto', label: 'Automático (original)' },
+          { value: '1/1', label: 'Cuadrado (1:1)' },
+          { value: '4/3', label: 'Estándar (4:3)' },
+          { value: '16/9', label: 'Widescreen (16:9)' },
+          { value: '3/2', label: 'Fotografía (3:2)' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Lightbox"
+        help="Abrir imágenes en vista ampliada al hacer clic"
+        checked={settings.galleryLightbox !== false}
+        onCheckedChange={(checked) => onUpdateSettings('galleryLightbox', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Lazy loading"
+        help="Cargar imágenes solo cuando sean visibles"
+        checked={settings.galleryLazyLoad !== false}
+        onCheckedChange={(checked) => onUpdateSettings('galleryLazyLoad', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar captions"
+        help="Mostrar título/descripción al pasar el mouse"
+        checked={settings.galleryShowCaptions || false}
+        onCheckedChange={(checked) => onUpdateSettings('galleryShowCaptions', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Efecto hover"
+        help="Efecto visual al pasar el mouse sobre imágenes"
+        value={settings.galleryHoverEffect || 'zoom'}
+        onChange={(value) => onUpdateSettings('galleryHoverEffect', value)}
+        options={[
+          { value: 'none', label: 'Ninguno' },
+          { value: 'zoom', label: 'Zoom' },
+          { value: 'overlay', label: 'Overlay oscuro' },
+          { value: 'lift', label: 'Elevar' },
+          { value: 'blur', label: 'Desenfocar fondo' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Filtro de categorías"
+        help="Permitir filtrar imágenes por categoría"
+        checked={settings.galleryFilter || false}
+        onCheckedChange={(checked) => onUpdateSettings('galleryFilter', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Botón cargar más"
+        help="Cargar imágenes de forma paginada"
+        checked={settings.galleryLoadMore || false}
+        onCheckedChange={(checked) => onUpdateSettings('galleryLoadMore', checked)}
+      />
+    </div>
+  );
+
+  // Text Section Options (8+ additional options)
+  const renderTextOptions = () => (
+    <div className="space-y-3 mt-6">
+      <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
+        Opciones de Sección de Texto
+      </h5>
+      
+      <SelectFieldWithHelp
+        label="Ancho del contenido"
+        help="Ancho máximo del texto"
+        value={settings.textMaxWidth || 'container'}
+        onChange={(value) => onUpdateSettings('textMaxWidth', value)}
+        options={[
+          { value: 'full', label: 'Ancho completo' },
+          { value: 'container', label: 'Contenedor (80%)' },
+          { value: 'narrow', label: 'Estrecho (60%)' },
+          { value: 'xs', label: 'Extra estrecho (40%)' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Tamaño de fuente base"
+        help="Tamaño de fuente del texto principal"
+        value={settings.textFontSize || 16}
+        onChange={(value) => onUpdateSettings('textFontSize', value)}
+        min={12}
+        max={24}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Altura de línea"
+        help="Espaciado vertical entre líneas"
+        value={settings.textLineHeight || 1.6}
+        onChange={(value) => onUpdateSettings('textLineHeight', value)}
+        min={1.2}
+        max={2.5}
+        step={0.1}
+      />
+
+      <SelectFieldWithHelp
+        label="Alineación de texto"
+        help="Alineación horizontal del texto"
+        value={settings.textAlign || 'left'}
+        onChange={(value) => onUpdateSettings('textAlign', value)}
+        options={[
+          { value: 'left', label: 'Izquierda' },
+          { value: 'center', label: 'Centro' },
+          { value: 'right', label: 'Derecha' },
+          { value: 'justify', label: 'Justificado' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Formato enriquecido (HTML)"
+        help="Permitir formato HTML en el texto"
+        checked={settings.textRichFormat || false}
+        onCheckedChange={(checked) => onUpdateSettings('textRichFormat', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Columnas de texto"
+        help="Dividir texto en múltiples columnas (estilo periódico)"
+        checked={settings.textColumns || false}
+        onCheckedChange={(checked) => onUpdateSettings('textColumns', checked)}
+      />
+
+      <SliderFieldWithHelp
+        label="Número de columnas"
+        help="Cuántas columnas usar (si está activado)"
+        value={settings.textColumnsCount || 2}
+        onChange={(value) => onUpdateSettings('textColumnsCount', value)}
+        min={2}
+        max={4}
+        step={1}
+      />
+
+      <SwitchFieldWithHelp
+        label="Letra capital (drop cap)"
+        help="Primera letra grande estilo revista"
+        checked={settings.textDropCap || false}
+        onCheckedChange={(checked) => onUpdateSettings('textDropCap', checked)}
+      />
+    </div>
+  );
+  
   return (
     <div className="space-y-6">
-      <h4 className="font-semibold text-sm border-b pb-2">Opciones Avanzadas</h4>
+      <h4 className="font-semibold text-sm border-b pb-2">Opciones Avanzadas (40+)</h4>
       
       {/* Layout & Display Options (10 options) */}
       <div className="space-y-3">
@@ -489,6 +1370,9 @@ export function EnhancedSectionOptions({
           onCheckedChange={(checked) => onUpdateSettings('lazyLoad', checked)}
         />
       </div>
+
+      {/* Section-Type Specific Options */}
+      {renderSectionSpecificOptions()}
     </div>
   );
 }

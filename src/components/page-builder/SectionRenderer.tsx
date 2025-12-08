@@ -293,64 +293,131 @@ function HeroSection({ section }: { section: SectionData }) {
   const paddingTop = styles?.paddingTop || styles?.paddingY || 150;
   const paddingBottom = styles?.paddingBottom || styles?.paddingY || 100;
   
+  // Hero-specific settings with defaults
+  const heroOverlayOpacity = (settings?.heroOverlayOpacity ?? 50) / 100;
+  const heroOverlayColor = settings?.heroOverlayColor || '#000000';
+  const heroTitleSize = settings?.heroTitleSize || 48;
+  const heroSubtitleSize = settings?.heroSubtitleSize || 20;
+  const heroContentPosition = settings?.heroContentPosition || 'center';
+  const heroFullHeight = settings?.heroFullHeight !== undefined ? settings?.heroFullHeight : true;
+  const heroParallax = settings?.heroParallax || false;
+  const heroVideoBackground = settings?.heroVideoBackground || false;
+  
+  // Position mapping for content alignment
+  const positionClasses: Record<string, string> = {
+    'top-left': 'items-start justify-start',
+    'top-center': 'items-start justify-center',
+    'top-right': 'items-start justify-end',
+    'center-left': 'items-center justify-start',
+    'center': 'items-center justify-center',
+    'center-right': 'items-center justify-end',
+    'bottom-left': 'items-end justify-start',
+    'bottom-center': 'items-end justify-center',
+    'bottom-right': 'items-end justify-end',
+  };
+  
   // Override or merge with specific hero styles
   const heroStyles: CSSProperties = {
     ...inlineStyles,
-    backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : inlineStyles.backgroundImage,
+    backgroundImage: content?.backgroundImage && !heroVideoBackground ? `url(${content.backgroundImage})` : inlineStyles.backgroundImage,
     backgroundSize: inlineStyles.backgroundSize || 'cover',
     backgroundPosition: inlineStyles.backgroundPosition || 'center',
-    minHeight: settings?.minHeight || settings?.height || '85vh',
+    backgroundAttachment: heroParallax ? 'fixed' : 'scroll',
+    minHeight: heroFullHeight ? '100vh' : (settings?.minHeight || settings?.height || '85vh'),
     paddingTop: `${paddingTop}px`,
     paddingBottom: `${paddingBottom}px`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   };
   
-  const overlayOpacity = settings?.overlayOpacity || 0.4;
+  // Button style variant mapping
+  const buttonVariantMap: Record<string, any> = {
+    'primary': 'default',
+    'secondary': 'secondary',
+    'outline': 'outline',
+    'ghost': 'ghost',
+    'link': 'link'
+  };
+  
+  const buttonSizeMap: Record<string, any> = {
+    'sm': 'sm',
+    'default': 'default',
+    'lg': 'lg',
+    'xl': 'lg'
+  };
+  
+  const heroButtonStyle = settings?.heroButtonStyle || 'primary';
+  const heroButtonSize = settings?.heroButtonSize || 'lg';
+  const heroTextAnimation = settings?.heroTextAnimation || 'fade-in';
   
   return (
     <section
       className={cn(
-        "relative overflow-hidden",
+        "relative overflow-hidden flex",
+        positionClasses[heroContentPosition] || positionClasses['center'],
         settings?.fullWidth ? "w-full" : "container mx-auto",
         getBorderRadiusClass(styles?.borderRadius),
         getResponsiveClasses(styles),
-        getAnimationClass(settings?.animation)
+        getAnimationClass(settings?.animation || heroTextAnimation)
       )}
       style={heroStyles}
     >
-      {content?.backgroundImage && (
+      {/* Video Background */}
+      {heroVideoBackground && content?.backgroundImage && (
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={content.backgroundImage} type="video/mp4" />
+        </video>
+      )}
+      
+      {/* Overlay */}
+      {(content?.backgroundImage || heroVideoBackground) && (
         <div 
           className="absolute inset-0" 
-          style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})` }}
+          style={{ 
+            backgroundColor: `${heroOverlayColor}`,
+            opacity: heroOverlayOpacity
+          }}
         />
       )}
+      
       <div className={cn(
         "relative z-10 max-w-4xl mx-auto px-4",
         getTextAlignClass(styles?.textAlign || 'center')
       )}>
         {content?.title && (
           <h1 
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 drop-shadow-lg"
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="font-bold mb-6 drop-shadow-lg"
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${heroTitleSize}px`,
+              lineHeight: '1.2'
+            }}
           >
             {content.title}
           </h1>
         )}
         {content?.subtitle && (
           <p 
-            className="text-lg md:text-xl lg:text-2xl mb-10 opacity-95 max-w-3xl mx-auto drop-shadow-md"
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="mb-10 opacity-95 max-w-3xl mx-auto drop-shadow-md"
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${heroSubtitleSize}px`,
+              lineHeight: '1.6'
+            }}
           >
             {content.subtitle}
           </p>
         )}
         {content?.buttonText && (
           <Button
-            size="lg"
+            size={buttonSizeMap[heroButtonSize]}
+            variant={buttonVariantMap[heroButtonStyle]}
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
-            className="text-lg px-10 py-7 font-semibold shadow-xl hover:scale-105 transition-transform"
+            className="font-semibold shadow-xl hover:scale-105 transition-transform"
           >
             {content.buttonText}
           </Button>
@@ -434,18 +501,47 @@ function ImageSection({ section }: { section: SectionData }) {
 function BannerSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   
-  const overlayOpacity = settings?.overlayOpacity || 0.5;
+  // Banner-specific settings with defaults
+  const bannerHeight = settings?.bannerHeight || 300;
+  const bannerContentAlign = settings?.bannerContentAlign || 'center';
+  const bannerOverlayColor = settings?.bannerOverlayColor || '#000000';
+  const bannerOverlayOpacity = (settings?.bannerOverlayOpacity ?? 40) / 100;
+  const bannerTitleSize = settings?.bannerTitleSize || 32;
+  const bannerTextSize = settings?.bannerTextSize || 16;
+  const bannerButtonStyle = settings?.bannerButtonStyle || 'primary';
+  const bannerSticky = settings?.bannerSticky || false;
+  const bannerDismissible = settings?.bannerDismissible || false;
+  
   const paddingY = styles?.paddingY || styles?.padding || 80;
   const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
   const marginTop = styles?.marginTop || 60;
   const marginBottom = styles?.marginBottom || 40;
   
+  // Content alignment classes
+  const contentAlignClasses: Record<string, string> = {
+    'left': 'items-center justify-start text-left',
+    'center': 'items-center justify-center text-center',
+    'right': 'items-center justify-end text-right'
+  };
+  
+  // Button variant mapping
+  const buttonVariantMap: Record<string, any> = {
+    'primary': 'default',
+    'secondary': 'secondary',
+    'outline': 'outline',
+    'ghost': 'ghost'
+  };
+  
   return (
     <section
       className={cn(
-        "relative overflow-hidden",
+        "relative overflow-hidden flex",
+        contentAlignClasses[bannerContentAlign] || contentAlignClasses['center'],
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation),
+        bannerSticky && "sticky top-0 z-40"
       )}
       style={{
         backgroundColor: styles?.backgroundColor || 'hsl(var(--primary))',
@@ -455,46 +551,68 @@ function BannerSection({ section }: { section: SectionData }) {
         marginBottom: `${marginBottom}px`,
         backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : undefined,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        minHeight: `${bannerHeight}px`
       }}
     >
+      {/* Overlay */}
       {content?.backgroundImage && (
         <div 
           className="absolute inset-0 z-0" 
-          style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})` }}
+          style={{ 
+            backgroundColor: bannerOverlayColor,
+            opacity: bannerOverlayOpacity
+          }}
         />
       )}
-      <div className={cn(
-        "max-w-3xl mx-auto relative z-10",
-        getTextAlignClass(styles?.textAlign || 'center')
-      )}>
+      
+      <div className="max-w-3xl mx-auto relative z-10">
         {content?.title && (
           <h2 
-            className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 drop-shadow-lg" 
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="font-bold mb-4 drop-shadow-lg" 
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${bannerTitleSize}px`
+            }}
           >
             {content.title}
           </h2>
         )}
         {content?.description && (
           <p 
-            className="text-lg md:text-xl mb-6 opacity-95 drop-shadow-md" 
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="mb-6 opacity-95 drop-shadow-md" 
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${bannerTextSize}px`
+            }}
           >
             {content.description}
           </p>
         )}
         {content?.buttonText && (
           <Button
-            variant="secondary"
+            variant={buttonVariantMap[bannerButtonStyle]}
             size="lg"
             onClick={() => safeNavigate(content?.buttonUrl || '/')}
-            className="text-lg px-8 py-6 font-semibold shadow-lg hover:scale-105 transition-transform"
+            className="font-semibold shadow-lg hover:scale-105 transition-transform"
           >
             {content.buttonText}
           </Button>
         )}
       </div>
+      
+      {/* Dismissible close button */}
+      {bannerDismissible && (
+        <button
+          className="absolute top-4 right-4 z-20 text-white/80 hover:text-white"
+          onClick={(e) => {
+            const section = e.currentTarget.closest('section');
+            if (section) section.style.display = 'none';
+          }}
+        >
+          ✕
+        </button>
+      )}
     </section>
   );
 }
@@ -559,16 +677,73 @@ function CTASection({ section }: { section: SectionData }) {
 // Features Section
 function FeaturesSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
-  const columns = settings?.columns || 3;
+  
+  // Feature-specific settings with defaults
+  const featuresColumns = settings?.featuresColumns || settings?.columns || 3;
+  const featuresGap = settings?.featuresGap || 24;
+  const featuresIconSize = settings?.featuresIconSize || 48;
+  const featuresIconColor = settings?.featuresIconColor || '#3b82f6';
+  const featuresCardStyle = settings?.featuresCardStyle || 'default';
+  const featuresAlignment = settings?.featuresAlignment || 'center';
+  const featuresTitleSize = settings?.featuresTitleSize || 20;
+  const featuresDescSize = settings?.featuresDescSize || 14;
+  const featuresHoverEffect = settings?.featuresHoverEffect !== false;
+  const featuresHoverType = settings?.featuresHoverType || 'lift';
+  const featuresScrollAnimation = settings?.featuresScrollAnimation !== false;
+  const featuresIconPosition = settings?.featuresIconPosition || 'top';
   
   const paddingY = styles?.paddingY || styles?.padding || 80;
   const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
+  
+  // Card style classes
+  const cardStyleClasses: Record<string, string> = {
+    'default': 'bg-card/50',
+    'bordered': 'border-2 border-border',
+    'shadowed': 'shadow-lg',
+    'filled': 'bg-primary/5',
+    'minimal': 'bg-transparent'
+  };
+  
+  // Hover effect classes
+  const hoverEffectClasses: Record<string, string> = {
+    'none': '',
+    'lift': 'hover:-translate-y-2',
+    'scale': 'hover:scale-105',
+    'glow': 'hover:shadow-xl hover:shadow-primary/20',
+    'tilt': 'hover:rotate-1'
+  };
+  
+  // Alignment classes
+  const alignmentClasses: Record<string, string> = {
+    'left': 'text-left items-start',
+    'center': 'text-center items-center',
+    'right': 'text-right items-end'
+  };
+  
+  // Icon position classes
+  const iconPositionClasses: Record<string, string> = {
+    'top': 'flex-col',
+    'left': 'flex-row',
+    'right': 'flex-row-reverse'
+  };
+  
+  // Column classes - using static mapping for Tailwind
+  const gridColsClasses: Record<number, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 md:grid-cols-2',
+    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    5: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5',
+    6: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-6'
+  };
   
   return (
     <section
       className={cn(
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        featuresScrollAnimation && getAnimationClass(settings?.animation || 'fade-in')
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
@@ -580,35 +755,63 @@ function FeaturesSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-6xl mx-auto">
         {content?.title && (
-          <h2 className={cn(
-            "text-3xl md:text-4xl font-bold mb-12",
-            "text-center" // Always center the title
-          )}>
+          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
             {content.title}
           </h2>
         )}
-        <div className={cn(
-          "grid gap-8",
-          columns === 2 && "grid-cols-1 md:grid-cols-2",
-          columns === 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-          columns === 4 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-        )}>
+        <div 
+          className={cn(
+            "grid",
+            gridColsClasses[featuresColumns] || gridColsClasses[3]
+          )}
+          style={{ gap: `${featuresGap}px` }}
+        >
           {content?.features?.map((feature: any, index: number) => (
             <div 
               key={index} 
-              className="text-center p-6 rounded-lg bg-card/50 hover:bg-card transition-colors"
+              className={cn(
+                "p-6 rounded-lg transition-all duration-300 flex",
+                iconPositionClasses[featuresIconPosition],
+                alignmentClasses[featuresAlignment],
+                cardStyleClasses[featuresCardStyle],
+                featuresHoverEffect && hoverEffectClasses[featuresHoverType]
+              )}
             >
               {feature.icon && (
-                <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-xl bg-primary/10">
-                  <span className="text-3xl">{feature.icon}</span>
+                <div 
+                  className={cn(
+                    "flex items-center justify-center rounded-xl",
+                    featuresIconPosition === 'top' ? 'mb-4' : 'mr-4'
+                  )}
+                  style={{ 
+                    width: `${featuresIconSize}px`,
+                    height: `${featuresIconSize}px`,
+                    fontSize: `${featuresIconSize * 0.6}px`,
+                    color: featuresIconColor,
+                    backgroundColor: `${featuresIconColor}20`
+                  }}
+                >
+                  <span>{feature.icon}</span>
                 </div>
               )}
-              {feature.title && (
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-              )}
-              {feature.description && (
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-              )}
+              <div className="flex-1">
+                {feature.title && (
+                  <h3 
+                    className="font-semibold mb-3"
+                    style={{ fontSize: `${featuresTitleSize}px` }}
+                  >
+                    {feature.title}
+                  </h3>
+                )}
+                {feature.description && (
+                  <p 
+                    className="text-muted-foreground leading-relaxed"
+                    style={{ fontSize: `${featuresDescSize}px` }}
+                  >
+                    {feature.description}
+                  </p>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -620,14 +823,67 @@ function FeaturesSection({ section }: { section: SectionData }) {
 // Gallery Section
 function GallerySection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
-  const columns = settings?.columns || 4;
-  const gap = settings?.gap || 16;
+  
+  // Gallery-specific settings with defaults
+  const galleryLayout = settings?.galleryLayout || 'grid';
+  const galleryColumns = settings?.galleryColumns || 4;
+  const galleryColumnsTablet = settings?.galleryColumnsTablet || 3;
+  const galleryColumnsMobile = settings?.galleryColumnsMobile || 2;
+  const galleryGap = settings?.galleryGap || 16;
+  const galleryAspectRatio = settings?.galleryAspectRatio || 'auto';
+  const galleryLightbox = settings?.galleryLightbox !== false;
+  const galleryLazyLoad = settings?.galleryLazyLoad !== false;
+  const galleryShowCaptions = settings?.galleryShowCaptions || false;
+  const galleryHoverEffect = settings?.galleryHoverEffect || 'zoom';
+  const galleryFilter = settings?.galleryFilter || false;
+  const galleryLoadMore = settings?.galleryLoadMore || false;
+  
+  // Grid column classes - static mapping for Tailwind to ensure classes are included in build
+  const gridColsMap: Record<string, string> = {
+    '1-1-1': 'grid-cols-1',
+    '2-2-1': 'grid-cols-1 md:grid-cols-2',
+    '2-2-2': 'grid-cols-2 md:grid-cols-2',
+    '3-2-1': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    '3-2-2': 'grid-cols-2 md:grid-cols-2 lg:grid-cols-3',
+    '3-3-1': 'grid-cols-1 md:grid-cols-3 lg:grid-cols-3',
+    '3-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-3',
+    '3-3-3': 'grid-cols-3 md:grid-cols-3 lg:grid-cols-3',
+    '4-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+    '4-3-1': 'grid-cols-1 md:grid-cols-3 lg:grid-cols-4',
+    '4-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-4',
+    '5-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
+    '6-3-2': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
+    '6-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6',
+    '8-4-2': 'grid-cols-2 md:grid-cols-4 lg:grid-cols-8'
+  };
+  const gridColsKey = `${galleryColumns}-${galleryColumnsTablet}-${galleryColumnsMobile}`;
+  const gridColsClasses = gridColsMap[gridColsKey] || gridColsMap['4-3-2'];
+  
+  // Hover effect classes
+  const hoverEffectClasses: Record<string, string> = {
+    'none': '',
+    'zoom': 'hover:scale-110',
+    'overlay': 'hover:opacity-80',
+    'lift': 'hover:-translate-y-2',
+    'blur': 'hover:blur-sm'
+  };
+  
+  // Aspect ratio classes
+  const aspectRatioClasses: Record<string, string> = {
+    'auto': '',
+    '1/1': 'aspect-square',
+    '4/3': 'aspect-[4/3]',
+    '16/9': 'aspect-video',
+    '3/2': 'aspect-[3/2]'
+  };
   
   return (
     <section
       className={cn(
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        getBorderRadiusClass(styles?.borderRadius)
+        getBorderRadiusClass(styles?.borderRadius),
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
@@ -640,26 +896,80 @@ function GallerySection({ section }: { section: SectionData }) {
             {content.title}
           </h2>
         )}
+        
+        {/* Filter buttons (if enabled) */}
+        {galleryFilter && content?.categories && (
+          <div className="flex flex-wrap gap-2 mb-6 justify-center">
+            <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">
+              Todos
+            </button>
+            {content.categories.map((cat: string, idx: number) => (
+              <button 
+                key={idx}
+                className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div 
           className={cn(
             "grid",
-            columns === 2 && "md:grid-cols-2",
-            columns === 3 && "md:grid-cols-3",
-            columns === 4 && "md:grid-cols-4",
-            columns === 5 && "md:grid-cols-5"
+            gridColsClasses
           )}
-          style={{ gap: `${gap}px` }}
+          style={{ gap: `${galleryGap}px` }}
         >
-          {content?.images?.map((image: string, index: number) => (
-            <div key={index} className="overflow-hidden rounded-lg">
-              <img
-                src={image}
-                alt={`Gallery ${index + 1}`}
-                className="w-full h-auto hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          ))}
+          {content?.images?.map((image: any, index: number) => {
+            const imageUrl = typeof image === 'string' ? image : image.url;
+            const imageCaption = typeof image === 'object' ? image.caption : '';
+            const imageAlt = typeof image === 'object' ? image.alt : `Gallery ${index + 1}`;
+            
+            return (
+              <div 
+                key={index} 
+                className={cn(
+                  "overflow-hidden rounded-lg relative group",
+                  aspectRatioClasses[galleryAspectRatio]
+                )}
+              >
+                <img
+                  src={imageUrl}
+                  alt={imageAlt}
+                  loading={galleryLazyLoad ? 'lazy' : 'eager'}
+                  className={cn(
+                    "w-full h-full object-cover transition-all duration-300",
+                    hoverEffectClasses[galleryHoverEffect],
+                    galleryLightbox && "cursor-pointer"
+                  )}
+                  onClick={() => {
+                    if (galleryLightbox) {
+                      // Simple lightbox implementation (could be enhanced)
+                      window.open(imageUrl, '_blank');
+                    }
+                  }}
+                />
+                
+                {/* Caption overlay */}
+                {galleryShowCaptions && imageCaption && (
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                    <p className="text-white text-sm">{imageCaption}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+        
+        {/* Load more button (if enabled) */}
+        {galleryLoadMore && (
+          <div className="text-center mt-8">
+            <Button variant="outline" size="lg">
+              Cargar más imágenes
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -966,6 +1276,18 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
   const images = content?.images || [];
   
+  // Image carousel specific settings with defaults
+  const imageCarouselPerView = settings?.imageCarouselPerView || settings?.itemsPerView || 3;
+  const imageCarouselHeight = settings?.imageCarouselHeight || 400;
+  const imageCarouselFit = settings?.imageCarouselFit || 'cover';
+  const imageCarouselShowCaptions = settings?.imageCarouselShowCaptions !== false;
+  const imageCarouselAutoplay = settings?.imageCarouselAutoplay || false;
+  const imageCarouselAutoplaySpeed = settings?.imageCarouselAutoplaySpeed || 4;
+  const imageCarouselKenBurns = settings?.imageCarouselKenBurns || false;
+  const imageCarouselThumbnails = settings?.imageCarouselThumbnails || false;
+  const imageCarouselLightbox = settings?.imageCarouselLightbox !== false;
+  const imageCarouselTransition = settings?.imageCarouselTransition || 'slide';
+  
   const paddingY = styles?.paddingY || styles?.padding || 80;
   const paddingX = styles?.paddingX || (styles?.padding ? styles.padding / 2 : 40);
   
@@ -983,7 +1305,9 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
       className={cn(
         "relative overflow-hidden",
         settings?.fullWidth ? "w-full" : "container mx-auto",
-        settings?.customClass
+        settings?.customClass,
+        getResponsiveClasses(styles),
+        getAnimationClass(settings?.animation)
       )}
       style={{
         backgroundColor: styles?.backgroundColor,
@@ -1028,22 +1352,41 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
           items={images}
           settings={{
             ...settings,
-            itemsPerView: settings?.itemsPerView || 4,
+            itemsPerView: imageCarouselPerView,
             itemsPerViewTablet: settings?.itemsPerViewTablet || 2,
             itemsPerViewMobile: settings?.itemsPerViewMobile || 1,
             spaceBetween: settings?.gap || 20,
-            showPagination: settings?.showDots !== false
+            showPagination: settings?.showDots !== false,
+            autoplay: imageCarouselAutoplay,
+            autoplayDelay: (imageCarouselAutoplaySpeed || 4) * 1000,
+            effect: imageCarouselTransition,
+            loop: settings?.loop !== false
           }}
           renderItem={(image: any, index: number) => (
             <div 
-              className="relative w-full group cursor-pointer" 
-              style={{ height: settings?.carouselHeight || '280px' }}
+              className={cn(
+                "relative w-full group",
+                imageCarouselLightbox && "cursor-pointer"
+              )}
+              style={{ height: `${imageCarouselHeight}px` }}
+              onClick={() => {
+                if (imageCarouselLightbox) {
+                  window.open(image?.url, '_blank');
+                }
+              }}
             >
               {isValidImageUrl(image?.url) ? (
                 <img
                   src={image.url}
                   alt={image.alt || `Imagen ${index + 1}`}
-                  className="w-full h-full object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]"
+                  className={cn(
+                    "w-full h-full rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300",
+                    imageCarouselKenBurns && imageCarouselAutoplay && "group-hover:scale-110",
+                    "group-hover:scale-[1.02]"
+                  )}
+                  style={{
+                    objectFit: imageCarouselFit as any
+                  }}
                   loading={settings?.lazyLoad !== false ? "lazy" : undefined}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
@@ -1054,7 +1397,7 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
                   <p className="text-muted-foreground">URL de imagen inválida</p>
                 </div>
               )}
-              {image?.caption && (
+              {imageCarouselShowCaptions && image?.caption && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white p-4 rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <p className="text-center text-sm font-medium">{image.caption}</p>
                 </div>
@@ -1062,6 +1405,20 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
             </div>
           )}
         />
+        
+        {/* Thumbnails navigation (if enabled) */}
+        {imageCarouselThumbnails && images.length > 1 && (
+          <div className="flex gap-2 mt-4 justify-center overflow-x-auto">
+            {images.map((image: any, idx: number) => (
+              <img
+                key={idx}
+                src={image?.url}
+                alt={`Thumbnail ${idx + 1}`}
+                className="w-16 h-16 object-cover rounded hover:ring-2 ring-primary transition-all"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

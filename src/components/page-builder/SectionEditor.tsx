@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { CarouselSettings } from "./CarouselSettings";
 import { URLSelector } from "./URLSelector";
 import { EnhancedSectionOptions } from "./EnhancedSectionOptions";
+import { ImageUploadField } from "./ImageUploadField";
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -104,14 +105,12 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                     placeholder="/productos"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Imagen de fondo (URL)</Label>
-                  <Input
-                    value={localContent.backgroundImage || ''}
-                    onChange={(e) => updateContent('backgroundImage', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
+                <ImageUploadField
+                  label="Imagen de fondo"
+                  value={localContent.backgroundImage || ''}
+                  onChange={(value) => updateContent('backgroundImage', value)}
+                  helpText="Sube una imagen o ingresa una URL"
+                />
               </>
             )}
 
@@ -139,14 +138,12 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
 
             {section.section_type === 'image' && (
               <>
-                <div className="space-y-2">
-                  <Label>URL de la imagen</Label>
-                  <Input
-                    value={localContent.imageUrl || ''}
-                    onChange={(e) => updateContent('imageUrl', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
+                <ImageUploadField
+                  label="Imagen"
+                  value={localContent.imageUrl || ''}
+                  onChange={(value) => updateContent('imageUrl', value)}
+                  helpText="Sube una imagen o ingresa una URL"
+                />
                 <div className="space-y-2">
                   <Label>Texto alternativo</Label>
                   <Input
@@ -163,16 +160,6 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                     placeholder="/productos"
                   />
                 </div>
-                {localContent.imageUrl && (
-                  <div className="mt-4">
-                    <Label className="text-xs text-muted-foreground">Vista previa</Label>
-                    <img 
-                      src={localContent.imageUrl} 
-                      alt="Preview" 
-                      className="mt-2 max-h-[200px] rounded border"
-                    />
-                  </div>
-                )}
               </>
             )}
 
@@ -211,14 +198,12 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                     placeholder="/ofertas"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Imagen de fondo</Label>
-                  <Input
-                    value={localContent.backgroundImage || ''}
-                    onChange={(e) => updateContent('backgroundImage', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
+                <ImageUploadField
+                  label="Imagen de fondo"
+                  value={localContent.backgroundImage || ''}
+                  onChange={(value) => updateContent('backgroundImage', value)}
+                  helpText="Sube una imagen o ingresa una URL"
+                />
               </>
             )}
 
@@ -795,7 +780,7 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                     </Button>
                   </div>
                   {(localContent.images || []).map((image: any, index: number) => (
-                    <div key={image.id || index} className="border rounded-lg p-3 space-y-2">
+                    <div key={image.id || index} className="border rounded-lg p-3 space-y-3">
                       <div className="flex justify-between items-start">
                         <Label className="text-xs">Imagen {index + 1}</Label>
                         <Button
@@ -811,15 +796,15 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Input
+                      <ImageUploadField
+                        label="Imagen"
                         value={image.url || ''}
-                        onChange={(e) => {
+                        onChange={(value) => {
                           const newImages = [...localContent.images];
-                          newImages[index] = { ...newImages[index], url: e.target.value };
+                          newImages[index] = { ...newImages[index], url: value };
                           updateContent('images', newImages);
                         }}
-                        placeholder="URL de la imagen"
-                        className="text-sm"
+                        helpText="Sube una imagen o ingresa una URL"
                       />
                       <Input
                         value={image.alt || ''}
