@@ -226,15 +226,15 @@ export function AdvancedCarousel({
   return (
     <div 
       ref={carouselRef}
-      className={cn('relative', getWidthClass(), className)}
+      className={cn('relative w-full', className)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         height: settings.carouselHeight || 'auto'
       }}
     >
-      {/* Carousel track */}
-      <div className="overflow-hidden">
+      {/* Carousel track wrapper with proper overflow handling */}
+      <div className={cn('overflow-hidden', getWidthClass())}>
         <div 
           className={cn(
             'flex transition-transform',
@@ -244,7 +244,9 @@ export function AdvancedCarousel({
           style={{
             transform: getTransform(),
             transitionDuration: `${settings.transitionDuration || 600}ms`,
-            gap: `${settings.spaceBetween || 20}px`
+            gap: `${settings.spaceBetween || 20}px`,
+            // Ensure proper width calculation for mobile
+            width: settings.direction === 'vertical' ? '100%' : undefined
           }}
         >
           {items.map((item, index) => (
@@ -255,12 +257,18 @@ export function AdvancedCarousel({
                 settings.effect === 'fade' && index !== currentIndex && 'opacity-0'
               )}
               style={{
-                width: settings.direction === 'vertical' ? '100%' : `calc(${100 / itemsPerView}% - ${(settings.spaceBetween || 20) * (itemsPerView - 1) / itemsPerView}px)`,
+                width: settings.direction === 'vertical' 
+                  ? '100%' 
+                  : `calc((100% - ${(settings.spaceBetween || 20) * (itemsPerView - 1)}px) / ${itemsPerView})`,
                 transitionProperty: settings.effect === 'fade' ? 'opacity' : 'none',
-                transitionDuration: `${settings.transitionDuration || 600}ms`
+                transitionDuration: `${settings.transitionDuration || 600}ms`,
+                // Prevent content overflow on mobile
+                minWidth: 0
               }}
             >
-              {renderItem(item, index)}
+              <div className="w-full h-full">
+                {renderItem(item, index)}
+              </div>
             </div>
           ))}
         </div>
