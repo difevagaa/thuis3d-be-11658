@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
+import { AdvancedCarousel } from "./AdvancedCarousel";
 
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
@@ -797,9 +798,6 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     return null;
   }
   
-  // Import AdvancedCarousel dynamically
-  const { AdvancedCarousel } = require('./AdvancedCarousel');
-  
   return (
     <section
       id={settings?.sectionId}
@@ -917,9 +915,6 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
     );
   }
 
-  // Import AdvancedCarousel dynamically
-  const { AdvancedCarousel } = require('./AdvancedCarousel');
-  
   return (
     <section
       id={settings?.sectionId}
