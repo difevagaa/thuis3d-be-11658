@@ -888,6 +888,15 @@ export default function PageBuilder() {
         onClose={() => setShowHelp(false)}
       />
 
+      {/* Section Editor Dialog */}
+      {selectedSection && (
+        <SectionEditor
+          section={selectedSection}
+          onUpdate={(updates) => handleUpdateSection(selectedSection.id, updates)}
+          onClose={() => setSelectedSection(null)}
+        />
+      )}
+
       {/* Create Page Dialog */}
       <Dialog open={showCreatePage} onOpenChange={setShowCreatePage}>
         <DialogContent className="sm:max-w-[500px]">
