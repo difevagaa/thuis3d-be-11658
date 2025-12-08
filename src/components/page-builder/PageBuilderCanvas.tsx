@@ -144,6 +144,15 @@ function SortableSectionItem({
           <Button
             variant="ghost"
             size="icon"
+            className="h-7 w-7 text-primary"
+            onClick={onSelect}
+            title="Editar sección (40+ opciones)"
+          >
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-7 w-7"
             onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
             title={section.is_visible ? 'Ocultar' : 'Mostrar'}
