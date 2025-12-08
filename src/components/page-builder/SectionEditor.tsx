@@ -13,6 +13,7 @@ import { CarouselSettings } from "./CarouselSettings";
 import { URLSelector } from "./URLSelector";
 import { EnhancedSectionOptions } from "./EnhancedSectionOptions";
 import { ImageUploadField } from "./ImageUploadField";
+import { StandardColorPicker } from "./StandardColorPicker";
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -963,41 +964,19 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
           </TabsContent>
 
           <TabsContent value="styles" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Color de fondo</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="color"
-                  value={localStyles.backgroundColor || '#ffffff'}
-                  onChange={(e) => updateStyles('backgroundColor', e.target.value)}
-                  className="w-14 h-10 p-1 cursor-pointer"
-                />
-                <Input
-                  value={localStyles.backgroundColor || ''}
-                  onChange={(e) => updateStyles('backgroundColor', e.target.value)}
-                  placeholder="Transparente"
-                  className="flex-1"
-                />
-              </div>
-            </div>
+            <StandardColorPicker
+              label="Color de fondo"
+              value={localStyles.backgroundColor || ''}
+              onChange={(value) => updateStyles('backgroundColor', value)}
+              placeholder="Transparente o selecciona un color"
+            />
 
-            <div className="space-y-2">
-              <Label>Color de texto</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="color"
-                  value={localStyles.textColor || '#000000'}
-                  onChange={(e) => updateStyles('textColor', e.target.value)}
-                  className="w-14 h-10 p-1 cursor-pointer"
-                />
-                <Input
-                  value={localStyles.textColor || ''}
-                  onChange={(e) => updateStyles('textColor', e.target.value)}
-                  placeholder="Heredar"
-                  className="flex-1"
-                />
-              </div>
-            </div>
+            <StandardColorPicker
+              label="Color de texto"
+              value={localStyles.textColor || ''}
+              onChange={(value) => updateStyles('textColor', value)}
+              placeholder="Heredar o selecciona un color"
+            />
 
             <div className="space-y-2">
               <Label>Padding: {localStyles.padding || 40}px</Label>
