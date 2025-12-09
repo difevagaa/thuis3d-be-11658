@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface CarouselSettings {
+export interface CarouselSettings {
   // Display
   itemsPerView?: number;
   itemsPerViewTablet?: number;
@@ -34,6 +34,10 @@ interface CarouselSettings {
   carouselWidth?: 'full' | 'container' | 'narrow' | 'wide';
   centeredSlides?: boolean;
   freeMode?: boolean;
+  
+  // Image sizing (for image carousels)
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain' | 'fill' | 'scale-down';
   
   // Advanced
   lazyLoad?: boolean;

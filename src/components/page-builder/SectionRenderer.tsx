@@ -1221,9 +1221,28 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         
         <AdvancedCarousel
           items={products}
-          settings={settings}
+          settings={{
+            ...settings,
+            itemsPerView: settings?.carouselProductsPerView || 4,
+            itemsPerViewTablet: settings?.carouselProductsPerViewTablet || 3,
+            itemsPerViewMobile: settings?.carouselProductsPerViewMobile || 1,
+            spaceBetween: settings?.carouselGap || 16,
+            showPagination: settings?.carouselShowDots || false,
+            showNavigation: settings?.carouselShowArrows !== false,
+            autoplay: settings?.carouselAutoplay || false,
+            autoplayDelay: settings?.carouselAutoplaySpeed || 3,
+            transitionDuration: settings?.carouselTransitionSpeed || 600,
+            effect: settings?.carouselTransition || 'slide',
+            loop: settings?.carouselLoop !== false,
+            centeredSlides: settings?.carouselCentered || false
+          }}
           renderItem={(product: any) => (
-            <ProductCard product={product} />
+            <ProductCard 
+              product={product} 
+              imageHeight={settings?.carouselImageHeight || 250}
+              titleSize={settings?.carouselTitleSize || 16}
+              priceSize={settings?.carouselPriceSize || 18}
+            />
           )}
         />
       </div>
@@ -1236,8 +1255,15 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   );
 }
 
-// Simple Product Card for carousel
-function ProductCard({ product }: { product: any }) {
+// Simple Product Card for carousel with configurable height
+interface ProductCardProps {
+  product: any;
+  imageHeight?: number;
+  titleSize?: number;
+  priceSize?: number;
+}
+
+function ProductCard({ product, imageHeight = 200, titleSize = 14, priceSize = 18 }: ProductCardProps) {
   const firstImage = product.images?.[0]?.image_url;
   
   return (
@@ -1245,7 +1271,10 @@ function ProductCard({ product }: { product: any }) {
       href={`/producto/${product.id}`}
       className="block group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
     >
-      <div className="relative h-48 bg-muted flex items-center justify-center overflow-hidden">
+      <div 
+        className="relative bg-muted flex items-center justify-center overflow-hidden"
+        style={{ height: `${imageHeight}px` }}
+      >
         {firstImage ? (
           <img 
             src={firstImage} 
@@ -1258,11 +1287,17 @@ function ProductCard({ product }: { product: any }) {
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+        <h3 
+          className="font-semibold line-clamp-2 mb-2 group-hover:text-primary transition-colors"
+          style={{ fontSize: `${titleSize}px` }}
+        >
           {product.name}
         </h3>
         {product.price && (
-          <p className="text-lg font-bold text-primary">
+          <p 
+            className="font-bold text-primary"
+            style={{ fontSize: `${priceSize}px` }}
+          >
             €{Number(product.price).toFixed(2)}
           </p>
         )}
