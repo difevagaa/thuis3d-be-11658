@@ -246,7 +246,7 @@ export function PageBuilderSidebar({
                   <button
                     key={`${section.type}-${index}`}
                     onClick={() => onAddSection(
-                      section.config ? 
+                      'config' in section && section.config ? 
                       { type: section.type, name: section.name, ...section.config } :
                       { type: section.type, name: section.name }
                     )}

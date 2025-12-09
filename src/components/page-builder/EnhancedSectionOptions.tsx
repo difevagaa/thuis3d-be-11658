@@ -6,6 +6,7 @@
 
 import { 
   FieldWithHelp, 
+  ColorFieldWithHelp,
   SwitchFieldWithHelp, 
   SelectFieldWithHelp, 
   SliderFieldWithHelp,
@@ -98,13 +99,11 @@ export function EnhancedSectionOptions({
         step={5}
       />
 
-      <FieldWithHelp
+      <ColorFieldWithHelp
         label="Color del overlay"
         help="Color de la capa sobre la imagen de fondo"
         value={settings.heroOverlayColor || '#000000'}
         onChange={(value) => onUpdateSettings('heroOverlayColor', value)}
-        placeholder="#000000"
-        type="color"
       />
 
       <SliderFieldWithHelp
@@ -229,12 +228,11 @@ export function EnhancedSectionOptions({
         step={4}
       />
 
-      <FieldWithHelp
+      <ColorFieldWithHelp
         label="Color de los iconos"
         help="Color de los iconos de características"
         value={settings.featuresIconColor || '#3b82f6'}
         onChange={(value) => onUpdateSettings('featuresIconColor', value)}
-        type="color"
       />
 
       <SelectFieldWithHelp
@@ -633,12 +631,11 @@ export function EnhancedSectionOptions({
         ]}
       />
 
-      <FieldWithHelp
+      <ColorFieldWithHelp
         label="Color del overlay"
         help="Capa de color sobre la imagen de fondo"
         value={settings.bannerOverlayColor || '#000000'}
         onChange={(value) => onUpdateSettings('bannerOverlayColor', value)}
-        type="color"
       />
 
       <SliderFieldWithHelp

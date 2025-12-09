@@ -1,8 +1,8 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Moon, Sun, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Award, Settings, Menu, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu } from "lucide-react";
+
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { ClientChatWidget } from "./ClientChatWidget";
@@ -32,7 +32,6 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  const { theme, setTheme } = useTheme();
   const { t } = useTranslation(['navigation']);
   const navigate = useNavigate();
   const [cartCount, setCartCount] = useState(0);
@@ -252,14 +251,6 @@ export const Layout = ({ children }: LayoutProps) => {
 
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2 flex-shrink-0">
               <LanguageSelector />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10"
-              >
-                {theme === "dark" ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />}
-              </Button>
               <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10" onClick={() => navigate("/carrito")}>
                 <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                 {cartCount > 0 && (
