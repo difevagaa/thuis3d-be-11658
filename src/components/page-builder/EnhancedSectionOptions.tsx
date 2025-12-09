@@ -323,12 +323,15 @@ export function EnhancedSectionOptions({
     </div>
   );
 
-  // Products Carousel Options (15+ additional options)
+  // Products Carousel Options (30+ additional options)
   const renderProductsCarouselOptions = () => (
     <div className="space-y-3 mt-6">
       <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
-        Opciones de Carrusel de Productos
+        Opciones de Carrusel de Productos (30+ opciones)
       </h5>
+      
+      {/* Display Settings */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Visualización</h6>
       
       <SliderFieldWithHelp
         label="Productos por vista (Desktop)"
@@ -370,15 +373,47 @@ export function EnhancedSectionOptions({
         step={4}
       />
 
+      {/* Image Settings */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Imágenes de productos</h6>
+
       <SliderFieldWithHelp
         label="Altura de imágenes de producto"
         help="Altura de las imágenes de productos en píxeles"
         value={settings.carouselImageHeight || 250}
         onChange={(value) => onUpdateSettings('carouselImageHeight', value)}
-        min={150}
-        max={500}
+        min={100}
+        max={600}
         step={10}
       />
+
+      <SelectFieldWithHelp
+        label="Ajuste de imagen"
+        help="Cómo se ajustan las imágenes al contenedor"
+        value={settings.carouselImageFit || 'cover'}
+        onChange={(value) => onUpdateSettings('carouselImageFit', value)}
+        options={[
+          { value: 'cover', label: 'Cubrir (crop)' },
+          { value: 'contain', label: 'Contener (completa)' },
+          { value: 'fill', label: 'Rellenar (estirar)' }
+        ]}
+      />
+
+      <SelectFieldWithHelp
+        label="Radio de bordes de imagen"
+        help="Redondeo de las esquinas de la imagen"
+        value={settings.carouselImageRadius || 'md'}
+        onChange={(value) => onUpdateSettings('carouselImageRadius', value)}
+        options={[
+          { value: 'none', label: 'Sin redondeo' },
+          { value: 'sm', label: 'Pequeño' },
+          { value: 'md', label: 'Mediano' },
+          { value: 'lg', label: 'Grande' },
+          { value: 'full', label: 'Circular' }
+        ]}
+      />
+
+      {/* Typography */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Tipografía</h6>
 
       <SliderFieldWithHelp
         label="Tamaño del título del producto"
@@ -400,6 +435,30 @@ export function EnhancedSectionOptions({
         step={2}
       />
 
+      <ColorFieldWithHelp
+        label="Color del precio"
+        help="Color del texto del precio"
+        value={settings.carouselPriceColor || ''}
+        onChange={(value) => onUpdateSettings('carouselPriceColor', value)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar descripción corta"
+        help="Mostrar extracto de descripción del producto"
+        checked={settings.carouselShowDescription || false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselShowDescription', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar categoría"
+        help="Mostrar categoría del producto en la tarjeta"
+        checked={settings.carouselShowCategory || false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselShowCategory', checked)}
+      />
+
+      {/* Navigation & Controls */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Navegación</h6>
+
       <SwitchFieldWithHelp
         label="Auto-reproducción"
         help="El carrusel avanza automáticamente"
@@ -413,8 +472,15 @@ export function EnhancedSectionOptions({
         value={settings.carouselAutoplaySpeed || 3}
         onChange={(value) => onUpdateSettings('carouselAutoplaySpeed', value)}
         min={1}
-        max={10}
+        max={15}
         step={0.5}
+      />
+
+      <SwitchFieldWithHelp
+        label="Pausar al pasar el mouse"
+        help="Detener autoplay cuando el cursor está encima"
+        checked={settings.carouselPauseOnHover !== false}
+        onCheckedChange={(checked) => onUpdateSettings('carouselPauseOnHover', checked)}
       />
 
       <SwitchFieldWithHelp
@@ -437,6 +503,9 @@ export function EnhancedSectionOptions({
         checked={settings.carouselShowDots || false}
         onCheckedChange={(checked) => onUpdateSettings('carouselShowDots', checked)}
       />
+
+      {/* Transitions & Effects */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Efectos y Transiciones</h6>
 
       <SelectFieldWithHelp
         label="Efecto de transición"
@@ -470,6 +539,56 @@ export function EnhancedSectionOptions({
       />
 
       <SelectFieldWithHelp
+        label="Efecto hover en tarjetas"
+        help="Efecto al pasar el mouse sobre productos"
+        value={settings.carouselHoverEffect || 'lift'}
+        onChange={(value) => onUpdateSettings('carouselHoverEffect', value)}
+        options={[
+          { value: 'none', label: 'Ninguno' },
+          { value: 'lift', label: 'Elevar' },
+          { value: 'scale', label: 'Agrandar' },
+          { value: 'glow', label: 'Resplandor' },
+          { value: 'tilt', label: 'Inclinar' }
+        ]}
+      />
+
+      {/* Card Styling */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Estilo de tarjetas</h6>
+
+      <SelectFieldWithHelp
+        label="Estilo de tarjeta"
+        help="Diseño visual de las tarjetas de producto"
+        value={settings.carouselCardStyle || 'shadowed'}
+        onChange={(value) => onUpdateSettings('carouselCardStyle', value)}
+        options={[
+          { value: 'flat', label: 'Plano' },
+          { value: 'bordered', label: 'Con borde' },
+          { value: 'shadowed', label: 'Con sombra' },
+          { value: 'elevated', label: 'Elevado' }
+        ]}
+      />
+
+      <ColorFieldWithHelp
+        label="Color de fondo de tarjeta"
+        help="Color de fondo de las tarjetas de producto"
+        value={settings.carouselCardBgColor || ''}
+        onChange={(value) => onUpdateSettings('carouselCardBgColor', value)}
+      />
+
+      <SliderFieldWithHelp
+        label="Padding de tarjeta"
+        help="Espacio interno de las tarjetas en píxeles"
+        value={settings.carouselCardPadding || 16}
+        onChange={(value) => onUpdateSettings('carouselCardPadding', value)}
+        min={0}
+        max={40}
+        step={4}
+      />
+
+      {/* Data Source */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Fuente de datos</h6>
+
+      <SelectFieldWithHelp
         label="Fuente de productos"
         help="De dónde obtener los productos a mostrar"
         value={settings.productsSource || 'featured'}
@@ -492,32 +611,109 @@ export function EnhancedSectionOptions({
         max={50}
         step={1}
       />
+
+      <SelectFieldWithHelp
+        label="Ordenar por"
+        help="Criterio de ordenación de productos"
+        value={settings.sortBy || 'created_at'}
+        onChange={(value) => onUpdateSettings('sortBy', value)}
+        options={[
+          { value: 'created_at', label: 'Fecha de creación' },
+          { value: 'name', label: 'Nombre' },
+          { value: 'price', label: 'Precio' },
+          { value: 'updated_at', label: 'Última actualización' }
+        ]}
+      />
+
+      <SelectFieldWithHelp
+        label="Orden"
+        help="Dirección de ordenación"
+        value={settings.sortOrder || 'desc'}
+        onChange={(value) => onUpdateSettings('sortOrder', value)}
+        options={[
+          { value: 'asc', label: 'Ascendente' },
+          { value: 'desc', label: 'Descendente' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Respetar filtros de roles"
+        help="Mostrar solo productos según rol del usuario (activo por defecto)"
+        checked={settings.respectRoleFilters !== false}
+        onCheckedChange={(checked) => onUpdateSettings('respectRoleFilters', checked)}
+      />
     </div>
   );
 
-  // Image Carousel Options (similar to products carousel)
+  // Image Carousel Options (30+ additional options)
   const renderImageCarouselOptions = () => (
     <div className="space-y-3 mt-6">
       <h5 className="text-xs font-medium text-muted-foreground uppercase border-t pt-3">
-        Opciones de Carrusel de Imágenes
+        Opciones de Carrusel de Imágenes (30+ opciones)
       </h5>
+      
+      {/* Display Settings */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Visualización</h6>
       
       <SliderFieldWithHelp
         label="Imágenes por vista (Desktop)"
-        help="Cuántas imágenes mostrar simultáneamente"
+        help="Cuántas imágenes mostrar simultáneamente en desktop"
         value={settings.imageCarouselPerView || 3}
         onChange={(value) => onUpdateSettings('imageCarouselPerView', value)}
+        min={1}
+        max={8}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Imágenes por vista (Tablet)"
+        help="Cuántas imágenes mostrar en tablets"
+        value={settings.imageCarouselPerViewTablet || 2}
+        onChange={(value) => onUpdateSettings('imageCarouselPerViewTablet', value)}
         min={1}
         max={6}
         step={1}
       />
 
       <SliderFieldWithHelp
+        label="Imágenes por vista (Móvil)"
+        help="Cuántas imágenes mostrar en móviles"
+        value={settings.imageCarouselPerViewMobile || 1}
+        onChange={(value) => onUpdateSettings('imageCarouselPerViewMobile', value)}
+        min={1}
+        max={3}
+        step={1}
+      />
+
+      <SliderFieldWithHelp
+        label="Espaciado entre imágenes"
+        help="Espacio entre imágenes en píxeles"
+        value={settings.imageCarouselGap || 20}
+        onChange={(value) => onUpdateSettings('imageCarouselGap', value)}
+        min={0}
+        max={60}
+        step={4}
+      />
+
+      {/* Image Sizing */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Tamaño de imágenes</h6>
+
+      <SliderFieldWithHelp
         label="Altura de las imágenes"
         help="Altura de las imágenes en el carrusel (px)"
         value={settings.imageCarouselHeight || 400}
         onChange={(value) => onUpdateSettings('imageCarouselHeight', value)}
-        min={200}
+        min={150}
+        max={900}
+        step={25}
+      />
+
+      <SliderFieldWithHelp
+        label="Ancho máximo de imagen"
+        help="Ancho máximo de cada imagen en píxeles (0 = automático)"
+        value={settings.imageCarouselMaxWidth || 0}
+        onChange={(value) => onUpdateSettings('imageCarouselMaxWidth', value)}
+        min={0}
         max={800}
         step={50}
       />
@@ -530,9 +726,42 @@ export function EnhancedSectionOptions({
         options={[
           { value: 'cover', label: 'Cubrir (crop)' },
           { value: 'contain', label: 'Contener (completa)' },
-          { value: 'fill', label: 'Rellenar (estirar)' }
+          { value: 'fill', label: 'Rellenar (estirar)' },
+          { value: 'scale-down', label: 'Escalar hacia abajo' }
         ]}
       />
+
+      <SelectFieldWithHelp
+        label="Relación de aspecto"
+        help="Proporción de las imágenes"
+        value={settings.imageCarouselAspectRatio || 'auto'}
+        onChange={(value) => onUpdateSettings('imageCarouselAspectRatio', value)}
+        options={[
+          { value: 'auto', label: 'Automático' },
+          { value: '1/1', label: 'Cuadrado (1:1)' },
+          { value: '4/3', label: 'Estándar (4:3)' },
+          { value: '16/9', label: 'Panorámico (16:9)' },
+          { value: '3/2', label: 'Fotografía (3:2)' }
+        ]}
+      />
+
+      <SelectFieldWithHelp
+        label="Radio de bordes"
+        help="Redondeo de las esquinas de las imágenes"
+        value={settings.imageCarouselBorderRadius || 'lg'}
+        onChange={(value) => onUpdateSettings('imageCarouselBorderRadius', value)}
+        options={[
+          { value: 'none', label: 'Sin redondeo' },
+          { value: 'sm', label: 'Pequeño' },
+          { value: 'md', label: 'Mediano' },
+          { value: 'lg', label: 'Grande' },
+          { value: 'xl', label: 'Muy grande' },
+          { value: 'full', label: 'Circular' }
+        ]}
+      />
+
+      {/* Captions & Overlays */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Captions y Overlays</h6>
 
       <SwitchFieldWithHelp
         label="Mostrar captions"
@@ -540,6 +769,45 @@ export function EnhancedSectionOptions({
         checked={settings.imageCarouselShowCaptions !== false}
         onCheckedChange={(checked) => onUpdateSettings('imageCarouselShowCaptions', checked)}
       />
+
+      <SelectFieldWithHelp
+        label="Posición de captions"
+        help="Dónde mostrar las descripciones"
+        value={settings.imageCarouselCaptionPosition || 'bottom'}
+        onChange={(value) => onUpdateSettings('imageCarouselCaptionPosition', value)}
+        options={[
+          { value: 'top', label: 'Arriba' },
+          { value: 'bottom', label: 'Abajo' },
+          { value: 'overlay', label: 'Sobre la imagen' }
+        ]}
+      />
+
+      <ColorFieldWithHelp
+        label="Color de fondo de caption"
+        help="Color de fondo para las descripciones"
+        value={settings.imageCarouselCaptionBg || 'rgba(0,0,0,0.7)'}
+        onChange={(value) => onUpdateSettings('imageCarouselCaptionBg', value)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar overlay oscuro"
+        help="Añadir capa oscura sobre las imágenes"
+        checked={settings.imageCarouselShowOverlay || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselShowOverlay', checked)}
+      />
+
+      <SliderFieldWithHelp
+        label="Opacidad de overlay"
+        help="Transparencia del overlay oscuro"
+        value={settings.imageCarouselOverlayOpacity || 30}
+        onChange={(value) => onUpdateSettings('imageCarouselOverlayOpacity', value)}
+        min={0}
+        max={100}
+        step={5}
+      />
+
+      {/* Navigation & Controls */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Navegación</h6>
 
       <SwitchFieldWithHelp
         label="Auto-reproducción"
@@ -559,10 +827,31 @@ export function EnhancedSectionOptions({
       />
 
       <SwitchFieldWithHelp
-        label="Efecto ken burns"
-        help="Zoom sutil en las imágenes durante el autoplay"
-        checked={settings.imageCarouselKenBurns || false}
-        onCheckedChange={(checked) => onUpdateSettings('imageCarouselKenBurns', checked)}
+        label="Pausar al pasar el mouse"
+        help="Detener autoplay cuando el cursor está encima"
+        checked={settings.imageCarouselPauseOnHover !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselPauseOnHover', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Loop infinito"
+        help="Volver al inicio al llegar al final"
+        checked={settings.imageCarouselLoop !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselLoop', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar flechas"
+        help="Mostrar botones de anterior/siguiente"
+        checked={settings.imageCarouselShowArrows !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselShowArrows', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Mostrar puntos"
+        help="Mostrar indicadores de posición"
+        checked={settings.imageCarouselShowDots || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselShowDots', checked)}
       />
 
       <SwitchFieldWithHelp
@@ -572,12 +861,8 @@ export function EnhancedSectionOptions({
         onCheckedChange={(checked) => onUpdateSettings('imageCarouselThumbnails', checked)}
       />
 
-      <SwitchFieldWithHelp
-        label="Lightbox al hacer clic"
-        help="Abrir imagen en pantalla completa al hacer clic"
-        checked={settings.imageCarouselLightbox !== false}
-        onCheckedChange={(checked) => onUpdateSettings('imageCarouselLightbox', checked)}
-      />
+      {/* Effects & Interactions */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Efectos e interacciones</h6>
 
       <SelectFieldWithHelp
         label="Efecto de transición"
@@ -589,8 +874,85 @@ export function EnhancedSectionOptions({
           { value: 'fade', label: 'Desvanecer' },
           { value: 'cube', label: 'Cubo 3D' },
           { value: 'flip', label: 'Voltear' },
-          { value: 'cards', label: 'Cartas' }
+          { value: 'cards', label: 'Cartas' },
+          { value: 'creative', label: 'Creativo' }
         ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Velocidad de transición"
+        help="Duración de la animación en milisegundos"
+        value={settings.imageCarouselTransitionSpeed || 600}
+        onChange={(value) => onUpdateSettings('imageCarouselTransitionSpeed', value)}
+        min={200}
+        max={2000}
+        step={100}
+      />
+
+      <SwitchFieldWithHelp
+        label="Efecto ken burns"
+        help="Zoom sutil en las imágenes durante el autoplay"
+        checked={settings.imageCarouselKenBurns || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselKenBurns', checked)}
+      />
+
+      <SelectFieldWithHelp
+        label="Efecto hover"
+        help="Efecto al pasar el mouse sobre imágenes"
+        value={settings.imageCarouselHoverEffect || 'zoom'}
+        onChange={(value) => onUpdateSettings('imageCarouselHoverEffect', value)}
+        options={[
+          { value: 'none', label: 'Ninguno' },
+          { value: 'zoom', label: 'Zoom' },
+          { value: 'lift', label: 'Elevar' },
+          { value: 'overlay', label: 'Oscurecer' },
+          { value: 'blur', label: 'Desenfocar' }
+        ]}
+      />
+
+      <SwitchFieldWithHelp
+        label="Lightbox al hacer clic"
+        help="Abrir imagen en pantalla completa al hacer clic"
+        checked={settings.imageCarouselLightbox !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselLightbox', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Centrar imágenes"
+        help="Centrar la imagen activa en el carrusel"
+        checked={settings.imageCarouselCentered || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselCentered', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Arrastrar para navegar"
+        help="Permitir arrastrar las imágenes para navegar"
+        checked={settings.imageCarouselDraggable !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselDraggable', checked)}
+      />
+
+      {/* Advanced */}
+      <h6 className="text-[10px] font-medium text-muted-foreground uppercase pt-2">Avanzado</h6>
+
+      <SwitchFieldWithHelp
+        label="Lazy loading"
+        help="Cargar imágenes solo cuando sean visibles"
+        checked={settings.imageCarouselLazyLoad !== false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselLazyLoad', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Control con teclado"
+        help="Permitir navegación con flechas del teclado"
+        checked={settings.imageCarouselKeyboard || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselKeyboard', checked)}
+      />
+
+      <SwitchFieldWithHelp
+        label="Control con rueda del mouse"
+        help="Permitir navegación con scroll del mouse"
+        checked={settings.imageCarouselMouseWheel || false}
+        onCheckedChange={(checked) => onUpdateSettings('imageCarouselMouseWheel', checked)}
       />
     </div>
   );
