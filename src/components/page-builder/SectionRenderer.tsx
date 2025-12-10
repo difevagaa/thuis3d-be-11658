@@ -503,6 +503,8 @@ function BannerSection({ section }: { section: SectionData }) {
   
   // Banner-specific settings with defaults
   const bannerHeight = settings?.bannerHeight || 300;
+  const bannerWidth = settings?.bannerWidth || 'full';
+  const bannerMaxWidth = settings?.bannerMaxWidth || 1200;
   const bannerContentAlign = settings?.bannerContentAlign || 'center';
   const bannerOverlayColor = settings?.bannerOverlayColor || '#000000';
   const bannerOverlayOpacity = (settings?.bannerOverlayOpacity ?? 40) / 100;
@@ -532,12 +534,25 @@ function BannerSection({ section }: { section: SectionData }) {
     'ghost': 'ghost'
   };
   
+  // Width classes and styles
+  const getWidthStyle = () => {
+    switch (bannerWidth) {
+      case 'full': return { width: '100%', maxWidth: '100%' };
+      case 'wide': return { width: '90%', maxWidth: '90%' };
+      case 'container': return { width: '80%', maxWidth: '1280px' };
+      case 'narrow': return { width: '60%', maxWidth: '960px' };
+      case 'custom': return { width: '100%', maxWidth: `${bannerMaxWidth}px` };
+      default: return { width: '100%', maxWidth: '100%' };
+    }
+  };
+  
+  const widthStyle = getWidthStyle();
+  
   return (
     <section
       className={cn(
-        "relative overflow-hidden flex",
+        "relative overflow-hidden flex mx-auto",
         contentAlignClasses[bannerContentAlign] || contentAlignClasses['center'],
-        settings?.fullWidth ? "w-full" : "container mx-auto",
         getBorderRadiusClass(styles?.borderRadius),
         getResponsiveClasses(styles),
         getAnimationClass(settings?.animation),
@@ -552,7 +567,8 @@ function BannerSection({ section }: { section: SectionData }) {
         backgroundImage: content?.backgroundImage ? `url(${content.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        minHeight: `${bannerHeight}px`
+        minHeight: `${bannerHeight}px`,
+        ...widthStyle
       }}
     >
       {/* Overlay */}

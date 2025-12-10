@@ -982,6 +982,30 @@ export function EnhancedSectionOptions({
       />
 
       <SelectFieldWithHelp
+        label="Ancho del banner"
+        help="Ancho del banner respecto a la pantalla"
+        value={settings.bannerWidth || 'full'}
+        onChange={(value) => onUpdateSettings('bannerWidth', value)}
+        options={[
+          { value: 'full', label: 'Ancho completo (100%)' },
+          { value: 'wide', label: 'Ancho amplio (90%)' },
+          { value: 'container', label: 'Contenedor (80%)' },
+          { value: 'narrow', label: 'Estrecho (60%)' },
+          { value: 'custom', label: 'Personalizado' }
+        ]}
+      />
+
+      <SliderFieldWithHelp
+        label="Ancho personalizado (px)"
+        help="Ancho máximo del banner en píxeles (si selecciona personalizado)"
+        value={settings.bannerMaxWidth || 1200}
+        onChange={(value) => onUpdateSettings('bannerMaxWidth', value)}
+        min={300}
+        max={1920}
+        step={50}
+      />
+
+      <SelectFieldWithHelp
         label="Alineación del contenido"
         help="Posición del texto dentro del banner"
         value={settings.bannerContentAlign || 'center'}
