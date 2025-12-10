@@ -108,13 +108,13 @@ export const Layout = ({ children }: LayoutProps) => {
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        <div className="container mx-auto px-2 sm:px-3 md:px-4">
-          <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6">
+          <div className="flex h-14 sm:h-16 md:h-16 items-center justify-between">
             {/* Mobile Menu Button */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
-                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation flex-shrink-0">
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[240px] xs:w-[280px] sm:w-[350px]">
@@ -220,9 +220,9 @@ export const Layout = ({ children }: LayoutProps) => {
               </SheetContent>
             </Sheet>
 
-            <Link to="/" className="flex items-center gap-1 sm:gap-2 notranslate min-w-0 flex-1 sm:flex-initial">
-              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <span className="text-base sm:text-lg md:text-xl font-bold text-primary truncate">
+            <Link to="/" className="flex items-center gap-2 notranslate min-w-0 flex-1 sm:flex-initial">
+              <Package className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
+              <span className="text-lg sm:text-xl md:text-xl font-bold text-primary truncate">
                 Thuis3D.be
               </span>
             </Link>
@@ -249,12 +249,17 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </nav>
 
-            <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               <LanguageSelector />
-              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10" onClick={() => navigate("/carrito")}>
-                <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation sm:h-10 sm:w-10 md:h-10 md:w-10" 
+                onClick={() => navigate("/carrito")}
+              >
+                <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-primary text-primary-foreground text-[9px] sm:text-[10px] md:text-xs rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 flex items-center justify-center font-medium">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] sm:text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                     {cartCount}
                   </span>
                 )}
@@ -265,8 +270,8 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10">
-                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                    <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation sm:h-10 sm:w-10 md:h-10 md:w-10">
+                      <User className="h-5 w-5 sm:h-5 sm:w-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 sm:w-56">
@@ -309,8 +314,8 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 hidden md:flex" onClick={() => navigate("/auth")}>
-                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation hidden md:flex" onClick={() => navigate("/auth")}>
+                  <User className="h-5 w-5" />
                 </Button>
               )}
             </div>
