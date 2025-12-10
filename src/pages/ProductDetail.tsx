@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, MessageSquare, Check } from "lucide-react";
+import { ShoppingCart, MessageSquare, Check, Plus, Minus } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -746,14 +746,36 @@ const ProductDetail = () => {
 
               <div className="space-y-1 md:space-y-2">
                 <Label className="text-xs md:text-sm">{t('quantity')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max={product.stock}
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="h-8 md:h-10 text-xs md:text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 min-h-[44px] min-w-[44px]"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-16 text-center text-lg font-semibold tabular-nums">
+                    {quantity}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 min-h-[44px] min-w-[44px]"
+                    onClick={() => setQuantity(Math.min(product.stock || 999, quantity + 1))}
+                    disabled={quantity >= (product.stock || 999)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  {product.stock && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (máx: {product.stock})
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-2 md:gap-3 lg:gap-4">
