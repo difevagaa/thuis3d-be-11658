@@ -86,7 +86,11 @@ function SortableSectionItem({
   onSelect, 
   onDelete,
   onDuplicate,
-  onToggleVisibility
+  onToggleVisibility,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast
 }: {
   section: SectionData;
   isSelected: boolean;
@@ -94,6 +98,10 @@ function SortableSectionItem({
   onDelete: () => void;
   onDuplicate: () => void;
   onToggleVisibility: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const {
     attributes,
@@ -140,42 +148,63 @@ function SortableSectionItem({
           {section.section_type}
         </Badge>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          {/* Botones subir/bajar para móviles */}
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-primary"
-            onClick={onSelect}
-            title="Editar sección (40+ opciones)"
+            className="h-8 w-8 md:h-7 md:w-7"
+            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+            disabled={isFirst}
+            title="Subir"
           >
-            <Edit2 className="h-3.5 w-3.5" />
+            <ChevronUp className="h-4 w-4 md:h-3.5 md:w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-8 w-8 md:h-7 md:w-7"
+            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+            disabled={isLast}
+            title="Bajar"
+          >
+            <ChevronDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:h-7 md:w-7 text-primary"
+            onClick={onSelect}
+            title="Editar sección"
+          >
+            <Edit2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:h-7 md:w-7"
             onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
             title={section.is_visible ? 'Ocultar' : 'Mostrar'}
           >
-            {section.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            {section.is_visible ? <Eye className="h-4 w-4 md:h-3.5 md:w-3.5" /> : <EyeOff className="h-4 w-4 md:h-3.5 md:w-3.5" />}
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-8 w-8 md:h-7 md:w-7"
             onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
             title="Duplicar"
           >
-            <Copy className="h-3.5 w-3.5" />
+            <Copy className="h-4 w-4 md:h-3.5 md:w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive"
+            className="h-8 w-8 md:h-7 md:w-7 text-destructive hover:text-destructive"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             title="Eliminar"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
           </Button>
         </div>
       </div>
@@ -463,7 +492,7 @@ export function PageBuilderCanvas({
             items={sections.map(s => s.id)}
             strategy={verticalListSortingStrategy}
           >
-            {sections.map(section => (
+            {sections.map((section, index) => (
               <SortableSectionItem
                 key={section.id}
                 section={section}
@@ -472,6 +501,22 @@ export function PageBuilderCanvas({
                 onDelete={() => onDeleteSection(section.id)}
                 onDuplicate={() => onDuplicateSection(section)}
                 onToggleVisibility={() => onUpdateSection(section.id, { is_visible: !section.is_visible })}
+                onMoveUp={() => {
+                  if (index > 0) {
+                    const reordered = [...sections];
+                    [reordered[index - 1], reordered[index]] = [reordered[index], reordered[index - 1]];
+                    onReorderSections(reordered);
+                  }
+                }}
+                onMoveDown={() => {
+                  if (index < sections.length - 1) {
+                    const reordered = [...sections];
+                    [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
+                    onReorderSections(reordered);
+                  }
+                }}
+                isFirst={index === 0}
+                isLast={index === sections.length - 1}
               />
             ))}
           </SortableContext>

@@ -27,7 +27,7 @@ export function useVisitorTracking() {
     // Guardar session ID
     sessionStorage.setItem('visitor_session_id', sessionId);
     
-    // Registrar visitante
+    // Registrar visitante (silencioso - no bloquea la app si falla)
     const registerVisitor = async () => {
       if (isRegistering.current) return;
       isRegistering.current = true;
@@ -35,6 +35,12 @@ export function useVisitorTracking() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         const userId = user?.id || null;
+        
+        // Solo intentar si hay usuario autenticado (evitar errores RLS)
+        if (!userId) {
+          isRegistering.current = false;
+          return;
+        }
         
         const visitorData = {
           session_id: sessionId,
@@ -46,71 +52,67 @@ export function useVisitorTracking() {
           device_type: getDeviceType()
         };
         
-        const { data, error } = await supabase
-          .from('visitor_sessions')
-          .upsert(visitorData, {
-            onConflict: 'session_id',
-            ignoreDuplicates: false
-          })
-          .select();
-        
-        if (error) {
-          console.error('❌ [VISITOR] Error:', error.message);
-        }
-        
-        // Si hay usuario autenticado, actualizar su estado en profiles
-        if (userId) {
-          const { error: activityError } = await supabase
-            .rpc('update_user_activity', {
-              user_id_param: userId,
-              page_path: window.location.pathname
+        // Operación silenciosa - no bloquea la app
+        try {
+          await supabase
+            .from('visitor_sessions')
+            .upsert(visitorData, {
+              onConflict: 'session_id',
+              ignoreDuplicates: false
             });
-          
-          if (activityError) {
-            console.error('❌ [ACTIVITY] Error updating user activity on register:', activityError);
-          }
+        } catch {
+          // Silenciar errores RLS
         }
-      } catch (error) {
-        console.error('❌ [VISITOR] Exception:', error);
+        
+        // Actualizar estado en profiles (silencioso)
+        try {
+          await supabase.rpc('update_user_activity', {
+            user_id_param: userId,
+            page_path: window.location.pathname
+          });
+        } catch {
+          // Silenciar errores
+        }
+      } catch {
+        // Silenciar excepciones
       } finally {
         isRegistering.current = false;
       }
     };
 
-    // Heartbeat: Actualizar actividad cada 30 segundos
+    // Heartbeat: Actualizar actividad cada 30 segundos (solo usuarios autenticados)
     const updateActivity = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
-        // Actualizar visitor_sessions
-        const { error: sessionError } = await supabase
-          .from('visitor_sessions')
-          .update({
-            last_seen_at: new Date().toISOString(),
-            page_path: window.location.pathname,
-            is_active: true
-          })
-          .eq('session_id', sessionId);
+        // Solo actualizar si hay usuario autenticado
+        if (!user?.id) return;
         
-        // Si hay usuario autenticado, actualizar su estado en profiles
-        if (user?.id) {
-          const { error: activityError } = await supabase
-            .rpc('update_user_activity', {
-              user_id_param: user.id,
-              page_path: window.location.pathname
-            });
-          
-          if (activityError) {
-            console.error('❌ [ACTIVITY] Error updating user activity:', activityError);
-          }
+        // Actualizar visitor_sessions (silencioso)
+        try {
+          await supabase
+            .from('visitor_sessions')
+            .update({
+              last_seen_at: new Date().toISOString(),
+              page_path: window.location.pathname,
+              is_active: true
+            })
+            .eq('session_id', sessionId);
+        } catch {
+          // Silenciar errores
         }
         
-        if (sessionError) {
-          // Si falla, re-registrar
-          await registerVisitor();
+        // Actualizar estado en profiles (silencioso)
+        try {
+          await supabase.rpc('update_user_activity', {
+            user_id_param: user.id,
+            page_path: window.location.pathname
+          });
+        } catch {
+          // Silenciar errores
         }
-      } catch (error) {
-        console.error('❌ [VISITOR] Update failed:', error);
+      } catch {
+        // Silenciar excepciones
       }
     };
 
