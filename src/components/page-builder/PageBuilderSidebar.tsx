@@ -291,234 +291,107 @@ export function PageBuilderSidebar({
             )}
           </TabsContent>
 
-          <TabsContent value="settings" className="m-0 p-4 space-y-6">
+          <TabsContent value="settings" className="m-0 p-3 space-y-4">
             {selectedSection ? (
               <>
-                {/* Section Name */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Nombre de la sección</Label>
-                  <Input
-                    value={selectedSection.section_name}
-                    onChange={(e) => onUpdateSection(selectedSection.id, { section_name: e.target.value })}
-                    placeholder="Nombre"
-                  />
-                </div>
-
-                {/* Visibility */}
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Visible</Label>
-                  <Switch
-                    checked={selectedSection.is_visible}
-                    onCheckedChange={(checked) => onUpdateSection(selectedSection.id, { is_visible: checked })}
-                  />
-                </div>
-
-                {/* Content Settings based on section type */}
-                {selectedSection.section_type === 'hero' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Contenido del Hero</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Título</Label>
-                      <Input
-                        value={selectedSection.content?.title || ''}
-                        onChange={(e) => handleContentChange('title', e.target.value)}
-                        placeholder="Título principal"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Subtítulo</Label>
-                      <Input
-                        value={selectedSection.content?.subtitle || ''}
-                        onChange={(e) => handleContentChange('subtitle', e.target.value)}
-                        placeholder="Subtítulo"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Texto del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonText || ''}
-                        onChange={(e) => handleContentChange('buttonText', e.target.value)}
-                        placeholder="Llamada a la acción"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">URL del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonUrl || ''}
-                        onChange={(e) => handleContentChange('buttonUrl', e.target.value)}
-                        placeholder="/productos"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Imagen de fondo (URL)</Label>
-                      <Input
-                        value={selectedSection.content?.backgroundImage || ''}
-                        onChange={(e) => handleContentChange('backgroundImage', e.target.value)}
-                        placeholder="https://..."
-                      />
-                    </div>
+                {/* Section Info */}
+                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Tipo:</span>
+                    <span className="text-xs font-medium capitalize">{selectedSection.section_type.replace('-', ' ')}</span>
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Nombre</Label>
+                    <Input
+                      value={selectedSection.section_name}
+                      onChange={(e) => onUpdateSection(selectedSection.id, { section_name: e.target.value })}
+                      placeholder="Nombre de la sección"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Visible</Label>
+                    <Switch
+                      checked={selectedSection.is_visible}
+                      onCheckedChange={(checked) => onUpdateSection(selectedSection.id, { is_visible: checked })}
+                    />
+                  </div>
+                </div>
 
-                {selectedSection.section_type === 'text' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Contenido de Texto</h4>
-                    <div className="space-y-2">
+                {/* Quick Content Edit */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase">Contenido Rápido</h4>
+                  
+                  {/* Title - Common to most sections */}
+                  {['hero', 'text', 'banner', 'cta', 'features', 'gallery', 'products-carousel', 'image-carousel'].includes(selectedSection.section_type) && (
+                    <div className="space-y-1">
                       <Label className="text-xs">Título</Label>
                       <Input
                         value={selectedSection.content?.title || ''}
                         onChange={(e) => handleContentChange('title', e.target.value)}
-                        placeholder="Título"
+                        placeholder="Título de la sección"
+                        className="h-8 text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
+                  )}
+
+                  {/* Subtitle for hero/banner */}
+                  {['hero', 'banner', 'cta'].includes(selectedSection.section_type) && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Subtítulo / Descripción</Label>
+                      <textarea
+                        value={selectedSection.content?.subtitle || selectedSection.content?.description || ''}
+                        onChange={(e) => handleContentChange(
+                          selectedSection.section_type === 'hero' ? 'subtitle' : 'description', 
+                          e.target.value
+                        )}
+                        placeholder="Texto descriptivo..."
+                        className="w-full min-h-[60px] px-2 py-1.5 text-xs rounded-md border bg-background resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Text content */}
+                  {selectedSection.section_type === 'text' && (
+                    <div className="space-y-1">
                       <Label className="text-xs">Contenido</Label>
                       <textarea
                         value={selectedSection.content?.text || ''}
                         onChange={(e) => handleContentChange('text', e.target.value)}
-                        placeholder="Escribe tu contenido..."
-                        className="w-full min-h-[100px] px-3 py-2 text-sm rounded-md border bg-background"
+                        placeholder="Escribe tu texto..."
+                        className="w-full min-h-[80px] px-2 py-1.5 text-xs rounded-md border bg-background resize-none"
                       />
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {selectedSection.section_type === 'image' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Configuración de Imagen</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">URL de la imagen</Label>
-                      <Input
-                        value={selectedSection.content?.imageUrl || ''}
-                        onChange={(e) => handleContentChange('imageUrl', e.target.value)}
-                        placeholder="https://..."
-                      />
+                  {/* Button text for CTA sections */}
+                  {['hero', 'banner', 'cta'].includes(selectedSection.section_type) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Texto botón</Label>
+                        <Input
+                          value={selectedSection.content?.buttonText || ''}
+                          onChange={(e) => handleContentChange('buttonText', e.target.value)}
+                          placeholder="Ver más"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">URL botón</Label>
+                        <Input
+                          value={selectedSection.content?.buttonUrl || ''}
+                          onChange={(e) => handleContentChange('buttonUrl', e.target.value)}
+                          placeholder="/pagina"
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Texto alternativo</Label>
-                      <Input
-                        value={selectedSection.content?.altText || ''}
-                        onChange={(e) => handleContentChange('altText', e.target.value)}
-                        placeholder="Descripción de la imagen"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Enlace (opcional)</Label>
-                      <Input
-                        value={selectedSection.content?.linkUrl || ''}
-                        onChange={(e) => handleContentChange('linkUrl', e.target.value)}
-                        placeholder="/productos"
-                      />
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {selectedSection.section_type === 'banner' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Configuración del Banner</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Título</Label>
-                      <Input
-                        value={selectedSection.content?.title || ''}
-                        onChange={(e) => handleContentChange('title', e.target.value)}
-                        placeholder="Título del banner"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Descripción</Label>
-                      <Input
-                        value={selectedSection.content?.description || ''}
-                        onChange={(e) => handleContentChange('description', e.target.value)}
-                        placeholder="Descripción"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Imagen de fondo</Label>
-                      <Input
-                        value={selectedSection.content?.backgroundImage || ''}
-                        onChange={(e) => handleContentChange('backgroundImage', e.target.value)}
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Texto del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonText || ''}
-                        onChange={(e) => handleContentChange('buttonText', e.target.value)}
-                        placeholder="Ver más"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">URL del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonUrl || ''}
-                        onChange={(e) => handleContentChange('buttonUrl', e.target.value)}
-                        placeholder="/ofertas"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {selectedSection.section_type === 'cta' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Llamada a la Acción</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Título</Label>
-                      <Input
-                        value={selectedSection.content?.title || ''}
-                        onChange={(e) => handleContentChange('title', e.target.value)}
-                        placeholder="¿Listo para empezar?"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Descripción</Label>
-                      <Input
-                        value={selectedSection.content?.description || ''}
-                        onChange={(e) => handleContentChange('description', e.target.value)}
-                        placeholder="Descripción breve"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Texto del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonText || ''}
-                        onChange={(e) => handleContentChange('buttonText', e.target.value)}
-                        placeholder="Contactar"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">URL del botón</Label>
-                      <Input
-                        value={selectedSection.content?.buttonUrl || ''}
-                        onChange={(e) => handleContentChange('buttonUrl', e.target.value)}
-                        placeholder="/contacto"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {selectedSection.section_type === 'features' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Características</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Título de la sección</Label>
-                      <Input
-                        value={selectedSection.content?.title || ''}
-                        onChange={(e) => handleContentChange('title', e.target.value)}
-                        placeholder="Por Qué Elegirnos"
-                      />
-                    </div>
-                    <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                      Las características individuales se gestionan desde la sección "Características" en Contenido.
-                    </div>
-                  </div>
-                )}
-
-                {selectedSection.section_type === 'spacer' && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-sm border-b pb-2">Espaciador</h4>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Altura (px): {selectedSection.settings?.height || 60}</Label>
+                  {/* Spacer height */}
+                  {selectedSection.section_type === 'spacer' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Altura: {selectedSection.settings?.height || 60}px</Label>
                       <Slider
                         value={[selectedSection.settings?.height || 60]}
                         onValueChange={([value]) => handleSettingsChange('height', value)}
@@ -527,99 +400,103 @@ export function PageBuilderSidebar({
                         step={10}
                       />
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* Common Styles */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm border-b pb-2">Estilos</h4>
+                {/* Quick Styles */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase">Estilos Rápidos</h4>
                   
-                  <div className="space-y-2">
-                    <Label className="text-xs">Color de fondo</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={selectedSection.styles?.backgroundColor || '#ffffff'}
-                        onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                        className="w-12 h-9 p-1"
-                      />
-                      <Input
-                        value={selectedSection.styles?.backgroundColor || ''}
-                        onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                        placeholder="#ffffff"
-                        className="flex-1"
-                      />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fondo</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          type="color"
+                          value={selectedSection.styles?.backgroundColor || '#ffffff'}
+                          onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+                          className="w-8 h-8 p-0.5 cursor-pointer"
+                        />
+                        <Input
+                          value={selectedSection.styles?.backgroundColor || ''}
+                          onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+                          placeholder="#fff"
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Texto</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          type="color"
+                          value={selectedSection.styles?.textColor || '#000000'}
+                          onChange={(e) => handleStyleChange('textColor', e.target.value)}
+                          className="w-8 h-8 p-0.5 cursor-pointer"
+                        />
+                        <Input
+                          value={selectedSection.styles?.textColor || ''}
+                          onChange={(e) => handleStyleChange('textColor', e.target.value)}
+                          placeholder="#000"
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Color de texto</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={selectedSection.styles?.textColor || '#000000'}
-                        onChange={(e) => handleStyleChange('textColor', e.target.value)}
-                        className="w-12 h-9 p-1"
-                      />
-                      <Input
-                        value={selectedSection.styles?.textColor || ''}
-                        onChange={(e) => handleStyleChange('textColor', e.target.value)}
-                        placeholder="#000000"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Padding (px): {selectedSection.styles?.padding || 40}</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Padding: {selectedSection.styles?.padding || 40}px</Label>
                     <Slider
                       value={[selectedSection.styles?.padding || 40]}
                       onValueChange={([value]) => handleStyleChange('padding', value)}
                       min={0}
                       max={120}
-                      step={4}
+                      step={8}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Alineación del texto</Label>
-                    <div className="flex gap-1">
-                      <Button
-                        variant={selectedSection.styles?.textAlign === 'left' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleStyleChange('textAlign', 'left')}
-                      >
-                        <AlignLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={selectedSection.styles?.textAlign === 'center' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleStyleChange('textAlign', 'center')}
-                      >
-                        <AlignCenter className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={selectedSection.styles?.textAlign === 'right' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleStyleChange('textAlign', 'right')}
-                      >
-                        <AlignRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={selectedSection.styles?.textAlign === 'left' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleStyleChange('textAlign', 'left')}
+                      className="flex-1 h-8"
+                    >
+                      <AlignLeft className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant={selectedSection.styles?.textAlign === 'center' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleStyleChange('textAlign', 'center')}
+                      className="flex-1 h-8"
+                    >
+                      <AlignCenter className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant={selectedSection.styles?.textAlign === 'right' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleStyleChange('textAlign', 'right')}
+                      className="flex-1 h-8"
+                    >
+                      <AlignRight className="h-3 w-3" />
+                    </Button>
                   </div>
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Ancho completo</Label>
-                    <Switch
-                      checked={selectedSection.settings?.fullWidth || false}
-                      onCheckedChange={(checked) => handleSettingsChange('fullWidth', checked)}
-                    />
-                  </div>
+                {/* Info about advanced settings */}
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Para más opciones (tipografía, animaciones, carrusel, responsive, etc.):
+                  </p>
+                  <p className="text-xs font-medium text-primary">
+                    Haz doble clic en la sección o usa el botón ✏️ Editar
+                  </p>
                 </div>
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">Selecciona una sección para editar sus propiedades</p>
+                <Layout className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">Selecciona una sección para ver sus opciones</p>
               </div>
             )}
           </TabsContent>
