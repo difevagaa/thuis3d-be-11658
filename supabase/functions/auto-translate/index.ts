@@ -40,6 +40,8 @@ async function translateText(
     'footer_links': 'Enlace de navegación. Máximo 2-3 palabras, claro y directo.',
     'reviews': 'Comentario de cliente real. Mantener tono y opinión original del usuario. NO editar ni mejorar el mensaje.',
     'pages': 'Página informativa del sitio. Tono profesional, claro e informativo.',
+    'page_builder_sections': 'Sección del editor de páginas. Mantén el tono y estilo original. Para títulos usa tono impactante y llamativo. Para descripciones mantén claridad y profesionalismo. Mantén emojis si existen.',
+    'page_builder_pages': 'Página personalizada del editor. Tono profesional y descriptivo.',
   };
 
   const context = contextMap[entityType] || 'Traduce este contenido manteniendo el tono y significado original. Si hay términos técnicos específicos de impresión 3D, mantenlos sin traducir.';
@@ -122,14 +124,57 @@ async function processTranslationQueue(supabaseAdmin: any) {
         .eq('id', task.id);
 
       // Obtener el contenido original
-      const { data: originalData } = await supabaseAdmin
-        .from(task.entity_type)
-        .select(task.field_name)
-        .eq('id', task.entity_id)
-        .single();
+      let originalText = null;
+      
+      // Handle page_builder_sections specially - content is in JSONB
+      if (task.entity_type === 'page_builder_sections') {
+        const { data: sectionData } = await supabaseAdmin
+          .from('page_builder_sections')
+          .select('section_name, content')
+          .eq('id', task.entity_id)
+          .single();
+        
+        if (!sectionData) {
+          console.warn(`Section not found for translation`, { entity_id: task.entity_id });
+          await supabaseAdmin
+            .from('translation_queue')
+            .update({ status: 'completed', error_message: 'Section not found', processed_at: new Date().toISOString() })
+            .eq('id', task.id);
+          continue;
+        }
+        
+        // Extract the field to translate from content JSONB or section_name
+        if (task.field_name === 'section_name') {
+          originalText = sectionData.section_name;
+        } else if (task.field_name.startsWith('items_') || task.field_name.startsWith('cards_')) {
+          // Parse items_0_title or cards_1_description format
+          const match = task.field_name.match(/(items|cards)_(\d+)_(\w+)/);
+          if (match) {
+            const arrayName = match[1];
+            const index = parseInt(match[2]);
+            const fieldName = match[3];
+            const contentArray = sectionData.content?.[arrayName];
+            if (Array.isArray(contentArray) && contentArray[index]) {
+              originalText = contentArray[index][fieldName];
+            }
+          }
+        } else {
+          // Regular field in content JSONB (title, subtitle, description, buttonText, text)
+          originalText = sectionData.content?.[task.field_name];
+        }
+      } else {
+        // Standard entity - field is a direct column
+        const { data: originalData } = await supabaseAdmin
+          .from(task.entity_type)
+          .select(task.field_name)
+          .eq('id', task.entity_id)
+          .single();
+        
+        originalText = originalData?.[task.field_name];
+      }
 
-      if (!originalData || originalData[task.field_name] === null ||
-          (typeof originalData[task.field_name] === 'string' && originalData[task.field_name].trim().length === 0)
+      if (originalText === null || originalText === undefined ||
+          (typeof originalText === 'string' && originalText.trim().length === 0)
         ) {
         console.warn(`Contenido original no encontrado para traducción`, {
           entity_type: task.entity_type,
@@ -150,8 +195,6 @@ async function processTranslationQueue(supabaseAdmin: any) {
 
         continue;
       }
-
-      const originalText = originalData[task.field_name];
 
       // Traducir a cada idioma objetivo
       for (const targetLang of task.target_languages) {
