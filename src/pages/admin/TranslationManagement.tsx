@@ -22,11 +22,15 @@ const ENTITY_TYPES = [
   { value: 'colors', label: 'Colores', fields: ['name'], nameField: 'name' },
   { value: 'blog_posts', label: 'Blog Posts', fields: ['title', 'excerpt', 'content'], nameField: 'title' },
   { value: 'pages', label: 'Páginas', fields: ['title', 'content', 'meta_description'], nameField: 'title' },
-  { value: 'page_builder_pages', label: 'Páginas Personalizadas (Editor)', fields: ['page_name', 'description'], nameField: 'page_name' },
+  { value: 'page_builder_pages', label: 'Páginas del Editor', fields: ['page_name', 'description'], nameField: 'page_name' },
+  { value: 'page_builder_sections', label: 'Secciones del Editor (Títulos, Textos, Botones)', fields: ['section_name', 'title', 'subtitle', 'description', 'buttonText', 'text'], nameField: 'section_name', isDynamic: true },
   { value: 'legal_pages', label: 'Páginas Legales', fields: ['title', 'content'], nameField: 'title' },
-  { value: 'homepage_banners', label: 'Banners', fields: ['title', 'description'], nameField: 'title' },
+  { value: 'homepage_banners', label: 'Banners Homepage', fields: ['title', 'description'], nameField: 'title' },
   { value: 'gallery_items', label: 'Galería', fields: ['title', 'description'], nameField: 'title' },
   { value: 'footer_links', label: 'Enlaces Footer', fields: ['title'], nameField: 'title' },
+  { value: 'homepage_features', label: 'Características Homepage', fields: ['title', 'description'], nameField: 'title' },
+  { value: 'homepage_quick_access_cards', label: 'Tarjetas Acceso Rápido', fields: ['title', 'description', 'button_text'], nameField: 'title' },
+  { value: 'homepage_sections', label: 'Secciones Homepage', fields: ['title', 'subtitle', 'description'], nameField: 'title' },
 ];
 
 const LANGUAGES = [

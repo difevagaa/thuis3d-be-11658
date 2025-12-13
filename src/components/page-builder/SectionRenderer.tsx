@@ -7,7 +7,7 @@ import FeaturedProductsCarousel from "@/components/FeaturedProductsCarousel";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import { AdvancedCarousel } from "./AdvancedCarousel";
-
+import { useTranslation } from "react-i18next";
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
@@ -1765,45 +1765,145 @@ function NewsletterSection({ section }: { section: SectionData }) {
   );
 }
 
-// Main renderer component
-function RenderSection({ section }: { section: SectionData }) {
-  if (!section.is_visible) return null;
+// Hook to translate section content
+function useTranslatedSection(section: SectionData): SectionData {
+  const { i18n } = useTranslation();
+  const [translatedSection, setTranslatedSection] = useState<SectionData>(section);
   
-  switch (section.section_type) {
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const baseLang = i18n.language.split('-')[0];
+      
+      // If Spanish, use original content
+      if (baseLang === 'es') {
+        setTranslatedSection(section);
+        return;
+      }
+      
+      if (!section.id) {
+        setTranslatedSection(section);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('translations')
+          .select('field_name, translated_text')
+          .eq('entity_type', 'page_builder_sections')
+          .eq('entity_id', section.id)
+          .eq('language', baseLang);
+        
+        if (error || !data || data.length === 0) {
+          setTranslatedSection(section);
+          return;
+        }
+        
+        // Apply translations to content
+        let newContent = { ...(section.content || {}) };
+        let newSectionName = section.section_name;
+        
+        data.forEach(translation => {
+          if (translation.field_name === 'section_name') {
+            newSectionName = translation.translated_text || section.section_name;
+          } else if (translation.field_name === 'title') {
+            newContent.title = translation.translated_text || section.content?.title;
+          } else if (translation.field_name === 'subtitle') {
+            newContent.subtitle = translation.translated_text || section.content?.subtitle;
+          } else if (translation.field_name === 'description') {
+            newContent.description = translation.translated_text || section.content?.description;
+          } else if (translation.field_name === 'buttonText') {
+            newContent.buttonText = translation.translated_text || section.content?.buttonText;
+          } else if (translation.field_name === 'text') {
+            newContent.text = translation.translated_text || section.content?.text;
+          } else if (translation.field_name.startsWith('items_')) {
+            // Handle array items (e.g., items_0_title, items_1_description)
+            const match = translation.field_name.match(/items_(\d+)_(\w+)/);
+            if (match) {
+              const index = parseInt(match[1]);
+              const field = match[2];
+              if (!newContent.items) newContent.items = [...(section.content?.items || [])];
+              if (newContent.items[index]) {
+                newContent.items[index] = {
+                  ...newContent.items[index],
+                  [field]: translation.translated_text
+                };
+              }
+            }
+          } else if (translation.field_name.startsWith('cards_')) {
+            // Handle card items
+            const match = translation.field_name.match(/cards_(\d+)_(\w+)/);
+            if (match) {
+              const index = parseInt(match[1]);
+              const field = match[2];
+              if (!newContent.cards) newContent.cards = [...(section.content?.cards || [])];
+              if (newContent.cards[index]) {
+                newContent.cards[index] = {
+                  ...newContent.cards[index],
+                  [field]: translation.translated_text
+                };
+              }
+            }
+          }
+        });
+        
+        setTranslatedSection({
+          ...section,
+          section_name: newSectionName,
+          content: newContent
+        });
+      } catch (error) {
+        console.error('Error loading section translations:', error);
+        setTranslatedSection(section);
+      }
+    };
+    
+    loadTranslations();
+  }, [section, i18n.language]);
+  
+  return translatedSection;
+}
+
+// Main renderer component with translation support
+function RenderSection({ section }: { section: SectionData }) {
+  const translatedSection = useTranslatedSection(section);
+  
+  if (!translatedSection.is_visible) return null;
+  
+  switch (translatedSection.section_type) {
     case 'hero':
-      return <HeroSection section={section} />;
+      return <HeroSection section={translatedSection} />;
     case 'text':
-      return <TextSection section={section} />;
+      return <TextSection section={translatedSection} />;
     case 'image':
-      return <ImageSection section={section} />;
+      return <ImageSection section={translatedSection} />;
     case 'banner':
-      return <BannerSection section={section} />;
+      return <BannerSection section={translatedSection} />;
     case 'cta':
-      return <CTASection section={section} />;
+      return <CTASection section={translatedSection} />;
     case 'features':
-      return <FeaturesSection section={section} />;
+      return <FeaturesSection section={translatedSection} />;
     case 'gallery':
-      return <GallerySection section={section} />;
+      return <GallerySection section={translatedSection} />;
     case 'divider':
-      return <DividerSection section={section} />;
+      return <DividerSection section={translatedSection} />;
     case 'spacer':
-      return <SpacerSection section={section} />;
+      return <SpacerSection section={translatedSection} />;
     case 'custom':
-      return <CustomSection section={section} />;
+      return <CustomSection section={translatedSection} />;
     case 'video':
-      return <VideoSection section={section} />;
+      return <VideoSection section={translatedSection} />;
     case 'products-carousel':
-      return <ProductsCarouselSection section={section} />;
+      return <ProductsCarouselSection section={translatedSection} />;
     case 'image-carousel':
-      return <ImageCarouselSection section={section} />;
+      return <ImageCarouselSection section={translatedSection} />;
     case 'accordion':
-      return <AccordionSection section={section} />;
+      return <AccordionSection section={translatedSection} />;
     case 'pricing':
-      return <PricingSection section={section} />;
+      return <PricingSection section={translatedSection} />;
     case 'form':
-      return <FormSection section={section} />;
+      return <FormSection section={translatedSection} />;
     case 'newsletter':
-      return <NewsletterSection section={section} />;
+      return <NewsletterSection section={translatedSection} />;
     default:
       return null;
   }

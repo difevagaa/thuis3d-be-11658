@@ -3626,6 +3626,7 @@ export type Database = {
       cleanup_inactive_visitor_sessions: { Args: never; Returns: undefined }
       cleanup_low_quality_keywords: { Args: never; Returns: number }
       detect_device_type: { Args: { user_agent: string }; Returns: string }
+      enqueue_all_page_builder_sections: { Args: never; Returns: number }
       enqueue_all_translatable_content: { Args: never; Returns: number }
       find_best_calibration_profile: {
         Args: {
@@ -3672,6 +3673,10 @@ export type Database = {
           p_title: string
           p_type: string
         }
+        Returns: undefined
+      }
+      queue_page_builder_section_translation_manual: {
+        Args: { p_section_id: string }
         Returns: undefined
       }
       redeem_loyalty_reward: {
