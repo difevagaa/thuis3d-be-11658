@@ -143,24 +143,28 @@ async function processTranslationQueue(supabaseAdmin: any) {
           continue;
         }
         
+        const content = sectionData.content || {};
+        
         // Extract the field to translate from content JSONB or section_name
         if (task.field_name === 'section_name') {
           originalText = sectionData.section_name;
-        } else if (task.field_name.startsWith('items_') || task.field_name.startsWith('cards_')) {
-          // Parse items_0_title or cards_1_description format
-          const match = task.field_name.match(/(items|cards)_(\d+)_(\w+)/);
-          if (match) {
-            const arrayName = match[1];
-            const index = parseInt(match[2]);
-            const fieldName = match[3];
-            const contentArray = sectionData.content?.[arrayName];
-            if (Array.isArray(contentArray) && contentArray[index]) {
-              originalText = contentArray[index][fieldName];
-            }
-          }
         } else {
-          // Regular field in content JSONB (title, subtitle, description, buttonText, text)
-          originalText = sectionData.content?.[task.field_name];
+          // Check if it's an array field (items_0_title, features_2_description, etc.)
+          const arrayMatch = task.field_name.match(/^(items|cards|features|testimonials|benefits|steps|slides)_(\d+)_(\w+)$/);
+          if (arrayMatch) {
+            const arrayName = arrayMatch[1];
+            const index = parseInt(arrayMatch[2]);
+            const fieldName = arrayMatch[3];
+            const contentArray = content[arrayName];
+            if (Array.isArray(contentArray) && contentArray[index] && contentArray[index][fieldName]) {
+              originalText = contentArray[index][fieldName];
+            } else {
+              console.warn(`Array field not found: ${arrayName}[${index}].${fieldName}`, { content: JSON.stringify(content).substring(0, 200) });
+            }
+          } else {
+            // Regular field in content JSONB (title, subtitle, description, buttonText, text)
+            originalText = content[task.field_name];
+          }
         }
       } else {
         // Standard entity - field is a direct column

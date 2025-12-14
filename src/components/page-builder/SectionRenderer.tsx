@@ -1802,47 +1802,52 @@ function useTranslatedSection(section: SectionData): SectionData {
         let newContent = { ...(section.content || {}) };
         let newSectionName = section.section_name;
         
+        // Helper function to handle array translations
+        const handleArrayTranslation = (arrayName: string, fieldName: string, translatedText: string) => {
+          const match = fieldName.match(new RegExp(`${arrayName}_(\\d+)_(\\w+)`));
+          if (match) {
+            const index = parseInt(match[1]);
+            const field = match[2];
+            if (!newContent[arrayName]) {
+              newContent[arrayName] = [...(section.content?.[arrayName] || [])];
+            }
+            if (newContent[arrayName][index]) {
+              newContent[arrayName][index] = {
+                ...newContent[arrayName][index],
+                [field]: translatedText
+              };
+            }
+          }
+        };
+        
         data.forEach(translation => {
-          if (translation.field_name === 'section_name') {
-            newSectionName = translation.translated_text || section.section_name;
-          } else if (translation.field_name === 'title') {
-            newContent.title = translation.translated_text || section.content?.title;
-          } else if (translation.field_name === 'subtitle') {
-            newContent.subtitle = translation.translated_text || section.content?.subtitle;
-          } else if (translation.field_name === 'description') {
-            newContent.description = translation.translated_text || section.content?.description;
-          } else if (translation.field_name === 'buttonText') {
-            newContent.buttonText = translation.translated_text || section.content?.buttonText;
-          } else if (translation.field_name === 'text') {
-            newContent.text = translation.translated_text || section.content?.text;
-          } else if (translation.field_name.startsWith('items_')) {
-            // Handle array items (e.g., items_0_title, items_1_description)
-            const match = translation.field_name.match(/items_(\d+)_(\w+)/);
-            if (match) {
-              const index = parseInt(match[1]);
-              const field = match[2];
-              if (!newContent.items) newContent.items = [...(section.content?.items || [])];
-              if (newContent.items[index]) {
-                newContent.items[index] = {
-                  ...newContent.items[index],
-                  [field]: translation.translated_text
-                };
-              }
-            }
-          } else if (translation.field_name.startsWith('cards_')) {
-            // Handle card items
-            const match = translation.field_name.match(/cards_(\d+)_(\w+)/);
-            if (match) {
-              const index = parseInt(match[1]);
-              const field = match[2];
-              if (!newContent.cards) newContent.cards = [...(section.content?.cards || [])];
-              if (newContent.cards[index]) {
-                newContent.cards[index] = {
-                  ...newContent.cards[index],
-                  [field]: translation.translated_text
-                };
-              }
-            }
+          const fieldName = translation.field_name;
+          const text = translation.translated_text;
+          
+          if (fieldName === 'section_name') {
+            newSectionName = text || section.section_name;
+          } else if (fieldName === 'title') {
+            newContent.title = text || section.content?.title;
+          } else if (fieldName === 'subtitle') {
+            newContent.subtitle = text || section.content?.subtitle;
+          } else if (fieldName === 'description') {
+            newContent.description = text || section.content?.description;
+          } else if (fieldName === 'buttonText') {
+            newContent.buttonText = text || section.content?.buttonText;
+          } else if (fieldName === 'text') {
+            newContent.text = text || section.content?.text;
+          } else if (fieldName.startsWith('items_')) {
+            handleArrayTranslation('items', fieldName, text);
+          } else if (fieldName.startsWith('cards_')) {
+            handleArrayTranslation('cards', fieldName, text);
+          } else if (fieldName.startsWith('features_')) {
+            handleArrayTranslation('features', fieldName, text);
+          } else if (fieldName.startsWith('testimonials_')) {
+            handleArrayTranslation('testimonials', fieldName, text);
+          } else if (fieldName.startsWith('benefits_')) {
+            handleArrayTranslation('benefits', fieldName, text);
+          } else if (fieldName.startsWith('steps_')) {
+            handleArrayTranslation('steps', fieldName, text);
           }
         });
         
