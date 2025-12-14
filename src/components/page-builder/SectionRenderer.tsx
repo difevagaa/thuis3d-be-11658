@@ -294,15 +294,16 @@ function HeroSection({ section }: { section: SectionData }) {
   const paddingTop = styles?.paddingTop || styles?.paddingY || 150;
   const paddingBottom = styles?.paddingBottom || styles?.paddingY || 100;
   
-  // Hero-specific settings with defaults
-  const heroOverlayOpacity = (settings?.heroOverlayOpacity ?? 50) / 100;
-  const heroOverlayColor = settings?.heroOverlayColor || '#000000';
-  const heroTitleSize = settings?.heroTitleSize || 48;
-  const heroSubtitleSize = settings?.heroSubtitleSize || 20;
-  const heroContentPosition = settings?.heroContentPosition || 'center';
-  const heroFullHeight = settings?.heroFullHeight !== undefined ? settings?.heroFullHeight : true;
-  const heroParallax = settings?.heroParallax || false;
-  const heroVideoBackground = settings?.heroVideoBackground || false;
+  // Hero-specific settings with defaults - using unified titleSize if available
+  const heroOverlayOpacity = (settings?.heroOverlayOpacity ?? settings?.overlayOpacity ?? 50) / 100;
+  const heroOverlayColor = settings?.heroOverlayColor || settings?.overlayColor || '#000000';
+  const heroTitleSize = settings?.heroTitleSize || settings?.titleSize || 48;
+  const heroSubtitleSize = settings?.heroSubtitleSize || settings?.textSize || 20;
+  const heroContentPosition = settings?.heroContentPosition || settings?.contentPosition || 'center';
+  const heroFullHeight = settings?.heroFullHeight ?? settings?.fullHeight ?? true;
+  const heroParallax = settings?.heroParallax || settings?.parallax || false;
+  const heroVideoBackground = settings?.heroVideoBackground || settings?.videoBackground || false;
+  const heroTitleWeight = settings?.titleWeight || 'bold';
   
   // Position mapping for content alignment
   const positionClasses: Record<string, string> = {
@@ -395,7 +396,8 @@ function HeroSection({ section }: { section: SectionData }) {
             style={{ 
               color: styles?.textColor || '#ffffff',
               fontSize: `${heroTitleSize}px`,
-              lineHeight: '1.2'
+              fontWeight: heroTitleWeight,
+              lineHeight: settings?.lineHeight || 1.2
             }}
           >
             {content.title}
@@ -445,17 +447,28 @@ function TextSection({ section }: { section: SectionData }) {
     >
       <div className={cn(
         "max-w-4xl mx-auto prose prose-lg dark:prose-invert",
-        getTextAlignClass(styles?.textAlign)
+        getTextAlignClass(settings?.textAlign || styles?.textAlign || 'left')
       )}>
         {content?.title && (
-          <h2 className="text-3xl font-bold mb-4" style={{ color: styles?.textColor }}>
+          <h2 
+            className="font-bold mb-4" 
+            style={{ 
+              color: styles?.textColor,
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              lineHeight: settings?.lineHeight || 1.3
+            }}
+          >
             {content.title}
           </h2>
         )}
         {content?.text && (
           <div 
             className="whitespace-pre-wrap"
-            style={{ color: styles?.textColor }}
+            style={{ 
+              color: styles?.textColor,
+              fontSize: `${settings?.textSize || 16}px`
+            }}
             dangerouslySetInnerHTML={{ 
               __html: DOMPurify.sanitize(content.text.replace(/\n/g, '<br/>'))
             }}
@@ -485,7 +498,18 @@ function ImageSection({ section }: { section: SectionData }) {
         "max-w-5xl mx-auto",
         getTextAlignClass(styles?.textAlign)
       )}>
-        {content?.title && <h2 className="text-3xl font-bold mb-6">{content.title}</h2>}
+        {content?.title && (
+          <h2 
+            className="font-bold mb-6"
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
+            {content.title}
+          </h2>
+        )}
         {content?.imageUrl && (
           <img
             src={content.imageUrl}
@@ -658,20 +682,27 @@ function CTASection({ section }: { section: SectionData }) {
     >
       <div className={cn(
         "max-w-3xl mx-auto",
-        getTextAlignClass(styles?.textAlign || 'center')
+        getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center')
       )}>
         {content?.title && (
           <h2 
-            className="text-3xl md:text-4xl font-bold mb-6 drop-shadow-lg" 
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="font-bold mb-6 drop-shadow-lg" 
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${settings?.titleSize || 32}px`,
+              fontWeight: settings?.titleWeight || 'bold'
+            }}
           >
             {content.title}
           </h2>
         )}
         {content?.description && (
           <p 
-            className="text-lg md:text-xl mb-10 opacity-95 max-w-2xl mx-auto" 
-            style={{ color: styles?.textColor || '#ffffff' }}
+            className="mb-10 opacity-95 max-w-2xl mx-auto" 
+            style={{ 
+              color: styles?.textColor || '#ffffff',
+              fontSize: `${settings?.textSize || 20}px`
+            }}
           >
             {content.description}
           </p>
@@ -772,7 +803,14 @@ function FeaturesSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-6xl mx-auto">
         {content?.title && (
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
+          <h2 
+            className={cn("font-bold mb-12", getTextAlignClass(settings?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 32}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
@@ -909,7 +947,14 @@ function GallerySection({ section }: { section: SectionData }) {
     >
       <div className="max-w-7xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("font-bold mb-8", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
@@ -1064,7 +1109,14 @@ function VideoSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-5xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-6", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("font-bold mb-6", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
@@ -1213,15 +1265,17 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     >
       <div className={cn(
         "max-w-7xl mx-auto",
-        getTextAlignClass(styles?.textAlign)
+        getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center')
       )}>
         {content?.title && (
           <h2 
-            className="text-3xl font-bold mb-4" 
+            className="font-bold mb-4" 
             style={{ 
               color: styles?.textColor,
               fontFamily: styles?.fontFamily,
-              fontSize: styles?.fontSize ? `${styles.fontSize}px` : undefined
+              fontSize: `${settings?.titleSize || 32}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              lineHeight: settings?.lineHeight || 1.2
             }}
           >
             {content.title}
@@ -1229,8 +1283,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         )}
         {content?.subtitle && (
           <p 
-            className="text-lg mb-8 opacity-90" 
-            style={{ color: styles?.textColor }}
+            className="mb-8 opacity-90" 
+            style={{ 
+              color: styles?.textColor,
+              fontSize: `${settings?.textSize || 18}px`
+            }}
           >
             {content.subtitle}
           </p>
@@ -1390,10 +1447,13 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
       )}>
         {content?.title && (
           <h2 
-            className={cn("text-3xl md:text-4xl font-bold mb-4", getTextAlignClass(styles?.textAlign || 'center'))}
+            className={cn("font-bold mb-4", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
             style={{ 
               color: styles?.textColor,
-              fontFamily: styles?.fontFamily
+              fontFamily: styles?.fontFamily,
+              fontSize: `${settings?.titleSize || 32}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              lineHeight: settings?.lineHeight || 1.2
             }}
           >
             {content.title}
@@ -1401,7 +1461,10 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
         )}
         {content?.subtitle && (
           <p 
-            className={cn("text-lg text-muted-foreground mb-8", getTextAlignClass(styles?.textAlign || 'center'))}
+            className={cn("text-muted-foreground mb-8", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.textSize || 18}px`
+            }}
           >
             {content.subtitle}
           </p>
@@ -1510,7 +1573,14 @@ function AccordionSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-4xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-8", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("font-bold mb-8", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
@@ -1558,7 +1628,14 @@ function PricingSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-7xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-12", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("font-bold mb-12", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
@@ -1646,12 +1723,24 @@ function FormSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-2xl mx-auto">
         {content?.title && (
-          <h2 className={cn("text-3xl font-bold mb-4", getTextAlignClass(styles?.textAlign))}>
+          <h2 
+            className={cn("font-bold mb-4", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold',
+              color: styles?.textColor
+            }}
+          >
             {content.title}
           </h2>
         )}
         {content?.description && (
-          <p className="text-muted-foreground mb-8">{content.description}</p>
+          <p 
+            className="text-muted-foreground mb-8"
+            style={{ fontSize: `${settings?.textSize || 16}px` }}
+          >
+            {content.description}
+          </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -1750,10 +1839,23 @@ function NewsletterSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-2xl mx-auto text-center">
         {content?.title && (
-          <h2 className="text-3xl font-bold mb-4">{content.title}</h2>
+          <h2 
+            className="font-bold mb-4"
+            style={{ 
+              fontSize: `${settings?.titleSize || 28}px`,
+              fontWeight: settings?.titleWeight || 'bold'
+            }}
+          >
+            {content.title}
+          </h2>
         )}
         {content?.description && (
-          <p className="text-lg mb-8 opacity-90">{content.description}</p>
+          <p 
+            className="mb-8 opacity-90"
+            style={{ fontSize: `${settings?.textSize || 18}px` }}
+          >
+            {content.description}
+          </p>
         )}
         <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">
           <input

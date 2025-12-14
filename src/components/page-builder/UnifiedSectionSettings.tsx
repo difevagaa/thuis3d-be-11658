@@ -50,7 +50,7 @@ export function UnifiedSectionSettings({
   // Determine which option categories to show based on section type
   const showImageOptions = ['hero', 'banner', 'image', 'cta'].includes(sectionType);
   const showCarouselOptions = ['products-carousel', 'image-carousel'].includes(sectionType);
-  const showTypographyOptions = ['hero', 'text', 'banner', 'cta', 'features'].includes(sectionType);
+  const showTypographyOptions = ['hero', 'text', 'banner', 'cta', 'features', 'products-carousel', 'image-carousel', 'gallery', 'accordion', 'pricing', 'testimonials', 'newsletter', 'form', 'video', 'image'].includes(sectionType);
   const showLayoutGrid = ['features', 'gallery', 'products-carousel'].includes(sectionType);
 
   return (
