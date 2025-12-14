@@ -221,11 +221,10 @@ export default function Payment() {
   };
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
+  // CRITICAL: Sin gift card en el cálculo de IVA para evitar dependencia circular
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
-    if (subtotal === 0) return 0; // Avoid division by zero
-    
-    const giftCardAmount = calculateGiftCardAmount();
+    if (subtotal === 0) return 0;
     
     const taxableAmount = cartItems
       .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
@@ -235,27 +234,26 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
-    // Apply gift card proportionally to taxable amount
-    const taxableAfterGiftCard = taxableAmount - (giftCardAmount * (taxableAmount / subtotal));
-    
     // Use tax rate from settings
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((Math.max(0, taxableAfterGiftCard) * taxRate).toFixed(2));
+    return Number((taxableAmount * taxRate).toFixed(2));
   };
 
   const calculateGiftCardAmount = () => {
     if (!appliedGiftCard) return 0;
     const subtotal = calculateSubtotal();
-    // Gift card can only cover up to the subtotal
-    return Math.min(appliedGiftCard.current_balance, subtotal);
+    const tax = calculateTax();
+    // Gift card covers: subtotal + IVA + envío
+    const totalBeforeGiftCard = subtotal + tax + shippingCost;
+    return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
   };
 
-  // Total = subtotal - gift card + IVA + envío
+  // Total = subtotal + IVA + envío - gift card
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
-    const giftCardAmount = calculateGiftCardAmount();
     const tax = calculateTax();
-    return Number(Math.max(0, subtotal - giftCardAmount + tax + shippingCost).toFixed(2));
+    const giftCardAmount = calculateGiftCardAmount();
+    return Number(Math.max(0, subtotal + tax + shippingCost - giftCardAmount).toFixed(2));
   };
 
   const applyGiftCard = async () => {

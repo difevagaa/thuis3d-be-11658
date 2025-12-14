@@ -161,7 +161,7 @@ const Cart = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Calculate discount
+  // Calculate discount from coupon
   let discount = 0;
   if (appliedCoupon) {
     if (appliedCoupon.discount_type === "percentage") {
@@ -171,19 +171,23 @@ const Cart = () => {
     }
   }
   
-  // Apply gift card
-  let giftCardApplied = 0;
-  if (appliedGiftCard) {
-    const afterDiscount = subtotal - discount;
-    giftCardApplied = Math.min(appliedGiftCard.current_balance, afterDiscount);
-  }
-  
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
+  // Calcular IVA SIN considerar gift card para evitar dependencia circular
   const taxableAmount = cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = calculateTax(taxableAmount - (discount * (taxableAmount / subtotal)) - (giftCardApplied * (taxableAmount / subtotal)), true);
-  const total = Math.max(0, subtotal - discount - giftCardApplied + tax);
+  const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+  const taxableAfterDiscount = Math.max(0, taxableAmount - (discount * discountRatio));
+  const tax = calculateTax(taxableAfterDiscount, true);
+  
+  // Apply gift card DESPUÉS de calcular IVA (gift card cubre subtotal - discount + tax)
+  let giftCardApplied = 0;
+  if (appliedGiftCard) {
+    const totalBeforeGiftCard = subtotal - discount + tax;
+    giftCardApplied = Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
+  }
+  
+  const total = Math.max(0, subtotal - discount + tax - giftCardApplied);
 
   if (cartItems.length === 0) {
     return (

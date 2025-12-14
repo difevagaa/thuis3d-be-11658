@@ -175,46 +175,46 @@ export default function PaymentSummary() {
     return 0;
   };
 
-  const calculateGiftCardAmount = () => {
-    if (!appliedGiftCard) return 0;
-    
-    const subtotal = calculateSubtotal();
-    const discount = calculateDiscount();
-    const tax = calculateTotalTax();
-    // CRITICAL: Gift card should cover subtotal - discount + tax + shipping
-    const totalBeforeGiftCard = subtotal - discount + tax + shippingCost;
-    
-    return Math.min(appliedGiftCard.current_balance, totalBeforeGiftCard);
-  };
-
+  // CRITICAL: Calculate tax first without gift card to avoid circular dependency
   const calculateTotalTax = () => {
     if (!taxSettings.enabled) return 0;
 
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
-    const giftCardAmount = calculateGiftCardAmount();
     
     // Solo aplicar IVA a productos que no sean tarjetas de regalo
     const taxableAmount = cartItems
       .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
       .reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
     
-    if (taxableAmount === 0) return 0;
+    if (taxableAmount === 0 || subtotal === 0) return 0;
     
-    // Aplicar descuentos proporcionalmente
-    const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
-    const taxableAfterDiscount = taxableAmount - (discount * discountRatio) - (giftCardAmount * discountRatio);
+    // Aplicar descuentos proporcionalmente (SIN gift card para evitar dependencia circular)
+    const discountRatio = taxableAmount / subtotal;
+    const taxableAfterDiscount = taxableAmount - (discount * discountRatio);
     
     return calculateTax(Math.max(0, taxableAfterDiscount), true);
+  };
+
+  const calculateGiftCardAmount = () => {
+    if (!appliedGiftCard) return 0;
+    
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    const tax = calculateTotalTax();
+    // Gift card covers: subtotal - discount + tax + shipping
+    const totalBeforeGiftCard = subtotal - discount + tax + shippingCost;
+    
+    return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
   };
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
-    const giftCardAmount = calculateGiftCardAmount();
     const tax = calculateTotalTax();
+    const giftCardAmount = calculateGiftCardAmount();
     
-    return Math.max(0, subtotal - discount - giftCardAmount + tax + shippingCost);
+    return Math.max(0, subtotal - discount + tax + shippingCost - giftCardAmount);
   };
 
   const [processing, setProcessing] = useState(false);
