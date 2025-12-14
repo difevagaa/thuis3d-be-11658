@@ -20,6 +20,11 @@ interface Message {
   created_at: string;
 }
 
+interface Position {
+  x: number;
+  y: number;
+}
+
 export const ClientChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,6 +35,15 @@ export const ClientChatWidget = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Draggable state
+  const [position, setPosition] = useState<Position>(() => {
+    const saved = localStorage.getItem('chatWidgetPosition');
+    return saved ? JSON.parse(saved) : { x: 0, y: 0 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -108,6 +122,62 @@ export const ClientChatWidget = () => {
     };
     markAsRead();
   }, [isOpen, messages, loadMessages]);
+
+  // Draggable handlers
+  const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    setDragStart({
+      x: clientX - position.x,
+      y: clientY - position.y
+    });
+  };
+
+  const handleDragMove = useCallback((e: TouchEvent | MouseEvent) => {
+    if (!isDragging) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    const newX = clientX - dragStart.x;
+    const newY = clientY - dragStart.y;
+    
+    // Limit to screen bounds
+    const maxX = window.innerWidth - 60;
+    const maxY = window.innerHeight - 60;
+    
+    const boundedX = Math.max(-maxX + 80, Math.min(0, newX));
+    const boundedY = Math.max(-maxY + 80, Math.min(0, newY));
+    
+    setPosition({ x: boundedX, y: boundedY });
+  }, [isDragging, dragStart]);
+
+  const handleDragEnd = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      localStorage.setItem('chatWidgetPosition', JSON.stringify(position));
+    }
+  }, [isDragging, position]);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDragMove);
+      window.addEventListener('touchend', handleDragEnd);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('touchmove', handleDragMove);
+        window.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [isDragging, handleDragMove, handleDragEnd]);
 
   const uploadAttachments = async (files: File[]) => {
     const uploadedUrls: any[] = [];
@@ -281,21 +351,34 @@ export const ClientChatWidget = () => {
 
   if (!isOpen) {
     return (
-      <div className="relative">
+      <div 
+        className="fixed z-50"
+        style={{ 
+          bottom: `${24 - position.y}px`, 
+          right: `${24 - position.x}px`,
+          touchAction: 'none'
+        }}
+      >
         <Button
+          ref={buttonRef}
           onClick={() => {
-            setIsOpen(true);
-            loadMessages();
+            if (!isDragging) {
+              setIsOpen(true);
+              loadMessages();
+            }
           }}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-strong z-50"
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          className={`h-12 w-12 rounded-full shadow-lg transition-transform ${isDragging ? 'scale-110 cursor-grabbing' : 'cursor-grab hover:scale-105'}`}
           size="icon"
+          aria-label="Abrir chat"
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-5 w-5" />
         </Button>
         {unreadCount > 0 && (
           <Badge 
             variant="destructive" 
-            className="fixed bottom-14 right-14 h-6 w-6 rounded-full p-0 flex items-center justify-center z-50"
+            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] font-bold pointer-events-none"
           >
             {unreadCount}
           </Badge>
@@ -305,7 +388,7 @@ export const ClientChatWidget = () => {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-96 h-[600px] shadow-strong z-50 flex flex-col">
+    <Card className="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 h-[80vh] sm:h-[500px] max-h-[600px] shadow-xl z-50 flex flex-col rounded-2xl overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
         <div>
           <CardTitle className="text-lg">Chat con Soporte</CardTitle>

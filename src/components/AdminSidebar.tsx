@@ -266,7 +266,9 @@ function AdminMenuSection({ section, collapsed }: { section: MenuSection; collap
 
 export function AdminSidebar() {
   const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  // En móvil, siempre mostrar expandido para que se vean los textos
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const collapsed = isMobile ? false : state === "collapsed";
   
   return (
     <Sidebar 
@@ -276,7 +278,7 @@ export function AdminSidebar() {
         "bg-gradient-to-b from-background via-background to-muted/30"
       )}
     >
-      <SidebarContent className="py-2 sm:py-3 md:py-4 px-1 sm:px-1.5 md:px-2">
+      <SidebarContent className="py-2 sm:py-3 md:py-4 px-1 sm:px-1.5 md:px-2 overflow-y-auto">
         {/* Logo Header */}
         {!collapsed && (
           <div className="px-1 sm:px-1.5 md:px-2 mb-3 sm:mb-4 md:mb-6">
