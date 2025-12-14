@@ -1,11 +1,5 @@
-import { Card } from "@/components/ui/card";
 import { getThemeById, getIconById, DEFAULT_THEME, DEFAULT_ICON } from "@/constants/giftCardThemes";
 import React from "react";
-
-// Constants for amount display thresholds
-const LARGE_AMOUNT_THRESHOLD = 1000;
-const MEDIUM_AMOUNT_THRESHOLD = 100;
-const MESSAGE_MAX_HEIGHT = '2.5rem';
 
 interface GiftCardPrintableProps {
   code: string;
@@ -28,105 +22,75 @@ export default function GiftCardPrintable({
   themeId,
   iconId
 }: GiftCardPrintableProps) {
-  // Get theme and icon, fallback to defaults
   const theme = themeId ? getThemeById(themeId) : DEFAULT_THEME;
   const icon = iconId ? getIconById(iconId) : DEFAULT_ICON;
 
-  // Map accent colors to actual color values for inline styles
-  const accentColorMap: Record<string, string> = {
-    'blue-500': '#3b82f6',
-    'green-500': '#22c55e',
-    'amber-500': '#f59e0b',
-    'purple-500': '#a855f7',
-    'pink-500': '#ec4899',
-    'slate-500': '#64748b',
-    'teal-500': '#14b8a6',
-    'orange-400': '#fb923c',
-    'gray-700': '#374151'
-  };
-
-  const accentColorValue = accentColorMap[theme.accentColor] || '#3b82f6';
-
-  // Get responsive font size classes based on amount
-  const getAmountFontSize = (amount: number): string => {
-    if (amount >= LARGE_AMOUNT_THRESHOLD) return 'text-3xl md:text-4xl';
-    if (amount >= MEDIUM_AMOUNT_THRESHOLD) return 'text-4xl md:text-5xl';
-    return 'text-5xl md:text-6xl';
-  };
-
   return (
-    <div className="w-full aspect-[16/10] max-w-[450px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[120mm] print:aspect-[16/10]" style={{ '--accent-color': accentColorValue } as React.CSSProperties}>
-      {/* Enhanced gradient background with selected theme */}
+    <div className="w-full max-w-[420px] relative overflow-hidden rounded-2xl shadow-2xl print:shadow-none print:max-w-[100mm]">
+      {/* Main gradient background */}
       <div className={`absolute inset-0 ${theme.bgGradient}`} />
       
-      {/* Animated pattern overlay */}
-      <div className="absolute inset-0 opacity-20">
-        <svg width="100%" height="100%">
-          <defs>
-            <pattern id="gift-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-              <circle cx="30" cy="30" r="3" fill="white" opacity="0.8" />
-              <circle cx="10" cy="10" r="2" fill="white" opacity="0.5" />
-              <circle cx="50" cy="50" r="2" fill="white" opacity="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#gift-pattern)" />
-        </svg>
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-2xl -translate-x-1/2 translate-y-1/2" />
       </div>
 
-      {/* Decorative shapes */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
-      {/* Content */}
-      <div className={`relative h-full p-4 md:p-6 flex flex-col justify-between ${theme.textColor}`}>
-        {/* Header */}
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-shrink-0">
-            <div className="text-3xl md:text-4xl mb-1">{icon.emoji}</div>
-            <h2 className="text-base md:text-lg font-bold tracking-tight">Tarjeta Regalo</h2>
-            <p className="text-xs md:text-sm opacity-90 font-medium">Thuis3D.be</p>
-          </div>
-          <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-semibold border border-white/30 flex-shrink-0">
-            No vendible
-          </div>
-        </div>
-
-        {/* Amount - Centered and prominent with adaptive sizing */}
-        <div className="text-center space-y-1.5 flex-1 flex flex-col justify-center min-h-0">
-          <div className={`font-bold drop-shadow-lg ${getAmountFontSize(amount)}`}>
-            €{amount.toFixed(2)}
-          </div>
-        </div>
-
-        {/* Code - Always visible, positioned separately */}
-        <div className="text-center pb-2">
-          <div className="bg-white/40 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono font-bold text-xs md:text-sm tracking-wider border-2 border-white/60 inline-block shadow-lg">
-            {code}
-          </div>
-        </div>
-
-        {/* Footer - Improved spacing and overflow handling */}
-        <div className="space-y-1.5">
-          {message && (
-            <div className="bg-white/20 backdrop-blur-md p-2 rounded-lg border border-white/30 overflow-y-auto" style={{ maxHeight: MESSAGE_MAX_HEIGHT }}>
-              <p className="text-[9px] md:text-[10px] italic leading-tight break-words">
-                "{message}"
-              </p>
+      {/* Card content */}
+      <div className={`relative p-6 ${theme.textColor}`}>
+        {/* Top row: Logo/Brand + Badge */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{icon.emoji}</span>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight leading-none">Tarjeta Regalo</h2>
+              <p className="text-xs opacity-80 font-medium">Thuis3D.be</p>
             </div>
-          )}
+          </div>
+          <div className="bg-white/25 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-semibold">
+            GIFT CARD
+          </div>
+        </div>
+
+        {/* Center: Amount - Clean and prominent */}
+        <div className="text-center py-6">
+          <div className="inline-flex items-baseline gap-1">
+            <span className="text-2xl font-medium opacity-80">€</span>
+            <span className="text-6xl font-bold tracking-tight drop-shadow-lg">
+              {amount.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+
+        {/* Code - Clean pill design */}
+        <div className="flex justify-center mb-5">
+          <div className="bg-white/30 backdrop-blur-sm px-5 py-2 rounded-full">
+            <span className="font-mono font-bold text-sm tracking-widest">{code}</span>
+          </div>
+        </div>
+
+        {/* Message (if exists) */}
+        {message && (
+          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-3 mb-4">
+            <p className="text-xs italic text-center leading-relaxed line-clamp-2">"{message}"</p>
+          </div>
+        )}
+
+        {/* Footer info - Clean layout */}
+        <div className="pt-3 border-t border-white/20 space-y-2">
           {senderName && (
-            <p className="text-[10px] md:text-xs text-center font-medium truncate">
-              De: <span className="font-bold">{senderName}</span>
+            <p className="text-xs text-center">
+              De: <span className="font-semibold">{senderName}</span>
             </p>
           )}
-          <div className="flex justify-between items-end text-[9px] md:text-[10px] opacity-80 font-medium gap-1">
-            <span className="truncate max-w-[50%]">{recipientEmail}</span>
+          <div className="flex justify-between items-center text-[10px] opacity-70">
+            <span className="truncate max-w-[45%]">{recipientEmail}</span>
             {expiresAt && (
-              <span className="whitespace-nowrap text-right flex-shrink-0">Válida hasta {new Date(expiresAt).toLocaleDateString('es-ES')}</span>
+              <span>Válida: {new Date(expiresAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
             )}
           </div>
-          <p className="text-[9px] md:text-[10px] text-center opacity-70 font-medium">
-            www.thuis3d.be • Uso exclusivo tienda online
+          <p className="text-[10px] text-center opacity-60 font-medium">
+            www.thuis3d.be
           </p>
         </div>
       </div>
