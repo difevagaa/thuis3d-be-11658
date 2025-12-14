@@ -54,6 +54,9 @@ export default function SEOManager() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [newRedirectFrom, setNewRedirectFrom] = useState("");
+  const [newRedirectTo, setNewRedirectTo] = useState("");
+  const [newRedirectType, setNewRedirectType] = useState<number>(301);
 
   const { regenerateAllProductSEO, validateSEO } = useAutoSEO();
 
@@ -1911,12 +1914,96 @@ export default function SEOManager() {
         <TabsContent value="redirects">
           <Card>
             <CardHeader>
-              <CardTitle>Redirecciones SEO</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-primary" />
+                Redirecciones SEO ({redirects.length})
+              </CardTitle>
               <CardDescription>
-                Gestiona redirecciones 301 para mantener el ranking
+                Gestiona redirecciones 301/302 para mantener el ranking cuando cambias URLs. Importante para no perder posicionamiento SEO.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Add new redirect form */}
+              <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Agregar Nueva Redirección
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Desde (ruta original)</Label>
+                    <Input
+                      value={newRedirectFrom}
+                      onChange={(e) => setNewRedirectFrom(e.target.value)}
+                      placeholder="/vieja-ruta"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hacia (nueva ruta)</Label>
+                    <Input
+                      value={newRedirectTo}
+                      onChange={(e) => setNewRedirectTo(e.target.value)}
+                      placeholder="/nueva-ruta"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select 
+                      value={String(newRedirectType)} 
+                      onValueChange={(v) => setNewRedirectType(parseInt(v, 10))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="301">301 (Permanente)</SelectItem>
+                        <SelectItem value="302">302 (Temporal)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      className="w-full"
+                      onClick={async () => {
+                        if (!newRedirectFrom || !newRedirectTo) {
+                          toast.error('Ingresa ambas rutas');
+                          return;
+                        }
+                        
+                        try {
+                          const { error } = await supabase.from('seo_redirects').insert({
+                            from_path: newRedirectFrom.startsWith('/') ? newRedirectFrom : `/${newRedirectFrom}`,
+                            to_path: newRedirectTo.startsWith('/') ? newRedirectTo : (newRedirectTo.startsWith('http') ? newRedirectTo : `/${newRedirectTo}`),
+                            redirect_type: newRedirectType,
+                            is_active: true
+                          });
+                          
+                          if (error) throw error;
+                          
+                          toast.success('Redirección creada');
+                          setNewRedirectFrom('');
+                          setNewRedirectTo('');
+                          setNewRedirectType(301);
+                          await loadData();
+                        } catch (error) {
+                          logger.error('Error creating redirect:', { error });
+                          toast.error('Error al crear redirección');
+                        }
+                      }}
+                    >
+                      <Link2 className="h-4 w-4 mr-2" />
+                      Agregar
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <strong>301:</strong> Redirección permanente (transfiere SEO). <strong>302:</strong> Redirección temporal (no transfiere SEO).
+                </p>
+              </div>
+
+              {/* Redirects table */}
               <div className="border rounded-lg">
                 <Table>
                   <TableHeader>
@@ -1925,13 +2012,18 @@ export default function SEOManager() {
                       <TableHead>Hacia</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {redirects.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No hay redirecciones configuradas
+                        <TableCell colSpan={5} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Link2 className="h-8 w-8 opacity-50" />
+                            <p>No hay redirecciones configuradas</p>
+                            <p className="text-xs">Agrega redirecciones cuando cambies URLs para no perder posicionamiento SEO</p>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -1944,14 +2036,43 @@ export default function SEOManager() {
                             {redirect.to_path}
                           </TableCell>
                           <TableCell>
-                            <Badge>{redirect.redirect_type}</Badge>
+                            <Badge variant={redirect.redirect_type === '301' ? 'default' : 'secondary'}>
+                              {redirect.redirect_type}
+                            </Badge>
                           </TableCell>
                           <TableCell>
-                            {redirect.is_active ? (
-                              <Badge className="bg-green-500">Activa</Badge>
-                            ) : (
-                              <Badge variant="secondary">Inactiva</Badge>
-                            )}
+                            <Switch
+                              checked={redirect.is_active}
+                              onCheckedChange={async (checked) => {
+                                try {
+                                  await supabase
+                                    .from('seo_redirects')
+                                    .update({ is_active: checked })
+                                    .eq('id', redirect.id);
+                                  await loadData();
+                                  toast.success(checked ? 'Redirección activada' : 'Redirección desactivada');
+                                } catch (error) {
+                                  toast.error('Error al actualizar');
+                                }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await supabase.from('seo_redirects').delete().eq('id', redirect.id);
+                                  await loadData();
+                                  toast.success('Redirección eliminada');
+                                } catch (error) {
+                                  toast.error('Error al eliminar');
+                                }
+                              }}
+                            >
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))

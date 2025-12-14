@@ -306,26 +306,25 @@ export function extractKeywords(
     });
   }
   
-  // Add trending modifier combinations
-  const primaryWord = Array.from(wordFrequency.entries())
-    .sort((a, b) => b[1] - a[1])[0]?.[0];
+  // Add trending modifier combinations - ONLY with pure language keywords
+  // Do NOT mix Spanish words with English/Dutch modifiers
+  const modifiers = TRENDING_MODIFIERS[language];
+  const industryTerms = INDUSTRY_TERMS[language];
   
-  if (primaryWord && primaryWord.length >= 4) {
-    const modifiers = TRENDING_MODIFIERS[language];
-    modifiers.slice(0, 3).forEach(modifier => {
-      if (modifier.split(' ')[0] !== primaryWord) {
-        const trendingKeyword = `${modifier} ${primaryWord}`;
-        keywords.push({
-          keyword: trendingKeyword,
-          relevanceScore: calculateRelevance(trendingKeyword, context, language) + 15,
-          searchVolume: 'high',
-          keywordType: 'secondary',
-          semanticCategory: 'trending',
-          language
-        });
-      }
+  // Use industry terms in the same language to avoid mixing (e.g., "best prototipos")
+  modifiers.slice(0, 3).forEach(modifier => {
+    industryTerms.slice(0, 3).forEach(term => {
+      const trendingKeyword = `${modifier} ${term}`;
+      keywords.push({
+        keyword: trendingKeyword,
+        relevanceScore: calculateRelevance(trendingKeyword, context, language) + 15,
+        searchVolume: 'high',
+        keywordType: 'secondary',
+        semanticCategory: 'trending',
+        language
+      });
     });
-  }
+  });
   
   // Remove duplicates and sort by relevance
   const uniqueKeywords = Array.from(
@@ -375,12 +374,11 @@ export function extractMultilingualKeywords(
     combined: []
   };
 
-  // Extract keywords for each language in priority order (Dutch first for Belgian market)
-  for (const lang of languages) {
-    const langKeywords = extractKeywords(text, { ...context, language: lang });
-    result[lang] = langKeywords;
-    result.combined.push(...langKeywords);
-  }
+  // ONLY extract keywords from the source text in Spanish (source language)
+  // This prevents mixing Spanish words with English/Dutch modifiers
+  const spanishKeywords = extractKeywords(text, { ...context, language: 'es' });
+  result.es = spanishKeywords;
+  result.combined.push(...spanishKeywords);
 
   // Generate native keywords for each target language based on industry terms
   // Belgian customers predominantly search in Dutch and English
