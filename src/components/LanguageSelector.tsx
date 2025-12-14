@@ -45,21 +45,21 @@ export function LanguageSelector() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-10 w-10 min-h-[40px] min-w-[40px] rounded-lg hover:bg-muted transition-all active:scale-95 flex-shrink-0"
+          className="h-12 w-12 min-h-[48px] min-w-[48px] rounded-xl hover:bg-muted transition-all active:scale-95 flex-shrink-0 touch-manipulation bg-muted/50"
           aria-label="Seleccionar idioma"
         >
-          <span className="text-lg">{currentLanguage.flag}</span>
+          <span className="text-2xl">{currentLanguage.flag}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="z-50 bg-background border shadow-lg rounded-lg min-w-[140px]">
+      <DropdownMenuContent align="end" className="z-50 bg-background border shadow-lg rounded-xl min-w-[160px] p-2">
         {languages.map((language) => (
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}
-            className={`cursor-pointer ${i18n.language === language.code ? 'bg-accent font-medium' : ''}`}
+            className={`cursor-pointer h-12 rounded-lg text-base ${i18n.language === language.code ? 'bg-accent font-medium' : ''}`}
           >
-            <span className="mr-2 text-base">{language.flag}</span>
-            <span className="text-sm">{language.name}</span>
+            <span className="mr-3 text-xl">{language.flag}</span>
+            <span>{language.name}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
