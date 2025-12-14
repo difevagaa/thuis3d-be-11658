@@ -274,18 +274,25 @@ function AdminMenuSection({ section, collapsed, onNavigate }: { section: MenuSec
 }
 
 export function AdminSidebar() {
-  const { state, setOpen } = useSidebar();
+  const { state, setOpen, isMobile, openMobile, setOpenMobile } = useSidebar();
   // En móvil, siempre mostrar expandido para que se vean los textos
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const collapsed = isMobile ? false : state === "collapsed";
   
   const handleNavigate = () => {
     // Cerrar sidebar al navegar (especialmente importante en móvil)
-    setOpen(false);
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
   };
   
   const handleCloseSidebar = () => {
-    setOpen(false);
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
   };
   
   return (
