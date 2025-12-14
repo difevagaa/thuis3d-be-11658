@@ -3805,6 +3805,7 @@ export type Database = {
       cleanup_inactive_sessions: { Args: never; Returns: undefined }
       cleanup_inactive_visitor_sessions: { Args: never; Returns: undefined }
       cleanup_low_quality_keywords: { Args: never; Returns: number }
+      cleanup_old_visitor_sessions: { Args: never; Returns: number }
       detect_device_type: { Args: { user_agent: string }; Returns: string }
       enqueue_all_page_builder_sections: { Args: never; Returns: number }
       enqueue_all_translatable_content: { Args: never; Returns: number }
