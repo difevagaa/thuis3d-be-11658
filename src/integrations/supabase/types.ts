@@ -795,6 +795,186 @@ export type Database = {
         }
         Relationships: []
       }
+      footer_settings: {
+        Row: {
+          background_color: string | null
+          border_color: string | null
+          border_top_style: string | null
+          border_top_width: number | null
+          brand_name: string | null
+          brand_tagline: string | null
+          columns_layout: string | null
+          copyright_text: string | null
+          created_at: string
+          help_section_title: string | null
+          id: string
+          link_font_size: number | null
+          newsletter_button_color: string | null
+          newsletter_description: string | null
+          newsletter_placeholder: string | null
+          newsletter_title: string | null
+          padding_bottom: number | null
+          padding_horizontal: number | null
+          padding_top: number | null
+          payment_methods_title: string | null
+          quick_links_title: string | null
+          section_gap: number | null
+          show_bancontact: boolean | null
+          show_blog_link: boolean | null
+          show_brand_section: boolean | null
+          show_catalog_link: boolean | null
+          show_cookies_link: boolean | null
+          show_copyright: boolean | null
+          show_faq_link: boolean | null
+          show_footer: boolean | null
+          show_gift_cards_link: boolean | null
+          show_help_section: boolean | null
+          show_ideal: boolean | null
+          show_legal_link: boolean | null
+          show_mastercard: boolean | null
+          show_newsletter: boolean | null
+          show_payment_methods: boolean | null
+          show_paypal: boolean | null
+          show_privacy_link: boolean | null
+          show_quick_links: boolean | null
+          show_quote_link: boolean | null
+          show_social_icons: boolean | null
+          show_terms_link: boolean | null
+          show_visa: boolean | null
+          social_facebook: string | null
+          social_icon_color: string | null
+          social_icon_size: number | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_tiktok: string | null
+          social_twitter: string | null
+          social_youtube: string | null
+          text_color: string | null
+          text_font_size: number | null
+          title_font_size: number | null
+          title_font_weight: string | null
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string | null
+          border_color?: string | null
+          border_top_style?: string | null
+          border_top_width?: number | null
+          brand_name?: string | null
+          brand_tagline?: string | null
+          columns_layout?: string | null
+          copyright_text?: string | null
+          created_at?: string
+          help_section_title?: string | null
+          id?: string
+          link_font_size?: number | null
+          newsletter_button_color?: string | null
+          newsletter_description?: string | null
+          newsletter_placeholder?: string | null
+          newsletter_title?: string | null
+          padding_bottom?: number | null
+          padding_horizontal?: number | null
+          padding_top?: number | null
+          payment_methods_title?: string | null
+          quick_links_title?: string | null
+          section_gap?: number | null
+          show_bancontact?: boolean | null
+          show_blog_link?: boolean | null
+          show_brand_section?: boolean | null
+          show_catalog_link?: boolean | null
+          show_cookies_link?: boolean | null
+          show_copyright?: boolean | null
+          show_faq_link?: boolean | null
+          show_footer?: boolean | null
+          show_gift_cards_link?: boolean | null
+          show_help_section?: boolean | null
+          show_ideal?: boolean | null
+          show_legal_link?: boolean | null
+          show_mastercard?: boolean | null
+          show_newsletter?: boolean | null
+          show_payment_methods?: boolean | null
+          show_paypal?: boolean | null
+          show_privacy_link?: boolean | null
+          show_quick_links?: boolean | null
+          show_quote_link?: boolean | null
+          show_social_icons?: boolean | null
+          show_terms_link?: boolean | null
+          show_visa?: boolean | null
+          social_facebook?: string | null
+          social_icon_color?: string | null
+          social_icon_size?: number | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          text_color?: string | null
+          text_font_size?: number | null
+          title_font_size?: number | null
+          title_font_weight?: string | null
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string | null
+          border_color?: string | null
+          border_top_style?: string | null
+          border_top_width?: number | null
+          brand_name?: string | null
+          brand_tagline?: string | null
+          columns_layout?: string | null
+          copyright_text?: string | null
+          created_at?: string
+          help_section_title?: string | null
+          id?: string
+          link_font_size?: number | null
+          newsletter_button_color?: string | null
+          newsletter_description?: string | null
+          newsletter_placeholder?: string | null
+          newsletter_title?: string | null
+          padding_bottom?: number | null
+          padding_horizontal?: number | null
+          padding_top?: number | null
+          payment_methods_title?: string | null
+          quick_links_title?: string | null
+          section_gap?: number | null
+          show_bancontact?: boolean | null
+          show_blog_link?: boolean | null
+          show_brand_section?: boolean | null
+          show_catalog_link?: boolean | null
+          show_cookies_link?: boolean | null
+          show_copyright?: boolean | null
+          show_faq_link?: boolean | null
+          show_footer?: boolean | null
+          show_gift_cards_link?: boolean | null
+          show_help_section?: boolean | null
+          show_ideal?: boolean | null
+          show_legal_link?: boolean | null
+          show_mastercard?: boolean | null
+          show_newsletter?: boolean | null
+          show_payment_methods?: boolean | null
+          show_paypal?: boolean | null
+          show_privacy_link?: boolean | null
+          show_quick_links?: boolean | null
+          show_quote_link?: boolean | null
+          show_social_icons?: boolean | null
+          show_terms_link?: boolean | null
+          show_visa?: boolean | null
+          social_facebook?: string | null
+          social_icon_color?: string | null
+          social_icon_size?: number | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          text_color?: string | null
+          text_font_size?: number | null
+          title_font_size?: number | null
+          title_font_weight?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gallery_items: {
         Row: {
           created_at: string
