@@ -55,6 +55,7 @@ import { PageBuilderCanvas } from "@/components/page-builder/PageBuilderCanvas";
 import { PageBuilderSettings } from "@/components/page-builder/PageBuilderSettings";
 import { SectionEditor } from "@/components/page-builder/SectionEditor";
 import { PageBuilderHelp } from "@/components/page-builder/PageBuilderHelp";
+import { FooterEditor } from "@/components/page-builder/FooterEditor";
 
 export interface PageData {
   id: string;
@@ -817,6 +818,25 @@ export default function PageBuilder() {
           </div>
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-1.5 space-y-0.5">
+              {/* Footer Editor Link */}
+              <button
+                onClick={() => {
+                  setSelectedPage(null);
+                  setSelectedSection(null);
+                  setSearchParams({ page: 'footer' });
+                }}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
+                  searchParams.get('page') === 'footer' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'hover:bg-muted'
+                }`}
+              >
+                <Layout className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate flex-1">Pie de Página</span>
+              </button>
+              
+              <div className="my-1 border-t" />
+              
               {pages.map(page => {
                 const isPredefined = ['home', 'products', 'quotes', 'gift-cards', 'blog', 'gallery', 'my-account'].includes(page.page_key);
                 
@@ -857,7 +877,13 @@ export default function PageBuilder() {
 
         {/* Center - Canvas */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-muted/30">
-          {selectedPage ? (
+          {searchParams.get('page') === 'footer' ? (
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="p-4">
+                <FooterEditor />
+              </div>
+            </ScrollArea>
+          ) : selectedPage ? (
             <ScrollArea className="flex-1 min-h-0">
               <div className="flex items-start justify-center p-3 min-h-full">
                 <div
