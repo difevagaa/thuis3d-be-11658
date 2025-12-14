@@ -1,0 +1,715 @@
+/* ==========================================================
+   MOBILE APP EXPERIENCE - Complete Native App Transformation
+   50+ Optimizations for App-Like Mobile Experience
+   ========================================================== */
+
+/* ---------- 1. APP HEADER & NAVIGATION ---------- */
+
+/* Sticky app header with blur effect */
+@media (max-width: 640px) {
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(var(--background), 0.9);
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+    padding: 0.75rem 1rem;
+    min-height: 56px;
+  }
+  
+  /* App navigation bar - bottom fixed on mobile */
+  .app-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+    padding: 0.5rem 0;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .app-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    min-width: 64px;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+  }
+  
+  .app-bottom-nav-item:active {
+    background: hsl(var(--muted));
+    transform: scale(0.95);
+  }
+  
+  .app-bottom-nav-item svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .app-bottom-nav-item span {
+    font-size: 0.6875rem;
+    font-weight: 500;
+  }
+}
+
+/* ---------- 2. APP CARDS - Featured/Promotional ---------- */
+
+.app-promo-card {
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.app-promo-card--green {
+  background: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 35%) 100%);
+  color: white;
+}
+
+.app-promo-card--orange {
+  background: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(25 95% 43%) 100%);
+  color: white;
+}
+
+.app-promo-card--yellow {
+  background: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(45 93% 40%) 100%);
+  color: hsl(0 0% 10%);
+}
+
+.app-promo-card--blue {
+  background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
+  color: white;
+}
+
+.app-promo-card--primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  color: hsl(var(--primary-foreground));
+}
+
+.app-promo-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.app-promo-card p {
+  font-size: 0.9375rem;
+  opacity: 0.9;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.app-promo-card-button {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: inherit;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+}
+
+.app-promo-card-button:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ---------- 3. APP LIST ITEMS ---------- */
+
+.app-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: hsl(var(--card));
+  border-radius: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.app-list-item:active {
+  transform: scale(0.98);
+  background: hsl(var(--muted));
+}
+
+.app-list-item-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-list-item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.25rem;
+}
+
+.app-list-item-subtitle {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-list-item-arrow {
+  color: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+}
+
+/* ---------- 4. APP SECTIONS ---------- */
+
+@media (max-width: 640px) {
+  .app-section {
+    padding: 1.5rem 0;
+  }
+  
+  .app-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .app-section-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+  }
+  
+  .app-section-link {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: hsl(var(--primary));
+  }
+  
+  .app-section-content {
+    padding: 0 1rem;
+  }
+}
+
+/* ---------- 5. APP HORIZONTAL SCROLL ---------- */
+
+.app-horizontal-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 1rem;
+  padding: 0.5rem 1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.app-horizontal-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ---------- 6. APP BUTTONS ---------- */
+
+@media (max-width: 640px) {
+  .app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 52px;
+    padding: 0 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.875rem;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .app-button:active {
+    transform: scale(0.97);
+  }
+  
+  .app-button--primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .app-button--secondary {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  
+  .app-button--outline {
+    background: transparent;
+    border: 2px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  
+  .app-button--full {
+    width: 100%;
+  }
+}
+
+/* ---------- 7. APP INPUTS ---------- */
+
+@media (max-width: 640px) {
+  .app-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    background: hsl(var(--background));
+    border: 2px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+  
+  .app-input:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+  }
+  
+  .app-input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .app-input-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: hsl(var(--foreground));
+  }
+  
+  .app-input-group {
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* ---------- 8. APP TABS ---------- */
+
+@media (max-width: 640px) {
+  .app-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    background: hsl(var(--muted));
+    border-radius: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .app-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .app-tab {
+    flex: 1;
+    min-width: max-content;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-align: center;
+  }
+  
+  .app-tab--active {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .app-tab:not(.app-tab--active) {
+    color: hsl(var(--muted-foreground));
+  }
+}
+
+/* ---------- 9. APP MODAL/SHEET ---------- */
+
+@media (max-width: 640px) {
+  .app-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: hsl(var(--background));
+    border-radius: 1.5rem 1.5rem 0 0;
+    padding: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .app-sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 2px;
+    margin: 0 auto 1rem;
+  }
+  
+  .app-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+}
+
+/* ---------- 10. APP PRODUCT CARDS ---------- */
+
+@media (max-width: 640px) {
+  .app-product-card {
+    background: hsl(var(--card));
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  
+  .app-product-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+  
+  .app-product-content {
+    padding: 1rem;
+  }
+  
+  .app-product-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .app-product-price {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: hsl(var(--primary));
+  }
+  
+  .app-product-original-price {
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    text-decoration: line-through;
+    margin-left: 0.5rem;
+  }
+}
+
+/* ---------- 11. APP EMPTY STATE ---------- */
+
+.app-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.app-empty-state-icon {
+  width: 80px;
+  height: 80px;
+  background: hsl(var(--muted));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.app-empty-state-icon svg {
+  width: 40px;
+  height: 40px;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.app-empty-state-text {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1.5rem;
+  max-width: 280px;
+}
+
+/* ---------- 12. APP BADGE ---------- */
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  gap: 0.375rem;
+}
+
+.app-badge--success {
+  background: hsl(var(--success) / 0.15);
+  color: hsl(var(--success));
+}
+
+.app-badge--warning {
+  background: hsl(var(--warning) / 0.15);
+  color: hsl(var(--warning));
+}
+
+.app-badge--error {
+  background: hsl(var(--destructive) / 0.15);
+  color: hsl(var(--destructive));
+}
+
+.app-badge--info {
+  background: hsl(var(--info) / 0.15);
+  color: hsl(var(--info));
+}
+
+/* ---------- 13. APP LOADING ---------- */
+
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.app-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid hsl(var(--muted));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: app-spin 1s linear infinite;
+}
+
+@keyframes app-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 14. APP AVATAR ---------- */
+
+.app-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: hsl(var(--muted));
+}
+
+.app-avatar--sm {
+  width: 36px;
+  height: 36px;
+}
+
+.app-avatar--lg {
+  width: 64px;
+  height: 64px;
+}
+
+.app-avatar--xl {
+  width: 80px;
+  height: 80px;
+}
+
+/* ---------- 15. APP DIVIDER ---------- */
+
+.app-divider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: 1rem 0;
+}
+
+.app-divider--thick {
+  height: 8px;
+  background: hsl(var(--muted));
+}
+
+/* ---------- 16. APP TOUCH FEEDBACK ---------- */
+
+@media (pointer: coarse) {
+  .app-touch-feedback {
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+  
+  .app-touch-feedback:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+}
+
+/* ---------- 17. ADMIN PANEL MOBILE OPTIMIZATIONS ---------- */
+
+@media (max-width: 640px) {
+  /* Admin header compact */
+  .admin-header-mobile {
+    min-height: 56px;
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Admin menu items larger tap targets */
+  .admin-menu-item-mobile {
+    min-height: 52px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    border-radius: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Admin cards full width */
+  .admin-card-mobile {
+    width: 100%;
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+  
+  /* Admin form groups */
+  .admin-form-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  
+  /* Admin table as cards */
+  .admin-table-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .admin-table-card-mobile {
+    background: hsl(var(--card));
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .admin-table-row-mobile {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+  }
+  
+  .admin-table-row-mobile:last-child {
+    border-bottom: none;
+  }
+  
+  .admin-table-label-mobile {
+    font-size: 0.8125rem;
+    color: hsl(var(--muted-foreground));
+    font-weight: 500;
+  }
+  
+  .admin-table-value-mobile {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-align: right;
+  }
+}
+
+/* ---------- 18. SAFE AREA INSETS ---------- */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .app-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .app-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .app-safe-all {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ---------- 19. APP SKELETON LOADING ---------- */
+
+.app-skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: app-skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes app-skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- 20. PAGE CONTENT SPACING ---------- */
+
+@media (max-width: 640px) {
+  /* Add bottom padding for fixed bottom nav */
+  .app-page-content {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+  
+  /* Main content area */
+  .app-main {
+    min-height: 100vh;
+    padding-top: 0;
+  }
+}
