@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import { AdvancedCarousel } from "./AdvancedCarousel";
 import { useTranslation } from "react-i18next";
+import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
@@ -1281,6 +1282,13 @@ interface ProductCardProps {
 
 function ProductCard({ product, imageHeight = 200, titleSize = 14, priceSize = 18 }: ProductCardProps) {
   const firstImage = product.images?.[0]?.image_url;
+  const { content } = useTranslatedContent(
+    'products',
+    product.id,
+    ['name', 'description'],
+    product
+  );
+  const translatedName = content.name || product.name;
   
   return (
     <a 
@@ -1294,7 +1302,7 @@ function ProductCard({ product, imageHeight = 200, titleSize = 14, priceSize = 1
         {firstImage ? (
           <img 
             src={firstImage} 
-            alt={product.name}
+            alt={translatedName}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             loading="lazy"
           />
@@ -1307,7 +1315,7 @@ function ProductCard({ product, imageHeight = 200, titleSize = 14, priceSize = 1
           className="font-semibold line-clamp-2 mb-2 group-hover:text-primary transition-colors"
           style={{ fontSize: `${titleSize}px` }}
         >
-          {product.name}
+          {translatedName}
         </h3>
         {product.price && (
           <p 
