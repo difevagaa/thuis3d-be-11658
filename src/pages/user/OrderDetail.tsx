@@ -274,30 +274,30 @@ export default function OrderDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal:</span>
-                <span className="font-medium">€{Number(order.subtotal).toFixed(2)}</span>
+              <div className="flex justify-between items-center text-sm gap-2">
+                <span className="text-muted-foreground flex-shrink-0">Subtotal:</span>
+                <span className="font-medium text-right whitespace-nowrap">€{Number(order.subtotal).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Envío:</span>
-                <span className="font-medium">€{Number(order.shipping || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center text-sm gap-2">
+                <span className="text-muted-foreground flex-shrink-0">Envío:</span>
+                <span className="font-medium text-right whitespace-nowrap">€{Number(order.shipping || 0).toFixed(2)}</span>
               </div>
               {Number(order.tax || 0) > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">IVA (21%):</span>
-                  <span className="font-medium">€{Number(order.tax || 0).toFixed(2)}</span>
+                <div className="flex justify-between items-center text-sm gap-2">
+                  <span className="text-muted-foreground flex-shrink-0">IVA (21%):</span>
+                  <span className="font-medium text-right whitespace-nowrap">€{Number(order.tax || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Descuento:</span>
-                  <span className="font-medium text-success">-€{Number(order.discount).toFixed(2)}</span>
+                <div className="flex justify-between items-center text-sm gap-2">
+                  <span className="text-muted-foreground flex-shrink-0">Descuento:</span>
+                  <span className="font-medium text-success text-right whitespace-nowrap">-€{Number(order.discount).toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t pt-2 mt-2">
-                <div className="flex justify-between font-bold">
-                  <span>Total:</span>
-                  <span>€{Number(order.total).toFixed(2)}</span>
+                <div className="flex justify-between items-center font-bold gap-2">
+                  <span className="flex-shrink-0">Total:</span>
+                  <span className="text-right whitespace-nowrap">€{Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
