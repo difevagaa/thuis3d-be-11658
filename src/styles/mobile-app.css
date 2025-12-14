@@ -28,6 +28,21 @@ html, body {
 
 /* Sticky app header with blur effect */
 @media (max-width: 640px) {
+  /* Ensure header takes full width without gaps */
+  header {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Ensure no gaps around header container */
+  header > .container {
+    margin: 0 auto !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    max-width: 100% !important;
+  }
+  
   .app-header {
     position: sticky;
     top: 0;
