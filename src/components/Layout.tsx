@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { ClientChatWidget } from "./ClientChatWidget";
 import { supabase } from "@/integrations/supabase/client";
-import { Footer } from "./Footer";
+import { FooterConfigurable } from "./FooterConfigurable";
 import { LanguageSelector } from "./LanguageSelector";
 import { logger } from "@/lib/logger";
 import {
@@ -327,7 +327,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <Footer />
+      <FooterConfigurable />
       
       {/* Client Chat Widget - for authenticated users */}
       {user && <ClientChatWidget />}

@@ -21,6 +21,7 @@
     "title": "Newsletter",
     "description": "Receive offers and news",
     "placeholder": "Your email",
+    "subscribe": "Subscribe",
     "subscribed": "Thanks for subscribing!"
   },
   "payment": {
