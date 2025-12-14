@@ -100,69 +100,71 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
+      {/* Header - App-like on mobile */}
       <header 
-        className="sticky top-0 z-40 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        className="sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/80"
         style={{ 
           backgroundColor: 'var(--home-menu-bg, var(--header-bg, var(--navbar-bg, hsl(var(--background)))))',
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <div className="flex h-14 sm:h-16 md:h-16 items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-4 md:px-6">
+          <div className="flex h-16 sm:h-16 md:h-16 items-center justify-between">
             {/* Mobile Menu Button */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation flex-shrink-0">
+                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation flex-shrink-0 rounded-xl hover:bg-muted">
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[240px] xs:w-[280px] sm:w-[350px]">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2 text-left">
-                    <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-                    <span className="text-lg sm:text-xl font-bold text-primary truncate">Thuis3D.be</span>
+              <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0">
+                <SheetHeader className="p-6 border-b">
+                  <SheetTitle className="flex items-center gap-3 text-left">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                      <Package className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <span className="text-xl font-bold text-primary">Thuis3D.be</span>
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-0.5 sm:gap-1 mt-6 sm:mt-8">
+                <nav className="flex flex-col p-4 gap-2">
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/")}
                   >
                     {t('home')}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/productos")}
                   >
                     {t('products')}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/cotizaciones")}
                   >
                     {t('quotes')}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/tarjetas-regalo")}
                   >
                     {t('giftCards')}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/blog")}
                   >
                     {t('blog')}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                     onClick={() => handleNavigate("/galeria")}
                   >
                     {t('gallery')}
@@ -170,34 +172,34 @@ export const Layout = ({ children }: LayoutProps) => {
                   
                   {user && (
                     <>
-                      <div className="my-3 sm:my-4 border-t border-border"></div>
+                      <div className="my-4 border-t border-border"></div>
                       <Button
                         variant="ghost"
-                        className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                        className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                         onClick={() => handleNavigate("/mi-cuenta")}
                       >
-                        <UserCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                        <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" />
                         {t('myAccount')}
                       </Button>
                       {isAdmin && (
                         <Button
                           variant="ghost"
-                          className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-accent hover:text-accent-foreground"
+                          className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
                           onClick={() => handleNavigate("/admin/dashboard")}
                         >
-                          <Settings className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
                           {t('adminPanel')}
                         </Button>
                       )}
                       <Button
                         variant="ghost"
-                        className="justify-start text-sm sm:text-base py-4 sm:py-6 hover:bg-destructive/10 text-destructive hover:text-destructive"
+                        className="justify-start text-base h-14 rounded-xl hover:bg-destructive/10 text-destructive hover:text-destructive transition-all active:scale-[0.98]"
                         onClick={() => {
                           handleLogout();
                           setMobileMenuOpen(false);
                         }}
                       >
-                        <LogOut className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                        <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
                         {t('logout')}
                       </Button>
                     </>
@@ -205,13 +207,13 @@ export const Layout = ({ children }: LayoutProps) => {
                   
                   {!user && (
                     <>
-                      <div className="my-3 sm:my-4 border-t border-border"></div>
+                      <div className="my-4 border-t border-border"></div>
                       <Button
                         variant="default"
-                        className="justify-start text-sm sm:text-base py-4 sm:py-6"
+                        className="justify-start text-base h-14 rounded-xl transition-all active:scale-[0.98]"
                         onClick={() => handleNavigate("/auth")}
                       >
-                        <User className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                        <User className="mr-3 h-5 w-5 flex-shrink-0" />
                         {t('login')}
                       </Button>
                     </>
@@ -220,46 +222,48 @@ export const Layout = ({ children }: LayoutProps) => {
               </SheetContent>
             </Sheet>
 
-            <Link to="/" className="flex items-center gap-2 notranslate min-w-0 flex-1 sm:flex-initial">
-              <Package className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
-              <span className="text-lg sm:text-xl md:text-xl font-bold text-primary truncate">
+            <Link to="/" className="flex items-center gap-3 notranslate min-w-0 flex-1 sm:flex-initial">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Package className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-primary truncate hidden xs:inline">
                 Thuis3D.be
               </span>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-3 lg:gap-6">
-              <Link to="/" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('home')}
               </Link>
-              <Link to="/productos" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/productos" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('products')}
               </Link>
-              <Link to="/cotizaciones" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/cotizaciones" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('quotes')}
               </Link>
-              <Link to="/tarjetas-regalo" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/tarjetas-regalo" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('giftCards')}
               </Link>
-              <Link to="/blog" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('blog')}
               </Link>
-              <Link to="/galeria" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+              <Link to="/galeria" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
                 {t('gallery')}
               </Link>
             </nav>
 
-            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <LanguageSelector />
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation sm:h-10 sm:w-10 md:h-10 md:w-10" 
+                className="relative h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation rounded-xl hover:bg-muted transition-all active:scale-95" 
                 onClick={() => navigate("/carrito")}
               >
-                <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5" />
+                <ShoppingCart className="h-6 w-6" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] sm:text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-lg">
                     {cartCount}
                   </span>
                 )}
@@ -270,52 +274,52 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation sm:h-10 sm:w-10 md:h-10 md:w-10">
-                      <User className="h-5 w-5 sm:h-5 sm:w-5" />
+                    <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation rounded-xl hover:bg-muted transition-all active:scale-95">
+                      <User className="h-6 w-6" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 sm:w-56">
-                    <DropdownMenuLabel className="text-xs sm:text-sm">{t('myAccount')}</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+                    <DropdownMenuLabel className="text-sm font-semibold">{t('myAccount')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")} className="text-xs sm:text-sm">
-                      <UserCircle className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")} className="text-sm h-11 rounded-lg">
+                      <UserCircle className="mr-3 h-5 w-5" />
                       {t('myProfile')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")} className="text-xs sm:text-sm">
-                      <ShoppingBag className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")} className="text-sm h-11 rounded-lg">
+                      <ShoppingBag className="mr-3 h-5 w-5" />
                       {t('myOrders')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")} className="text-xs sm:text-sm">
-                      <MessageSquare className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")} className="text-sm h-11 rounded-lg">
+                      <MessageSquare className="mr-3 h-5 w-5" />
                       {t('myMessages')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=invoices")} className="text-xs sm:text-sm">
-                      <Package className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=invoices")} className="text-sm h-11 rounded-lg">
+                      <Package className="mr-3 h-5 w-5" />
                       {t('myInvoices')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta")} className="font-semibold text-xs sm:text-sm">
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta")} className="font-semibold text-sm h-11 rounded-lg">
                       {t('viewAll')}
                     </DropdownMenuItem>
                     {isAdmin && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="text-xs sm:text-sm">
-                          <Settings className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="text-sm h-11 rounded-lg">
+                          <Settings className="mr-3 h-5 w-5" />
                           {t('adminPanel')}
                         </DropdownMenuItem>
                       </>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-xs sm:text-sm">
-                      <LogOut className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <DropdownMenuItem onClick={handleLogout} className="text-sm h-11 rounded-lg text-destructive">
+                      <LogOut className="mr-3 h-5 w-5" />
                       {t('logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation hidden md:flex" onClick={() => navigate("/auth")}>
-                  <User className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation hidden md:flex rounded-xl hover:bg-muted" onClick={() => navigate("/auth")}>
+                  <User className="h-6 w-6" />
                 </Button>
               )}
             </div>
@@ -323,8 +327,8 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      {/* Main Content - with app-like padding */}
+      <main className="flex-1 app-page-content">{children}</main>
 
       {/* Footer */}
       <FooterConfigurable />
