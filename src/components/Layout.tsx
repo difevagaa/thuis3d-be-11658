@@ -108,12 +108,12 @@ export const Layout = ({ children }: LayoutProps) => {
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        <div className="container mx-auto px-4 sm:px-4 md:px-6">
-          <div className="flex h-16 sm:h-16 md:h-16 items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6">
+          <div className="flex h-14 sm:h-16 md:h-16 items-center justify-between gap-2">
             {/* Mobile Menu Button */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation flex-shrink-0 rounded-xl hover:bg-muted">
+                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation flex-shrink-0 rounded-xl hover:bg-muted bg-transparent border-0">
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
