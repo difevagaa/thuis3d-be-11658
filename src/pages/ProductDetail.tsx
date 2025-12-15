@@ -16,6 +16,7 @@ import ProductReviews from "@/components/ProductReviews";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
+import { StockIndicator } from "@/components/StockIndicator";
 import type { ColorSelection } from "@/hooks/useCart";
 
 interface Product {
@@ -24,6 +25,8 @@ interface Product {
   description: string;
   price: number;
   stock: number;
+  stock_quantity?: number | null;
+  track_stock?: boolean;
   allow_direct_purchase: boolean;
   enable_material_selection: boolean;
   enable_color_selection: boolean;
@@ -614,13 +617,15 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Stock info */}
-            {product.stock > 0 && (
-              <p className="text-sm text-green-600 mb-2">
-                <Check className="w-4 h-4 inline mr-1" />
-                {t('details.inStock')}: {product.stock} {t('details.available')}
-              </p>
-            )}
+            {/* Stock Indicator with Reservation System */}
+            <StockIndicator
+              productId={product.id}
+              trackStock={product.track_stock}
+              stockQuantity={product.stock_quantity}
+              quantity={quantity}
+              showWaitlistButton={true}
+              className="mb-3"
+            />
 
             {/* Brand/Manufacturer Info */}
             {(product.brand || product.manufacturer || product.origin_country) && (
