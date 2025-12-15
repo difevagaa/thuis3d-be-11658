@@ -24,6 +24,7 @@ export default function PaymentConfig() {
     bank_instructions: "",
     paypal_email: "",
     revolut_link: "",
+    card_payment_link: "",
     company_info: "",
   });
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
@@ -38,7 +39,7 @@ export default function PaymentConfig() {
       const settingKeys = [
         'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
-        'paypal_email', 'revolut_link', 'company_info', 'payment_images'
+        'paypal_email', 'revolut_link', 'card_payment_link', 'company_info', 'payment_images'
       ];
 
       const { data } = await supabase
@@ -72,6 +73,7 @@ export default function PaymentConfig() {
           bank_instructions: settings.bank_instructions || "",
           paypal_email: settings.paypal_email || "",
           revolut_link: settings.revolut_link || "",
+          card_payment_link: settings.card_payment_link || "",
           company_info: settings.company_info || "",
         });
       }
@@ -176,6 +178,11 @@ export default function PaymentConfig() {
           setting_group: "general"
         },
         {
+          setting_key: "card_payment_link",
+          setting_value: config.card_payment_link,
+          setting_group: "general"
+        },
+        {
           setting_key: "company_info",
           setting_value: config.company_info,
           setting_group: "general"
@@ -274,6 +281,23 @@ export default function PaymentConfig() {
               }
             />
           </div>
+
+          {config.card_enabled && (
+            <div className="ml-4 md:ml-12 p-4 bg-muted/50 rounded-lg space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="card_payment_link">Enlace de Pago con Tarjeta</Label>
+                <Input
+                  id="card_payment_link"
+                  value={config.card_payment_link}
+                  onChange={(e) => setConfig({ ...config, card_payment_link: e.target.value })}
+                  placeholder="https://tu-pasarela-de-pago.com/link"
+                />
+                <p className="text-xs text-muted-foreground">
+                  URL de la pasarela de pago donde se redirigirá al cliente para pagar con tarjeta (Stripe, Square, etc.)
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4">
             <div className="flex items-center gap-4">
