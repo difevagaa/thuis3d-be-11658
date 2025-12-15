@@ -477,7 +477,7 @@ export default function Payment() {
             isInvoicePayment: true
           }));
           
-          toast.success("Redirigiendo a página de pago...");
+          // No mostrar toast aquí - se mostrará en la página de pago
           navigate("/pago-tarjeta");
           setProcessing(false);
           return;
@@ -519,7 +519,7 @@ export default function Payment() {
             isInvoicePayment: true
           }));
           
-          toast.success("Redirigiendo a página de pago...");
+          // No mostrar toast aquí - se mostrará en la página de pago
           navigate("/pago-revolut");
           setProcessing(false);
           return;
@@ -618,7 +618,7 @@ export default function Payment() {
           orderNumber
         }));
 
-        toast.success("Redirigiendo a página de pago...");
+        // No mostrar toast aquí - se mostrará en la página de pago con tarjeta
         navigate("/pago-tarjeta");
         
         setProcessing(false);
@@ -650,7 +650,7 @@ export default function Payment() {
           orderNumber
         }));
 
-        toast.success("Redirigiendo a página de pago...");
+        // No mostrar toast aquí - se mostrará en la página de pago con Revolut
         navigate("/pago-revolut");
         
         setProcessing(false);
