@@ -1137,9 +1137,10 @@ function VideoSection({ section }: { section: SectionData }) {
 
 // View All Button Component for Carousels
 function ViewAllButton({ settings }: { settings: any }) {
+  const { t } = useTranslation(['products']);
   const position = settings?.viewAllButtonPosition || 'bottom-center';
   const variant = settings?.viewAllButtonVariant || 'default';
-  const text = settings?.viewAllButtonText || 'Ver todos los productos';
+  const text = settings?.viewAllButtonText || t('products:viewAllProducts');
   const url = settings?.viewAllButtonUrl || '/productos';
   const bgColor = settings?.viewAllButtonBgColor;
   const textColor = settings?.viewAllButtonTextColor;
