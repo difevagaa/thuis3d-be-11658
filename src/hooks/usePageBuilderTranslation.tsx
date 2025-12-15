@@ -1,19 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
-interface TranslatedSection {
-  section_name: string;
-  content: Record<string, any>;
-}
-
-interface TranslationCache {
-  [key: string]: TranslatedSection;
-}
-
 /**
  * Hook to translate Page Builder section content based on current language
- * Handles all translatable arrays: features, items, cards, testimonials, benefits, steps
+ * Handles all translatable arrays: features, items, cards, testimonials, benefits, steps, plans
  */
 export const usePageBuilderTranslation = (sectionId: string, originalContent: any, originalName: string) => {
   const { i18n } = useTranslation();
@@ -56,70 +47,96 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
       let newContent = JSON.parse(JSON.stringify(originalContent || {}));
       let newName = originalName;
 
+      const ensureArrayItem = (key: string, index: number) => {
+        if (!newContent[key]) {
+          newContent[key] = [...(originalContent?.[key] || [])];
+        }
+        return newContent[key]?.[index];
+      };
+
+      const setArrayField = (key: string, index: number, field: string, value: string) => {
+        if (!ensureArrayItem(key, index)) return;
+        newContent[key][index] = {
+          ...newContent[key][index],
+          [field]: value
+        };
+      };
+
       // Process translations
-      data?.forEach(translation => {
+      data?.forEach((translation) => {
         const fieldName = translation.field_name;
         const value = translation.translated_text;
-        
+
         if (!value) return;
 
         if (fieldName === 'section_name') {
           newName = value;
-        } else if (fieldName === 'title') {
-          newContent.title = value;
-        } else if (fieldName === 'subtitle') {
-          newContent.subtitle = value;
-        } else if (fieldName === 'description') {
-          newContent.description = value;
-        } else if (fieldName === 'buttonText') {
-          newContent.buttonText = value;
-        } else if (fieldName === 'text') {
-          newContent.text = value;
-        } else if (fieldName === 'headline') {
-          newContent.headline = value;
-        } else if (fieldName === 'subheadline') {
-          newContent.subheadline = value;
-        } else if (fieldName === 'label') {
-          newContent.label = value;
-        } else if (fieldName === 'tagline') {
-          newContent.tagline = value;
-        } else if (fieldName === 'message') {
-          newContent.message = value;
-        } else if (fieldName === 'placeholder') {
-          newContent.placeholder = value;
-        } else {
-          // Handle array fields: features, items, cards, testimonials, benefits, steps
-          const arrayPatterns = [
-            { prefix: 'features_', key: 'features' },
-            { prefix: 'items_', key: 'items' },
-            { prefix: 'cards_', key: 'cards' },
-            { prefix: 'testimonials_', key: 'testimonials' },
-            { prefix: 'benefits_', key: 'benefits' },
-            { prefix: 'steps_', key: 'steps' }
-          ];
+          return;
+        }
 
-          for (const pattern of arrayPatterns) {
-            if (fieldName.startsWith(pattern.prefix)) {
-              const match = fieldName.match(new RegExp(`${pattern.prefix}(\\d+)_(\\w+)`));
-              if (match) {
-                const index = parseInt(match[1]);
-                const field = match[2];
-                
-                // Initialize array if not exists
-                if (!newContent[pattern.key]) {
-                  newContent[pattern.key] = [...(originalContent?.[pattern.key] || [])];
-                }
-                
-                // Ensure the item exists
-                if (newContent[pattern.key][index]) {
-                  newContent[pattern.key][index] = {
-                    ...newContent[pattern.key][index],
-                    [field]: value
-                  };
-                }
-              }
-              break;
+        // Top-level known fields
+        const topLevelFields = [
+          'title', 'subtitle', 'description', 'buttonText', 'text',
+          'headline', 'subheadline', 'label', 'tagline', 'message',
+          'placeholder', 'emailPlaceholder'
+        ];
+
+        if (topLevelFields.includes(fieldName)) {
+          newContent[fieldName] = value;
+          return;
+        }
+
+        // Pricing plans features (plans_0_features_1)
+        const planFeatureMatch = fieldName.match(/^plans_(\d+)_features_(\d+)$/);
+        if (planFeatureMatch) {
+          const planIndex = parseInt(planFeatureMatch[1]);
+          const featureIndex = parseInt(planFeatureMatch[2]);
+          if (ensureArrayItem('plans', planIndex)) {
+            const existingFeatures = Array.isArray(newContent.plans[planIndex]?.features)
+              ? [...newContent.plans[planIndex].features]
+              : [...(originalContent?.plans?.[planIndex]?.features || [])];
+            existingFeatures[featureIndex] = value;
+            newContent.plans[planIndex] = {
+              ...newContent.plans[planIndex],
+              features: existingFeatures
+            };
+          }
+          return;
+        }
+
+        // Pricing plans other fields (plans_0_name, plans_0_buttonText)
+        const planFieldMatch = fieldName.match(/^plans_(\d+)_(\w+)$/);
+        if (planFieldMatch) {
+          const planIndex = parseInt(planFieldMatch[1]);
+          const field = planFieldMatch[2];
+          if (ensureArrayItem('plans', planIndex)) {
+            newContent.plans[planIndex] = {
+              ...newContent.plans[planIndex],
+              [field]: value
+            };
+          }
+          return;
+        }
+
+        // Handle array fields: features, items, cards, testimonials, benefits, steps
+        const arrayPatterns = [
+          { prefix: 'features_', key: 'features' },
+          { prefix: 'items_', key: 'items' },
+          { prefix: 'cards_', key: 'cards' },
+          { prefix: 'testimonials_', key: 'testimonials' },
+          { prefix: 'benefits_', key: 'benefits' },
+          { prefix: 'steps_', key: 'steps' }
+        ];
+
+        for (const pattern of arrayPatterns) {
+          if (fieldName.startsWith(pattern.prefix)) {
+            const match = fieldName.match(new RegExp(`${pattern.prefix}(\\d+)_(\\w+)`));
+            if (match) {
+              const index = parseInt(match[1]);
+              const field = match[2];
+              setArrayField(pattern.key, index, field, value);
             }
+            break;
           }
         }
       });
@@ -140,13 +157,18 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
 
 /**
  * Utility function to get all translatable fields from a section
- * Extended to support all array types
+ * Extended to support all array types including pricing plans
  */
 export const getSectionTranslatableFields = (sectionType: string, content: any): { field: string; value: string }[] => {
   const fields: { field: string; value: string }[] = [];
 
   // Common top-level fields
-  const topLevelFields = ['title', 'subtitle', 'description', 'buttonText', 'text', 'headline', 'subheadline', 'label', 'tagline', 'message', 'placeholder'];
+  const topLevelFields = [
+    'title', 'subtitle', 'description', 'buttonText', 'text',
+    'headline', 'subheadline', 'label', 'tagline', 'message',
+    'placeholder', 'emailPlaceholder'
+  ];
+
   topLevelFields.forEach(fieldName => {
     if (content?.[fieldName] && typeof content[fieldName] === 'string') {
       fields.push({ field: fieldName, value: content[fieldName] });
@@ -174,6 +196,25 @@ export const getSectionTranslatableFields = (sectionType: string, content: any):
       });
     }
   });
+
+  // Pricing plans (plans + plan.features[])
+  if (content?.plans && Array.isArray(content.plans)) {
+    content.plans.forEach((plan: any, planIndex: number) => {
+      ['name', 'period', 'buttonText', 'description'].forEach((fieldName) => {
+        if (plan?.[fieldName] && typeof plan[fieldName] === 'string') {
+          fields.push({ field: `plans_${planIndex}_${fieldName}`, value: plan[fieldName] });
+        }
+      });
+
+      if (Array.isArray(plan?.features)) {
+        plan.features.forEach((feature: any, featureIndex: number) => {
+          if (typeof feature === 'string' && feature.trim()) {
+            fields.push({ field: `plans_${planIndex}_features_${featureIndex}`, value: feature });
+          }
+        });
+      }
+    });
+  }
 
   return fields;
 };
