@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
 
 export default function LegalPage() {
   const { type } = useParams();
+  const { t } = useTranslation(["common", "errors"]);
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +36,7 @@ export default function LegalPage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <div className="text-center">Cargando...</div>
+        <div className="text-center">{t("common:loading")}</div>
       </div>
     );
   }
@@ -44,8 +46,8 @@ export default function LegalPage() {
       <div className="container mx-auto px-4 py-12">
         <Card>
           <CardContent className="p-12 text-center">
-            <h1 className="text-3xl font-bold mb-4">Página no encontrada</h1>
-            <p className="text-muted-foreground">La página legal que buscas no existe o no está publicada.</p>
+            <h1 className="text-3xl font-bold mb-4">{t("errors:pageNotFound")}</h1>
+            <p className="text-muted-foreground">{t("errors:pageNotFoundMessage")}</p>
           </CardContent>
         </Card>
       </div>
@@ -57,7 +59,7 @@ export default function LegalPage() {
       <Card>
         <CardContent className="p-8">
           <h1 className="text-4xl font-bold mb-6">{page.title}</h1>
-          <div 
+          <div
             className="prose prose-lg max-w-none dark:prose-invert"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
           />

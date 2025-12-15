@@ -41,5 +41,9 @@
       "title": "Total Guarantee",
       "description": "We back our work with a complete satisfaction guarantee on all our products"
     }
+  },
+  "fallback": {
+    "title": "Welcome",
+    "description": "This page is under construction. Please configure the sections from the page builder."
   }
 }
