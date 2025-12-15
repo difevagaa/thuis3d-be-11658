@@ -4193,6 +4193,7 @@ export type Database = {
       generate_product_keywords: { Args: never; Returns: undefined }
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin_or_superadmin: { Args: { user_id?: string }; Returns: boolean }
       mark_user_offline: { Args: { user_id_param: string }; Returns: undefined }
       notify_admins_async: {
         Args: {

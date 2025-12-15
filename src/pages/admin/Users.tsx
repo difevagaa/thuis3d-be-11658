@@ -103,6 +103,7 @@ export default function Users() {
       
       // Load BOTH system roles and custom roles
       const systemRoles = [
+        { value: 'superadmin', label: 'Superadministrador' },
         { value: 'admin', label: 'Administrador' },
         { value: 'client', label: 'Cliente' },
         { value: 'moderator', label: 'Moderador' }
@@ -115,7 +116,7 @@ export default function Users() {
         .order("display_name");
       
       const customRolesList = (customRolesData || [])
-        .filter(role => !['admin', 'client', 'moderator'].includes(role.name))
+        .filter(role => !['admin', 'client', 'moderator', 'superadmin'].includes(role.name))
         .map(role => ({
           value: role.name,
           label: role.display_name
