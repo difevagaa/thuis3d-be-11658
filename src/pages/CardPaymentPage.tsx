@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, ExternalLink, Copy } from "lucide-react";
 import { logger } from "@/lib/logger";
@@ -39,7 +39,7 @@ export default function CardPaymentPage() {
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing invoice data:", error);
-        toast.error("Error al cargar información de la factura");
+        i18nToast.error("error.loadingFailed");
         navigate("/pago");
       }
     } else if (pendingOrderStr) {
@@ -52,11 +52,11 @@ export default function CardPaymentPage() {
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing order data:", error);
-        toast.error("Error al cargar información del pedido");
+        i18nToast.error("error.loadingFailed");
         navigate("/pago");
       }
     } else {
-      toast.error("No se encontró información del pedido");
+      i18nToast.error("error.loadingFailed");
       navigate("/pago");
       return;
     }
@@ -97,7 +97,7 @@ export default function CardPaymentPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    i18nToast.success("success.copiedToClipboard");
   };
 
   const handleProceedToPayment = async () => {
@@ -107,7 +107,7 @@ export default function CardPaymentPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error(t('payment:messages.loginRequired'));
+        i18nToast.error("error.unauthorized");
         navigate("/auth");
         return;
       }
@@ -132,7 +132,7 @@ export default function CardPaymentPage() {
         // Clear invoice payment data
         sessionStorage.removeItem("pending_card_invoice");
 
-        toast.success(t('payment:messages.paymentRegistered'));
+        i18nToast.success("success.orderCreated");
 
         // Redirect to card payment gateway (uses card_payment_link, not revolut_link)
         if (paymentConfig?.card_payment_link) {
@@ -267,18 +267,18 @@ export default function CardPaymentPage() {
         sessionStorage.removeItem("checkout_session_id");
       }
 
-      toast.success(t('payment:messages.orderCreated'));
+      i18nToast.success("success.orderCreated");
 
       // Redirect to card payment gateway (uses card_payment_link, independent from revolut_link)
       if (paymentConfig?.card_payment_link) {
         window.location.href = paymentConfig.card_payment_link;
       } else {
-        toast.error("Configuración de pasarela de pago con tarjeta no disponible");
+        i18nToast.error("error.general");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
       logger.error("Error creating order:", error);
-      toast.error(t('payment:messages.errorProcessingOrder'));
+      i18nToast.error("error.general");
       setProcessing(false);
     }
   };

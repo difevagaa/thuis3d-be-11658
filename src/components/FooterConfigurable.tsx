@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FooterSettings {
@@ -232,14 +232,14 @@ export const FooterConfigurable = () => {
       
       if (existing) {
         if (existing.status === "subscribed") {
-          toast.info(t('newsletter.alreadySubscribed', 'Ya estás suscrito'));
+          i18nToast.info("info.alreadySubscribed");
         } else {
           // Reactivate subscription
           await supabase
             .from("email_subscribers")
             .update({ status: "subscribed", subscribed_at: new Date().toISOString() })
             .eq("id", existing.id);
-          toast.success(t('newsletter.subscribed'));
+          i18nToast.success("success.subscribed");
         }
       } else {
         // New subscription
@@ -252,12 +252,12 @@ export const FooterConfigurable = () => {
           });
         
         if (error) throw error;
-        toast.success(t('newsletter.subscribed'));
+        i18nToast.success("success.subscribed");
       }
       setEmail("");
     } catch (error: any) {
       console.error("Error subscribing:", error);
-      toast.error(t('newsletter.error', 'Error al suscribirse'));
+      i18nToast.error("error.general");
     } finally {
       setSubscribing(false);
     }
