@@ -10,7 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { withTimeout, TimeoutError } from "@/lib/asyncUtils";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -29,8 +28,8 @@ const Auth = () => {
     fullName: "",
   });
 
-  // Validation schema for signup with strict password requirements
-  const signupSchema = z.object({
+  // Validation schema with translated errors
+  const authSchema = z.object({
     email: z.string().email(t('invalidEmail')),
     password: z.string()
       .min(8, t('passwordMinLength'))
@@ -38,12 +37,6 @@ const Auth = () => {
       .regex(/[0-9]/, t('passwordNumber'))
       .regex(/[^A-Za-z0-9]/, t('passwordSpecial')),
     fullName: z.string().min(2, t('nameMinLength')).optional(),
-  });
-
-  // Simpler validation for login - just email and non-empty password
-  const loginSchema = z.object({
-    email: z.string().email(t('invalidEmail')),
-    password: z.string().min(1, t('passwordRequired', 'Password is required')),
   });
 
   useEffect(() => {
@@ -69,27 +62,22 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const validated = signupSchema.parse(formData);
-
-      const signUpRes = await withTimeout(
-        supabase.auth.signUp({
-          email: validated.email,
-          password: validated.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-              subscribed_newsletter: subscribeNewsletter,
-            },
-            emailRedirectTo: `${window.location.origin}/`,
+      const validated = authSchema.parse(formData);
+      
+      const { data: signUpData, error } = await supabase.auth.signUp({
+        email: validated.email,
+        password: validated.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            subscribed_newsletter: subscribeNewsletter,
           },
-        }),
-        15000,
-        t('signUp', 'Crear cuenta')
-      );
-
-      const { data: signUpData, error } = signUpRes;
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
 
       if (error) throw error;
+      
       // Si el usuario quiere suscribirse al newsletter, añadirlo a la tabla
       if (subscribeNewsletter && signUpData.user) {
         await supabase.from("email_subscribers").insert({
@@ -119,20 +107,15 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const validated = loginSchema.parse(formData);
-
-      const signInRes = await withTimeout(
-        supabase.auth.signInWithPassword({
-          email: validated.email,
-          password: validated.password,
-        }),
-        15000,
-        t('signIn', 'Iniciar sesión')
-      );
-
-      const { error } = signInRes;
+      const validated = authSchema.pick({ email: true, password: true }).parse(formData);
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: validated.email,
+        password: validated.password,
+      });
 
       if (error) throw error;
+      
       toast.success(t('welcomeBack'));
       navigate("/");
     } catch (error: any) {
@@ -156,17 +139,12 @@ const Auth = () => {
         return;
       }
 
-      const resetRes = await withTimeout(
-        supabase.auth.resetPasswordForEmail(resetEmail, {
-          redirectTo: `${window.location.origin}/auth?reset=true`,
-        }),
-        15000,
-        t('resetPassword', 'Recuperar contraseña')
-      );
-
-      const { error } = resetRes;
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
 
       if (error) throw error;
+
       toast.success(t('resetEmailSent'));
       setShowResetPassword(false);
       setResetEmail("");
@@ -187,17 +165,12 @@ const Auth = () => {
         return;
       }
 
-      const updateRes = await withTimeout(
-        supabase.auth.updateUser({
-          password: newPassword
-        }),
-        15000,
-        t('setNewPassword', 'Actualizar contraseña')
-      );
-
-      const { error } = updateRes;
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
 
       if (error) throw error;
+
       toast.success(t('passwordUpdated'));
       setIsSettingNewPassword(false);
       setNewPassword("");
