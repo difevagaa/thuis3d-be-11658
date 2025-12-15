@@ -1664,8 +1664,9 @@ function AccordionSection({ section }: { section: SectionData }) {
 
 // Pricing Section
 function PricingSection({ section }: { section: SectionData }) {
+  const { t } = useTranslation(["pageBuilder"]);
   const { content, styles, settings } = section;
-  
+
   return (
     <section
       className={cn(
@@ -1678,9 +1679,9 @@ function PricingSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-7xl mx-auto">
         {content?.title && (
-          <h2 
+          <h2
             className={cn("font-bold mb-12", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
-            style={{ 
+            style={{
               fontSize: `${settings?.titleSize || 28}px`,
               fontWeight: settings?.titleWeight || 'bold',
               color: styles?.textColor
@@ -1703,7 +1704,7 @@ function PricingSection({ section }: { section: SectionData }) {
             >
               {plan.highlighted && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                  Destacado
+                  {t("pageBuilder:pricing.featured")}
                 </div>
               )}
               <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
@@ -1724,7 +1725,7 @@ function PricingSection({ section }: { section: SectionData }) {
                 variant={plan.highlighted ? "default" : "outline"}
                 onClick={() => safeNavigate(plan.buttonUrl || '/contact')}
               >
-                {plan.buttonText || 'Seleccionar plan'}
+                {plan.buttonText || t("pageBuilder:pricing.selectPlan")}
               </Button>
             </div>
           ))}
@@ -1736,31 +1737,32 @@ function PricingSection({ section }: { section: SectionData }) {
 
 // Form Section
 function FormSection({ section }: { section: SectionData }) {
+  const { t } = useTranslation(["pageBuilder", "forms"]);
   const { content, styles, settings } = section;
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       // TODO: Integrate with backend API or Supabase Edge Function
       // Example: await supabase.functions.invoke('send-contact-form', { body: formData });
-      
+
       // Simulate submission for now
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Formulario enviado. Te contactaremos pronto!');
+
+      toast.success(t("pageBuilder:form.success"));
       setFormData({ name: '', email: '', phone: '', message: '' });
     } catch (error) {
       logger.error('Error submitting form:', error);
-      toast.error('Error al enviar el formulario. Por favor, intenta de nuevo.');
+      toast.error(t("pageBuilder:form.error"));
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   return (
     <section
       className={cn(
@@ -1773,9 +1775,9 @@ function FormSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-2xl mx-auto">
         {content?.title && (
-          <h2 
+          <h2
             className={cn("font-bold mb-4", getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center'))}
-            style={{ 
+            style={{
               fontSize: `${settings?.titleSize || 28}px`,
               fontWeight: settings?.titleWeight || 'bold',
               color: styles?.textColor
@@ -1785,7 +1787,7 @@ function FormSection({ section }: { section: SectionData }) {
           </h2>
         )}
         {content?.description && (
-          <p 
+          <p
             className="text-muted-foreground mb-8"
             style={{ fontSize: `${settings?.textSize || 16}px` }}
           >
@@ -1794,54 +1796,54 @@ function FormSection({ section }: { section: SectionData }) {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Nombre *</label>
+            <label className="block text-sm font-medium mb-2">{t("forms:name")} *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Tu nombre"
+              placeholder={t("pageBuilder:form.namePlaceholder")}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Email *</label>
+            <label className="block text-sm font-medium mb-2">{t("forms:email")} *</label>
             <input
               type="email"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="tu@email.com"
+              placeholder={t("pageBuilder:form.emailPlaceholder")}
             />
           </div>
           {settings?.includePhone !== false && (
             <div>
-              <label className="block text-sm font-medium mb-2">Teléfono</label>
+              <label className="block text-sm font-medium mb-2">{t("forms:phone")}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="+34 600 000 000"
+                placeholder={t("pageBuilder:form.phonePlaceholder")}
               />
             </div>
           )}
           <div>
             <label className="block text-sm font-medium mb-2">
-              Mensaje {settings?.requireMessage !== false && '*'}
+              {t("forms:message")} {settings?.requireMessage !== false && '*'}
             </label>
             <textarea
               required={settings?.requireMessage !== false}
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Tu mensaje"
+              placeholder={t("pageBuilder:form.messagePlaceholder")}
               rows={5}
             />
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Enviando...' : 'Enviar mensaje'}
+            {submitting ? t("pageBuilder:form.sending") : t("pageBuilder:form.submit")}
           </Button>
         </form>
       </div>
@@ -1851,31 +1853,32 @@ function FormSection({ section }: { section: SectionData }) {
 
 // Newsletter Section
 function NewsletterSection({ section }: { section: SectionData }) {
+  const { t } = useTranslation(["pageBuilder"]);
   const { content, styles, settings } = section;
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       // TODO: Integrate with newsletter service or backend
       // Example: await supabase.functions.invoke('subscribe-newsletter', { body: { email } });
-      
+
       // Simulate submission for now
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('¡Gracias por suscribirte!');
+
+      toast.success(t("pageBuilder:newsletter.success"));
       setEmail('');
     } catch (error) {
       logger.error('Error subscribing to newsletter:', error);
-      toast.error('Error al suscribirse. Por favor, intenta de nuevo.');
+      toast.error(t("pageBuilder:newsletter.error"));
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   return (
     <section
       className={cn(
@@ -1889,9 +1892,9 @@ function NewsletterSection({ section }: { section: SectionData }) {
     >
       <div className="max-w-2xl mx-auto text-center">
         {content?.title && (
-          <h2 
+          <h2
             className="font-bold mb-4"
-            style={{ 
+            style={{
               fontSize: `${settings?.titleSize || 28}px`,
               fontWeight: settings?.titleWeight || 'bold'
             }}
@@ -1900,7 +1903,7 @@ function NewsletterSection({ section }: { section: SectionData }) {
           </h2>
         )}
         {content?.description && (
-          <p 
+          <p
             className="mb-8 opacity-90"
             style={{ fontSize: `${settings?.textSize || 18}px` }}
           >
@@ -1914,10 +1917,10 @@ function NewsletterSection({ section }: { section: SectionData }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="flex-1 px-4 py-3 rounded-lg text-gray-900"
-            placeholder={content?.emailPlaceholder || 'tu@email.com'}
+            placeholder={content?.emailPlaceholder || t("pageBuilder:newsletter.emailPlaceholder")}
           />
           <Button type="submit" variant="secondary" disabled={submitting} className="px-6">
-            {submitting ? '...' : (content?.buttonText || 'Suscribirse')}
+            {submitting ? t("pageBuilder:newsletter.sending") : (content?.buttonText || t("pageBuilder:newsletter.button"))}
           </Button>
         </form>
       </div>

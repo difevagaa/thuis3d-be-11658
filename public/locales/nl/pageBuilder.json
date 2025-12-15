@@ -1,0 +1,23 @@
+{
+  "pricing": {
+    "featured": "Uitgelicht",
+    "selectPlan": "Kies plan"
+  },
+  "form": {
+    "namePlaceholder": "Uw naam",
+    "emailPlaceholder": "uw@email.com",
+    "phonePlaceholder": "+32 470 00 00 00",
+    "messagePlaceholder": "Uw bericht",
+    "submit": "Bericht verzenden",
+    "sending": "Verzenden...",
+    "success": "Formulier verzonden. We nemen snel contact met u op!",
+    "error": "Fout bij het verzenden van het formulier. Probeer het opnieuw."
+  },
+  "newsletter": {
+    "emailPlaceholder": "uw@email.com",
+    "button": "Abonneren",
+    "sending": "...",
+    "success": "Bedankt voor uw inschrijving!",
+    "error": "Fout bij inschrijven. Probeer het opnieuw."
+  }
+}
