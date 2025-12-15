@@ -64,7 +64,7 @@ export default function CardPaymentPage() {
 
   const loadPaymentConfig = useCallback(async () => {
     try {
-      const settingKeys = ['revolut_link', 'payment_images'];
+      const settingKeys = ['revolut_link', 'card_payment_link', 'payment_images'];
       const { data } = await supabase
         .from("site_settings")
         .select("*")
@@ -134,9 +134,9 @@ export default function CardPaymentPage() {
 
         toast.success(t('payment:messages.paymentRegistered'));
 
-        // Redirect to payment gateway
-        if (paymentConfig?.revolut_link) {
-          window.location.href = paymentConfig.revolut_link;
+        // Redirect to card payment gateway (uses card_payment_link, not revolut_link)
+        if (paymentConfig?.card_payment_link) {
+          window.location.href = paymentConfig.card_payment_link;
         } else {
           // If no gateway configured, go to instructions page
           navigate("/pago-instrucciones", { 
@@ -269,11 +269,11 @@ export default function CardPaymentPage() {
 
       toast.success(t('payment:messages.orderCreated'));
 
-      // Redirect to payment gateway (uses Revolut configuration as per requirements)
-      if (paymentConfig?.revolut_link) {
-        window.location.href = paymentConfig.revolut_link;
+      // Redirect to card payment gateway (uses card_payment_link, independent from revolut_link)
+      if (paymentConfig?.card_payment_link) {
+        window.location.href = paymentConfig.card_payment_link;
       } else {
-        toast.error("Configuración de pasarela de pago no disponible");
+        toast.error("Configuración de pasarela de pago con tarjeta no disponible");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {

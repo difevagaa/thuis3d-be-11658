@@ -264,9 +264,19 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   const checkAdminAccess = useCallback(async () => {
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        logger.error("Admin access check timed out");
+        toast.error("Tiempo de espera agotado. Por favor, inicia sesión nuevamente.");
+        navigate("/auth");
+      }
+    }, 10000); // 10 second timeout
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        clearTimeout(timeoutId);
         toast.error("Debes iniciar sesión");
         navigate("/auth");
         return;
@@ -288,12 +298,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       const isAdmin = roles.includes("admin");
 
       if (isSuperAdmin || isAdmin) {
+        clearTimeout(timeoutId);
         setHasAdminAccess(true);
+        setLoading(false);
         return;
       }
 
       // Allow access if user has any role that exists in custom_roles
       if (roles.length === 0) {
+        clearTimeout(timeoutId);
         toast.error("No tienes permisos de administrador");
         navigate("/");
         return;
@@ -308,20 +321,22 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       const hasCustomAdminRole = (customRoles || []).length > 0;
       if (!hasCustomAdminRole) {
+        clearTimeout(timeoutId);
         toast.error("No tienes permisos de administrador");
         navigate("/");
         return;
       }
 
+      clearTimeout(timeoutId);
       setHasAdminAccess(true);
-    } catch (error: unknown) {
-      logger.error("Error checking admin access:", { error });
-      toast.error("Error al verificar permisos");
-      navigate("/");
-    } finally {
       setLoading(false);
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      logger.error("Error checking admin access:", { error });
+      toast.error("Error al verificar permisos. Intenta iniciar sesión nuevamente.");
+      navigate("/auth");
     }
-  }, [navigate]);
+  }, [navigate, loading]);
 
   useEffect(() => {
     checkAdminAccess();

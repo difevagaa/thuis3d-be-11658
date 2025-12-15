@@ -17,6 +17,7 @@ export default function ShippingInfo() {
   const navigate = useNavigate();
   const { t } = useTranslation(['shipping', 'common']);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<any[]>([]);
   const { getAvailableCountries } = useShippingCalculator();
   const [formData, setFormData] = useState({
@@ -77,11 +78,16 @@ export default function ShippingInfo() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (submitting) return;
+    
     // Validate form using centralized validation
     const validation = validateShippingInfo(formData);
     if (!showValidationError(validation)) {
       return;
     }
+
+    setSubmitting(true);
 
     try {
       // Get current user
@@ -104,28 +110,50 @@ export default function ShippingInfo() {
         if (profileError) throw profileError;
       }
       
-      // Crear/actualizar sesión de checkout con la info de envío
-      const shippingInfo = { ...formData };
-      try {
-        const { data: session, error: sessionError } = await supabase
+      // Check if we already have a checkout session to prevent duplicates
+      const existingSessionId = sessionStorage.getItem('checkout_session_id');
+      if (existingSessionId) {
+        // Update existing session instead of creating new one
+        const { error: updateError } = await supabase
           .from('checkout_sessions')
-          .insert({
-            user_id: user ? user.id : null,
-            shipping_info: shippingInfo,
-            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString() // 2h
+          .update({
+            shipping_info: formData,
+            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
           })
-          .select()
-          .single();
-        if (sessionError) throw sessionError;
-        if (session?.id) {
-          sessionStorage.setItem('checkout_session_id', session.id);
+          .eq('id', existingSessionId);
+        
+        if (!updateError) {
+          toast.success(t('shipping:messages.saved'));
+          navigate("/resumen-pago");
+          return;
         }
-      } catch (sessionErr) {
-        handleSupabaseError(sessionErr, {
+        // If update failed (session expired/deleted), create new one
+        sessionStorage.removeItem('checkout_session_id');
+      }
+      
+      // Create new checkout session
+      const shippingInfo = { ...formData };
+      const { data: session, error: sessionError } = await supabase
+        .from('checkout_sessions')
+        .insert({
+          user_id: user ? user.id : null,
+          shipping_info: shippingInfo,
+          expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
+        })
+        .select()
+        .single();
+        
+      if (sessionError) {
+        handleSupabaseError(sessionError, {
           toastMessage: t('shipping:messages.error'),
           context: 'Create Checkout Session'
         });
+        setSubmitting(false);
         return;
+      }
+      
+      if (session?.id) {
+        sessionStorage.setItem('checkout_session_id', session.id);
       }
 
       toast.success(t('shipping:messages.saved'));
@@ -135,6 +163,7 @@ export default function ShippingInfo() {
         toastMessage: t('shipping:messages.error'),
         context: "Save Shipping Info"
       });
+      setSubmitting(false);
     }
   };
 
@@ -261,11 +290,18 @@ export default function ShippingInfo() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1 order-2 sm:order-1">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1 order-2 sm:order-1" disabled={submitting}>
                 {t('shipping:buttons.back')}
               </Button>
-              <Button type="submit" className="flex-1 order-1 sm:order-2">
-                {t('shipping:buttons.continue')}
+              <Button type="submit" className="flex-1 order-1 sm:order-2" disabled={submitting}>
+                {submitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    {t('common:processing') || 'Procesando...'}
+                  </span>
+                ) : (
+                  t('shipping:buttons.continue')
+                )}
               </Button>
             </div>
           </form>
