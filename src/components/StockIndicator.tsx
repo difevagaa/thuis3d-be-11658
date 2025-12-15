@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Bell, BellOff, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useStockReservation } from '@/hooks/useStockReservation';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface StockIndicatorProps {
@@ -30,17 +31,68 @@ export function StockIndicator({
   const [availableStock, setAvailableStock] = useState<number | null>(stockQuantity ?? null);
   const [inWaitlist, setInWaitlist] = useState(false);
 
-  useEffect(() => {
+  // Cargar stock inicial
+  const loadStock = useCallback(async () => {
     if (trackStock) {
-      // Cargar stock disponible real (considerando reservas)
-      getAvailableStock(productId).then(stock => {
-        if (stock !== null) setAvailableStock(stock);
-      });
+      const stock = await getAvailableStock(productId);
+      if (stock !== null) setAvailableStock(stock);
       
-      // Verificar si está en lista de espera
-      isInWaitlist(productId).then(setInWaitlist);
+      const waitlistStatus = await isInWaitlist(productId);
+      setInWaitlist(waitlistStatus);
     }
   }, [productId, trackStock, getAvailableStock, isInWaitlist]);
+
+  useEffect(() => {
+    loadStock();
+  }, [loadStock]);
+
+  // Suscripción a cambios en tiempo real
+  useEffect(() => {
+    if (!trackStock) return;
+
+    // Suscribirse a cambios en stock_reservations
+    const reservationsChannel = supabase
+      .channel(`stock-reservations-${productId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stock_reservations',
+          filter: `product_id=eq.${productId}`
+        },
+        () => {
+          // Recargar stock cuando hay cambios en reservas
+          loadStock();
+        }
+      )
+      .subscribe();
+
+    // Suscribirse a cambios en products (para actualizaciones directas de stock)
+    const productsChannel = supabase
+      .channel(`products-stock-${productId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products',
+          filter: `id=eq.${productId}`
+        },
+        (payload) => {
+          if (payload.new && 'stock_quantity' in payload.new) {
+            // Actualizar stock directo y recargar disponibilidad
+            loadStock();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(reservationsChannel);
+      supabase.removeChannel(productsChannel);
+    };
+  }, [productId, trackStock, loadStock]);
 
   // Si no se rastrea stock, no mostrar nada
   if (!trackStock) {
