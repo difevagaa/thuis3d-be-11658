@@ -2107,15 +2107,23 @@ export function usePageSections(pageKey: string) {
       try {
         // Use the already-imported supabase client (avoid dynamic import that can hang on slow/mobile connections)
 
-        // Get page by key
+        // Get page by key (use maybeSingle to avoid error when no page exists)
         const { data: page, error: pageError } = await supabase
           .from('page_builder_pages')
           .select('id')
           .eq('page_key', pageKey)
           .eq('is_enabled', true)
-          .single();
+          .maybeSingle();
 
-        if (pageError || !page) {
+        if (pageError) {
+          console.error('Error loading page:', pageError);
+          setSections([]);
+          setLoading(false);
+          return;
+        }
+
+        if (!page) {
+          // No page configured - this is OK, just show empty
           setSections([]);
           setLoading(false);
           return;
