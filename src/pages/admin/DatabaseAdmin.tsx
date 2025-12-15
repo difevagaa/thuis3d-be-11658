@@ -66,8 +66,40 @@ interface TableData {
 function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [attempts, setAttempts] = useState(0);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Check if superadmin on mount (auto-unlock)
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .in("role", ["superadmin"]);
+
+        if (roles && roles.length > 0) {
+          setIsSuperAdmin(true);
+          toast.success("Acceso de superadministrador concedido");
+          onUnlock();
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking superadmin:", err);
+      }
+      setLoading(false);
+    };
+
+    checkSuperAdmin();
+  }, [onUnlock]);
 
   const verifyPin = async () => {
     if (pin.length !== 4) {
@@ -79,17 +111,11 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     setError("");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No autenticado");
-
-      // Verify using server-side function (hash-safe)
       const { data, error: fnError } = await supabase.functions.invoke('verify-admin-pin', {
         body: { pin, action: 'verify' }
       });
 
-      if (fnError) {
-        throw fnError;
-      }
+      if (fnError) throw fnError;
 
       if (data?.success) {
         toast.success("Acceso concedido");
@@ -117,6 +143,20 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     }
   };
 
+  // Show loading while checking superadmin
+  if (loading && !pin) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="py-12 text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p>Verificando permisos...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -143,6 +183,7 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
               maxLength={4}
               className="text-center text-2xl tracking-widest"
               disabled={loading || attempts >= 5}
+              autoFocus
             />
           </div>
 
@@ -181,6 +222,16 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+// Table column definition for creating tables
+interface NewColumnDef {
+  name: string;
+  type: string;
+  nullable: boolean;
+  defaultValue: string;
+  isPrimaryKey: boolean;
+  isUnique: boolean;
+}
+
 // Main Database Admin Component
 export default function DatabaseAdmin() {
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -210,6 +261,16 @@ export default function DatabaseAdmin() {
   const [filterValue, setFilterValue] = useState("");
   const [activeTab, setActiveTab] = useState("tables");
   const [queryHistory, setQueryHistory] = useState<string[]>([]);
+  
+  // Create table states
+  const [showCreateTableDialog, setShowCreateTableDialog] = useState(false);
+  const [newTableName, setNewTableName] = useState("");
+  const [newTableColumns, setNewTableColumns] = useState<NewColumnDef[]>([
+    { name: "id", type: "uuid", nullable: false, defaultValue: "gen_random_uuid()", isPrimaryKey: true, isUnique: false }
+  ]);
+  const [enableRLS, setEnableRLS] = useState(true);
+  const [createTableLoading, setCreateTableLoading] = useState(false);
+
   const [stats, setStats] = useState({
     totalTables: 0,
     totalRows: 0,
@@ -566,11 +627,15 @@ export default function DatabaseAdmin() {
             Gestión completa de todas las tablas y datos del sistema
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="gap-1">
             <Table2 className="h-3 w-3" />
             {tables.length} tablas
           </Badge>
+          <Button variant="default" size="sm" onClick={() => setShowCreateTableDialog(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Crear Tabla
+          </Button>
           <Button variant="outline" size="sm" onClick={loadTables}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Actualizar
@@ -1304,6 +1369,300 @@ export default function DatabaseAdmin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Table Dialog */}
+      <Dialog open={showCreateTableDialog} onOpenChange={setShowCreateTableDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Crear Nueva Tabla
+            </DialogTitle>
+            <DialogDescription>
+              Define la estructura de tu nueva tabla usando el formulario visual
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Table Name */}
+            <div className="space-y-2">
+              <Label htmlFor="tableName">Nombre de la Tabla</Label>
+              <Input
+                id="tableName"
+                value={newTableName}
+                onChange={(e) => setNewTableName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"))}
+                placeholder="mi_nueva_tabla"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Solo letras minúsculas, números y guiones bajos
+              </p>
+            </div>
+
+            {/* Columns */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Columnas</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewTableColumns([...newTableColumns, {
+                    name: "",
+                    type: "text",
+                    nullable: true,
+                    defaultValue: "",
+                    isPrimaryKey: false,
+                    isUnique: false
+                  }])}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Añadir Columna
+                </Button>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-40">Nombre</TableHead>
+                      <TableHead className="w-32">Tipo</TableHead>
+                      <TableHead className="w-24">Nullable</TableHead>
+                      <TableHead className="w-40">Valor Default</TableHead>
+                      <TableHead className="w-20">PK</TableHead>
+                      <TableHead className="w-20">Unique</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {newTableColumns.map((col, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>
+                          <Input
+                            value={col.name}
+                            onChange={(e) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].name = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+                              setNewTableColumns(updated);
+                            }}
+                            placeholder="columna"
+                            className="font-mono h-8 text-sm"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={col.type}
+                            onValueChange={(v) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].type = v;
+                              setNewTableColumns(updated);
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="uuid">UUID</SelectItem>
+                              <SelectItem value="text">Text</SelectItem>
+                              <SelectItem value="integer">Integer</SelectItem>
+                              <SelectItem value="bigint">BigInt</SelectItem>
+                              <SelectItem value="numeric">Numeric</SelectItem>
+                              <SelectItem value="boolean">Boolean</SelectItem>
+                              <SelectItem value="timestamp with time zone">Timestamp</SelectItem>
+                              <SelectItem value="date">Date</SelectItem>
+                              <SelectItem value="jsonb">JSONB</SelectItem>
+                              <SelectItem value="text[]">Text Array</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={col.nullable}
+                            onCheckedChange={(v) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].nullable = !!v;
+                              setNewTableColumns(updated);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={col.defaultValue}
+                            onChange={(e) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].defaultValue = e.target.value;
+                              setNewTableColumns(updated);
+                            }}
+                            placeholder="default"
+                            className="font-mono h-8 text-sm"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={col.isPrimaryKey}
+                            onCheckedChange={(v) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].isPrimaryKey = !!v;
+                              setNewTableColumns(updated);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={col.isUnique}
+                            onCheckedChange={(v) => {
+                              const updated = [...newTableColumns];
+                              updated[idx].isUnique = !!v;
+                              setNewTableColumns(updated);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {idx > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setNewTableColumns(newTableColumns.filter((_, i) => i !== idx));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enableRLS"
+                  checked={enableRLS}
+                  onCheckedChange={(v) => setEnableRLS(!!v)}
+                />
+                <Label htmlFor="enableRLS" className="text-sm">
+                  Habilitar Row Level Security (RLS)
+                </Label>
+              </div>
+            </div>
+
+            {/* SQL Preview */}
+            <div className="space-y-2">
+              <Label>Vista Previa SQL</Label>
+              <ScrollArea className="h-40 rounded border p-3 bg-muted/50">
+                <pre className="text-xs font-mono whitespace-pre-wrap">
+                  {generateCreateTableSQL()}
+                </pre>
+              </ScrollArea>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowCreateTableDialog(false);
+              resetCreateTableForm();
+            }}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateTable}
+              disabled={createTableLoading || !newTableName || newTableColumns.filter(c => c.name).length === 0}
+            >
+              {createTableLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Tabla
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
+  // Generate CREATE TABLE SQL from form
+  function generateCreateTableSQL(): string {
+    if (!newTableName) return "-- Ingresa el nombre de la tabla";
+    
+    const columnsSQL = newTableColumns
+      .filter(col => col.name)
+      .map(col => {
+        let def = `  ${col.name} ${col.type.toUpperCase()}`;
+        if (!col.nullable) def += " NOT NULL";
+        if (col.defaultValue) def += ` DEFAULT ${col.defaultValue}`;
+        if (col.isPrimaryKey) def += " PRIMARY KEY";
+        if (col.isUnique && !col.isPrimaryKey) def += " UNIQUE";
+        return def;
+      })
+      .join(",\n");
+
+    let sql = `CREATE TABLE public.${newTableName} (\n${columnsSQL}\n);`;
+    
+    if (enableRLS) {
+      sql += `\n\nALTER TABLE public.${newTableName} ENABLE ROW LEVEL SECURITY;`;
+      sql += `\n\n-- Política para administradores`;
+      sql += `\nCREATE POLICY "Admins can manage ${newTableName}"`;
+      sql += `\nON public.${newTableName}`;
+      sql += `\nFOR ALL`;
+      sql += `\nUSING (has_role(auth.uid(), 'admin'::text));`;
+    }
+    
+    return sql;
+  }
+
+  // Reset create table form
+  function resetCreateTableForm() {
+    setNewTableName("");
+    setNewTableColumns([
+      { name: "id", type: "uuid", nullable: false, defaultValue: "gen_random_uuid()", isPrimaryKey: true, isUnique: false }
+    ]);
+    setEnableRLS(true);
+  }
+
+  // Handle create table
+  async function handleCreateTable() {
+    if (!newTableName || newTableColumns.filter(c => c.name).length === 0) return;
+
+    setCreateTableLoading(true);
+    try {
+      const sql = generateCreateTableSQL();
+      
+      // Execute via RPC function (requires admin privileges)
+      const { data, error } = await supabase.rpc('execute_admin_sql' as any, {
+        sql_query: sql
+      });
+
+      if (error) {
+        // If RPC doesn't exist, show the SQL to copy
+        toast.error(
+          "No se pudo crear la tabla automáticamente. Copia el SQL y ejecútalo manualmente.",
+          { duration: 5000 }
+        );
+        console.error("Create table error:", error);
+        return;
+      }
+
+      toast.success(`Tabla "${newTableName}" creada exitosamente`);
+      setShowCreateTableDialog(false);
+      resetCreateTableForm();
+      loadTables();
+    } catch (err: any) {
+      console.error("Error creating table:", err);
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setCreateTableLoading(false);
+    }
+  }
 }
