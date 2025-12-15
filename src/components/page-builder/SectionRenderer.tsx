@@ -1135,6 +1135,46 @@ function VideoSection({ section }: { section: SectionData }) {
   );
 }
 
+// View All Button Component for Carousels
+function ViewAllButton({ settings }: { settings: any }) {
+  const position = settings?.viewAllButtonPosition || 'bottom-center';
+  const variant = settings?.viewAllButtonVariant || 'default';
+  const text = settings?.viewAllButtonText || 'Ver todos los productos';
+  const url = settings?.viewAllButtonUrl || '/productos';
+  const bgColor = settings?.viewAllButtonBgColor;
+  const textColor = settings?.viewAllButtonTextColor;
+  
+  const positionClasses: Record<string, string> = {
+    'top-left': 'justify-start mt-0 mb-6',
+    'top-center': 'justify-center mt-0 mb-6',
+    'top-right': 'justify-end mt-0 mb-6',
+    'bottom-left': 'justify-start mt-6 mb-0',
+    'bottom-center': 'justify-center mt-6 mb-0',
+    'bottom-right': 'justify-end mt-6 mb-0',
+  };
+  
+  const buttonStyle: React.CSSProperties = {};
+  if (bgColor && variant === 'default') {
+    buttonStyle.backgroundColor = bgColor;
+  }
+  if (textColor) {
+    buttonStyle.color = textColor;
+  }
+
+  return (
+    <div className={cn("flex w-full", positionClasses[position] || positionClasses['bottom-center'])}>
+      <Button
+        variant={variant as any}
+        onClick={() => safeNavigate(url)}
+        style={buttonStyle}
+        className="font-semibold"
+      >
+        {text}
+      </Button>
+    </div>
+  );
+}
+
 // Products Carousel Section
 function ProductsCarouselSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
@@ -1293,6 +1333,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
           </p>
         )}
         
+        {/* View All Button - Top Position */}
+        {settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top') && (
+          <ViewAllButton settings={settings} />
+        )}
+        
         <AdvancedCarousel
           items={products}
           settings={{
@@ -1319,6 +1364,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
             />
           )}
         />
+        
+        {/* View All Button - Bottom Position */}
+        {settings?.showViewAllButton && (!settings?.viewAllButtonPosition || settings?.viewAllButtonPosition?.startsWith('bottom')) && (
+          <ViewAllButton settings={settings} />
+        )}
       </div>
       
       {/* Custom CSS if provided */}

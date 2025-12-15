@@ -408,6 +408,102 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
             />
           </div>
         </Card>
+
+        {/* Botón Ver Todos los Productos */}
+        <Card className="p-4 space-y-4">
+          <h4 className="font-medium text-sm border-b pb-2">Botón "Ver Todos"</h4>
+          
+          <div className="flex items-center justify-between">
+            <Label>Mostrar botón "Ver todos"</Label>
+            <Switch
+              checked={settings?.showViewAllButton || false}
+              onCheckedChange={(checked) => onUpdate('showViewAllButton', checked)}
+            />
+          </div>
+
+          {settings?.showViewAllButton && (
+            <>
+              <div className="space-y-2">
+                <Label>Texto del botón</Label>
+                <Input
+                  type="text"
+                  value={settings?.viewAllButtonText || 'Ver todos los productos'}
+                  onChange={(e) => onUpdate('viewAllButtonText', e.target.value)}
+                  placeholder="Ver todos los productos"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>URL del botón</Label>
+                <Input
+                  type="text"
+                  value={settings?.viewAllButtonUrl || '/productos'}
+                  onChange={(e) => onUpdate('viewAllButtonUrl', e.target.value)}
+                  placeholder="/productos"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Posición del botón</Label>
+                <Select
+                  value={settings?.viewAllButtonPosition || 'bottom-center'}
+                  onValueChange={(value) => onUpdate('viewAllButtonPosition', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="top-left">Arriba izquierda</SelectItem>
+                    <SelectItem value="top-center">Arriba centro</SelectItem>
+                    <SelectItem value="top-right">Arriba derecha</SelectItem>
+                    <SelectItem value="bottom-left">Abajo izquierda</SelectItem>
+                    <SelectItem value="bottom-center">Abajo centro</SelectItem>
+                    <SelectItem value="bottom-right">Abajo derecha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Estilo del botón</Label>
+                <Select
+                  value={settings?.viewAllButtonVariant || 'default'}
+                  onValueChange={(value) => onUpdate('viewAllButtonVariant', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Principal</SelectItem>
+                    <SelectItem value="secondary">Secundario</SelectItem>
+                    <SelectItem value="outline">Contorno</SelectItem>
+                    <SelectItem value="ghost">Fantasma</SelectItem>
+                    <SelectItem value="link">Enlace</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Color de fondo del botón</Label>
+                <Input
+                  type="color"
+                  value={settings?.viewAllButtonBgColor || '#3b82f6'}
+                  onChange={(e) => onUpdate('viewAllButtonBgColor', e.target.value)}
+                  className="h-10 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Color del texto del botón</Label>
+                <Input
+                  type="color"
+                  value={settings?.viewAllButtonTextColor || '#ffffff'}
+                  onChange={(e) => onUpdate('viewAllButtonTextColor', e.target.value)}
+                  className="h-10 w-full"
+                />
+              </div>
+            </>
+          )}
+        </Card>
       </TabsContent>
     </Tabs>
   );
