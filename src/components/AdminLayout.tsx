@@ -17,7 +17,6 @@ import {
   Home, 
   RefreshCw, 
   RotateCcw, 
-  Contrast, 
   Maximize, 
   Minimize,
   Shield
@@ -29,7 +28,7 @@ interface AdminLayoutProps {
 // Inner component that has access to useSidebar
 function AdminLayoutContent({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [isGrayscale, setIsGrayscale] = useState(false);
+  
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { setOpen, open } = useSidebar();
@@ -92,20 +91,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     };
   }, [open, setOpen]);
 
-  // Toggle grayscale mode for accessibility
-  const toggleGrayscale = useCallback(() => {
-    setIsGrayscale((prev) => {
-      const newValue = !prev;
-      if (newValue) {
-        document.documentElement.classList.add("grayscale");
-        toast.success("Modo blanco y negro activado");
-      } else {
-        document.documentElement.classList.remove("grayscale");
-        toast.success("Modo blanco y negro desactivado");
-      }
-      return newValue;
-    });
-  }, []);
 
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
@@ -234,22 +219,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Toggle Grayscale Mode - Hidden on mobile */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={toggleGrayscale}
-                  className={`h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 hover:bg-muted hidden lg:flex ${isGrayscale ? "bg-muted" : ""}`}
-                >
-                  <Contrast className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">{isGrayscale ? "Desactivar" : "Activar"} B/N</p>
-              </TooltipContent>
-            </Tooltip>
 
             {/* Toggle Fullscreen - Hidden on mobile */}
             <Tooltip>
