@@ -102,26 +102,32 @@ export default function RevolutPaymentPage() {
     // Silent copy - no toast
   };
 
-  // Effect to handle redirect after overlay
+  const openPaymentTab = () => {
+    return window.open("about:blank", "_blank", "noopener,noreferrer");
+  };
+
+  // Navegar después del overlay (la pestaña se abre DURANTE el click para evitar bloqueos)
   useEffect(() => {
-    if (showRedirectOverlay && pendingOrderInfo && paymentConfig?.revolut_link) {
+    if (showRedirectOverlay && pendingOrderInfo) {
       const timer = setTimeout(() => {
-        window.open(paymentConfig.revolut_link, '_blank');
-        navigate("/pago-en-proceso", { 
-          state: { 
+        navigate("/pago-en-proceso", {
+          state: {
             orderNumber: pendingOrderInfo.orderNumber,
             total: pendingOrderInfo.total,
             paymentMethod: "revolut",
-            isInvoicePayment: pendingOrderInfo.isInvoicePayment
-          } 
+            isInvoicePayment: pendingOrderInfo.isInvoicePayment,
+          },
         });
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [showRedirectOverlay, pendingOrderInfo, paymentConfig, navigate]);
+  }, [showRedirectOverlay, pendingOrderInfo, navigate]);
 
   const handleProceedToPayment = async () => {
     setProcessing(true);
+
+    const gatewayUrl = paymentConfig?.revolut_link as string | undefined;
+    const paymentTab = gatewayUrl ? openPaymentTab() : null;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -152,20 +158,21 @@ export default function RevolutPaymentPage() {
         // Clear invoice payment data
         sessionStorage.removeItem("pending_revolut_invoice");
 
-        // Show redirect overlay
-        if (paymentConfig?.revolut_link) {
+        // Abrir en pestaña nueva (no popup) dentro del gesto del click
+        if (gatewayUrl) {
+          if (paymentTab) paymentTab.location.href = gatewayUrl;
           setPendingOrderInfo({ orderNumber: invoiceNumber, total, isInvoicePayment: true });
           setShowRedirectOverlay(true);
         } else {
           // If no gateway configured, go to instructions page
-          navigate("/pago-instrucciones", { 
-            state: { 
+          navigate("/pago-instrucciones", {
+            state: {
               orderNumber: invoiceNumber,
               method: "revolut",
               total: total,
               isPending: false,
               isInvoicePayment: true
-            } 
+            }
           });
         }
         return;
@@ -287,7 +294,8 @@ export default function RevolutPaymentPage() {
       }
 
       // Show redirect overlay
-      if (paymentConfig?.revolut_link) {
+      if (gatewayUrl) {
+        if (paymentTab) paymentTab.location.href = gatewayUrl;
         setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
@@ -295,6 +303,7 @@ export default function RevolutPaymentPage() {
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
+      try { paymentTab?.close(); } catch {}
       logger.error("Error creating order:", error);
       toast.error(t('payment:messages.errorProcessingOrder'));
       setProcessing(false);
