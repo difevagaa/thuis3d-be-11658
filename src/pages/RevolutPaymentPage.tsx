@@ -41,7 +41,7 @@ export default function RevolutPaymentPage() {
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing invoice data:", error);
-        toast.error("Error al cargar información de la factura");
+        // Silent error - navigate away
         navigate("/pago");
       }
     } else if (pendingOrderStr) {
@@ -54,11 +54,11 @@ export default function RevolutPaymentPage() {
         setLoading(false);
       } catch (error) {
         logger.error("Error parsing order data:", error);
-        toast.error("Error al cargar información del pedido");
+        // Silent error - navigate away
         navigate("/pago");
       }
     } else {
-      toast.error("No se encontró información del pedido");
+      // Silent error - navigate away
       navigate("/pago");
       return;
     }
@@ -99,7 +99,7 @@ export default function RevolutPaymentPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    // Silent copy - no toast
   };
 
   // Effect to handle redirect after overlay
@@ -291,7 +291,7 @@ export default function RevolutPaymentPage() {
         setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
-        toast.error("Configuración de pago no disponible");
+        // Silent error - navigate away
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
@@ -350,28 +350,28 @@ export default function RevolutPaymentPage() {
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
             </svg>
           </div>
-          <CardTitle className="text-2xl">Pago con Revolut</CardTitle>
+          <CardTitle className="text-2xl">{t('payment:revolutPayment.title', 'Revolut Payment')}</CardTitle>
           <CardDescription>
-            Vas a ser redirigido a la plataforma de pago de Revolut
+            {t('payment:revolutPayment.description', 'You will be redirected to the Revolut payment platform')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Order/Invoice Information */}
           <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
             <h3 className="font-semibold mb-3 text-purple-900 dark:text-purple-100">
-              {orderData.isInvoicePayment ? 'Información de la Factura' : 'Información del Pedido'}
+              {orderData.isInvoicePayment ? t('payment:invoiceInfo', 'Invoice Information') : t('payment:orderInfo', 'Order Information')}
             </h3>
             
             <div className="space-y-3 text-sm">
               <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Monto a Pagar:</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{t('payment:amountToPay', 'Amount to Pay')}:</p>
                 <p className="text-3xl font-bold text-primary">€{Number(orderData.total).toFixed(2)}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">IVA incluido</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('payment:vatIncluded', 'VAT included')}</p>
               </div>
 
               <div>
                 <p className="font-medium text-purple-900 dark:text-purple-100">
-                  {orderData.isInvoicePayment ? 'Número de Referencia:' : 'Número de Pedido:'}
+                  {orderData.isInvoicePayment ? t('payment:referenceNumber', 'Reference Number') : t('payment:orderNumber', 'Order Number')}:
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
@@ -388,21 +388,21 @@ export default function RevolutPaymentPage() {
               </div>
 
               <div className="pt-3 border-t border-purple-200 dark:border-purple-700">
-                <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-2">Detalles del Pago:</h4>
+                <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-2">{t('payment:paymentDetails', 'Payment Details')}:</h4>
                 <div className="space-y-1 text-purple-900 dark:text-purple-50">
                   <div className="flex justify-between">
-                    <span>Subtotal:</span>
+                    <span>{t('payment:subtotal', 'Subtotal')}:</span>
                     <span>€{Number(orderData.subtotal).toFixed(2)}</span>
                   </div>
                   {orderData.shipping > 0 && (
                     <div className="flex justify-between">
-                      <span>Envío:</span>
+                      <span>{t('payment:shipping', 'Shipping')}:</span>
                       <span>€{Number(orderData.shipping).toFixed(2)}</span>
                     </div>
                   )}
                   {orderData.tax > 0 && (
                     <div className="flex justify-between">
-                      <span>IVA:</span>
+                      <span>{t('payment:vat', 'VAT')}:</span>
                       <span>€{Number(orderData.tax).toFixed(2)}</span>
                     </div>
                   )}
@@ -413,23 +413,23 @@ export default function RevolutPaymentPage() {
 
           {/* Payment Instructions */}
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <h3 className="font-semibold mb-2 text-amber-900 dark:text-amber-100">Instrucciones Importantes</h3>
+            <h3 className="font-semibold mb-2 text-amber-900 dark:text-amber-100">{t('payment:importantInstructions', 'Important Instructions')}</h3>
             <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-200">
               <li className="flex items-start gap-2">
                 <span className="font-bold">1.</span>
-                <span>Al hacer clic en "Proceder al Pago", serás redirigido a la plataforma de pago de Revolut.</span>
+                <span>{t('payment:revolutInstruction1', 'By clicking "Proceed to Payment", you will be redirected to the Revolut payment platform.')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">2.</span>
-                <span>Introduce el monto exacto de <strong>€{Number(orderData.total).toFixed(2)}</strong> en la plataforma.</span>
+                <span>{t('payment:revolutInstruction2', { amount: Number(orderData.total).toFixed(2), defaultValue: 'Enter the exact amount of €{{amount}} on the platform.' })}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">3.</span>
-                <span>En el concepto o nota de pago, incluye el número de pedido que se te proporcionará.</span>
+                <span>{t('payment:revolutInstruction3', 'In the payment concept or note, include the order number provided.')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">4.</span>
-                <span>Tu pedido quedará en estado <strong>pendiente</strong> hasta que confirmemos el pago.</span>
+                <span>{t('payment:revolutInstruction4', 'Your order will remain in pending status until we confirm the payment.')}</span>
               </li>
             </ul>
           </div>
@@ -437,16 +437,16 @@ export default function RevolutPaymentPage() {
           {/* QR Codes if available */}
           {paymentImages.length > 0 && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Códigos QR de Pago</h4>
+              <h4 className="font-semibold text-foreground">{t('payment:qrCodes', 'Payment QR Codes')}</h4>
               <p className="text-sm text-muted-foreground">
-                También puedes escanear estos códigos QR para realizar el pago
+                {t('payment:qrCodesDescription', 'You can also scan these QR codes to make the payment')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paymentImages.map((img, index) => (
                   <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                     <img 
                       src={img} 
-                      alt={`Código QR ${index + 1}`}
+                      alt={t('payment:qrCodeAlt', { number: index + 1, defaultValue: 'QR Code' })}
                       className="w-full h-56 object-contain rounded"
                     />
                   </div>
@@ -463,7 +463,7 @@ export default function RevolutPaymentPage() {
               className="flex-1"
               disabled={processing}
             >
-              Cancelar
+              {t('common:cancel', 'Cancel')}
             </Button>
             <Button 
               onClick={handleProceedToPayment} 
@@ -471,7 +471,7 @@ export default function RevolutPaymentPage() {
               disabled={processing}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              {processing ? "Procesando..." : "Proceder al Pago"}
+              {processing ? t('common:processing', 'Processing...') : t('payment:proceedToPayment', 'Proceed to Payment')}
             </Button>
           </div>
         </CardContent>
