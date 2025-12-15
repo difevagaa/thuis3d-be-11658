@@ -102,14 +102,17 @@ export default function RevolutPaymentPage() {
     // Silent copy - no toast
   };
 
-  const openPaymentTab = () => {
-    return window.open("about:blank", "_blank", "noopener,noreferrer");
-  };
-
-  // Navegar después del overlay (la pestaña se abre DURANTE el click para evitar bloqueos)
+  // Después de mostrar overlay 4s, abrir pestaña con URL y navegar a /pago-en-proceso
   useEffect(() => {
     if (showRedirectOverlay && pendingOrderInfo) {
       const timer = setTimeout(() => {
+        // Abrir la pestaña de pago con la URL configurada
+        const gatewayUrl = paymentConfig?.revolut_link;
+        if (gatewayUrl) {
+          window.open(gatewayUrl, '_blank', 'noopener,noreferrer');
+        }
+        
+        // Navegar a página de pago en proceso
         navigate("/pago-en-proceso", {
           state: {
             orderNumber: pendingOrderInfo.orderNumber,
@@ -121,13 +124,10 @@ export default function RevolutPaymentPage() {
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [showRedirectOverlay, pendingOrderInfo, navigate]);
+  }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
     setProcessing(true);
-
-    const gatewayUrl = paymentConfig?.revolut_link as string | undefined;
-    const paymentTab = gatewayUrl ? openPaymentTab() : null;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -158,9 +158,8 @@ export default function RevolutPaymentPage() {
         // Clear invoice payment data
         sessionStorage.removeItem("pending_revolut_invoice");
 
-        // Abrir en pestaña nueva (no popup) dentro del gesto del click
-        if (gatewayUrl) {
-          if (paymentTab) paymentTab.location.href = gatewayUrl;
+        // Mostrar overlay - la pestaña se abrirá después de 4s desde useEffect
+        if (paymentConfig?.revolut_link) {
           setPendingOrderInfo({ orderNumber: invoiceNumber, total, isInvoicePayment: true });
           setShowRedirectOverlay(true);
         } else {
@@ -293,9 +292,8 @@ export default function RevolutPaymentPage() {
         sessionStorage.removeItem("checkout_session_id");
       }
 
-      // Show redirect overlay
-      if (gatewayUrl) {
-        if (paymentTab) paymentTab.location.href = gatewayUrl;
+      // Show redirect overlay - la pestaña se abrirá después de 4s desde useEffect
+      if (paymentConfig?.revolut_link) {
         setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
@@ -303,7 +301,6 @@ export default function RevolutPaymentPage() {
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
-      try { paymentTab?.close(); } catch {}
       logger.error("Error creating order:", error);
       toast.error(t('payment:messages.errorProcessingOrder'));
       setProcessing(false);

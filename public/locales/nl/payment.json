@@ -64,6 +64,13 @@
   "qrCodes": "QR-codes voor Betaling",
   "qrCodesDescription": "Je kunt ook deze QR-codes scannen om de betaling uit te voeren",
   "qrCodeAlt": "QR-code {{number}}",
+  "qrBankTransfer": "QR Bankoverschrijving",
+  "qrBankTransferDesc": "Scan voor directe overschrijving",
+  "qrRevolut": "QR Revolut",
+  "qrRevolutDesc": "Snelle betaling met Revolut",
+  "qrAlternative": "Alternatieve betaalmethode",
+  "noPaymentMethods": "Op dit moment zijn er geen betaalmethoden beschikbaar. Neem contact op met support.",
+  "secureInfo": "Je informatie is veilig. We gebruiken SSL-encryptie.",
   "proceedToPayment": "Doorgaan naar Betaling",
   "messages": {
     "orderCreated": "Bestelling succesvol aangemaakt",
