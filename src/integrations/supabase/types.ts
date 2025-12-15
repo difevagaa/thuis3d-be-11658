@@ -4281,6 +4281,7 @@ export type Database = {
       cleanup_low_quality_keywords: { Args: never; Returns: number }
       cleanup_old_visitor_sessions: { Args: never; Returns: number }
       clear_admin_pin: { Args: { target_user_id: string }; Returns: undefined }
+      deactivate_expired_gift_cards: { Args: never; Returns: undefined }
       detect_device_type: { Args: { user_agent: string }; Returns: string }
       enqueue_all_page_builder_sections: { Args: never; Returns: number }
       enqueue_all_translatable_content: { Args: never; Returns: number }
@@ -4311,6 +4312,7 @@ export type Database = {
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_or_superadmin: { Args: { user_id?: string }; Returns: boolean }
+      is_valid_uuid: { Args: { text_value: string }; Returns: boolean }
       mark_user_offline: { Args: { user_id_param: string }; Returns: undefined }
       notify_admins_async: {
         Args: {
