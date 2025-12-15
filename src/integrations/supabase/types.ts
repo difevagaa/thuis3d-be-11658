@@ -2855,80 +2855,197 @@ export type Database = {
       }
       products: {
         Row: {
+          age_restriction: number | null
           allow_direct_purchase: boolean | null
           allow_quote_request: boolean | null
+          barcode: string | null
+          brand: string | null
+          care_instructions: string | null
           category_id: string | null
+          compare_at_price: number | null
+          cost_price: number | null
           created_at: string | null
           custom_shipping_cost: number | null
           deleted_at: string | null
           description: string | null
+          digital_file_url: string | null
+          display_order: number | null
           enable_color_selection: boolean | null
           enable_custom_text: boolean | null
           enable_material_selection: boolean | null
+          estimated_delivery_days: number | null
+          gift_wrap_price: number | null
           height: number | null
           id: string
+          is_bestseller: boolean | null
+          is_digital: boolean | null
+          is_eco_friendly: boolean | null
+          is_featured: boolean | null
+          is_fragile: boolean | null
+          is_gift_wrappable: boolean | null
+          is_new: boolean | null
+          is_on_sale: boolean | null
+          is_preorder: boolean | null
           length: number | null
+          low_stock_alert: number | null
+          manufacturer: string | null
+          materials_info: string | null
+          max_order_quantity: number | null
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_title: string | null
+          min_order_quantity: number | null
           name: string
+          origin_country: string | null
+          preorder_release_date: string | null
           price: number | null
           product_code: string | null
+          profit_margin: number | null
+          related_product_ids: string[] | null
+          requires_shipping: boolean | null
+          return_policy: string | null
+          sale_end_date: string | null
+          sale_price: number | null
+          seo_slug: string | null
           shipping_type: string | null
+          sku: string | null
           stock: number | null
           tax_enabled: boolean | null
           updated_at: string | null
+          upsell_product_ids: string[] | null
           video_url: string | null
           visible_to_all: boolean | null
+          warranty_months: number | null
           weight: number | null
           width: number | null
         }
         Insert: {
+          age_restriction?: number | null
           allow_direct_purchase?: boolean | null
           allow_quote_request?: boolean | null
+          barcode?: string | null
+          brand?: string | null
+          care_instructions?: string | null
           category_id?: string | null
+          compare_at_price?: number | null
+          cost_price?: number | null
           created_at?: string | null
           custom_shipping_cost?: number | null
           deleted_at?: string | null
           description?: string | null
+          digital_file_url?: string | null
+          display_order?: number | null
           enable_color_selection?: boolean | null
           enable_custom_text?: boolean | null
           enable_material_selection?: boolean | null
+          estimated_delivery_days?: number | null
+          gift_wrap_price?: number | null
           height?: number | null
           id?: string
+          is_bestseller?: boolean | null
+          is_digital?: boolean | null
+          is_eco_friendly?: boolean | null
+          is_featured?: boolean | null
+          is_fragile?: boolean | null
+          is_gift_wrappable?: boolean | null
+          is_new?: boolean | null
+          is_on_sale?: boolean | null
+          is_preorder?: boolean | null
           length?: number | null
+          low_stock_alert?: number | null
+          manufacturer?: string | null
+          materials_info?: string | null
+          max_order_quantity?: number | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          min_order_quantity?: number | null
           name: string
+          origin_country?: string | null
+          preorder_release_date?: string | null
           price?: number | null
           product_code?: string | null
+          profit_margin?: number | null
+          related_product_ids?: string[] | null
+          requires_shipping?: boolean | null
+          return_policy?: string | null
+          sale_end_date?: string | null
+          sale_price?: number | null
+          seo_slug?: string | null
           shipping_type?: string | null
+          sku?: string | null
           stock?: number | null
           tax_enabled?: boolean | null
           updated_at?: string | null
+          upsell_product_ids?: string[] | null
           video_url?: string | null
           visible_to_all?: boolean | null
+          warranty_months?: number | null
           weight?: number | null
           width?: number | null
         }
         Update: {
+          age_restriction?: number | null
           allow_direct_purchase?: boolean | null
           allow_quote_request?: boolean | null
+          barcode?: string | null
+          brand?: string | null
+          care_instructions?: string | null
           category_id?: string | null
+          compare_at_price?: number | null
+          cost_price?: number | null
           created_at?: string | null
           custom_shipping_cost?: number | null
           deleted_at?: string | null
           description?: string | null
+          digital_file_url?: string | null
+          display_order?: number | null
           enable_color_selection?: boolean | null
           enable_custom_text?: boolean | null
           enable_material_selection?: boolean | null
+          estimated_delivery_days?: number | null
+          gift_wrap_price?: number | null
           height?: number | null
           id?: string
+          is_bestseller?: boolean | null
+          is_digital?: boolean | null
+          is_eco_friendly?: boolean | null
+          is_featured?: boolean | null
+          is_fragile?: boolean | null
+          is_gift_wrappable?: boolean | null
+          is_new?: boolean | null
+          is_on_sale?: boolean | null
+          is_preorder?: boolean | null
           length?: number | null
+          low_stock_alert?: number | null
+          manufacturer?: string | null
+          materials_info?: string | null
+          max_order_quantity?: number | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          min_order_quantity?: number | null
           name?: string
+          origin_country?: string | null
+          preorder_release_date?: string | null
           price?: number | null
           product_code?: string | null
+          profit_margin?: number | null
+          related_product_ids?: string[] | null
+          requires_shipping?: boolean | null
+          return_policy?: string | null
+          sale_end_date?: string | null
+          sale_price?: number | null
+          seo_slug?: string | null
           shipping_type?: string | null
+          sku?: string | null
           stock?: number | null
           tax_enabled?: boolean | null
           updated_at?: string | null
+          upsell_product_ids?: string[] | null
           video_url?: string | null
           visible_to_all?: boolean | null
+          warranty_months?: number | null
           weight?: number | null
           width?: number | null
         }
