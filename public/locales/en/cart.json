@@ -10,7 +10,8 @@
     "color": "Color",
     "text": "Text",
     "subtotal": "Subtotal",
-    "remove": "Remove"
+    "remove": "Remove",
+    "customization": "Customization"
   },
   "summary": {
     "title": "Order Summary",
@@ -46,6 +47,7 @@
     "redeemed": "You have applied a gift card for €{amount}"
   },
   "checkout": "Proceed to Checkout",
+  "continueShopping": "Continue shopping",
   "itemRemoved": "Product removed from cart",
   "loginRequired": "You must log in to continue with the purchase"
 }

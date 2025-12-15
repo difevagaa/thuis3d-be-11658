@@ -231,7 +231,7 @@ const Cart = () => {
                       </Button>
                     </div>
                     {item.materialName && (
-                      <p className="text-xs md:text-sm text-muted-foreground">Material: {item.materialName}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.material')}: {item.materialName}</p>
                     )}
                     {item.colorName && (
                       <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.color')}: {item.colorName}</p>
@@ -241,7 +241,7 @@ const Cart = () => {
                     )}
                     {item.colorSelections && item.colorSelections.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold text-muted-foreground">Personalización:</p>
+                        <p className="text-xs font-semibold text-muted-foreground">{t('cart:item.customization')}:</p>
                         {item.colorSelections.map((sel, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs">
                             <span className="font-medium">{sel.section_name}:</span>
@@ -408,7 +408,7 @@ const Cart = () => {
                 size="default"
                 onClick={() => navigate("/productos")}
               >
-                Continuar Comprando
+                {t('cart:continueShopping')}
               </Button>
             </CardContent>
           </Card>

@@ -41,5 +41,9 @@
       "title": "Garantía Total",
       "description": "Respaldamos nuestro trabajo con una garantía completa de satisfacción en todos nuestros productos"
     }
+  },
+  "fallback": {
+    "title": "Bienvenido",
+    "description": "Esta página está en construcción. Por favor, configura las secciones desde el editor de páginas."
   }
 }

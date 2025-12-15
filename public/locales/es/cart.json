@@ -10,7 +10,8 @@
     "color": "Color",
     "text": "Texto",
     "subtotal": "Subtotal",
-    "remove": "Eliminar"
+    "remove": "Eliminar",
+    "customization": "Personalización"
   },
   "summary": {
     "title": "Resumen del Pedido",
@@ -46,6 +47,7 @@
     "redeemed": "Has aplicado una tarjeta regalo por €{amount}"
   },
   "checkout": "Proceder al Pago",
+  "continueShopping": "Continuar comprando",
   "itemRemoved": "Producto eliminado del carrito",
   "loginRequired": "Debes iniciar sesión para continuar con la compra"
 }

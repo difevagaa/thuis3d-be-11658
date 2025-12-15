@@ -41,5 +41,9 @@
       "title": "Totale Garantie",
       "description": "We ondersteunen ons werk met een volledige tevredenheidsgarantie op al onze producten"
     }
+  },
+  "fallback": {
+    "title": "Welkom",
+    "description": "Deze pagina is in aanbouw. Configureer de secties vanuit de paginabouwer."
   }
 }
