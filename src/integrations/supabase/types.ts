@@ -4163,6 +4163,7 @@ export type Database = {
       cleanup_inactive_visitor_sessions: { Args: never; Returns: undefined }
       cleanup_low_quality_keywords: { Args: never; Returns: number }
       cleanup_old_visitor_sessions: { Args: never; Returns: number }
+      clear_admin_pin: { Args: { target_user_id: string }; Returns: undefined }
       detect_device_type: { Args: { user_agent: string }; Returns: string }
       enqueue_all_page_builder_sections: { Args: never; Returns: number }
       enqueue_all_translatable_content: { Args: never; Returns: number }
@@ -4291,6 +4292,10 @@ export type Database = {
           }
       send_welcome_email_http: {
         Args: { user_email: string; user_name?: string }
+        Returns: undefined
+      }
+      set_admin_pin: {
+        Args: { pin_input: string; target_user_id: string }
         Returns: undefined
       }
       update_user_activity: {
