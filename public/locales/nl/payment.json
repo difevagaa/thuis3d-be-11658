@@ -1,4 +1,8 @@
 {
+  "redirect": {
+    "title": "We leiden je door naar de betaalpagina...",
+    "message": "Zodra we je betaling hebben geverifieerd, verandert de status van je bestelling automatisch."
+  },
   "title": "Betalingsoverzicht",
   "orderSummary": "Besteloverzicht",
   "invoiceSummary": "Factuuroverzicht",

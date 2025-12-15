@@ -1,4 +1,8 @@
 {
+  "redirect": {
+    "title": "Estamos redirigiéndote a la página de pago...",
+    "message": "Cuando verifiquemos tu pago, el estado de tu pedido cambiará automáticamente."
+  },
   "title": "Resumen de Pago",
   "orderSummary": "Resumen del Pedido",
   "invoiceSummary": "Resumen de Factura",

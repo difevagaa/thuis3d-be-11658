@@ -80,10 +80,10 @@ export default function PaymentProcessing() {
               <ExternalLink className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                  {t('payment:processing.newTabTitle', 'Página de pago abierta')}
+                  {t('payment:processing.newTabTitle', 'Completa tu pago')}
                 </h3>
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  {t('payment:processing.newTabMessage', 'Hemos abierto la página de pago en una nueva pestaña. Por favor, completa el pago allí. Si la pestaña no se abrió, haz clic en el botón de abajo.')}
+                  {t('payment:processing.newTabMessage', 'Se ha abierto la página de pago en una nueva pestaña. Por favor, completa el pago allí.')}
                 </p>
               </div>
             </div>
@@ -95,10 +95,10 @@ export default function PaymentProcessing() {
               <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  {t('payment:processing.pendingTitle', 'Estado del Pedido')}
+                  {t('payment:processing.pendingTitle', 'Verificación pendiente')}
                 </h3>
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  {t('payment:processing.pendingMessage', 'Tu pedido ha sido creado y está en estado PENDIENTE. Una vez recibamos la confirmación del pago, actualizaremos el estado automáticamente.')}
+                  {t('payment:processing.pendingMessage', 'Cuando verifiquemos tu pago, el estado de tu pedido cambiará automáticamente y recibirás una notificación.')}
                 </p>
               </div>
             </div>
