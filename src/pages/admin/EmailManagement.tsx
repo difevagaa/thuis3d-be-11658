@@ -108,6 +108,16 @@ export default function EmailManagement() {
   const [isManualSendDialogOpen, setIsManualSendDialogOpen] = useState(false);
   const [sendType, setSendType] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [previewTemplateId, setPreviewTemplateId] = useState<string>("");
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [isAutomationDialogOpen, setIsAutomationDialogOpen] = useState(false);
+  const [selectedAutomation, setSelectedAutomation] = useState<EmailAutomation | null>(null);
+  const [newAutomation, setNewAutomation] = useState({
+    name: "",
+    description: "",
+    trigger_type: "",
+    delay_minutes: 0
+  });
   const queryClient = useQueryClient();
 
   // Queries
@@ -256,6 +266,152 @@ export default function EmailManagement() {
       toast.success("Automatización actualizada");
     }
   });
+
+  const createAutomationMutation = useMutation({
+    mutationFn: async (automation: { name: string; description: string; trigger_type: string; delay_minutes: number }) => {
+      const { error } = await supabase
+        .from("email_automations")
+        .insert({
+          ...automation,
+          is_active: false,
+          total_sent: 0
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-automations"] });
+      toast.success("Automatización creada");
+      setIsAutomationDialogOpen(false);
+      setNewAutomation({ name: "", description: "", trigger_type: "", delay_minutes: 0 });
+    },
+    onError: () => toast.error("Error al crear automatización")
+  });
+
+  const deleteAutomationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("email_automations")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-automations"] });
+      toast.success("Automatización eliminada");
+    }
+  });
+
+  const createCampaignMutation = useMutation({
+    mutationFn: async (campaign: {
+      name: string;
+      subject: string;
+      recipient_type: string;
+      html_content?: string;
+      template_id?: string;
+      scheduled_at?: string;
+    }) => {
+      const { error } = await supabase
+        .from("email_campaigns")
+        .insert({
+          ...campaign,
+          status: "draft",
+          total_recipients: 0,
+          sent_count: 0,
+          opened_count: 0,
+          clicked_count: 0,
+          bounced_count: 0
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      toast.success("Campaña creada");
+      setIsCampaignDialogOpen(false);
+    },
+    onError: () => toast.error("Error al crear campaña")
+  });
+
+  const duplicateCampaignMutation = useMutation({
+    mutationFn: async (campaign: EmailCampaign) => {
+      const { error } = await supabase
+        .from("email_campaigns")
+        .insert([{
+          name: `${campaign.name} (copia)`,
+          subject: campaign.subject,
+          template_id: campaign.template_id,
+          html_content: campaign.html_content,
+          recipient_type: campaign.recipient_type,
+          recipient_filter: campaign.recipient_filter as any,
+          status: "draft",
+          total_recipients: 0,
+          sent_count: 0,
+          opened_count: 0,
+          clicked_count: 0,
+          bounced_count: 0
+        }]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      toast.success("Campaña duplicada");
+    }
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("email_campaigns")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      toast.success("Campaña eliminada");
+    }
+  });
+
+  const duplicateTemplateMutation = useMutation({
+    mutationFn: async (template: EmailTemplate) => {
+      const { error } = await supabase
+        .from("email_templates")
+        .insert({
+          name: `${template.name} (copia)`,
+          slug: `${template.slug}-copy-${Date.now()}`,
+          subject: template.subject,
+          html_content: template.html_content,
+          text_content: template.text_content,
+          description: template.description,
+          category: template.category,
+          variables: template.variables,
+          is_active: false,
+          is_system: false,
+          language: template.language
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      toast.success("Plantilla duplicada");
+    }
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("email_templates")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      toast.success("Plantilla eliminada");
+    }
+  });
+
+  // Helper to get preview template
+  const previewTemplate = templates.find(t => t.id === previewTemplateId);
 
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string | boolean | number }) => {
@@ -732,14 +888,63 @@ export default function EmailManagement() {
                 className="pl-9"
               />
             </div>
-            <Button onClick={() => {
-              setSelectedTemplate(null);
-              setIsTemplateDialogOpen(true);
-            }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Plantilla
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["email-templates"] })}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button onClick={() => {
+                setSelectedTemplate(null);
+                setIsTemplateDialogOpen(true);
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Plantilla
+              </Button>
+            </div>
           </div>
+
+          {/* Template Actions Bar */}
+          <Card>
+            <CardContent className="py-3">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => {
+                  const inactiveCount = templates.filter(t => !t.is_active).length;
+                  toast.info(`${inactiveCount} plantillas inactivas`);
+                }}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  Ver Inactivas ({templates.filter(t => !t.is_active).length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  // Export templates as JSON
+                  const dataStr = JSON.stringify(templates, null, 2);
+                  const blob = new Blob([dataStr], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "email-templates.json";
+                  a.click();
+                  toast.success("Plantillas exportadas");
+                }}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const byCategory = templates.reduce((acc, t) => {
+                    acc[t.category] = (acc[t.category] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  toast.info(`Transaccional: ${byCategory.transactional || 0}, Marketing: ${byCategory.marketing || 0}, Notificación: ${byCategory.notification || 0}`);
+                }}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Estadísticas
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4">
             {templates
@@ -779,7 +984,7 @@ export default function EmailManagement() {
                         </Badge>
                       ))}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -791,31 +996,187 @@ export default function EmailManagement() {
                         <Edit className="h-3 w-3 mr-1" />
                         Editar
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setPreviewTemplateId(template.id);
+                          setIsPreviewDialogOpen(true);
+                        }}
+                      >
                         <Eye className="h-3 w-3 mr-1" />
                         Vista Previa
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => duplicateTemplateMutation.mutate(template)}
+                      >
                         <Copy className="h-3 w-3 mr-1" />
                         Duplicar
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          updateTemplateMutation.mutate({
+                            id: template.id,
+                            is_active: !template.is_active
+                          });
+                        }}
+                      >
+                        {template.is_active ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+                        {template.is_active ? "Desactivar" : "Activar"}
+                      </Button>
+                      {!template.is_system && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm("¿Eliminar esta plantilla?")) {
+                              deleteTemplateMutation.mutate(template.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Eliminar
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
           </div>
+
+          {/* Preview Dialog */}
+          <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Vista Previa: {previewTemplate?.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Asunto: {previewTemplate?.subject}
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="h-[500px]">
+                {previewTemplate ? (
+                  <div 
+                    className="border rounded-lg p-4 bg-white text-black"
+                    dangerouslySetInnerHTML={{ __html: previewTemplate.html_content }}
+                  />
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Selecciona una plantilla para ver la vista previa
+                  </p>
+                )}
+              </ScrollArea>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>
+                  Cerrar
+                </Button>
+                <Button onClick={async () => {
+                  const email = prompt("Ingresa email para enviar prueba:");
+                  if (email && previewTemplate) {
+                    try {
+                      await supabase.functions.invoke("test-email", {
+                        body: { to: email, template_id: previewTemplate.id }
+                      });
+                      toast.success("Email de prueba enviado");
+                    } catch {
+                      toast.error("Error al enviar");
+                    }
+                  }
+                }}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar Prueba
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h3 className="text-lg font-semibold">Campañas de Email</h3>
-            <Button onClick={() => setIsCampaignDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Campaña
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["email-campaigns"] })}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button onClick={() => setIsCampaignDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Campaña
+              </Button>
+            </div>
           </div>
 
+          {/* Campaign Quick Actions */}
+          <Card>
+            <CardContent className="py-3">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info(`${campaigns.filter(c => c.status === "draft").length} campañas en borrador`);
+                }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Borradores ({campaigns.filter(c => c.status === "draft").length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info(`${campaigns.filter(c => c.status === "active" || c.status === "sending").length} campañas activas`);
+                }}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Activas ({campaigns.filter(c => c.status === "active" || c.status === "sending").length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info(`${campaigns.filter(c => c.status === "completed").length} campañas completadas`);
+                }}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Completadas ({campaigns.filter(c => c.status === "completed").length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const totalSent = campaigns.reduce((sum, c) => sum + (c.sent_count || 0), 0);
+                  const totalOpened = campaigns.reduce((sum, c) => sum + (c.opened_count || 0), 0);
+                  const rate = totalSent > 0 ? ((totalOpened / totalSent) * 100).toFixed(1) : 0;
+                  toast.info(`Total enviados: ${totalSent}, Tasa apertura: ${rate}%`);
+                }}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Estadísticas
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const dataStr = JSON.stringify(campaigns, null, 2);
+                  const blob = new Blob([dataStr], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "email-campaigns.json";
+                  a.click();
+                  toast.success("Campañas exportadas");
+                }}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Programadas ({campaigns.filter(c => c.scheduled_at).length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info("Función de A/B Testing próximamente");
+                }}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  A/B Testing
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Campaign List */}
           <div className="grid gap-4">
             {campaigns.length === 0 ? (
               <Card>
@@ -840,7 +1201,7 @@ export default function EmailManagement() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-4 gap-4 text-center mb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center mb-4">
                       <div>
                         <p className="text-2xl font-bold">{campaign.total_recipients}</p>
                         <p className="text-xs text-muted-foreground">Destinatarios</p>
@@ -857,73 +1218,464 @@ export default function EmailManagement() {
                         <p className="text-2xl font-bold">{campaign.clicked_count}</p>
                         <p className="text-xs text-muted-foreground">Clics</p>
                       </div>
+                      <div>
+                        <p className="text-2xl font-bold">{campaign.bounced_count || 0}</p>
+                        <p className="text-xs text-muted-foreground">Rebotes</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    {campaign.scheduled_at && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        <Calendar className="h-3 w-3 inline mr-1" />
+                        Programado: {format(new Date(campaign.scheduled_at), "dd/MM/yyyy HH:mm", { locale: es })}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline">
                         <Edit className="h-3 w-3 mr-1" />
                         Editar
                       </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          if (campaign.html_content || campaign.template_id) {
+                            const template = campaign.template_id ? templates.find(t => t.id === campaign.template_id) : null;
+                            setPreviewTemplateId(template?.id || "");
+                            setIsPreviewDialogOpen(true);
+                          } else {
+                            toast.info("Esta campaña no tiene contenido HTML");
+                          }
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Vista Previa
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => duplicateCampaignMutation.mutate(campaign)}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Duplicar
+                      </Button>
                       {campaign.status === "draft" && (
-                        <Button size="sm">
-                          <Send className="h-3 w-3 mr-1" />
-                          Enviar
+                        <>
+                          <Button size="sm" onClick={() => toast.info("Funcionalidad de envío próximamente")}>
+                            <Send className="h-3 w-3 mr-1" />
+                            Enviar Ahora
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.info("Programación próximamente")}>
+                            <Clock className="h-3 w-3 mr-1" />
+                            Programar
+                          </Button>
+                        </>
+                      )}
+                      {(campaign.status === "active" || campaign.status === "sending") && (
+                        <Button size="sm" variant="outline" onClick={() => toast.info("Pausar próximamente")}>
+                          <Pause className="h-3 w-3 mr-1" />
+                          Pausar
                         </Button>
                       )}
+                      <Button size="sm" variant="outline" onClick={() => toast.info("Envío de prueba próximamente")}>
+                        <TestTube className="h-3 w-3 mr-1" />
+                        Prueba
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <BarChart3 className="h-3 w-3 mr-1" />
+                        Reporte
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (confirm("¿Eliminar esta campaña?")) {
+                            deleteCampaignMutation.mutate(campaign.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Eliminar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))
             )}
           </div>
+
+          {/* Create Campaign Dialog */}
+          <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Nueva Campaña de Email</DialogTitle>
+                <DialogDescription>Crea una nueva campaña para enviar a tus suscriptores</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Nombre de la Campaña</Label>
+                  <Input placeholder="Ej: Newsletter Diciembre 2024" id="campaign-name" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Asunto del Email</Label>
+                  <Input placeholder="Ej: ¡Ofertas especiales de fin de año!" id="campaign-subject" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Destinatarios</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los suscriptores</SelectItem>
+                      <SelectItem value="customers">Solo clientes</SelectItem>
+                      <SelectItem value="new">Nuevos registros (última semana)</SelectItem>
+                      <SelectItem value="active">Usuarios activos</SelectItem>
+                      <SelectItem value="inactive">Usuarios inactivos</SelectItem>
+                      <SelectItem value="segment">Segmento personalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Plantilla Base</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona plantilla (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Contenido HTML (opcional)</Label>
+                  <Textarea placeholder="<html>..." className="font-mono text-sm h-32" id="campaign-html" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Programar Envío</Label>
+                  <Input type="datetime-local" id="campaign-schedule" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCampaignDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  const name = (document.getElementById("campaign-name") as HTMLInputElement)?.value;
+                  const subject = (document.getElementById("campaign-subject") as HTMLInputElement)?.value;
+                  if (!name || !subject) {
+                    toast.error("Nombre y asunto son requeridos");
+                    return;
+                  }
+                  createCampaignMutation.mutate({
+                    name,
+                    subject,
+                    recipient_type: "all"
+                  });
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Campaña
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Automations Tab */}
         <TabsContent value="automations" className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-lg font-semibold">Automatizaciones de Email</h3>
+              <p className="text-sm text-muted-foreground">Configura emails automáticos basados en eventos</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["email-automations"] })}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button onClick={() => setIsAutomationDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Automatización
+              </Button>
+            </div>
+          </div>
+
+          {/* Automation Quick Actions */}
+          <Card>
+            <CardContent className="py-3">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info(`${automations.filter(a => a.is_active).length} automatizaciones activas`);
+                }}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Activas ({automations.filter(a => a.is_active).length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.info(`${automations.filter(a => !a.is_active).length} automatizaciones pausadas`);
+                }}>
+                  <Pause className="h-4 w-4 mr-2" />
+                  Pausadas ({automations.filter(a => !a.is_active).length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const total = automations.reduce((sum, a) => sum + (a.total_sent || 0), 0);
+                  toast.info(`Total emails automáticos enviados: ${total}`);
+                }}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Estadísticas
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const dataStr = JSON.stringify(automations, null, 2);
+                  const blob = new Blob([dataStr], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "email-automations.json";
+                  a.click();
+                  toast.success("Automatizaciones exportadas");
+                }}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  // Activate all automations
+                  automations.forEach(a => {
+                    if (!a.is_active) {
+                      toggleAutomationMutation.mutate({ id: a.id, is_active: true });
+                    }
+                  });
+                  toast.success("Todas las automatizaciones activadas");
+                }}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Activar Todas
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  // Pause all automations
+                  automations.forEach(a => {
+                    if (a.is_active) {
+                      toggleAutomationMutation.mutate({ id: a.id, is_active: false });
+                    }
+                  });
+                  toast.success("Todas las automatizaciones pausadas");
+                }}>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Pausar Todas
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Automations List */}
+          <Card>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                {automations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No hay automatizaciones configuradas</p>
+                    <Button className="mt-4" onClick={() => setIsAutomationDialogOpen(true)}>
+                      Crear Primera Automatización
+                    </Button>
+                  </div>
+                ) : (
+                  automations.map((automation) => (
+                    <div
+                      key={automation.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-medium">{automation.name}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {automation.trigger_type}
+                          </Badge>
+                          <Badge variant={automation.is_active ? "default" : "secondary"} className="text-xs">
+                            {automation.is_active ? "Activo" : "Pausado"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {automation.description}
+                        </p>
+                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                          <span>📧 Enviados: {automation.total_sent}</span>
+                          <span>⏱️ Retraso: {automation.delay_minutes} min</span>
+                          <span>📅 Creado: {format(new Date(automation.created_at), "dd/MM/yy", { locale: es })}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Switch
+                          checked={automation.is_active}
+                          onCheckedChange={(checked) => 
+                            toggleAutomationMutation.mutate({ id: automation.id, is_active: checked })
+                          }
+                        />
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setSelectedAutomation(automation);
+                          setIsAutomationDialogOpen(true);
+                        }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => toast.info("Historial próximamente")}>
+                          <Clock className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => toast.info("Prueba manual próximamente")}>
+                          <TestTube className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm("¿Eliminar esta automatización?")) {
+                              deleteAutomationMutation.mutate(automation.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Available Triggers */}
           <Card>
             <CardHeader>
-              <CardTitle>Automatizaciones de Email</CardTitle>
-              <CardDescription>
-                Configura emails automáticos basados en eventos del sistema
-              </CardDescription>
+              <CardTitle className="text-base">Triggers Disponibles</CardTitle>
+              <CardDescription>Eventos que pueden activar automatizaciones</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {automations.map((automation) => (
-                  <div
-                    key={automation.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {[
+                  { trigger: "user_registered", label: "Usuario Registrado", icon: "👤" },
+                  { trigger: "order_created", label: "Pedido Creado", icon: "🛒" },
+                  { trigger: "order_status_changed", label: "Estado Pedido", icon: "📦" },
+                  { trigger: "order_shipped", label: "Pedido Enviado", icon: "🚚" },
+                  { trigger: "order_delivered", label: "Pedido Entregado", icon: "✅" },
+                  { trigger: "quote_created", label: "Cotización Creada", icon: "📝" },
+                  { trigger: "quote_priced", label: "Cotización Lista", icon: "💰" },
+                  { trigger: "invoice_created", label: "Factura Creada", icon: "📄" },
+                  { trigger: "payment_received", label: "Pago Recibido", icon: "💳" },
+                  { trigger: "abandoned_cart", label: "Carrito Abandonado", icon: "🛒" },
+                  { trigger: "review_request", label: "Solicitar Reseña", icon: "⭐" },
+                  { trigger: "loyalty_points_earned", label: "Puntos Ganados", icon: "🏆" },
+                  { trigger: "birthday", label: "Cumpleaños", icon: "🎂" },
+                  { trigger: "anniversary", label: "Aniversario", icon: "🎉" },
+                  { trigger: "reactivation", label: "Reactivación", icon: "🔄" },
+                  { trigger: "new_message", label: "Nuevo Mensaje", icon: "💬" }
+                ].map(({ trigger, label, icon }) => (
+                  <div 
+                    key={trigger} 
+                    className="p-2 border rounded-lg text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      const exists = automations.some(a => a.trigger_type === trigger);
+                      if (exists) {
+                        toast.info(`Ya tienes una automatización para: ${label}`);
+                      } else {
+                        setNewAutomation(prev => ({ ...prev, trigger_type: trigger }));
+                        setIsAutomationDialogOpen(true);
+                      }
+                    }}
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{automation.name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {automation.trigger_type}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {automation.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Enviados: {automation.total_sent} • 
-                        Retraso: {automation.delay_minutes} min
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Switch
-                        checked={automation.is_active}
-                        onCheckedChange={(checked) => 
-                          toggleAutomationMutation.mutate({ id: automation.id, is_active: checked })
-                        }
-                      />
-                      <Button size="sm" variant="ghost">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <span className="text-xl">{icon}</span>
+                    <p className="text-xs mt-1">{label}</p>
+                    {automations.some(a => a.trigger_type === trigger) && (
+                      <Badge variant="default" className="text-[10px] mt-1">Configurado</Badge>
+                    )}
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+
+          {/* Create/Edit Automation Dialog */}
+          <Dialog open={isAutomationDialogOpen} onOpenChange={(open) => {
+            setIsAutomationDialogOpen(open);
+            if (!open) {
+              setSelectedAutomation(null);
+              setNewAutomation({ name: "", description: "", trigger_type: "", delay_minutes: 0 });
+            }
+          }}>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>{selectedAutomation ? "Editar" : "Nueva"} Automatización</DialogTitle>
+                <DialogDescription>Configura un email automático basado en eventos</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Nombre</Label>
+                  <Input 
+                    placeholder="Ej: Bienvenida a nuevos usuarios"
+                    value={newAutomation.name}
+                    onChange={(e) => setNewAutomation(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descripción</Label>
+                  <Textarea 
+                    placeholder="Describe qué hace esta automatización..."
+                    value={newAutomation.description}
+                    onChange={(e) => setNewAutomation(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Trigger (Evento Activador)</Label>
+                  <Select 
+                    value={newAutomation.trigger_type}
+                    onValueChange={(value) => setNewAutomation(prev => ({ ...prev, trigger_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona trigger" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user_registered">Usuario Registrado</SelectItem>
+                      <SelectItem value="order_created">Pedido Creado</SelectItem>
+                      <SelectItem value="order_status_changed">Estado de Pedido Cambiado</SelectItem>
+                      <SelectItem value="order_shipped">Pedido Enviado</SelectItem>
+                      <SelectItem value="order_delivered">Pedido Entregado</SelectItem>
+                      <SelectItem value="quote_created">Cotización Creada</SelectItem>
+                      <SelectItem value="quote_priced">Cotización con Precio</SelectItem>
+                      <SelectItem value="invoice_created">Factura Creada</SelectItem>
+                      <SelectItem value="payment_received">Pago Recibido</SelectItem>
+                      <SelectItem value="abandoned_cart">Carrito Abandonado</SelectItem>
+                      <SelectItem value="review_request">Solicitar Reseña</SelectItem>
+                      <SelectItem value="loyalty_points_earned">Puntos de Lealtad</SelectItem>
+                      <SelectItem value="birthday">Cumpleaños</SelectItem>
+                      <SelectItem value="anniversary">Aniversario de Registro</SelectItem>
+                      <SelectItem value="reactivation">Reactivación de Cliente</SelectItem>
+                      <SelectItem value="new_message">Nuevo Mensaje</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Retraso (minutos antes de enviar)</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={newAutomation.delay_minutes}
+                    onChange={(e) => setNewAutomation(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 0 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">0 = inmediato, 60 = 1 hora, 1440 = 1 día</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAutomationDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  if (!newAutomation.name || !newAutomation.trigger_type) {
+                    toast.error("Nombre y trigger son requeridos");
+                    return;
+                  }
+                  createAutomationMutation.mutate(newAutomation);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {selectedAutomation ? "Guardar" : "Crear"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Logs Tab */}
