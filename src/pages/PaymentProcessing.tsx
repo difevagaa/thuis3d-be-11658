@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,40 +16,26 @@ export default function PaymentProcessing() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation(['payment', 'common']);
-  const [isReady, setIsReady] = useState(false);
   
   const state = location.state as LocationState | null;
 
   useEffect(() => {
-    // If no state, redirect to home after a small delay to avoid flash
-    if (!state || !state.orderNumber) {
-      const timer = setTimeout(() => {
-        navigate("/");
-      }, 100);
-      return () => clearTimeout(timer);
+    // If no state, redirect to home
+    if (!state) {
+      navigate("/");
     }
-    setIsReady(true);
   }, [state, navigate]);
 
-  // Show loading while checking state
-  if (!isReady || !state || !state.orderNumber) {
-    return (
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-lg">{t('common:loading', 'Loading...')}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!state) {
+    return null;
   }
 
   const { orderNumber, total, paymentMethod, isInvoicePayment } = state;
 
   const getPaymentMethodLabel = () => {
     switch (paymentMethod) {
-      case 'card': return t('payment:methods.creditCard', 'Credit/Debit Card');
-      case 'revolut': return t('payment:methods.revolut', 'Revolut');
+      case 'card': return t('payment:methods.creditCard');
+      case 'revolut': return t('payment:methods.revolut');
       default: return paymentMethod;
     }
   };
@@ -62,10 +48,10 @@ export default function PaymentProcessing() {
             <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
           <CardTitle className="text-2xl">
-            {t('payment:processing.title', 'Payment In Progress!')}
+            {t('payment:processing.title', '¡Pago en Proceso!')}
           </CardTitle>
           <CardDescription>
-            {t('payment:processing.subtitle', 'The payment page has been opened in a new tab')}
+            {t('payment:processing.subtitle', 'Se ha abierto la página de pago en una nueva pestaña')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -73,18 +59,18 @@ export default function PaymentProcessing() {
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center">
             <p className="text-sm font-medium text-muted-foreground mb-2">
               {isInvoicePayment 
-                ? t('payment:processing.referenceNumber', 'Reference Number')
-                : t('payment:processing.orderNumber', 'Order Number')}
+                ? t('payment:processing.referenceNumber', 'Número de Referencia')
+                : t('payment:processing.orderNumber', 'Número de Pedido')}
             </p>
             <p className="text-3xl font-bold text-primary mb-4">{orderNumber}</p>
             
             <div className="flex items-center justify-center gap-2 text-lg">
-              <span className="text-muted-foreground">{t('payment:processing.totalAmount', 'Total to pay')}:</span>
-              <span className="font-bold text-foreground">€{Number(total || 0).toFixed(2)}</span>
+              <span className="text-muted-foreground">{t('payment:processing.totalAmount', 'Total a pagar')}:</span>
+              <span className="font-bold text-foreground">€{Number(total).toFixed(2)}</span>
             </div>
             
             <div className="mt-3 text-sm text-muted-foreground">
-              {t('payment:processing.paymentMethod', 'Method')}: {getPaymentMethodLabel()}
+              {t('payment:processing.paymentMethod', 'Método')}: {getPaymentMethodLabel()}
             </div>
           </div>
 
@@ -94,10 +80,10 @@ export default function PaymentProcessing() {
               <ExternalLink className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                  {t('payment:processing.newTabTitle', 'Complete your payment')}
+                  {t('payment:processing.newTabTitle', 'Completa tu pago')}
                 </h3>
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  {t('payment:processing.newTabMessage', 'The payment page has been opened in a new tab. Please complete the payment there.')}
+                  {t('payment:processing.newTabMessage', 'Se ha abierto la página de pago en una nueva pestaña. Por favor, completa el pago allí.')}
                 </p>
               </div>
             </div>
@@ -109,10 +95,10 @@ export default function PaymentProcessing() {
               <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  {t('payment:processing.pendingTitle', 'Pending verification')}
+                  {t('payment:processing.pendingTitle', 'Verificación pendiente')}
                 </h3>
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  {t('payment:processing.pendingMessage', 'Once we verify your payment, your order status will change automatically and you will receive a notification.')}
+                  {t('payment:processing.pendingMessage', 'Cuando verifiquemos tu pago, el estado de tu pedido cambiará automáticamente y recibirás una notificación.')}
                 </p>
               </div>
             </div>
@@ -121,20 +107,20 @@ export default function PaymentProcessing() {
           {/* Next Steps */}
           <div className="space-y-4">
             <h4 className="font-semibold text-foreground">
-              {t('payment:processing.nextSteps', 'What\'s next?')}
+              {t('payment:processing.nextSteps', '¿Qué sigue?')}
             </h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
-                <span>{t('payment:processing.step1', 'Complete the payment in the tab that was opened')}</span>
+                <span>{t('payment:processing.step1', 'Completa el pago en la pestaña que se ha abierto')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
-                <span>{t('payment:processing.step2', 'You will receive a confirmation email when we verify the payment')}</span>
+                <span>{t('payment:processing.step2', 'Recibirás un email de confirmación cuando verifiquemos el pago')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
-                <span>{t('payment:processing.step3', 'You can track your order status in "My Account"')}</span>
+                <span>{t('payment:processing.step3', 'Podrás seguir el estado de tu pedido en "Mi Cuenta"')}</span>
               </li>
             </ul>
           </div>
@@ -147,15 +133,15 @@ export default function PaymentProcessing() {
             >
               <Package className="h-4 w-4 mr-2" />
               {isInvoicePayment 
-                ? t('payment:processing.viewInvoices', 'View My Invoices')
-                : t('payment:processing.viewOrders', 'View My Orders')}
+                ? t('payment:processing.viewInvoices', 'Ver Mis Facturas')
+                : t('payment:processing.viewOrders', 'Ver Mis Pedidos')}
             </Button>
             <Button 
               onClick={() => navigate("/")}
               variant="outline"
               className="flex-1"
             >
-              {t('payment:processing.continueShopping', 'Continue Shopping')}
+              {t('payment:processing.continueShopping', 'Seguir Comprando')}
             </Button>
           </div>
         </CardContent>

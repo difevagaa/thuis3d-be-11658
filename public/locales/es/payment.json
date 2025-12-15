@@ -64,13 +64,6 @@
   "qrCodes": "Códigos QR de Pago",
   "qrCodesDescription": "También puedes escanear estos códigos QR para realizar el pago",
   "qrCodeAlt": "Código QR {{number}}",
-  "qrBankTransfer": "QR Transferencia Bancaria",
-  "qrBankTransferDesc": "Escanea para transferencia directa",
-  "qrRevolut": "QR Revolut",
-  "qrRevolutDesc": "Pago rápido con Revolut",
-  "qrAlternative": "Método de pago alternativo",
-  "noPaymentMethods": "No hay métodos de pago disponibles en este momento. Por favor, contacta con soporte.",
-  "secureInfo": "Tu información está segura. Usamos encriptación SSL.",
   "proceedToPayment": "Proceder al Pago",
   "messages": {
     "orderCreated": "Pedido creado exitosamente",

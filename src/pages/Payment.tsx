@@ -1065,8 +1065,8 @@ export default function Payment() {
                 >
                   <Banknote className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
                   <div className="text-left min-w-0">
-                    <div className="font-semibold text-sm md:text-base">{t('payment:methods.bankTransfer')}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t('payment:methodDescriptions.bankTransfer')}</div>
+                    <div className="font-semibold text-sm md:text-base">Transferencia Bancaria</div>
+                    <div className="text-xs text-muted-foreground truncate">Te enviaremos los datos bancarios</div>
                   </div>
                 </Button>
               )}
@@ -1080,8 +1080,8 @@ export default function Payment() {
                 >
                   <CreditCard className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
                   <div className="text-left min-w-0">
-                    <div className="font-semibold text-sm md:text-base">{t('payment:methods.creditCard')}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t('payment:methodDescriptions.creditCard')}</div>
+                    <div className="font-semibold text-sm md:text-base">Tarjeta de Crédito/Débito</div>
+                    <div className="text-xs text-muted-foreground truncate">Visa, Mastercard, American Express</div>
                   </div>
                 </Button>
               )}
@@ -1098,8 +1098,8 @@ export default function Payment() {
                     <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
                   </svg>
                   <div className="text-left">
-                    <div className="font-semibold">{t('payment:methods.paypal')}</div>
-                    <div className="text-xs text-muted-foreground">{t('payment:methodDescriptions.paypal')}</div>
+                    <div className="font-semibold">PayPal</div>
+                    <div className="text-xs text-muted-foreground">Pagar de forma segura con PayPal</div>
                   </div>
                 </Button>
               )}
@@ -1115,20 +1115,20 @@ export default function Payment() {
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
                   </svg>
                   <div className="text-left">
-                    <div className="font-semibold">{t('payment:methods.revolut')}</div>
-                    <div className="text-xs text-muted-foreground">{t('payment:methodDescriptions.revolut')}</div>
+                    <div className="font-semibold">Revolut</div>
+                    <div className="text-xs text-muted-foreground">Tarjetas crédito/débito - Pago rápido y seguro</div>
                   </div>
                 </Button>
               )}
 
               {!paymentConfig.bank_transfer_enabled && !paymentConfig.card_enabled && !paymentConfig.paypal_enabled && !paymentConfig.revolut_enabled && (
                 <p className="text-center text-muted-foreground py-8">
-                  {t('payment:noPaymentMethods', 'No payment methods available at this time. Please contact support.')}
+                  No hay métodos de pago disponibles en este momento. Por favor, contacta con soporte.
                 </p>
               )}
 
               <p className="text-xs text-muted-foreground text-center pt-4">
-                {t('payment:secureInfo', 'Your information is secure. We use SSL encryption.')}
+                Tu información está segura. Usamos encriptación SSL.
               </p>
             </CardContent>
           </Card>
@@ -1137,8 +1137,8 @@ export default function Payment() {
           {paymentImages.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>{t('payment:qrCodes')}</CardTitle>
-                <CardDescription>{t('payment:qrCodesDescription')}</CardDescription>
+                <CardTitle>Códigos QR de Pago</CardTitle>
+                <CardDescription>Escanea con tu móvil para pagar</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1146,19 +1146,19 @@ export default function Payment() {
                     <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                       <img 
                         src={img} 
-                        alt={t('payment:qrCodeAlt', { number: index + 1 })}
+                        alt={`Código QR ${index + 1}`}
                         className="w-full h-56 object-contain rounded"
                       />
                       <div className="text-center space-y-1">
                         <p className="font-medium text-sm text-foreground">
-                          {index === 0 ? t('payment:qrBankTransfer', 'QR Bank Transfer') : 
-                           index === 1 ? t('payment:qrRevolut', 'QR Revolut') : 
-                           t('payment:qrCodeAlt', { number: index + 1 })}
+                          {index === 0 ? "QR Transferencia Bancaria" : 
+                           index === 1 ? "QR Revolut" : 
+                           `Código QR ${index + 1}`}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {index === 0 ? t('payment:qrBankTransferDesc', 'Scan for direct transfer') : 
-                           index === 1 ? t('payment:qrRevolutDesc', 'Fast payment with Revolut') : 
-                           t('payment:qrAlternative', 'Alternative payment method')}
+                          {index === 0 ? "Escanea para transferencia directa" : 
+                           index === 1 ? "Pago rápido con Revolut" : 
+                           "Método de pago alternativo"}
                         </p>
                       </div>
                     </div>
