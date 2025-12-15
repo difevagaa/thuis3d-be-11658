@@ -2543,9 +2543,13 @@ function ManualSendForm({
     
     setIsSending(true);
     try {
+      let emailSubject = "";
+      let success = false;
+      
       if (type === "gift-card" && selectedItem) {
         const giftCard = giftCards.find(g => g.id === selectedItem);
-        await supabase.functions.invoke("send-gift-card-email", {
+        emailSubject = `Tu Tarjeta de Regalo - €${giftCard.initial_amount}`;
+        const { error } = await supabase.functions.invoke("send-gift-card-email", {
           body: {
             to: recipientEmail,
             code: giftCard.code,
@@ -2554,10 +2558,13 @@ function ManualSendForm({
             message: giftCard.message || ""
           }
         });
-        toast.success("Tarjeta de regalo enviada");
+        success = !error;
+        if (!error) toast.success("Tarjeta de regalo enviada");
+        else throw error;
       } else if (type === "invoice" && selectedItem) {
         const invoice = invoices.find(i => i.id === selectedItem);
-        await supabase.functions.invoke("send-invoice-email", {
+        emailSubject = `Factura ${invoice.invoice_number}`;
+        const { error } = await supabase.functions.invoke("send-invoice-email", {
           body: {
             to: recipientEmail,
             invoice_number: invoice.invoice_number,
@@ -2565,29 +2572,59 @@ function ManualSendForm({
             customer_name: invoice.profiles?.full_name || "Cliente"
           }
         });
-        toast.success("Factura enviada");
+        success = !error;
+        if (!error) toast.success("Factura enviada");
+        else throw error;
       } else if (type === "custom") {
-        await supabase.functions.invoke("send-notification-email", {
+        emailSubject = customSubject || "Email Personalizado";
+        const { error } = await supabase.functions.invoke("send-notification-email", {
           body: {
             to: recipientEmail,
             subject: customSubject,
             message: customMessage
           }
         });
-        toast.success("Email enviado");
+        success = !error;
+        if (!error) toast.success("Email enviado");
+        else throw error;
       } else if (type === "notification") {
-        await supabase.functions.invoke("send-notification-email", {
+        emailSubject = customSubject || "Notificación de Thuis 3D";
+        const { error } = await supabase.functions.invoke("send-notification-email", {
           body: {
             to: recipientEmail,
             subject: customSubject || "Notificación de Thuis 3D",
             message: customMessage
           }
         });
-        toast.success("Notificación enviada");
+        success = !error;
+        if (!error) toast.success("Notificación enviada");
+        else throw error;
       }
+      
+      // Registrar en el historial (email_logs)
+      if (success) {
+        await supabase.from("email_logs").insert({
+          recipient_email: recipientEmail,
+          subject: emailSubject,
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          metadata: { type, manual: true }
+        });
+      }
+      
       onClose();
     } catch (error) {
       console.error("Error sending email:", error);
+      
+      // Registrar error en el historial
+      await supabase.from("email_logs").insert({
+        recipient_email: recipientEmail,
+        subject: type === "gift-card" ? "Tarjeta de Regalo" : type === "invoice" ? "Factura" : customSubject || "Email Manual",
+        status: "failed",
+        error_message: error instanceof Error ? error.message : "Error desconocido",
+        metadata: { type, manual: true }
+      });
+      
       toast.error("Error al enviar email");
     } finally {
       setIsSending(false);
