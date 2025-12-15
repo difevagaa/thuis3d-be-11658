@@ -26,6 +26,7 @@
   "noProducts": "Geen producten gevonden met deze filters",
   "loading": "Product laden...",
   "code": "Code",
+  "sku": "SKU",
   "specifications": "Specificaties",
   "weight": "Gewicht",
   "dimensions": "Afmetingen",
@@ -51,5 +52,35 @@
     "title": "Aanpassing",
     "selectColorFor": "Selecteer kleur voor",
     "selectImageFor": "Selecteer afbeelding voor"
+  },
+  "badges": {
+    "new": "NIEUW",
+    "bestseller": "BESTSELLER",
+    "featured": "AANBEVOLEN",
+    "onSale": "UITVERKOOP",
+    "ecoFriendly": "MILIEUVRIENDELIJK",
+    "preorder": "VOORBESTELLING",
+    "giftWrap": "CADEAUVERPAKKING"
+  },
+  "details": {
+    "brand": "Merk",
+    "manufacturer": "Fabrikant",
+    "originCountry": "Land van Herkomst",
+    "warranty": "Garantie",
+    "warrantyMonths": "{{months}} maanden garantie",
+    "returnPolicy": "Retourbeleid",
+    "estimatedDelivery": "Geschatte Levering",
+    "estimatedDeliveryDays": "{{days}} werkdagen",
+    "preorderDate": "Beschikbaar",
+    "giftWrapAvailable": "Cadeauverpakking Beschikbaar",
+    "giftWrapPrice": "+€{{price}}",
+    "materialsInfo": "Materialen",
+    "careInstructions": "Verzorgingsinstructies",
+    "ageRestriction": "Leeftijdsbeperking",
+    "ageRestrictionYears": "{{years}}+ jaar",
+    "comparePrice": "Was",
+    "youSave": "U Bespaart",
+    "inStock": "Op Voorraad",
+    "available": "beschikbaar"
   }
 }
