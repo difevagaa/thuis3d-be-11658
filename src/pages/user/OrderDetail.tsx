@@ -328,39 +328,71 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Truck className="h-5 w-5" />
-                Dirección de Envío
+                Envío y Seguimiento
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-line">
-                {(() => {
-                  try {
-                    if (!order.shipping_address) return "No especificada";
-                    
-                    // Intentar parsear si es JSON
-                    const addr = typeof order.shipping_address === 'string' && order.shipping_address.startsWith('{')
-                      ? JSON.parse(order.shipping_address)
-                      : order.shipping_address;
-                    
-                    // Si es un objeto, formatear las propiedades
-                    if (typeof addr === 'object' && addr !== null) {
-                      const fullName = addr.full_name || addr.fullName || '';
-                      const address = addr.address || '';
-                      const city = addr.city || '';
-                      const postalCode = addr.postal_code || addr.postalCode || '';
-                      const country = addr.country || '';
-                      
-                      return `${fullName}\n${address}\n${city}, ${postalCode}\n${country}`.trim();
+            <CardContent className="space-y-4">
+              {/* Tracking Info */}
+              {order.tracking_number && (
+                <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg space-y-3">
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 flex items-center gap-2">
+                    📦 Información de Seguimiento
+                  </h4>
+                  {order.carrier_name && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Transportista:</span>
+                      <span className="font-medium ml-2">{order.carrier_name}</span>
+                    </div>
+                  )}
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Número de seguimiento:</span>
+                    <code className="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded ml-2">{order.tracking_number}</code>
+                  </div>
+                  {order.estimated_delivery_date && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Entrega estimada:</span>
+                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString('es-ES')}</span>
+                    </div>
+                  )}
+                  {order.tracking_url && (
+                    <a 
+                      href={order.tracking_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                    >
+                      🔗 Rastrear Pedido
+                    </a>
+                  )}
+                </div>
+              )}
+              
+              {/* Shipping Address */}
+              <div>
+                <span className="text-muted-foreground text-sm block mb-1">Dirección de envío:</span>
+                <p className="text-sm whitespace-pre-line">
+                  {(() => {
+                    try {
+                      if (!order.shipping_address) return "No especificada";
+                      const addr = typeof order.shipping_address === 'string' && order.shipping_address.startsWith('{')
+                        ? JSON.parse(order.shipping_address)
+                        : order.shipping_address;
+                      if (typeof addr === 'object' && addr !== null) {
+                        const fullName = addr.full_name || addr.fullName || '';
+                        const address = addr.address || '';
+                        const city = addr.city || '';
+                        const postalCode = addr.postal_code || addr.postalCode || '';
+                        const country = addr.country || '';
+                        return `${fullName}\n${address}\n${city}, ${postalCode}\n${country}`.trim();
+                      }
+                      return addr;
+                    } catch (error) {
+                      logger.error('Error parsing address:', error);
+                      return order.shipping_address || "No especificada";
                     }
-                    
-                    // Si es string plano, retornar tal cual
-                    return addr;
-                  } catch (error) {
-                    logger.error('Error parsing address:', error);
-                    return order.shipping_address || "No especificada";
-                  }
-                })()}
-              </p>
+                  })()}
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

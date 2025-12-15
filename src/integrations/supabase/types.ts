@@ -2209,61 +2209,91 @@ export type Database = {
       }
       orders: {
         Row: {
+          admin_notes: string | null
           billing_address: string | null
+          carrier_name: string | null
           created_at: string | null
           deleted_at: string | null
+          delivered_at: string | null
           discount: number | null
+          estimated_delivery_date: string | null
           id: string
           notes: string | null
           order_number: string
+          package_count: number | null
           payment_method: string | null
           payment_status: string | null
+          rejection_reason: string | null
+          shipped_at: string | null
           shipping: number | null
           shipping_address: string | null
           status_id: string | null
           subtotal: number
           tax: number | null
           total: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string | null
           user_id: string | null
+          weight_kg: number | null
         }
         Insert: {
+          admin_notes?: string | null
           billing_address?: string | null
+          carrier_name?: string | null
           created_at?: string | null
           deleted_at?: string | null
+          delivered_at?: string | null
           discount?: number | null
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           order_number?: string
+          package_count?: number | null
           payment_method?: string | null
           payment_status?: string | null
+          rejection_reason?: string | null
+          shipped_at?: string | null
           shipping?: number | null
           shipping_address?: string | null
           status_id?: string | null
           subtotal: number
           tax?: number | null
           total: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string | null
           user_id?: string | null
+          weight_kg?: number | null
         }
         Update: {
+          admin_notes?: string | null
           billing_address?: string | null
+          carrier_name?: string | null
           created_at?: string | null
           deleted_at?: string | null
+          delivered_at?: string | null
           discount?: number | null
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           order_number?: string
+          package_count?: number | null
           payment_method?: string | null
           payment_status?: string | null
+          rejection_reason?: string | null
+          shipped_at?: string | null
           shipping?: number | null
           shipping_address?: string | null
           status_id?: string | null
           subtotal?: number
           tax?: number | null
           total?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string | null
           user_id?: string | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
