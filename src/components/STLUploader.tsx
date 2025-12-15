@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { analyzeSTLFile, AnalysisResult, detectSupportsNeeded } from '@/lib/stlAnalyzer';
+import { analyzeSTLFile, AnalysisResult } from '@/lib/stlAnalyzer';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, Loader2, CheckCircle2, FileText, Shield, Lightbulb } from 'lucide-react';
+import { Upload, Loader2, CheckCircle2, FileText, Shield, Info, Box, Ruler } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTranslation } from 'react-i18next';
@@ -26,12 +26,10 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
   const [progressMessage, setProgressMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [supportsDetection, setSupportsDetection] = useState<{
-    detected: boolean;
-    reason: string;
-    confidence: 'high' | 'medium' | 'low';
+  const [fileInfo, setFileInfo] = useState<{
+    size: string;
+    dimensions?: { x: number; y: number; z: number };
   } | null>(null);
-  const [detectingSupports, setDetectingSupports] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     if (!file) return;
@@ -47,42 +45,10 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
     }
 
     setSelectedFile(file);
-    setSupportsDetection(null);
+    setFileInfo({
+      size: (file.size / 1024 / 1024).toFixed(2)
+    });
     toast.success(`${t('fileSelected')}: ${file.name}`);
-    
-    if (onSupportsDetected) {
-      setDetectingSupports(true);
-      try {
-        const fileURL = URL.createObjectURL(file);
-        const materialForDetection = materialId || 'PLA';
-        const layerHeightForDetection = layerHeight || 0.2;
-        
-        const detection = await detectSupportsNeeded(
-          fileURL, 
-          materialForDetection,
-          layerHeightForDetection
-        );
-        URL.revokeObjectURL(fileURL);
-        
-        setSupportsDetection({
-          detected: detection.needsSupports,
-          reason: detection.reason,
-          confidence: detection.confidence
-        });
-        
-        onSupportsDetected(detection.needsSupports, detection.reason);
-        
-        if (detection.needsSupports) {
-          toast.info(t('supportsNeeded'), { description: detection.reason });
-        } else {
-          toast.success(t('noSupportsNeeded'), { description: detection.reason });
-        }
-      } catch (error) {
-        console.error('Error detecting supports:', error);
-      } finally {
-        setDetectingSupports(false);
-      }
-    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -111,10 +77,8 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
       return;
     }
 
-    if (!materialId) {
-      toast.error(t('errorNoMaterial'));
-      return;
-    }
+    // Use a default material for initial analysis - price will be calculated later
+    const analyseMaterialId = materialId || 'default';
 
     setAnalyzing(true);
     setProgress(10);
@@ -128,10 +92,16 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const analysis = await analyzeSTLFile(fileURL, materialId, '', supportsRequired, layerHeight, quantity, colorId);
+      const analysis = await analyzeSTLFile(fileURL, analyseMaterialId, '', supportsRequired, layerHeight, quantity, colorId);
 
       setProgress(90);
       setProgressMessage(t('progressCalculating'));
+
+      // Update file info with dimensions
+      setFileInfo(prev => ({
+        ...prev!,
+        dimensions: analysis.dimensions
+      }));
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -160,11 +130,17 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
     <div className="space-y-4">
       <Label className="text-base font-semibold">{t('label')} *</Label>
       
-      {/* Privacy notice */}
+      {/* Process guide - replaces supports recommendation */}
       <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-        <Shield className="h-4 w-4 text-blue-600" />
+        <Info className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-          <strong>🔒 {t('privacyTitle')}:</strong> {t('privacyText')}
+          <strong>{t('howItWorks')}:</strong>
+          <ol className="mt-2 space-y-1 list-decimal list-inside">
+            <li>{t('step1Upload')}</li>
+            <li>{t('step2Analyze')}</li>
+            <li>{t('step3Customize')}</li>
+            <li>{t('step4Submit')}</li>
+          </ol>
         </AlertDescription>
       </Alert>
       
@@ -198,10 +174,24 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               <div>
                 <p className="text-sm font-medium text-green-700 dark:text-green-400">✅ {t('fileReady')}</p>
                 <p className="text-base font-semibold mt-1">{selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('fileSize')}: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
               </div>
+              
+              {/* File info card */}
+              {fileInfo && (
+                <div className="flex flex-wrap justify-center gap-3 mt-2">
+                  <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded">
+                    <Box className="h-3 w-3" />
+                    <span>{fileInfo.size} MB</span>
+                  </div>
+                  {fileInfo.dimensions && (
+                    <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded">
+                      <Ruler className="h-3 w-3" />
+                      <span>{fileInfo.dimensions.x.toFixed(1)} × {fileInfo.dimensions.y.toFixed(1)} × {fileInfo.dimensions.z.toFixed(1)} mm</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <Button 
                 type="button" 
                 variant="outline" 
@@ -209,7 +199,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedFile(null);
-                  setSupportsDetection(null);
+                  setFileInfo(null);
                 }}
               >
                 {t('changeFile')}
@@ -265,51 +255,11 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
         </Card>
       )}
 
-      {/* Supports detection in progress */}
-      {detectingSupports && (
-        <Card className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-              <div>
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                  🔬 {t('analyzingGeometry')}
-                </span>
-                <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                  {t('detectingOverhangs')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Supports detection result */}
-      {supportsDetection && !detectingSupports && (
-        <Alert className={
-          supportsDetection.detected 
-            ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
-            : "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-        }>
-          <Lightbulb className={`h-4 w-4 ${supportsDetection.detected ? 'text-amber-600' : 'text-green-600'}`} />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className={`text-sm font-semibold ${supportsDetection.detected ? 'text-amber-900 dark:text-amber-100' : 'text-green-900 dark:text-green-100'}`}>
-                {supportsDetection.detected ? `⚠️ ${t('supportsRecommended')}` : `✅ ${t('noSupportsRequired')}`}
-              </p>
-              <p className={`text-xs ${supportsDetection.detected ? 'text-amber-800 dark:text-amber-200' : 'text-green-800 dark:text-green-200'}`}>
-                {supportsDetection.reason}
-              </p>
-              <p className={`text-xs ${supportsDetection.detected ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
-                <strong>{t('analysisConfidence')}:</strong> {
-                  supportsDetection.confidence === 'high' ? `🟢 ${t('confidenceHigh')}` :
-                  supportsDetection.confidence === 'medium' ? `🟡 ${t('confidenceMedium')}` : `🟠 ${t('confidenceLow')}`
-                }
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Privacy notice - compact */}
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <Shield className="h-3 w-3" />
+        🔒 {t('privacyText')}
+      </p>
 
       {/* Success */}
       {progress === 100 && !analyzing && (
