@@ -451,7 +451,7 @@ export default function Payment() {
         // Clear invoice payment data
         sessionStorage.removeItem("invoice_payment");
 
-        toast.success(t('payment:messages.paymentRegistered'));
+        // No mostrar toast aquí - se muestra en la página de destino
 
         // Navigate based on payment method
         if (method === "bank_transfer") {

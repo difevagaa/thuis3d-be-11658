@@ -348,28 +348,28 @@ export default function CardPaymentPage() {
           <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
             <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <CardTitle className="text-2xl">Pago con Tarjeta de Crédito/Débito</CardTitle>
+          <CardTitle className="text-2xl">{t('payment:cardPayment.title', 'Card Payment')}</CardTitle>
           <CardDescription>
-            Vas a ser redirigido a la plataforma de pago segura
+            {t('payment:cardPayment.description', 'You will be redirected to the secure payment platform')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Order/Invoice Information */}
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="font-semibold mb-3 text-blue-900 dark:text-blue-100">
-              {orderData.isInvoicePayment ? 'Información de la Factura' : 'Información del Pedido'}
+              {orderData.isInvoicePayment ? t('payment:invoiceInfo', 'Invoice Information') : t('payment:orderInfo', 'Order Information')}
             </h3>
             
             <div className="space-y-3 text-sm">
               <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Monto a Pagar:</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{t('payment:amountToPay', 'Amount to Pay')}:</p>
                 <p className="text-3xl font-bold text-primary">€{Number(orderData.total).toFixed(2)}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">IVA incluido</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('payment:vatIncluded', 'VAT included')}</p>
               </div>
 
               <div>
                 <p className="font-medium text-blue-900 dark:text-blue-100">
-                  {orderData.isInvoicePayment ? 'Número de Referencia:' : 'Número de Pedido:'}
+                  {orderData.isInvoicePayment ? t('payment:referenceNumber', 'Reference Number') : t('payment:orderNumber', 'Order Number')}:
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
@@ -386,21 +386,21 @@ export default function CardPaymentPage() {
               </div>
 
               <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Detalles del Pago:</h4>
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">{t('payment:paymentDetails', 'Payment Details')}:</h4>
                 <div className="space-y-1 text-blue-900 dark:text-blue-50">
                   <div className="flex justify-between">
-                    <span>Subtotal:</span>
+                    <span>{t('payment:subtotal', 'Subtotal')}:</span>
                     <span>€{Number(orderData.subtotal).toFixed(2)}</span>
                   </div>
                   {orderData.shipping > 0 && (
                     <div className="flex justify-between">
-                      <span>Envío:</span>
+                      <span>{t('payment:shipping', 'Shipping')}:</span>
                       <span>€{Number(orderData.shipping).toFixed(2)}</span>
                     </div>
                   )}
                   {orderData.tax > 0 && (
                     <div className="flex justify-between">
-                      <span>IVA:</span>
+                      <span>{t('payment:vat', 'VAT')}:</span>
                       <span>€{Number(orderData.tax).toFixed(2)}</span>
                     </div>
                   )}
@@ -411,23 +411,23 @@ export default function CardPaymentPage() {
 
           {/* Payment Instructions */}
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <h3 className="font-semibold mb-2 text-amber-900 dark:text-amber-100">Instrucciones Importantes</h3>
+            <h3 className="font-semibold mb-2 text-amber-900 dark:text-amber-100">{t('payment:importantInstructions', 'Important Instructions')}</h3>
             <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-200">
               <li className="flex items-start gap-2">
                 <span className="font-bold">1.</span>
-                <span>Al hacer clic en "Proceder al Pago", serás redirigido a nuestra plataforma de pago segura.</span>
+                <span>{t('payment:cardInstruction1', 'By clicking "Proceed to Payment", you will be redirected to our secure payment platform.')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">2.</span>
-                <span>Podrás pagar con <strong>Bancontact, Apple Pay, Google Pay</strong> y tarjetas de crédito/débito.</span>
+                <span>{t('payment:cardInstruction2', 'You can pay with Bancontact, Apple Pay, Google Pay and credit/debit cards.')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">3.</span>
-                <span>Introduce el monto exacto de <strong>€{Number(orderData.total).toFixed(2)}</strong> en la plataforma de pago.</span>
+                <span>{t('payment:cardInstruction3', { amount: Number(orderData.total).toFixed(2), defaultValue: 'Enter the exact amount of €{{amount}} on the payment platform.' })}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold">4.</span>
-                <span>Tu pedido quedará en estado <strong>pendiente</strong> hasta que confirmemos el pago.</span>
+                <span>{t('payment:cardInstruction4', 'Your order will remain in pending status until we confirm the payment.')}</span>
               </li>
             </ul>
           </div>
@@ -435,16 +435,16 @@ export default function CardPaymentPage() {
           {/* QR Codes if available */}
           {paymentImages.length > 0 && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Códigos QR de Pago</h4>
+              <h4 className="font-semibold text-foreground">{t('payment:qrCodes', 'Payment QR Codes')}</h4>
               <p className="text-sm text-muted-foreground">
-                También puedes escanear estos códigos QR para realizar el pago
+                {t('payment:qrCodesDescription', 'You can also scan these QR codes to make the payment')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paymentImages.map((img, index) => (
                   <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
                     <img 
                       src={img} 
-                      alt={`Código QR ${index + 1}`}
+                      alt={t('payment:qrCodeAlt', { number: index + 1, defaultValue: 'QR Code' })}
                       className="w-full h-56 object-contain rounded"
                     />
                   </div>
@@ -461,7 +461,7 @@ export default function CardPaymentPage() {
               className="flex-1"
               disabled={processing}
             >
-              Cancelar
+              {t('common:cancel', 'Cancel')}
             </Button>
             <Button 
               onClick={handleProceedToPayment} 
@@ -469,7 +469,7 @@ export default function CardPaymentPage() {
               disabled={processing}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              {processing ? "Procesando..." : "Proceder al Pago"}
+              {processing ? t('common:processing', 'Processing...') : t('payment:proceedToPayment', 'Proceed to Payment')}
             </Button>
           </div>
         </CardContent>
