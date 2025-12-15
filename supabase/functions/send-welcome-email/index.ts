@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// HTML escaping function to prevent XSS attacks in email templates
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
     '&': '&amp;',
@@ -18,9 +17,72 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// Multilingual templates
+const templates = {
+  es: {
+    subject: '¡Bienvenido/a a {{company_name}}! 🎉',
+    title: '¡Bienvenido/a!',
+    greeting: '¡Hola {{customer_name}}! 👋',
+    welcome: 'Nos alegra que te hayas unido a nuestra comunidad. Tu cuenta ha sido creada exitosamente.',
+    whatCanYouDo: '¿Qué puedes hacer ahora?',
+    feature1: 'Explorar nuestro catálogo completo de productos de impresión 3D',
+    feature2: 'Realizar pedidos y seguir su estado en tiempo real',
+    feature3: 'Solicitar cotizaciones personalizadas para tus proyectos',
+    feature4: 'Recibir notificaciones sobre tus pedidos y facturas',
+    feature5: 'Acceder a tu historial de compras y facturas',
+    startShopping: 'Comenzar a Comprar',
+    tip: '💡 <strong>Consejo:</strong> Completa tu perfil en "Mi Cuenta" para una experiencia personalizada.',
+    footer: '{{company_name}}',
+    contact: 'Si tienes alguna pregunta, no dudes en contactarnos en {{email}}',
+    autoMessage: 'Este es un correo automático, por favor no respondas a este mensaje.'
+  },
+  en: {
+    subject: 'Welcome to {{company_name}}! 🎉',
+    title: 'Welcome!',
+    greeting: 'Hello {{customer_name}}! 👋',
+    welcome: 'We are glad you have joined our community. Your account has been created successfully.',
+    whatCanYouDo: 'What can you do now?',
+    feature1: 'Explore our complete 3D printing product catalog',
+    feature2: 'Place orders and track their status in real time',
+    feature3: 'Request personalized quotes for your projects',
+    feature4: 'Receive notifications about your orders and invoices',
+    feature5: 'Access your purchase history and invoices',
+    startShopping: 'Start Shopping',
+    tip: '💡 <strong>Tip:</strong> Complete your profile in "My Account" for a personalized experience.',
+    footer: '{{company_name}}',
+    contact: 'If you have any questions, feel free to contact us at {{email}}',
+    autoMessage: 'This is an automated email, please do not reply to this message.'
+  },
+  nl: {
+    subject: 'Welkom bij {{company_name}}! 🎉',
+    title: 'Welkom!',
+    greeting: 'Hallo {{customer_name}}! 👋',
+    welcome: 'We zijn blij dat je lid bent geworden van onze community. Je account is succesvol aangemaakt.',
+    whatCanYouDo: 'Wat kun je nu doen?',
+    feature1: 'Ontdek onze volledige catalogus van 3D-printproducten',
+    feature2: 'Plaats bestellingen en volg de status in realtime',
+    feature3: 'Vraag gepersonaliseerde offertes aan voor je projecten',
+    feature4: 'Ontvang meldingen over je bestellingen en facturen',
+    feature5: 'Toegang tot je aankoopgeschiedenis en facturen',
+    startShopping: 'Begin met Winkelen',
+    tip: '💡 <strong>Tip:</strong> Vul je profiel in bij "Mijn Account" voor een gepersonaliseerde ervaring.',
+    footer: '{{company_name}}',
+    contact: 'Als je vragen hebt, neem gerust contact met ons op via {{email}}',
+    autoMessage: 'Dit is een automatische e-mail, reageer a.u.b. niet op dit bericht.'
+  }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'nl') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'nl';
+}
+
 interface WelcomeEmailRequest {
   to: string;
   name?: string;
+  language?: string;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -29,7 +91,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Require authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -52,17 +113,38 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { to, name }: WelcomeEmailRequest = await req.json();
+    const { to, name, language, user_id }: WelcomeEmailRequest = await req.json();
 
-    console.log('📧 Sending welcome email to:', to);
+    console.log('📧 Sending welcome email to:', to, 'language:', language);
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
-    // Get company info from site_customization
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
+    
+    // Get user's preferred language
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', to)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    
+    const lang = getLang(userLang);
+    const t = templates[lang];
     
     const { data: companyInfo } = await supabase
       .from('site_customization')
@@ -80,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const displayName = escapeHtml(name || 'Cliente');
+    const displayName = escapeHtml(name || (lang === 'es' ? 'Cliente' : lang === 'en' ? 'Customer' : 'Klant'));
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -141,41 +223,33 @@ const handler = async (req: Request): Promise<Response> => {
           <div class="container">
             <div class="header">
               <div class="logo">${companyName}</div>
-              <h1 style="margin: 0; font-size: 24px;">¡Bienvenido/a!</h1>
+              <h1 style="margin: 0; font-size: 24px;">${t.title}</h1>
             </div>
             <div class="content">
               <div class="welcome-box">
-                <h2 style="color: #3b82f6; margin-top: 0;">¡Hola ${displayName}! 👋</h2>
-                <p style="font-size: 16px; margin: 0;">
-                  Nos alegra que te hayas unido a nuestra comunidad. Tu cuenta ha sido creada exitosamente.
-                </p>
+                <h2 style="color: #3b82f6; margin-top: 0;">${t.greeting.replace('{{customer_name}}', displayName)}</h2>
+                <p style="font-size: 16px; margin: 0;">${t.welcome}</p>
               </div>
               
               <div class="features">
-                <h3 style="color: #333; margin-top: 0;">¿Qué puedes hacer ahora?</h3>
-                <div class="feature-item">Explorar nuestro catálogo completo de productos de impresión 3D</div>
-                <div class="feature-item">Realizar pedidos y seguir su estado en tiempo real</div>
-                <div class="feature-item">Solicitar cotizaciones personalizadas para tus proyectos</div>
-                <div class="feature-item">Recibir notificaciones sobre tus pedidos y facturas</div>
-                <div class="feature-item">Acceder a tu historial de compras y facturas</div>
+                <h3 style="color: #333; margin-top: 0;">${t.whatCanYouDo}</h3>
+                <div class="feature-item">${t.feature1}</div>
+                <div class="feature-item">${t.feature2}</div>
+                <div class="feature-item">${t.feature3}</div>
+                <div class="feature-item">${t.feature4}</div>
+                <div class="feature-item">${t.feature5}</div>
               </div>
 
               <div style="text-align: center;">
-                <a href="${Deno.env.get('SUPABASE_URL')?.replace('https://kvmgikqyjqtmdkscqdcc.supabase.co', 'https://tu-dominio.com') || '#'}" class="btn">
-                  Comenzar a Comprar
-                </a>
+                <a href="https://thuis3d.be" class="btn">${t.startShopping}</a>
               </div>
 
-              <p style="margin-top: 30px; padding: 15px; background: white; border-radius: 5px;">
-                <strong>💡 Consejo:</strong> Completa tu perfil en "Mi Cuenta" para una experiencia personalizada.
-              </p>
+              <p style="margin-top: 30px; padding: 15px; background: white; border-radius: 5px;">${t.tip}</p>
               
               <div class="footer">
-                <p><strong>${companyName}</strong></p>
-                <p>Si tienes alguna pregunta, no dudes en contactarnos en ${companyEmail}</p>
-                <p style="color: #999; font-size: 12px; margin-top: 15px;">
-                  Este es un correo automático, por favor no respondas a este mensaje.
-                </p>
+                <p><strong>${t.footer.replace('{{company_name}}', companyName)}</strong></p>
+                <p>${t.contact.replace('{{email}}', companyEmail)}</p>
+                <p style="color: #999; font-size: 12px; margin-top: 15px;">${t.autoMessage}</p>
               </div>
             </div>
           </div>
@@ -194,7 +268,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [to],
-        subject: `¡Bienvenido/a a ${companyName}! 🎉`,
+        subject: t.subject.replace('{{company_name}}', companyName),
         html: emailHtml,
       }),
     });

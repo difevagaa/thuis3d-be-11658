@@ -17,6 +17,88 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// Multilingual templates
+const templates = {
+  es: {
+    subject: '📄 Nueva Factura #{{invoice_number}} - {{company_name}}',
+    title: 'Nueva Factura Disponible',
+    invoiceGenerated: 'Se ha generado una nueva factura{{order_info}}.',
+    totalToPay: 'Total a pagar',
+    dueDate: 'Fecha de vencimiento',
+    viewInvoice: 'Ver Factura y Pagar',
+    tip: '💡 <strong>Consejo:</strong> Puedes descargar e imprimir tu factura desde tu cuenta en cualquier momento.',
+    footer: 'Este es un correo automático de {{company_name}}',
+    contact: 'Si tienes alguna pregunta, contáctanos en {{email}}',
+    // Quote ready
+    quoteBadge: '✅ Cotización Lista',
+    quoteGreeting: '¡Hola {{customer_name}}!',
+    quoteReady: 'Tenemos excelentes noticias: tu cotización de <strong>{{quote_type}}</strong> ha sido procesada y está lista.',
+    invoiceNumber: '📄 Número de Factura:',
+    totalAmount: 'Monto Total a Pagar:',
+    vatIncluded: 'IVA incluido',
+    paymentInfo: 'Puedes proceder con el pago cuando estés listo. Tu factura está disponible en tu panel de usuario.',
+    viewInvoiceQuote: '💳 Ver Mi Factura y Pagar',
+    paymentMethods: '💡 Métodos de Pago Disponibles:',
+    questions: 'Si tienes alguna pregunta sobre tu cotización o factura, no dudes en contactarnos a través de nuestro chat de soporte.'
+  },
+  en: {
+    subject: '📄 New Invoice #{{invoice_number}} - {{company_name}}',
+    title: 'New Invoice Available',
+    invoiceGenerated: 'A new invoice has been generated{{order_info}}.',
+    totalToPay: 'Total to pay',
+    dueDate: 'Due date',
+    viewInvoice: 'View Invoice and Pay',
+    tip: '💡 <strong>Tip:</strong> You can download and print your invoice from your account at any time.',
+    footer: 'This is an automated email from {{company_name}}',
+    contact: 'If you have any questions, contact us at {{email}}',
+    // Quote ready
+    quoteBadge: '✅ Quote Ready',
+    quoteGreeting: 'Hello {{customer_name}}!',
+    quoteReady: 'Great news: your quote for <strong>{{quote_type}}</strong> has been processed and is ready.',
+    invoiceNumber: '📄 Invoice Number:',
+    totalAmount: 'Total Amount to Pay:',
+    vatIncluded: 'VAT included',
+    paymentInfo: 'You can proceed with the payment when you are ready. Your invoice is available in your user panel.',
+    viewInvoiceQuote: '💳 View My Invoice and Pay',
+    paymentMethods: '💡 Available Payment Methods:',
+    questions: 'If you have any questions about your quote or invoice, feel free to contact us through our support chat.'
+  },
+  nl: {
+    subject: '📄 Nieuwe Factuur #{{invoice_number}} - {{company_name}}',
+    title: 'Nieuwe Factuur Beschikbaar',
+    invoiceGenerated: 'Er is een nieuwe factuur gegenereerd{{order_info}}.',
+    totalToPay: 'Te betalen',
+    dueDate: 'Vervaldatum',
+    viewInvoice: 'Bekijk Factuur en Betaal',
+    tip: '💡 <strong>Tip:</strong> Je kunt je factuur op elk moment downloaden en afdrukken vanuit je account.',
+    footer: 'Dit is een automatische e-mail van {{company_name}}',
+    contact: 'Als je vragen hebt, neem contact met ons op via {{email}}',
+    // Quote ready
+    quoteBadge: '✅ Offerte Klaar',
+    quoteGreeting: 'Hallo {{customer_name}}!',
+    quoteReady: 'Goed nieuws: je offerte voor <strong>{{quote_type}}</strong> is verwerkt en klaar.',
+    invoiceNumber: '📄 Factuurnummer:',
+    totalAmount: 'Totaal te Betalen:',
+    vatIncluded: 'BTW inbegrepen',
+    paymentInfo: 'Je kunt doorgaan met de betaling wanneer je klaar bent. Je factuur is beschikbaar in je gebruikerspaneel.',
+    viewInvoiceQuote: '💳 Bekijk Mijn Factuur en Betaal',
+    paymentMethods: '💡 Beschikbare Betaalmethoden:',
+    questions: 'Als je vragen hebt over je offerte of factuur, neem gerust contact met ons op via onze supportchat.'
+  }
+};
+
+const quoteTypeTranslations: Record<string, Record<string, string>> = {
+  es: { 'file_upload': 'Archivo 3D', 'service': 'Servicio', 'default': 'Cotización' },
+  en: { 'file_upload': '3D File', 'service': 'Service', 'default': 'Quote' },
+  nl: { 'file_upload': '3D-bestand', 'service': 'Dienst', 'default': 'Offerte' }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'nl') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'nl';
+}
+
 interface InvoiceEmailRequest {
   to: string;
   invoice_number: string;
@@ -25,6 +107,8 @@ interface InvoiceEmailRequest {
   order_number?: string;
   customer_name?: string;
   quote_type?: string;
+  language?: string;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -33,9 +117,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, invoice_number, total, due_date, order_number, customer_name, quote_type }: InvoiceEmailRequest = await req.json();
+    const { to, invoice_number, total, due_date, order_number, customer_name, quote_type, language, user_id }: InvoiceEmailRequest = await req.json();
     
-    console.log('📧 Processing invoice email:', { to, invoice_number, quote_type });
+    console.log('📧 Processing invoice email:', { to, invoice_number, quote_type, language });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
@@ -43,6 +127,28 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
+    
+    // Get user's preferred language
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', to)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    
+    const lang = getLang(userLang);
+    const t = templates[lang];
     
     const { data: companyInfo } = await supabase
       .from('site_customization')
@@ -63,12 +169,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Si es una factura de cotización (quote_type presente), usar template diferente
-    if (quote_type) {
-      const quoteTypeText = quote_type === 'file_upload' ? 'Archivo 3D' : 
-                           quote_type === 'service' ? 'Servicio' : 'Cotización';
+    let emailHtml: string;
+    let subject: string;
 
-      const emailHtml = `
+    // Quote invoice template
+    if (quote_type) {
+      const quoteTypeText = quoteTypeTranslations[lang][quote_type] || quoteTypeTranslations[lang]['default'];
+
+      subject = `✅ ${t.quoteBadge.replace('✅ ', '')} - ${lang === 'es' ? 'Factura' : lang === 'en' ? 'Invoice' : 'Factuur'} ${safeInvoiceNumber}`;
+
+      emailHtml = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -93,159 +203,130 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="header">
                   <div class="logo">${companyName}</div>
                   <div style="margin-top: 10px;">
-                    <span class="success-badge">✅ Cotización Lista</span>
+                    <span class="success-badge">${t.quoteBadge}</span>
                   </div>
                 </div>
                 
-                <h2 style="color: #1f2937; margin-bottom: 20px;">¡Hola ${safeCustomerName}!</h2>
+                <h2 style="color: #1f2937; margin-bottom: 20px;">${t.quoteGreeting.replace('{{customer_name}}', safeCustomerName)}</h2>
                 
                 <p style="font-size: 16px; margin-bottom: 20px;">
-                  Tenemos excelentes noticias: tu cotización de <strong>${quoteTypeText}</strong> ha sido procesada y está lista.
+                  ${t.quoteReady.replace('{{quote_type}}', quoteTypeText)}
                 </p>
                 
                 <div class="info-box">
                   <p style="margin: 0;">
-                    <strong>📄 Número de Factura:</strong> <span class="highlight">${safeInvoiceNumber}</span>
+                    <strong>${t.invoiceNumber}</strong> <span class="highlight">${safeInvoiceNumber}</span>
                   </p>
                 </div>
                 
                 <div class="amount-box">
-                  <p style="margin: 0 0 10px 0; font-size: 14px; color: #92400e;">Monto Total a Pagar:</p>
+                  <p style="margin: 0 0 10px 0; font-size: 14px; color: #92400e;">${t.totalAmount}</p>
                   <div class="amount">€${total.toFixed(2)}</div>
-                  <p style="margin: 10px 0 0 0; font-size: 12px; color: #92400e;">IVA incluido</p>
+                  <p style="margin: 10px 0 0 0; font-size: 12px; color: #92400e;">${t.vatIncluded}</p>
                 </div>
                 
-                <p style="font-size: 16px;">
-                  Puedes proceder con el pago cuando estés listo. Tu factura está disponible en tu panel de usuario.
-                </p>
+                <p style="font-size: 16px;">${t.paymentInfo}</p>
                 
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="https://thuis3d.be/mi-cuenta?tab=invoices" class="button">
-                    💳 Ver Mi Factura y Pagar
+                    ${t.viewInvoiceQuote}
                   </a>
                 </div>
                 
                 <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px;">
                   <p style="margin: 0; font-size: 14px; color: #6b7280;">
-                    <strong>💡 Métodos de Pago Disponibles:</strong><br>
+                    <strong>${t.paymentMethods}</strong><br>
                     • PayPal<br>
-                    • Transferencia Bancaria<br>
+                    • ${lang === 'es' ? 'Transferencia Bancaria' : lang === 'en' ? 'Bank Transfer' : 'Bankoverschrijving'}<br>
                     • Revolut
                   </p>
                 </div>
                 
-                <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-                  Si tienes alguna pregunta sobre tu cotización o factura, no dudes en contactarnos a través de nuestro chat de soporte.
-                </p>
+                <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">${t.questions}</p>
                 
                 <div class="footer">
-                  <p>Este es un correo automático de ${companyName}</p>
-                  <p>© 2025 ${companyName} - Servicios de Impresión 3D</p>
+                  <p>${t.footer.replace('{{company_name}}', companyName)}</p>
+                  <p>© 2025 ${companyName}</p>
                 </div>
               </div>
             </div>
           </body>
         </html>
       `;
+    } else {
+      // Regular order invoice template
+      const formattedDueDate = due_date ? new Date(due_date).toLocaleDateString(
+        lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : 'nl-NL',
+        { day: '2-digit', month: 'long', year: 'numeric' }
+      ) : '';
 
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: `${companyName} <noreply@thuis3d.be>`,
-          to: [to],
-          subject: `✅ Tu Cotización está Lista - Factura ${safeInvoiceNumber}`,
-          html: emailHtml,
-        }),
-      });
+      const orderInfo = safeOrderNumber 
+        ? (lang === 'es' ? ' para tu pedido <strong>#' : lang === 'en' ? ' for your order <strong>#' : ' voor je bestelling <strong>#') + safeOrderNumber + '</strong>'
+        : '';
 
-      const data = await res.json();
+      subject = t.subject.replace('{{invoice_number}}', safeInvoiceNumber).replace('{{company_name}}', companyName);
 
-      if (!res.ok) {
-        console.error('Resend API error:', data);
-        throw new Error(data.message || 'Failed to send email');
-      }
-
-      console.log('✅ Quote invoice email sent successfully:', safeInvoiceNumber);
-
-      return new Response(
-        JSON.stringify({ success: true, data }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Template original para facturas de pedidos
-    const formattedDueDate = due_date ? new Date(due_date).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }) : '';
-
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
-            .card { background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .header { text-align: center; margin-bottom: 30px; }
-            .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
-            .invoice-number { font-size: 20px; color: #666; margin-top: 10px; }
-            .amount-box { background: #e0f2fe; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 5px; }
-            .amount { font-size: 32px; font-weight: bold; color: #3b82f6; }
-            .button { display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }
-            .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="card">
-              <div class="header">
-                <div class="logo">${companyName}</div>
-                <div class="invoice-number">Factura #${safeInvoiceNumber}</div>
-              </div>
-              
-              <h2>Nueva Factura Disponible${safeCustomerName ? ', ' + safeCustomerName : ''}</h2>
-              
-              <p>Se ha generado una nueva factura${safeOrderNumber ? ' para tu pedido <strong>#' + safeOrderNumber + '</strong>' : ''}.</p>
-              
-              <div class="amount-box">
+      emailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+              .card { background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+              .header { text-align: center; margin-bottom: 30px; }
+              .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+              .invoice-number { font-size: 20px; color: #666; margin-top: 10px; }
+              .amount-box { background: #e0f2fe; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 5px; }
+              .amount { font-size: 32px; font-weight: bold; color: #3b82f6; }
+              .button { display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }
+              .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="card">
+                <div class="header">
+                  <div class="logo">${companyName}</div>
+                  <div class="invoice-number">${lang === 'es' ? 'Factura' : lang === 'en' ? 'Invoice' : 'Factuur'} #${safeInvoiceNumber}</div>
+                </div>
+                
+                <h2>${t.title}${safeCustomerName ? ', ' + safeCustomerName : ''}</h2>
+                
+                <p>${t.invoiceGenerated.replace('{{order_info}}', orderInfo)}</p>
+                
+                <div class="amount-box">
+                  <div style="text-align: center;">
+                    <p style="margin: 0; color: #666; font-size: 14px;">${t.totalToPay}</p>
+                    <div class="amount">€${total.toFixed(2)}</div>
+                    ${formattedDueDate ? `<p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">${t.dueDate}: ${formattedDueDate}</p>` : ''}
+                  </div>
+                </div>
+                
+                <p style="margin-top: 30px;">
+                  ${lang === 'es' ? 'Puedes ver tu factura completa y realizar el pago desde tu cuenta:' :
+                    lang === 'en' ? 'You can view your complete invoice and make the payment from your account:' :
+                    'Je kunt je volledige factuur bekijken en de betaling doen vanuit je account:'}
+                </p>
+                
                 <div style="text-align: center;">
-                  <p style="margin: 0; color: #666; font-size: 14px;">Total a pagar</p>
-                  <div class="amount">€${total.toFixed(2)}</div>
-                  <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">
-                    Fecha de vencimiento: ${formattedDueDate}
-                  </p>
+                  <a href="https://thuis3d.be/mi-cuenta?tab=invoices" class="button">
+                    ${t.viewInvoice}
+                  </a>
+                </div>
+                
+                <p style="margin-top: 30px; font-size: 14px; color: #666;">${t.tip}</p>
+                
+                <div class="footer">
+                  <p>${t.footer.replace('{{company_name}}', companyName)}</p>
+                  <p>${t.contact.replace('{{email}}', companyEmail)}</p>
                 </div>
               </div>
-              
-              <p style="margin-top: 30px;">
-                Puedes ver tu factura completa y realizar el pago desde tu cuenta:
-              </p>
-              
-              <div style="text-align: center;">
-                <a href="https://thuis3d.be/mi-cuenta?tab=invoices" class="button">
-                  Ver Factura y Pagar
-                </a>
-              </div>
-              
-              <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                💡 <strong>Consejo:</strong> Puedes descargar e imprimir tu factura desde tu cuenta en cualquier momento.
-              </p>
-              
-              <div class="footer">
-                <p>Este es un correo automático de ${companyName}</p>
-                <p>Si tienes alguna pregunta, contáctanos en ${companyEmail}</p>
-              </div>
             </div>
-          </div>
-        </body>
-      </html>
-    `;
+          </body>
+        </html>
+      `;
+    }
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -256,7 +337,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [to],
-        subject: `📄 Nueva Factura #${safeInvoiceNumber} - ${companyName}`,
+        subject: subject,
         html: emailHtml,
       }),
     });
@@ -268,7 +349,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || 'Failed to send email');
     }
 
-    console.log('Invoice email sent successfully:', data);
+    console.log('✅ Invoice email sent successfully:', safeInvoiceNumber);
 
     return new Response(
       JSON.stringify({ success: true, data }),
