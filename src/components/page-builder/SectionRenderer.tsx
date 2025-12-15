@@ -1343,25 +1343,27 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
           items={products}
           settings={{
             ...settings,
-            itemsPerView: settings?.carouselProductsPerView || 4,
-            itemsPerViewTablet: settings?.carouselProductsPerViewTablet || 3,
-            itemsPerViewMobile: settings?.carouselProductsPerViewMobile || 1,
-            spaceBetween: settings?.carouselGap || 16,
-            showPagination: settings?.carouselShowDots || false,
-            showNavigation: settings?.carouselShowArrows !== false,
-            autoplay: settings?.carouselAutoplay || false,
-            autoplayDelay: settings?.carouselAutoplaySpeed || 3,
-            transitionDuration: settings?.carouselTransitionSpeed || 600,
-            effect: settings?.carouselTransition || 'slide',
-            loop: settings?.carouselLoop !== false,
-            centeredSlides: settings?.carouselCentered || false
+            // Use direct settings names from CarouselSettings (itemsPerView, etc.)
+            // Fall back to legacy names (carouselProductsPerView, etc.) for backwards compatibility
+            itemsPerView: settings?.itemsPerView ?? settings?.carouselProductsPerView ?? 4,
+            itemsPerViewTablet: settings?.itemsPerViewTablet ?? settings?.carouselProductsPerViewTablet ?? 3,
+            itemsPerViewMobile: settings?.itemsPerViewMobile ?? settings?.carouselProductsPerViewMobile ?? 1,
+            spaceBetween: settings?.spaceBetween ?? settings?.carouselGap ?? 16,
+            showPagination: settings?.showPagination ?? settings?.carouselShowDots ?? false,
+            showNavigation: settings?.showNavigation ?? settings?.carouselShowArrows ?? true,
+            autoplay: settings?.autoplay ?? settings?.carouselAutoplay ?? false,
+            autoplayDelay: settings?.autoplayDelay ?? settings?.carouselAutoplaySpeed ?? 3,
+            transitionDuration: settings?.transitionSpeed ?? settings?.carouselTransitionSpeed ?? 600,
+            effect: settings?.transitionEffect ?? settings?.carouselTransition ?? 'slide',
+            loop: settings?.loop ?? settings?.carouselLoop ?? true,
+            centeredSlides: settings?.centeredSlides ?? settings?.carouselCentered ?? false
           }}
           renderItem={(product: any) => (
             <ProductCard 
               product={product} 
-              imageHeight={settings?.carouselImageHeight || 250}
-              titleSize={settings?.carouselTitleSize || 16}
-              priceSize={settings?.carouselPriceSize || 18}
+              imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 250}
+              titleSize={settings?.titleSize ?? settings?.carouselTitleSize ?? 16}
+              priceSize={settings?.priceSize ?? settings?.carouselPriceSize ?? 18}
             />
           )}
         />

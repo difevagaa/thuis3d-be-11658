@@ -63,30 +63,51 @@ export function AdvancedCarousel({
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Get responsive items per view
+  // Get responsive items per view based on current window width and settings
   const getItemsPerView = () => {
-    if (typeof window === 'undefined') return settings.itemsPerView || 3;
+    if (typeof window === 'undefined') {
+      return settings.itemsPerView ?? 3;
+    }
     
     const width = window.innerWidth;
+    
+    // Mobile: < 640px (sm breakpoint)
     if (width < 640) {
-      return settings.itemsPerViewMobile || 1;
-    } else if (width < 1024) {
-      return settings.itemsPerViewTablet || 2;
+      const mobileItems = settings.itemsPerViewMobile;
+      // Only use default if explicitly undefined/null, not if set to a specific number
+      return typeof mobileItems === 'number' ? mobileItems : 1;
     }
-    return settings.itemsPerView || 3;
+    
+    // Tablet: >= 640px and < 1024px (md-lg breakpoint)
+    if (width < 1024) {
+      const tabletItems = settings.itemsPerViewTablet;
+      return typeof tabletItems === 'number' ? tabletItems : 2;
+    }
+    
+    // Desktop: >= 1024px
+    const desktopItems = settings.itemsPerView;
+    return typeof desktopItems === 'number' ? desktopItems : 3;
   };
 
-  const [itemsPerView, setItemsPerView] = useState(getItemsPerView());
+  const [itemsPerView, setItemsPerView] = useState(getItemsPerView);
 
-  // Handle window resize
+  // Handle window resize AND settings changes
   useEffect(() => {
     const handleResize = () => {
-      setItemsPerView(getItemsPerView());
+      const newItemsPerView = getItemsPerView();
+      setItemsPerView(newItemsPerView);
     };
+
+    // Recalculate immediately when settings change
+    handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [settings]);
+  }, [
+    settings.itemsPerView, 
+    settings.itemsPerViewTablet, 
+    settings.itemsPerViewMobile
+  ]);
 
   // Calculate max index
   const maxIndex = Math.max(0, items.length - itemsPerView);
