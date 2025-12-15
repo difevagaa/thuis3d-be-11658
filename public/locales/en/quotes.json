@@ -1,4 +1,6 @@
 {
+  "uploadFileFirst": "Upload an STL file first",
+  "phone": "Phone",
   "title": "Request a Quote",
   "subtitle": "Get a personalized estimate for your 3D printing project",
   "tab3d": "3D File",

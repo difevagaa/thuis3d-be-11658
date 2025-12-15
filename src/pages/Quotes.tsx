@@ -160,7 +160,7 @@ const Quotes = () => {
       case 'shipping':
         return !!analysisResult && !!selectedMaterial && !!selectedColor;
       case 'review':
-        return !!analysisResult && !!selectedMaterial && !!selectedColor && !!address && !!city && !!postalCode;
+        return !!analysisResult && !!selectedMaterial && !!selectedColor && !!customerName && !!customerEmail && !!phone && !!postalCode;
       default:
         return false;
     }
@@ -665,13 +665,18 @@ const Quotes = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {selectedColor ? (
+                    {analysisResult?.stlData && selectedColor ? (
                       <Suspense fallback={<div className="w-full h-64 rounded-lg border bg-muted/30 animate-pulse" />}>
-                        <RandomModelPreview color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#cccccc"} />
+                        <STLViewer3D 
+                          stlData={analysisResult.stlData}
+                          color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#cccccc"}
+                        />
                       </Suspense>
                     ) : (
                       <div className="w-full h-64 rounded-lg border bg-muted/30 flex items-center justify-center">
-                        <p className="text-sm text-muted-foreground text-center px-4">{t('selectColor')}</p>
+                        <p className="text-sm text-muted-foreground text-center px-4">
+                          {!analysisResult?.stlData ? t('uploadFileFirst') : t('selectColor')}
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -690,32 +695,32 @@ const Quotes = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
-                    {!isAuthenticated && (
-                      <>
-                        <div className="space-y-2">
-                          <Label>{t('fullName')} *</Label>
-                          <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>{t('email')} *</Label>
-                          <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
-                        </div>
-                      </>
-                    )}
                     <div className="space-y-2">
-                      <Label>{t('address')} *</Label>
-                      <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} required />
+                      <Label>{t('fullName')} *</Label>
+                      <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t('city')} *</Label>
-                      <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('cityPlaceholder')} required />
+                      <Label>{t('email')} *</Label>
+                      <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('phone')} *</Label>
+                      <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} required />
                     </div>
                     <div className="space-y-2">
                       <Label>{t('postalCode')} *</Label>
                       <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder={t('postalPlaceholder')} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t('country')} *</Label>
+                      <Label>{t('address')}</Label>
+                      <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('city')}</Label>
+                      <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('cityPlaceholder')} />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>{t('country')}</Label>
                       <Select value={country} onValueChange={setCountry}>
                         <SelectTrigger>
                           <SelectValue placeholder={t('selectCountry')} />
@@ -726,10 +731,6 @@ const Quotes = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>{t('phoneOptional')}</Label>
-                      <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
                     </div>
                   </div>
 
@@ -806,10 +807,6 @@ const Quotes = () => {
 
                     {/* Pricing */}
                     <div className="bg-primary/10 rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>{t('printingCost')}</span>
-                        <span className="font-semibold">€{analysisResult.estimatedTotal.toFixed(2)}</span>
-                      </div>
                       {shippingCost !== null && (
                         <div className="flex justify-between text-sm">
                           <span>{t('shipping')}</span>
