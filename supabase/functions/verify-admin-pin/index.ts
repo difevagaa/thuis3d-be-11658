@@ -42,13 +42,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify user is admin
+    // Verify user is admin or superadmin
     const { data: roles } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
+      .in('role', ['admin', 'superadmin'])
+      .maybeSingle();
 
     if (!roles) {
       return new Response(
@@ -56,6 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
 
     const { pin, action, table, item_id }: VerifyPinRequest = await req.json();
 

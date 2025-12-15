@@ -82,34 +82,30 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      // Get current user's profile with PIN
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("admin_pin")
-        .eq("id", user.id)
-        .single();
+      // Verify using server-side function (hash-safe)
+      const { data, error: fnError } = await supabase.functions.invoke('verify-admin-pin', {
+        body: { pin, action: 'verify' }
+      });
 
-      if (profileError) throw profileError;
+      if (fnError) {
+        throw fnError;
+      }
 
-      if (!profile?.admin_pin) {
-        setError("No tienes un PIN configurado. Configúralo en Gestión de PINs.");
+      if (data?.success) {
+        toast.success("Acceso concedido");
+        onUnlock();
         return;
       }
 
-      if (profile.admin_pin === pin) {
-        toast.success("Acceso concedido");
-        onUnlock();
-      } else {
-        setAttempts(prev => prev + 1);
-        setError(`PIN incorrecto. Intentos: ${attempts + 1}/5`);
-        if (attempts + 1 >= 5) {
-          setError("Demasiados intentos fallidos. Espera 1 minuto.");
-          setTimeout(() => setAttempts(0), 60000);
-        }
+      setAttempts((prev) => prev + 1);
+      setError(`PIN incorrecto. Intentos: ${attempts + 1}/5`);
+      if (attempts + 1 >= 5) {
+        setError("Demasiados intentos fallidos. Espera 1 minuto.");
+        setTimeout(() => setAttempts(0), 60000);
       }
     } catch (err: any) {
       console.error("Error verifying PIN:", err);
-      setError("Error al verificar PIN");
+      setError(err?.message || "Error al verificar PIN");
     } finally {
       setLoading(false);
     }
@@ -149,7 +145,7 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
               disabled={loading || attempts >= 5}
             />
           </div>
-          
+
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -157,9 +153,9 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
             </div>
           )}
 
-          <Button 
-            className="w-full" 
-            onClick={verifyPin} 
+          <Button
+            className="w-full"
+            onClick={verifyPin}
             disabled={loading || attempts >= 5 || pin.length !== 4}
           >
             {loading ? (
@@ -177,7 +173,7 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
 
           <div className="text-center text-sm text-muted-foreground">
             <p>¿Olvidaste tu PIN?</p>
-            <p>Contacta a otro administrador para restablecerlo.</p>
+            <p>Si eres administrador, podrás restablecerlo confirmando tu contraseña en Gestión de PINs.</p>
           </div>
         </CardContent>
       </Card>

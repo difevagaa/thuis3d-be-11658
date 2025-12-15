@@ -1,15 +1,47 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Sidebar, SidebarContent, useSidebar } from "@/components/ui/sidebar";
-import { 
-  LayoutDashboard, FileText, ShoppingCart, FolderTree, Settings, Receipt, 
-  Package, Users, UserCog, Palette, Gift, Tag, Award, MessageSquare, 
-  FileCode, BookOpen, Star, Trash2, Percent, TrendingUp, TrendingDown, 
-  ChevronDown, ChevronRight, Layers, Shield, Activity, CreditCard, Truck, 
-  HardDrive, Gauge, Box, Image, Globe, Calculator, Layout, X, Database
+import {
+  LayoutDashboard,
+  FileText,
+  ShoppingCart,
+  FolderTree,
+  Settings,
+  Receipt,
+  Package,
+  Users,
+  UserCog,
+  Palette,
+  Gift,
+  Tag,
+  Award,
+  MessageSquare,
+  FileCode,
+  BookOpen,
+  Star,
+  Trash2,
+  Percent,
+  TrendingUp,
+  TrendingDown,
+  ChevronDown,
+  Layers,
+  Shield,
+  Activity,
+  CreditCard,
+  Truck,
+  HardDrive,
+  Gauge,
+  Box,
+  Image,
+  Globe,
+  Calculator,
+  Layout,
+  X,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { adminMenuItems } from "@/constants/adminMenu";
 
 interface MenuItem {
   icon: React.ElementType;
@@ -27,117 +59,115 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const menuItems: MenuSection[] = [
-  {
-    title: "Principal",
-    icon: LayoutDashboard,
-    color: "from-blue-500 to-blue-600",
-    items: [{
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      url: "/admin/dashboard",
-      color: "text-blue-600",
-      bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300"
-    }]
-  },
-  {
-    title: "Catálogo",
-    icon: Package,
-    color: "from-emerald-500 to-emerald-600",
-    items: [
-      { icon: Package, label: "Productos", url: "/admin/productos", color: "text-emerald-700", bgColor: "bg-emerald-100 hover:bg-emerald-200 border-emerald-300" },
-      { icon: FolderTree, label: "Categorías", url: "/admin/categorias", color: "text-teal-700", bgColor: "bg-teal-100 hover:bg-teal-200 border-teal-300" },
-      { icon: Layers, label: "Materiales", url: "/admin/materiales", color: "text-cyan-700", bgColor: "bg-cyan-100 hover:bg-cyan-200 border-cyan-300" },
-      { icon: Palette, label: "Colores", url: "/admin/colores", color: "text-pink-700", bgColor: "bg-pink-100 hover:bg-pink-200 border-pink-300" }
-    ]
-  },
-  {
-    title: "Ventas",
-    icon: ShoppingCart,
-    color: "from-orange-500 to-orange-600",
-    items: [
-      { icon: ShoppingCart, label: "Pedidos", url: "/admin/pedidos", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
-      { icon: FileText, label: "Cotizaciones", url: "/admin/cotizaciones", color: "text-amber-700", bgColor: "bg-amber-100 hover:bg-amber-200 border-amber-300" },
-      { icon: Receipt, label: "Facturas", url: "/admin/facturas", color: "text-yellow-700", bgColor: "bg-yellow-100 hover:bg-yellow-200 border-yellow-300" },
-      { icon: Tag, label: "Estados", url: "/admin/estados", color: "text-lime-700", bgColor: "bg-lime-100 hover:bg-lime-200 border-lime-300" }
-    ]
-  },
-  {
-    title: "Calculadora 3D",
-    icon: Calculator,
-    color: "from-violet-500 to-violet-600",
-    collapsible: true,
-    items: [
-      { icon: Settings, label: "Configuración", url: "/admin/calculadora-3d", color: "text-violet-700", bgColor: "bg-violet-100 hover:bg-violet-200 border-violet-300" },
-      { icon: TrendingDown, label: "Descuentos", url: "/admin/descuentos-cantidad", color: "text-purple-700", bgColor: "bg-purple-100 hover:bg-purple-200 border-purple-300" },
-      { icon: Gauge, label: "Calibración", url: "/admin/calibracion", color: "text-fuchsia-700", bgColor: "bg-fuchsia-100 hover:bg-fuchsia-200 border-fuchsia-300" },
-      { icon: TrendingUp, label: "Perfiles", url: "/admin/perfiles-calibracion", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
-      { icon: Activity, label: "Precisión", url: "/admin/precision-calculadora", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
-      { icon: Shield, label: "Soportes", url: "/admin/deteccion-soportes", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
-      { icon: Box, label: "Vista Previa", url: "/admin/modelos-vista-previa", color: "text-cyan-700", bgColor: "bg-cyan-100 hover:bg-cyan-200 border-cyan-300" }
-    ]
-  },
-  {
-    title: "Clientes",
-    icon: Users,
-    color: "from-rose-500 to-rose-600",
-    items: [
-      { icon: Users, label: "Usuarios", url: "/admin/usuarios", color: "text-rose-700", bgColor: "bg-rose-100 hover:bg-rose-200 border-rose-300" },
-      { icon: UserCog, label: "Roles", url: "/admin/roles", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" }
-    ]
-  },
-  {
-    title: "Marketing",
-    icon: Award,
-    color: "from-amber-500 to-amber-600",
-    items: [
-      { icon: Award, label: "Lealtad", url: "/admin/loyalty", color: "text-amber-700", bgColor: "bg-amber-100 hover:bg-amber-200 border-amber-300" },
-      { icon: Percent, label: "Cupones", url: "/admin/coupons", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
-      { icon: Gift, label: "Gift Cards", url: "/admin/gift-cards", color: "text-pink-700", bgColor: "bg-pink-100 hover:bg-pink-200 border-pink-300" },
-      { icon: TrendingUp, label: "SEO", url: "/admin/seo", color: "text-green-700", bgColor: "bg-green-100 hover:bg-green-200 border-green-300" }
-    ]
-  },
-  {
-    title: "Comunicación",
-    icon: MessageSquare,
-    color: "from-sky-500 to-sky-600",
-    items: [
-      { icon: MessageSquare, label: "Mensajes", url: "/admin/messages", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
-      { icon: FileText, label: "Emails", url: "/admin/emails", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
-      { icon: Star, label: "Reseñas", url: "/admin/reviews", color: "text-yellow-700", bgColor: "bg-yellow-100 hover:bg-yellow-200 border-yellow-300" },
-      { icon: Activity, label: "Actividad", url: "/admin/visitantes", color: "text-teal-700", bgColor: "bg-teal-100 hover:bg-teal-200 border-teal-300" }
-    ]
-  },
-  {
-    title: "Contenido",
-    icon: FileCode,
-    color: "from-indigo-500 to-indigo-600",
-    items: [
-      { icon: Layout, label: "Editor de Páginas", url: "/admin/page-builder", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
-      { icon: Palette, label: "Personalizar", url: "/admin/personalizador", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
-      { icon: FileCode, label: "Contenido", url: "/admin/contenido", color: "text-violet-700", bgColor: "bg-violet-100 hover:bg-violet-200 border-violet-300" },
-      { icon: BookOpen, label: "Páginas", url: "/admin/pages", color: "text-purple-700", bgColor: "bg-purple-100 hover:bg-purple-200 border-purple-300" },
-      { icon: FileText, label: "Legal", url: "/admin/paginas-legales", color: "text-slate-700", bgColor: "bg-slate-100 hover:bg-slate-200 border-slate-300" },
-      { icon: BookOpen, label: "Blog", url: "/admin/blog", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
-      { icon: Image, label: "Galería", url: "/admin/galeria", color: "text-cyan-700", bgColor: "bg-cyan-100 hover:bg-cyan-200 border-cyan-300" }
-    ]
-  },
-  {
-    title: "Configuración",
-    icon: Settings,
-    color: "from-slate-500 to-slate-600",
-    items: [
-      { icon: Database, label: "Base de Datos", url: "/admin/database", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" },
-      { icon: Shield, label: "PINs", url: "/admin/pin", color: "text-slate-700", bgColor: "bg-slate-100 hover:bg-slate-200 border-slate-300" },
-      { icon: CreditCard, label: "Pagos", url: "/admin/configuracion-pagos", color: "text-emerald-700", bgColor: "bg-emerald-100 hover:bg-emerald-200 border-emerald-300" },
-      { icon: Percent, label: "IVA", url: "/admin/configuracion-iva", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
-      { icon: Truck, label: "Envíos", url: "/admin/gestion-envios", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
-      { icon: Globe, label: "Idiomas", url: "/admin/traducciones", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
-      { icon: HardDrive, label: "Backup", url: "/admin/backup-config", color: "text-gray-700", bgColor: "bg-gray-100 hover:bg-gray-200 border-gray-300" },
-      { icon: Trash2, label: "Papelera", url: "/admin/trash", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" }
-    ]
-  }
-];
+const menuItems: MenuSection[] = adminMenuItems.map((section) => ({
+  ...section,
+  icon:
+    section.title === "Principal"
+      ? LayoutDashboard
+      : section.title === "Catálogo"
+      ? Package
+      : section.title === "Ventas"
+      ? ShoppingCart
+      : section.title === "Calculadora 3D"
+      ? Calculator
+      : section.title === "Clientes"
+      ? Users
+      : section.title === "Marketing"
+      ? Award
+      : section.title === "Comunicación"
+      ? MessageSquare
+      : section.title === "Contenido"
+      ? FileCode
+      : Settings,
+  items: section.items.map((item) => ({
+    ...item,
+    icon:
+      item.url === "/admin/dashboard"
+        ? LayoutDashboard
+        : item.url === "/admin/productos"
+        ? Package
+        : item.url === "/admin/categorias"
+        ? FolderTree
+        : item.url === "/admin/materiales"
+        ? Layers
+        : item.url === "/admin/colores"
+        ? Palette
+        : item.url === "/admin/pedidos"
+        ? ShoppingCart
+        : item.url === "/admin/cotizaciones"
+        ? FileText
+        : item.url === "/admin/facturas"
+        ? Receipt
+        : item.url === "/admin/estados"
+        ? Tag
+        : item.url === "/admin/calculadora-3d"
+        ? Settings
+        : item.url === "/admin/descuentos-cantidad"
+        ? TrendingDown
+        : item.url === "/admin/calibracion"
+        ? Gauge
+        : item.url === "/admin/perfiles-calibracion"
+        ? TrendingUp
+        : item.url === "/admin/precision-calculadora"
+        ? Activity
+        : item.url === "/admin/deteccion-soportes"
+        ? Shield
+        : item.url === "/admin/modelos-vista-previa"
+        ? Box
+        : item.url === "/admin/usuarios"
+        ? Users
+        : item.url === "/admin/roles"
+        ? UserCog
+        : item.url === "/admin/loyalty"
+        ? Award
+        : item.url === "/admin/coupons"
+        ? Percent
+        : item.url === "/admin/gift-cards"
+        ? Gift
+        : item.url === "/admin/seo"
+        ? TrendingUp
+        : item.url === "/admin/messages"
+        ? MessageSquare
+        : item.url === "/admin/emails"
+        ? FileText
+        : item.url === "/admin/reviews"
+        ? Star
+        : item.url === "/admin/visitantes"
+        ? Activity
+        : item.url === "/admin/page-builder"
+        ? Layout
+        : item.url === "/admin/personalizador"
+        ? Palette
+        : item.url === "/admin/contenido"
+        ? FileCode
+        : item.url === "/admin/pages"
+        ? BookOpen
+        : item.url === "/admin/paginas-legales"
+        ? FileText
+        : item.url === "/admin/blog"
+        ? BookOpen
+        : item.url === "/admin/galeria"
+        ? Image
+        : item.url === "/admin/database"
+        ? Database
+        : item.url === "/admin/pin"
+        ? Shield
+        : item.url === "/admin/configuracion-pagos"
+        ? CreditCard
+        : item.url === "/admin/configuracion-iva"
+        ? Percent
+        : item.url === "/admin/gestion-envios"
+        ? Truck
+        : item.url === "/admin/traducciones"
+        ? Globe
+        : item.url === "/admin/backup-config"
+        ? HardDrive
+        : item.url === "/admin/trash"
+        ? Trash2
+        : Settings,
+  })),
+}));
+
 
 function AdminMenuCard({ item, isActive, collapsed, onNavigate }: { item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate: () => void }) {
   const Icon = item.icon;

@@ -261,31 +261,59 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
+
   const checkAdminAccess = useCallback(async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Debes iniciar sesión");
         navigate("/auth");
         return;
       }
-      const {
-        data,
-        error
-      } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      if (error) throw error;
-      if (!data) {
+
+      // Load all roles for this user
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      if (rolesError) throw rolesError;
+
+      const roles = (rolesData || [])
+        .map(r => String(r.role || "").trim().toLowerCase())
+        .filter(Boolean);
+
+      const isSuperAdmin = roles.includes("superadmin");
+      const isAdmin = roles.includes("admin");
+
+      if (isSuperAdmin || isAdmin) {
+        setHasAdminAccess(true);
+        return;
+      }
+
+      // Allow access if user has any role that exists in custom_roles
+      if (roles.length === 0) {
         toast.error("No tienes permisos de administrador");
         navigate("/");
         return;
       }
-      setIsAdmin(true);
+
+      const { data: customRoles, error: customError } = await supabase
+        .from("custom_roles")
+        .select("name")
+        .in("name", roles);
+
+      if (customError) throw customError;
+
+      const hasCustomAdminRole = (customRoles || []).length > 0;
+      if (!hasCustomAdminRole) {
+        toast.error("No tienes permisos de administrador");
+        navigate("/");
+        return;
+      }
+
+      setHasAdminAccess(true);
     } catch (error: unknown) {
       logger.error("Error checking admin access:", { error });
       toast.error("Error al verificar permisos");
@@ -298,7 +326,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   useEffect(() => {
     checkAdminAccess();
   }, [checkAdminAccess]);
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -306,11 +334,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       </div>
     );
   }
-  
-  if (!isAdmin) {
+
+  if (!hasAdminAccess) {
     return null;
   }
-  
+
   return (
     <SidebarProvider>
       <AdminLayoutContent>{children}</AdminLayoutContent>
