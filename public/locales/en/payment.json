@@ -1,4 +1,8 @@
 {
+  "redirect": {
+    "title": "We're redirecting you to the payment page...",
+    "message": "Once we verify your payment, your order status will change automatically."
+  },
   "title": "Payment Summary",
   "orderSummary": "Order Summary",
   "invoiceSummary": "Invoice Summary",

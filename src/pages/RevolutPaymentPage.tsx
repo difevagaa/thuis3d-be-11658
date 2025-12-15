@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, Copy } from "lucide-react";
+import { ExternalLink, Copy, Loader2 } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
   createOrder, 
@@ -20,10 +20,12 @@ export default function RevolutPaymentPage() {
   const { t } = useTranslation(['payment', 'common']);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [showRedirectOverlay, setShowRedirectOverlay] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [orderNumber, setOrderNumber] = useState<string>("");
+  const [pendingOrderInfo, setPendingOrderInfo] = useState<{ orderNumber: string; total: number; isInvoicePayment: boolean } | null>(null);
 
   const loadOrderData = useCallback(() => {
     // Check for invoice payment first
@@ -100,6 +102,24 @@ export default function RevolutPaymentPage() {
     toast.success("Copiado al portapapeles");
   };
 
+  // Effect to handle redirect after overlay
+  useEffect(() => {
+    if (showRedirectOverlay && pendingOrderInfo && paymentConfig?.revolut_link) {
+      const timer = setTimeout(() => {
+        window.open(paymentConfig.revolut_link, '_blank');
+        navigate("/pago-en-proceso", { 
+          state: { 
+            orderNumber: pendingOrderInfo.orderNumber,
+            total: pendingOrderInfo.total,
+            paymentMethod: "revolut",
+            isInvoicePayment: pendingOrderInfo.isInvoicePayment
+          } 
+        });
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [showRedirectOverlay, pendingOrderInfo, paymentConfig, navigate]);
+
   const handleProceedToPayment = async () => {
     setProcessing(true);
     
@@ -132,20 +152,10 @@ export default function RevolutPaymentPage() {
         // Clear invoice payment data
         sessionStorage.removeItem("pending_revolut_invoice");
 
-        toast.success(t('payment:messages.paymentRegistered'));
-
-        // Open payment gateway in new tab
+        // Show redirect overlay
         if (paymentConfig?.revolut_link) {
-          window.open(paymentConfig.revolut_link, '_blank');
-          // Navigate to processing page
-          navigate("/pago-en-proceso", { 
-            state: { 
-              orderNumber: invoiceNumber,
-              total: total,
-              paymentMethod: "revolut",
-              isInvoicePayment: true
-            } 
-          });
+          setPendingOrderInfo({ orderNumber: invoiceNumber, total, isInvoicePayment: true });
+          setShowRedirectOverlay(true);
         } else {
           // If no gateway configured, go to instructions page
           navigate("/pago-instrucciones", { 
@@ -276,20 +286,10 @@ export default function RevolutPaymentPage() {
         sessionStorage.removeItem("checkout_session_id");
       }
 
-      toast.success(t('payment:messages.orderCreated'));
-
-      // Open payment gateway in new tab
+      // Show redirect overlay
       if (paymentConfig?.revolut_link) {
-        window.open(paymentConfig.revolut_link, '_blank');
-        // Navigate to processing page
-        navigate("/pago-en-proceso", { 
-          state: { 
-            orderNumber: order.order_number,
-            total: finalTotal,
-            paymentMethod: "revolut",
-            isInvoicePayment: false
-          } 
-        });
+        setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
+        setShowRedirectOverlay(true);
       } else {
         toast.error("Configuración de pago no disponible");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
@@ -300,6 +300,30 @@ export default function RevolutPaymentPage() {
       setProcessing(false);
     }
   };
+
+  // Redirect overlay
+  if (showRedirectOverlay) {
+    return (
+      <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8 max-w-md">
+          <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">
+            {t('payment:redirect.title', 'Estamos redirigiéndote a la página de pago...')}
+          </h2>
+          <p className="text-muted-foreground">
+            {t('payment:redirect.message', 'Cuando verifiquemos tu pago, el estado de tu pedido cambiará automáticamente.')}
+          </p>
+          <div className="flex justify-center gap-1">
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
