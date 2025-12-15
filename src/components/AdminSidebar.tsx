@@ -152,13 +152,13 @@ function AdminMenuCard({ item, isActive, collapsed, onNavigate }: { item: MenuIt
       <button
         onClick={handleClick}
         className={cn(
-          "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl border-2 transition-all duration-300 shadow-sm",
+          "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl border transition-all duration-300 shadow-sm",
           isActive 
-            ? "bg-primary text-white border-primary shadow-lg scale-105" 
-            : item.bgColor
+            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105" 
+            : "bg-sidebar-accent/50 border-sidebar-border hover:bg-sidebar-accent"
         )}
       >
-        <Icon className={cn("h-5 w-5 md:h-6 md:w-6", isActive ? "text-white" : item.color)} />
+        <Icon className={cn("h-5 w-5 md:h-6 md:w-6", isActive ? "text-primary-foreground" : "text-primary")} />
       </button>
     );
   }
@@ -167,28 +167,28 @@ function AdminMenuCard({ item, isActive, collapsed, onNavigate }: { item: MenuIt
     <button
       onClick={handleClick}
       className={cn(
-        "w-full group flex items-center gap-3 p-3 md:p-4 rounded-xl border-2 transition-all duration-300 shadow-sm text-left",
+        "w-full group flex items-center gap-3 p-3 md:p-4 rounded-xl border transition-all duration-300 shadow-sm text-left",
         isActive 
-          ? "bg-primary text-white border-primary shadow-lg scale-[1.02]" 
-          : item.bgColor
+          ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]" 
+          : "bg-sidebar-accent/50 border-sidebar-border hover:bg-sidebar-accent"
       )}
     >
       <div className={cn(
         "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl transition-all duration-300 flex-shrink-0",
         isActive 
-          ? "bg-white/20" 
-          : "bg-white shadow-sm group-hover:scale-110"
+          ? "bg-primary-foreground/20" 
+          : "bg-background shadow-sm group-hover:scale-110"
       )}>
         <Icon 
           className={cn(
             "h-5 w-5 md:h-6 md:w-6 transition-all duration-300",
-            isActive ? "text-white" : item.color
+            isActive ? "text-primary-foreground" : "text-primary"
           )} 
         />
       </div>
       <span className={cn(
         "text-sm md:text-base font-semibold transition-colors truncate",
-        isActive ? "text-white" : "text-gray-800"
+        isActive ? "text-primary-foreground" : "text-sidebar-foreground"
       )}>
         {item.label}
       </span>
@@ -226,19 +226,19 @@ function AdminMenuSection({ section, collapsed, onNavigate }: { section: MenuSec
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
           hasActiveItem 
-            ? `bg-gradient-to-r ${section.color} text-white shadow-lg` 
-            : "bg-gray-100 hover:bg-gray-200"
+            ? "bg-primary text-primary-foreground shadow-lg" 
+            : "bg-sidebar-accent/30 hover:bg-sidebar-accent"
         )}
       >
         <div className={cn(
-          "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl transition-all",
-          hasActiveItem ? "bg-white/20" : `bg-gradient-to-br ${section.color} shadow-md`
+          "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl transition-all shadow-md",
+          hasActiveItem ? "bg-primary-foreground/20" : "bg-primary"
         )}>
-          <SectionIcon className={cn("h-5 w-5 md:h-6 md:w-6", hasActiveItem ? "text-white" : "text-white")} />
+          <SectionIcon className="h-5 w-5 md:h-6 md:w-6 text-primary-foreground" />
         </div>
         <span className={cn(
           "flex-1 text-left text-base md:text-lg font-bold tracking-wide truncate",
-          hasActiveItem ? "text-white" : "text-gray-800"
+          hasActiveItem ? "text-primary-foreground" : "text-sidebar-foreground"
         )}>
           {section.title}
         </span>
@@ -247,7 +247,7 @@ function AdminMenuSection({ section, collapsed, onNavigate }: { section: MenuSec
             "transition-transform duration-300 flex-shrink-0",
             isOpen ? "rotate-180" : ""
           )}>
-            <ChevronDown className={cn("h-5 w-5 md:h-6 md:w-6", hasActiveItem ? "text-white" : "text-gray-500")} />
+            <ChevronDown className={cn("h-5 w-5 md:h-6 md:w-6", hasActiveItem ? "text-primary-foreground" : "text-sidebar-foreground/70")} />
           </div>
         )}
       </button>
@@ -298,9 +298,9 @@ export function AdminSidebar() {
   return (
     <Sidebar 
       className={cn(
-        "transition-all duration-300 border-r",
+        "transition-all duration-300 border-r border-sidebar-border",
         collapsed ? "w-20 md:w-24" : "w-80 md:w-96",
-        "bg-white dark:bg-gray-900"
+        "bg-sidebar"
       )}
     >
       <SidebarContent className="py-4 px-3 overflow-y-auto">
@@ -310,22 +310,22 @@ export function AdminSidebar() {
             variant="ghost"
             size="icon"
             onClick={handleCloseSidebar}
-            className="h-10 w-10 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="h-10 w-10 rounded-xl hover:bg-sidebar-accent"
           >
-            <X className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+            <X className="h-6 w-6 text-sidebar-foreground" />
           </Button>
         </div>
         
         {/* Logo Header */}
         {!collapsed && (
           <div className="px-2 mb-6">
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-2 border-primary/20 shadow-md">
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-sidebar-accent/50 border-2 border-sidebar-border shadow-md">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 flex-shrink-0">
-                <LayoutDashboard className="h-7 w-7 text-white" />
+                <LayoutDashboard className="h-7 w-7 text-primary-foreground" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">Admin Panel</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Gestión Completa</p>
+                <h3 className="text-lg md:text-xl font-bold text-sidebar-foreground truncate">Admin Panel</h3>
+                <p className="text-sm text-sidebar-foreground/70 truncate">Gestión Completa</p>
               </div>
             </div>
           </div>
@@ -334,7 +334,7 @@ export function AdminSidebar() {
         {collapsed && (
           <div className="flex justify-center mb-4">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-              <LayoutDashboard className="h-7 w-7 text-white" />
+              <LayoutDashboard className="h-7 w-7 text-primary-foreground" />
             </div>
           </div>
         )}
