@@ -4167,6 +4167,7 @@ export type Database = {
       detect_device_type: { Args: { user_agent: string }; Returns: string }
       enqueue_all_page_builder_sections: { Args: never; Returns: number }
       enqueue_all_translatable_content: { Args: never; Returns: number }
+      execute_admin_sql: { Args: { sql_query: string }; Returns: Json }
       find_best_calibration_profile: {
         Args: {
           p_geometry_class: string
