@@ -126,15 +126,13 @@ const defaultSettings: FooterSettings = {
 };
 
 export const FooterConfigurable = () => {
-  const { t } = useTranslation('footer');
+  const { t, i18n } = useTranslation('footer');
   const [email, setEmail] = useState("");
   const [settings, setSettings] = useState<FooterSettings>(defaultSettings);
   const [customization, setCustomization] = useState<any>(null);
   const [footerLinks, setFooterLinks] = useState<any[]>([]);
 
   useEffect(() => {
-    loadFooterData();
-
     // Subscribe to real-time changes
     const footerChannel = supabase
       .channel('footer-config-realtime')
@@ -163,9 +161,17 @@ export const FooterConfigurable = () => {
     return () => {
       supabase.removeChannel(footerChannel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    loadFooterData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
+
   const loadFooterData = async () => {
+    const baseLang = (i18n.language || 'es').split('-')[0];
+
     try {
       // Load footer settings
       const { data: footerSettings } = await supabase
@@ -175,7 +181,38 @@ export const FooterConfigurable = () => {
         .maybeSingle();
 
       if (footerSettings) {
-        setSettings(footerSettings as FooterSettings);
+        let nextSettings = footerSettings as FooterSettings;
+
+        if (baseLang !== 'es') {
+          const translatableFields = [
+            'brand_name',
+            'brand_tagline',
+            'help_section_title',
+            'quick_links_title',
+            'newsletter_title',
+            'newsletter_description',
+            'newsletter_placeholder',
+            'payment_methods_title',
+            'copyright_text'
+          ];
+
+          const { data: settingsTranslations } = await supabase
+            .from('translations')
+            .select('field_name, translated_text')
+            .eq('entity_type', 'footer_settings')
+            .eq('entity_id', footerSettings.id)
+            .eq('language', baseLang)
+            .in('field_name', translatableFields);
+
+          const overrides: Partial<FooterSettings> = {};
+          settingsTranslations?.forEach((tr) => {
+            (overrides as any)[tr.field_name] = tr.translated_text;
+          });
+
+          nextSettings = { ...(footerSettings as any), ...overrides } as FooterSettings;
+        }
+
+        setSettings(nextSettings);
       }
 
       // Load site settings for fallback values
@@ -183,12 +220,12 @@ export const FooterConfigurable = () => {
         .from("site_settings")
         .select("*")
         .in('setting_key', ['social_facebook', 'social_instagram', 'social_twitter', 'social_linkedin', 'social_tiktok', 'site_name', 'copyright_text']);
-      
+
       const siteSettings: any = {};
       settingsData?.forEach(setting => {
         siteSettings[setting.setting_key] = setting.setting_value;
       });
-      
+
       // Load customization
       const { data: customData } = await supabase
         .from("site_customization")
@@ -196,7 +233,7 @@ export const FooterConfigurable = () => {
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       const merged = { ...customData, ...siteSettings };
       setCustomization(merged);
 
@@ -206,9 +243,33 @@ export const FooterConfigurable = () => {
         .select("*")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
-      
+
       if (linksData) {
-        setFooterLinks(linksData);
+        let nextLinks = linksData;
+
+        if (baseLang !== 'es' && linksData.length > 0) {
+          const ids = linksData.map((l) => l.id);
+
+          const { data: linkTranslations } = await supabase
+            .from('translations')
+            .select('entity_id, translated_text')
+            .eq('entity_type', 'footer_links')
+            .eq('field_name', 'title')
+            .eq('language', baseLang)
+            .in('entity_id', ids);
+
+          const map = new Map<string, string>();
+          linkTranslations?.forEach((tr: any) => {
+            if (tr?.entity_id && tr?.translated_text) map.set(tr.entity_id, tr.translated_text);
+          });
+
+          nextLinks = linksData.map((link) => {
+            const translatedTitle = map.get(link.id);
+            return translatedTitle ? { ...link, title: translatedTitle } : link;
+          });
+        }
+
+        setFooterLinks(nextLinks);
       }
     } catch (error) {
       console.error("Error loading footer data:", error);

@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function CookieConsent() {
+  const { t } = useTranslation(["common"]);
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
@@ -30,25 +32,26 @@ export default function CookieConsent() {
       <Card className="max-w-4xl mx-auto p-6 shadow-lg">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-2">Utilizamos Cookies</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("common:cookieConsent.title")}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Utilizamos cookies para mejorar tu experiencia de navegación, personalizar contenido y analizar nuestro tráfico. 
-              Al hacer clic en "Aceptar", consientes el uso de TODAS las cookies. 
-              Puedes consultar nuestra{" "}
-              <a href="/legal/cookies" className="underline">Política de Cookies</a> para más información.
+              <Trans
+                ns="common"
+                i18nKey="cookieConsent.description"
+                components={[<a key="cookies" href="/legal/cookies" className="underline" />]}
+              />
             </p>
             <div className="flex gap-3">
-              <Button onClick={acceptCookies}>
-                Aceptar Todas
-              </Button>
+              <Button onClick={acceptCookies}>{t("common:cookieConsent.acceptAll")}</Button>
               <Button variant="outline" onClick={rejectCookies}>
-                Rechazar
+                {t("common:cookieConsent.reject")}
               </Button>
             </div>
           </div>
           <button
             onClick={rejectCookies}
             className="text-muted-foreground hover:text-foreground"
+            aria-label={t("common:close")}
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>

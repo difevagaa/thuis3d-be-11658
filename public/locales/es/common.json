@@ -37,6 +37,12 @@
   "cookies": "Política de Cookies",
   "legal": "Aviso Legal",
   "faq": "Preguntas Frecuentes",
+  "cookieConsent": {
+    "title": "Utilizamos cookies",
+    "description": "Utilizamos cookies para mejorar tu experiencia de navegación, personalizar contenido y analizar nuestro tráfico. Al hacer clic en \"Aceptar\", consientes el uso de TODAS las cookies. Puedes consultar nuestra <0>Política de Cookies</0> para más información.",
+    "acceptAll": "Aceptar todas",
+    "reject": "Rechazar"
+  },
   "mustLogin": "Debes iniciar sesión",
   "unauthorized": "No autorizado",
   "notFound": "No encontrado",
