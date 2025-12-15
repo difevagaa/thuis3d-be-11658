@@ -25,7 +25,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { toast } from "sonner";
+import { i18nToast } from "@/lib/i18nToast";
 
 interface LayoutProps {
   children: ReactNode;
@@ -72,7 +72,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("Sesión cerrada exitosamente");
+    i18nToast.success("success.sessionClosed");
     navigate("/");
   };
 

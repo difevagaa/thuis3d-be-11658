@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
+import { i18nToast } from '@/lib/i18nToast';
 import { logger } from '@/lib/logger';
 
 export interface ColorSelection {
@@ -67,7 +67,7 @@ export const useCart = () => {
       setCartItems(items);
     } catch (error) {
       logger.error('Error saving cart:', error);
-      toast.error('Error al guardar el carrito');
+      i18nToast.error("error.savingFailed");
     }
   }, []);
 
@@ -96,16 +96,16 @@ export const useCart = () => {
             ? { ...i, quantity: i.quantity + item.quantity }
             : i
         );
-        toast.success('Cantidad actualizada en el carrito');
+        i18nToast.success("success.quantityUpdated");
       } else {
         newCart = [...cartItems, { ...item, id: `${item.productId}-${Date.now()}` }];
-        toast.success('Producto añadido al carrito');
+        i18nToast.success("success.addedToCart");
       }
 
       saveCart(newCart);
     } catch (error) {
       logger.error('Error adding item to cart:', error);
-      toast.error('Error al añadir producto');
+      i18nToast.error("error.general");
     } finally {
       setLoading(false);
     }
@@ -125,13 +125,13 @@ export const useCart = () => {
   const removeItem = useCallback((id: string) => {
     const newCart = cartItems.filter(item => item.id !== id);
     saveCart(newCart);
-    toast.success('Producto eliminado del carrito');
+    i18nToast.success("success.removedFromCart");
   }, [cartItems, saveCart]);
 
   const clearCart = useCallback(() => {
     localStorage.removeItem(CART_STORAGE_KEY);
     setCartItems([]);
-    toast.success('Carrito vaciado');
+    i18nToast.success("success.cartCleared");
   }, []);
 
   const calculateSubtotal = useCallback(() => {
