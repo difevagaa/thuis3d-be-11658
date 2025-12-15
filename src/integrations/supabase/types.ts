@@ -4302,7 +4302,12 @@ export type Database = {
         Args: { page_path?: string; user_id_param: string }
         Returns: undefined
       }
-      verify_admin_pin: { Args: { pin_input: string }; Returns: boolean }
+      verify_admin_pin:
+        | { Args: { pin_input: string }; Returns: boolean }
+        | {
+            Args: { pin_input: string; user_id_input?: string }
+            Returns: boolean
+          }
     }
     Enums: {
       app_role: "admin" | "client" | "moderator" | "superadmin"
