@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { i18nToast } from '@/lib/i18nToast';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ColorSelection {
   section_id: string;
@@ -35,9 +36,23 @@ export interface CartItem {
   giftCardMessage?: string;
   // Para productos con personalización por secciones
   colorSelections?: ColorSelection[];
+  // Para reservas de stock
+  reservationId?: string;
+  reservationExpiresAt?: string;
 }
 
 const CART_STORAGE_KEY = 'cart';
+const SESSION_ID_KEY = 'cart_session_id';
+
+// Generar o recuperar ID de sesión para reservas
+const getSessionId = (): string => {
+  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+  }
+  return sessionId;
+};
 
 export const useCart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -71,9 +86,47 @@ export const useCart = () => {
     }
   }, []);
 
-  const addItem = useCallback((item: CartItem) => {
+  const addItem = useCallback(async (item: CartItem) => {
     setLoading(true);
     try {
+      // Intentar crear reserva de stock
+      const sessionId = getSessionId();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data: reservationResult, error: reservationError } = await supabase.rpc('create_stock_reservation', {
+        p_product_id: item.productId,
+        p_quantity: item.quantity,
+        p_user_id: user?.id || null,
+        p_session_id: sessionId
+      });
+      
+      if (reservationError) {
+        logger.error('Error creating stock reservation:', reservationError);
+      }
+      
+      const result = reservationResult as unknown as { 
+        success: boolean; 
+        error?: string; 
+        available?: number;
+        reservation_id?: string;
+        expires_at?: string;
+        unlimited?: boolean;
+      } | null;
+      
+      // Si no hay stock suficiente, mostrar error
+      if (result && !result.success && result.error === 'insufficient_stock') {
+        i18nToast.error("products:stock.insufficientTitle");
+        setLoading(false);
+        return;
+      }
+      
+      // Añadir info de reserva al item si aplica
+      const itemWithReservation = {
+        ...item,
+        reservationId: result?.reservation_id,
+        reservationExpiresAt: result?.expires_at
+      };
+      
       // Comparar también colorSelections para productos con personalización por secciones
       const existingItemIndex = cartItems.findIndex(i => {
         const sameProduct = i.productId === item.productId;
@@ -93,12 +146,12 @@ export const useCart = () => {
       if (existingItemIndex >= 0) {
         newCart = cartItems.map((i, index) =>
           index === existingItemIndex
-            ? { ...i, quantity: i.quantity + item.quantity }
+            ? { ...i, quantity: i.quantity + item.quantity, ...itemWithReservation }
             : i
         );
         i18nToast.success("success.quantityUpdated");
       } else {
-        newCart = [...cartItems, { ...item, id: `${item.productId}-${Date.now()}` }];
+        newCart = [...cartItems, { ...itemWithReservation, id: `${item.productId}-${Date.now()}` }];
         i18nToast.success("success.addedToCart");
       }
 
@@ -122,17 +175,50 @@ export const useCart = () => {
     saveCart(newCart);
   }, [cartItems, saveCart]);
 
-  const removeItem = useCallback((id: string) => {
+  const removeItem = useCallback(async (id: string) => {
+    // Cancelar reserva de stock
+    const itemToRemove = cartItems.find(item => item.id === id);
+    if (itemToRemove) {
+      try {
+        const sessionId = getSessionId();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        await supabase.rpc('cancel_stock_reservation', {
+          p_product_id: itemToRemove.productId,
+          p_user_id: user?.id || null,
+          p_session_id: sessionId
+        });
+      } catch (error) {
+        logger.error('Error cancelling stock reservation:', error);
+      }
+    }
+    
     const newCart = cartItems.filter(item => item.id !== id);
     saveCart(newCart);
     i18nToast.success("success.removedFromCart");
   }, [cartItems, saveCart]);
 
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
+    // Cancelar todas las reservas de stock
+    const sessionId = getSessionId();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    for (const item of cartItems) {
+      try {
+        await supabase.rpc('cancel_stock_reservation', {
+          p_product_id: item.productId,
+          p_user_id: user?.id || null,
+          p_session_id: sessionId
+        });
+      } catch (error) {
+        logger.error('Error cancelling stock reservation:', error);
+      }
+    }
+    
     localStorage.removeItem(CART_STORAGE_KEY);
     setCartItems([]);
     i18nToast.success("success.cartCleared");
-  }, []);
+  }, [cartItems]);
 
   const calculateSubtotal = useCallback(() => {
     return cartItems.reduce((sum, item) => {

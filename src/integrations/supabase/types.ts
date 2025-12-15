@@ -2910,7 +2910,9 @@ export type Database = {
           shipping_type: string | null
           sku: string | null
           stock: number | null
+          stock_quantity: number | null
           tax_enabled: boolean | null
+          track_stock: boolean | null
           updated_at: string | null
           upsell_product_ids: string[] | null
           video_url: string | null
@@ -2975,7 +2977,9 @@ export type Database = {
           shipping_type?: string | null
           sku?: string | null
           stock?: number | null
+          stock_quantity?: number | null
           tax_enabled?: boolean | null
+          track_stock?: boolean | null
           updated_at?: string | null
           upsell_product_ids?: string[] | null
           video_url?: string | null
@@ -3040,7 +3044,9 @@ export type Database = {
           shipping_type?: string | null
           sku?: string | null
           stock?: number | null
+          stock_quantity?: number | null
           tax_enabled?: boolean | null
+          track_stock?: boolean | null
           updated_at?: string | null
           upsell_product_ids?: string[] | null
           video_url?: string | null
@@ -3982,6 +3988,91 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_reservations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          product_id: string
+          quantity: number
+          reserved_at: string
+          session_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          reserved_at?: string
+          session_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          reserved_at?: string
+          session_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          product_id: string
+          quantity_requested: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          quantity_requested?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          quantity_requested?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_waitlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_detection_settings: {
         Row: {
           created_at: string
@@ -4259,6 +4350,14 @@ export type Database = {
         Args: { p_estimated_size_mb?: number; p_table_name: string }
         Returns: string
       }
+      cancel_stock_reservation: {
+        Args: {
+          p_product_id: string
+          p_session_id?: string
+          p_user_id?: string
+        }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -4276,11 +4375,29 @@ export type Database = {
         }[]
       }
       cleanup_expired_checkout_sessions: { Args: never; Returns: undefined }
+      cleanup_expired_reservations: { Args: never; Returns: number }
       cleanup_inactive_sessions: { Args: never; Returns: undefined }
       cleanup_inactive_visitor_sessions: { Args: never; Returns: undefined }
       cleanup_low_quality_keywords: { Args: never; Returns: number }
       cleanup_old_visitor_sessions: { Args: never; Returns: number }
       clear_admin_pin: { Args: { target_user_id: string }; Returns: undefined }
+      complete_stock_reservation: {
+        Args: {
+          p_product_id: string
+          p_session_id?: string
+          p_user_id?: string
+        }
+        Returns: boolean
+      }
+      create_stock_reservation: {
+        Args: {
+          p_product_id: string
+          p_quantity: number
+          p_session_id?: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       deactivate_expired_gift_cards: { Args: never; Returns: undefined }
       detect_device_type: { Args: { user_agent: string }; Returns: string }
       enqueue_all_page_builder_sections: { Args: never; Returns: number }
@@ -4310,9 +4427,19 @@ export type Database = {
       generate_product_code: { Args: never; Returns: string }
       generate_product_keywords: { Args: never; Returns: undefined }
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
+      get_available_stock: { Args: { p_product_id: string }; Returns: number }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_or_superadmin: { Args: { user_id?: string }; Returns: boolean }
       is_valid_uuid: { Args: { text_value: string }; Returns: boolean }
+      join_stock_waitlist: {
+        Args: {
+          p_email: string
+          p_product_id: string
+          p_quantity?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       mark_user_offline: { Args: { user_id_param: string }; Returns: undefined }
       notify_admins_async: {
         Args: {
@@ -4334,6 +4461,10 @@ export type Database = {
           p_type: string
         }
         Returns: undefined
+      }
+      notify_waitlist_for_products: {
+        Args: { p_product_ids: string[] }
+        Returns: number
       }
       queue_page_builder_section_translation_manual: {
         Args: { p_section_id: string }
