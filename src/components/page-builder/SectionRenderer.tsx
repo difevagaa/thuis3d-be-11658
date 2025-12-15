@@ -2105,8 +2105,8 @@ export function usePageSections(pageKey: string) {
   useEffect(() => {
     async function loadSections() {
       try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        
+        // Use the already-imported supabase client (avoid dynamic import that can hang on slow/mobile connections)
+
         // Get page by key
         const { data: page, error: pageError } = await supabase
           .from('page_builder_pages')
