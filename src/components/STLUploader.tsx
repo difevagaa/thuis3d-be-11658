@@ -3,10 +3,11 @@ import { analyzeSTLFile, AnalysisResult, detectSupportsNeeded } from '@/lib/stlA
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Loader2, CheckCircle2, FileText, Shield, Lightbulb } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useTranslation } from 'react-i18next';
 
 interface STLUploaderProps {
   materialId: string;
@@ -19,6 +20,7 @@ interface STLUploaderProps {
 }
 
 export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupportsDetected, supportsRequired = false, layerHeight, quantity = 1 }: STLUploaderProps) => {
+  const { t } = useTranslation('stlUploader');
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
@@ -34,31 +36,26 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
   const handleFileSelect = async (file: File) => {
     if (!file) return;
 
-    // Validar que sea un archivo STL
     if (!file.name.toLowerCase().endsWith('.stl')) {
-      toast.error('Por favor selecciona un archivo STL válido');
+      toast.error(t('errorInvalidFile'));
       return;
     }
 
-    // Validar tamaño (max 50MB)
     if (file.size > 50 * 1024 * 1024) {
-      toast.error('El archivo es demasiado grande (máximo 50MB)');
+      toast.error(t('errorFileTooLarge'));
       return;
     }
 
     setSelectedFile(file);
     setSupportsDetection(null);
-    toast.success(`Archivo seleccionado: ${file.name}`);
+    toast.success(`${t('fileSelected')}: ${file.name}`);
     
-    // Detectar automáticamente si necesita soportes
     if (onSupportsDetected) {
       setDetectingSupports(true);
       try {
         const fileURL = URL.createObjectURL(file);
-        
-        // Usar valores por defecto si no están disponibles
-        const materialForDetection = materialId || 'PLA'; // Usar el materialId como nombre (o PLA por defecto)
-        const layerHeightForDetection = layerHeight || 0.2; // 0.2mm por defecto
+        const materialForDetection = materialId || 'PLA';
+        const layerHeightForDetection = layerHeight || 0.2;
         
         const detection = await detectSupportsNeeded(
           fileURL, 
@@ -73,17 +70,12 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
           confidence: detection.confidence
         });
         
-        // Notificar al componente padre
         onSupportsDetected(detection.needsSupports, detection.reason);
         
         if (detection.needsSupports) {
-          toast.info('Se detectó que la pieza necesita soportes', {
-            description: detection.reason
-          });
+          toast.info(t('supportsNeeded'), { description: detection.reason });
         } else {
-          toast.success('La pieza no necesita soportes', {
-            description: detection.reason
-          });
+          toast.success(t('noSupportsNeeded'), { description: detection.reason });
         }
       } catch (error) {
         console.error('Error detecting supports:', error);
@@ -115,52 +107,46 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
   const handleUploadAndAnalyze = async () => {
     if (!selectedFile) {
-      toast.error('Por favor selecciona un archivo');
+      toast.error(t('errorNoFile'));
       return;
     }
 
     if (!materialId) {
-      toast.error('Por favor selecciona un material primero');
+      toast.error(t('errorNoMaterial'));
       return;
     }
 
     setAnalyzing(true);
     setProgress(10);
-    setProgressMessage('Leyendo archivo...');
+    setProgressMessage(t('progressReading'));
 
     try {
-      // 1. Crear URL temporal del archivo local (NO lo subimos aún)
       const fileURL = URL.createObjectURL(selectedFile);
       
       setProgress(30);
-      setProgressMessage('Analizando geometría del modelo 3D...');
+      setProgressMessage(t('progressAnalyzing'));
 
-      // Pequeña pausa para dar feedback visual
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 2. Analizar archivo STL localmente (sin subirlo) con configuraciones
       const analysis = await analyzeSTLFile(fileURL, materialId, '', supportsRequired, layerHeight, quantity, colorId);
 
       setProgress(90);
-      setProgressMessage('Calculando costos...');
+      setProgressMessage(t('progressCalculating'));
 
-      // Pequeña pausa para mostrar el progreso
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setProgress(100);
-      setProgressMessage('¡Análisis completado!');
+      setProgressMessage(t('progressComplete'));
 
-      // 3. Devolver resultados con el archivo original
       onAnalysisComplete({ ...analysis, file: selectedFile });
 
-      // Limpiar URL temporal
       URL.revokeObjectURL(fileURL);
 
-      toast.success('Análisis completado exitosamente');
+      toast.success(t('analysisSuccess'));
 
     } catch (error: any) {
       console.error('Error analyzing file:', error);
-      toast.error(error.message || 'Error al analizar el archivo. Verifica que sea un STL válido.');
+      toast.error(error.message || t('errorAnalyzing'));
     } finally {
       setTimeout(() => {
         setAnalyzing(false);
@@ -172,20 +158,17 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
   return (
     <div className="space-y-4">
-      <Label className="text-base font-semibold">Archivo 3D (STL) *</Label>
+      <Label className="text-base font-semibold">{t('label')} *</Label>
       
-      {/* Aviso de privacidad */}
+      {/* Privacy notice */}
       <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <Shield className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-          <strong>🔒 Protección de Datos:</strong> Tu archivo NO será almacenado hasta que envíes la cotización. 
-          Todos los datos y archivos están protegidos bajo nuestra Política de Privacidad (RGPD) 
-          y solo serán utilizados para procesar tu solicitud. Los archivos se eliminan automáticamente 
-          después de 30 días.
+          <strong>🔒 {t('privacyTitle')}:</strong> {t('privacyText')}
         </AlertDescription>
       </Alert>
       
-      {/* Zona de drop */}
+      {/* Drop zone */}
       <div
         className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
           dragActive 
@@ -213,10 +196,10 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
             <>
               <CheckCircle2 className="h-12 w-12 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">✅ Archivo seleccionado</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">✅ {t('fileReady')}</p>
                 <p className="text-base font-semibold mt-1">{selectedFile.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Tamaño: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  {t('fileSize')}: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
               <Button 
@@ -229,7 +212,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
                   setSupportsDetection(null);
                 }}
               >
-                Cambiar archivo
+                {t('changeFile')}
               </Button>
             </>
           ) : (
@@ -237,13 +220,13 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               <Upload className="h-12 w-12 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">
-                  Arrastra tu archivo STL aquí
+                  {t('dropHere')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  o haz clic para seleccionar
+                  {t('orClickToSelect')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 opacity-70">
-                  📁 Formato: STL • Máximo: 50MB
+                  📁 {t('formatInfo')}
                 </p>
               </div>
             </>
@@ -251,7 +234,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
         </div>
       </div>
 
-      {/* Botón de analizar */}
+      {/* Analyze button */}
       {selectedFile && !analyzing && (
         <Button 
           onClick={handleUploadAndAnalyze} 
@@ -260,11 +243,11 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
           size="lg"
         >
           <FileText className="h-4 w-4 mr-2" />
-          🔍 Analizar Modelo 3D
+          🔍 {t('analyzeButton')}
         </Button>
       )}
 
-      {/* Progreso de análisis */}
+      {/* Analysis progress */}
       {analyzing && (
         <Card className="border-primary/50">
           <CardContent className="pt-6">
@@ -275,14 +258,14 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               </div>
               <Progress value={progress} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                {progress}% completado
+                {progress}% {t('completed')}
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Detección de soportes */}
+      {/* Supports detection in progress */}
       {detectingSupports && (
         <Card className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
           <CardContent className="pt-6">
@@ -290,10 +273,10 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               <div>
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                  🔬 Analizando geometría del modelo...
+                  🔬 {t('analyzingGeometry')}
                 </span>
                 <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                  Detectando voladizos y calculando necesidad de soportes
+                  {t('detectingOverhangs')}
                 </p>
               </div>
             </div>
@@ -301,7 +284,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
         </Card>
       )}
 
-      {/* Resultado de detección de soportes */}
+      {/* Supports detection result */}
       {supportsDetection && !detectingSupports && (
         <Alert className={
           supportsDetection.detected 
@@ -312,15 +295,15 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
           <AlertDescription>
             <div className="space-y-2">
               <p className={`text-sm font-semibold ${supportsDetection.detected ? 'text-amber-900 dark:text-amber-100' : 'text-green-900 dark:text-green-100'}`}>
-                {supportsDetection.detected ? '⚠️ Soportes Recomendados' : '✅ Sin Soportes Necesarios'}
+                {supportsDetection.detected ? `⚠️ ${t('supportsRecommended')}` : `✅ ${t('noSupportsRequired')}`}
               </p>
               <p className={`text-xs ${supportsDetection.detected ? 'text-amber-800 dark:text-amber-200' : 'text-green-800 dark:text-green-200'}`}>
                 {supportsDetection.reason}
               </p>
               <p className={`text-xs ${supportsDetection.detected ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
-                <strong>Confianza del análisis:</strong> {
-                  supportsDetection.confidence === 'high' ? '🟢 Alta' :
-                  supportsDetection.confidence === 'medium' ? '🟡 Media' : '🟠 Baja'
+                <strong>{t('analysisConfidence')}:</strong> {
+                  supportsDetection.confidence === 'high' ? `🟢 ${t('confidenceHigh')}` :
+                  supportsDetection.confidence === 'medium' ? `🟡 ${t('confidenceMedium')}` : `🟠 ${t('confidenceLow')}`
                 }
               </p>
             </div>
@@ -328,16 +311,16 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
         </Alert>
       )}
 
-      {/* Éxito */}
+      {/* Success */}
       {progress === 100 && !analyzing && (
         <Card className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 text-green-700 dark:text-green-400">
               <CheckCircle2 className="h-5 w-5" />
               <div>
-                <span className="text-sm font-medium">✅ Análisis completado exitosamente</span>
+                <span className="text-sm font-medium">✅ {t('analysisCompleteSuccess')}</span>
                 <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                  Revisa los detalles de tu pieza a continuación
+                  {t('reviewDetailsBelow')}
                 </p>
               </div>
             </div>
