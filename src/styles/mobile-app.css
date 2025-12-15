@@ -1717,3 +1717,418 @@ html, body {
 .skip-link:focus {
   top: 0;
 }
+
+/* ---------- 40. AUTH PAGE MOBILE OPTIMIZATION ---------- */
+
+@media (max-width: 640px) {
+  /* Auth page container */
+  .auth-page,
+  [class*="min-h-screen"][class*="flex"][class*="items-center"][class*="justify-center"] {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+    min-height: calc(100vh - 60px) !important;
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+  }
+  
+  /* Auth card improvements */
+  .auth-page [class*="Card"],
+  .min-h-screen .max-w-md {
+    width: calc(100% - 1.5rem) !important;
+    margin: 0 auto !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  /* Checkbox and label alignment fix */
+  .flex.items-start.gap-3,
+  .flex.items-start.space-x-2,
+  [class*="flex"][class*="items-start"] {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* Checkbox size increase for mobile touch */
+  [role="checkbox"],
+  input[type="checkbox"],
+  button[role="checkbox"] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+    margin-top: 2px !important;
+  }
+  
+  /* Label text wrapping fix */
+  label[for] {
+    flex: 1 !important;
+    min-width: 0 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Input fields height for better touch */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px !important;
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+  
+  /* Button touch targets */
+  button,
+  [role="button"],
+  a[class*="button"] {
+    min-height: 44px;
+  }
+  
+  /* Tab list improvements */
+  [role="tablist"] {
+    width: 100% !important;
+  }
+  
+  [role="tab"] {
+    flex: 1 !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+  }
+}
+
+/* ---------- 41. PAYMENT PAGES MOBILE ---------- */
+
+@media (max-width: 640px) {
+  /* Payment summary cards */
+  .payment-summary-card,
+  .payment-method-card {
+    padding: 1rem !important;
+    border-radius: 0.875rem !important;
+  }
+  
+  /* Payment method selection */
+  .payment-methods-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  .payment-method-option {
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+    min-height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+  }
+  
+  /* QR code sizing */
+  .qr-code-container {
+    max-width: 200px !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Payment instructions */
+  .payment-instructions {
+    font-size: 0.9375rem !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* Order reference display */
+  .order-reference {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    padding: 1rem !important;
+    background: hsl(var(--muted) / 0.5) !important;
+    border-radius: 0.75rem !important;
+    font-family: monospace !important;
+  }
+}
+
+/* ---------- 42. INVOICE MOBILE OPTIMIZATION ---------- */
+
+@media (max-width: 640px) {
+  .invoice-container {
+    padding: 1rem !important;
+  }
+  
+  .invoice-header {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center !important;
+  }
+  
+  .invoice-details {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+  
+  .invoice-items-table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  .invoice-totals {
+    padding: 1rem !important;
+    background: hsl(var(--muted) / 0.3) !important;
+    border-radius: 0.75rem !important;
+    margin-top: 1rem !important;
+  }
+  
+  .invoice-total-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid hsl(var(--border) / 0.5) !important;
+  }
+  
+  .invoice-total-row:last-child {
+    border-bottom: none !important;
+    font-weight: 700 !important;
+    font-size: 1.125rem !important;
+  }
+}
+
+/* ---------- 43. GLOBAL CARD MOBILE FIX ---------- */
+
+@media (max-width: 640px) {
+  /* All cards should be full-width with proper padding */
+  [class*="Card"],
+  .card {
+    border-radius: 1rem !important;
+    overflow: hidden !important;
+  }
+  
+  /* Card content padding */
+  [class*="CardContent"],
+  .card-content {
+    padding: 1rem !important;
+  }
+  
+  /* Card header */
+  [class*="CardHeader"],
+  .card-header {
+    padding: 1rem 1rem 0.5rem !important;
+  }
+}
+
+/* ---------- 44. FORM CHECKBOX ALIGNMENT FIX ---------- */
+
+@media (max-width: 640px) {
+  /* Ensure checkboxes and radios align properly */
+  .checkbox-wrapper,
+  .radio-wrapper,
+  .flex.items-start:has([role="checkbox"]),
+  .flex.items-start:has(input[type="checkbox"]) {
+    display: grid !important;
+    grid-template-columns: 24px 1fr !important;
+    gap: 0.75rem !important;
+    align-items: start !important;
+  }
+  
+  /* Text next to checkbox should wrap properly */
+  .checkbox-wrapper label,
+  .radio-wrapper label,
+  .flex.items-start:has([role="checkbox"]) label {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* ---------- 45. SHIPPING INFO PAGE MOBILE ---------- */
+
+@media (max-width: 640px) {
+  .shipping-form {
+    padding: 1rem !important;
+  }
+  
+  .shipping-form-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .shipping-form-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .shipping-summary {
+    padding: 1rem !important;
+    background: hsl(var(--card)) !important;
+    border-radius: 0.875rem !important;
+    margin-top: 1rem !important;
+  }
+}
+
+/* ---------- 46. ADMIN MOBILE COMPREHENSIVE ---------- */
+
+@media (max-width: 768px) {
+  /* Admin sidebar overlay */
+  .admin-sidebar-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: 40 !important;
+  }
+  
+  /* Admin content padding */
+  .admin-content {
+    padding: 1rem !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+  
+  /* Admin tables as cards */
+  .admin-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 -1rem !important;
+    padding: 0 1rem !important;
+  }
+  
+  /* Admin form fields */
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea {
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+  
+  /* Admin action buttons */
+  .admin-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  .admin-actions button {
+    flex: 1 !important;
+    min-width: 120px !important;
+  }
+}
+
+/* ---------- 47. QUOTES PAGE MOBILE ---------- */
+
+@media (max-width: 640px) {
+  .quote-form-container {
+    padding: 1rem !important;
+  }
+  
+  .quote-type-selection {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  .quote-type-card {
+    padding: 1rem !important;
+    border-radius: 0.875rem !important;
+    min-height: auto !important;
+  }
+  
+  .quote-file-upload {
+    padding: 1.5rem 1rem !important;
+    text-align: center !important;
+  }
+  
+  .quote-summary {
+    padding: 1rem !important;
+    background: hsl(var(--muted) / 0.3) !important;
+    border-radius: 0.875rem !important;
+  }
+}
+
+/* ---------- 48. PRODUCT DETAIL MOBILE ---------- */
+
+@media (max-width: 640px) {
+  .product-detail-container {
+    padding: 0 !important;
+  }
+  
+  .product-image-gallery {
+    margin: 0 -1rem !important;
+  }
+  
+  .product-info {
+    padding: 1rem !important;
+  }
+  
+  .product-title {
+    font-size: 1.375rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .product-price {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+  }
+  
+  .product-options {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .product-add-to-cart {
+    position: sticky !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 1rem !important;
+    background: hsl(var(--background)) !important;
+    border-top: 1px solid hsl(var(--border)) !important;
+    z-index: 20 !important;
+  }
+}
+
+/* ---------- 49. RESPONSIVE TYPOGRAPHY ---------- */
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.35 !important;
+  }
+  
+  h3 {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  p, li {
+    font-size: 0.9375rem !important;
+    line-height: 1.6 !important;
+  }
+}
+
+/* ---------- 50. DIALOG/MODAL MOBILE ---------- */
+
+@media (max-width: 640px) {
+  [role="dialog"],
+  [data-state="open"][class*="Dialog"] {
+    max-width: calc(100vw - 2rem) !important;
+    max-height: calc(100vh - 2rem) !important;
+    margin: 1rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  [role="dialog"] [class*="DialogContent"],
+  [data-state="open"] [class*="DialogContent"] {
+    padding: 1rem !important;
+  }
+  
+  /* Sheet/drawer on mobile */
+  [data-state="open"][class*="Sheet"] {
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+}
