@@ -109,127 +109,131 @@ export const Layout = ({ children }: LayoutProps) => {
         }}
       >
         <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <div className="flex h-14 sm:h-16 md:h-16 items-center justify-between gap-2">
-            {/* Mobile Menu Button */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation flex-shrink-0 rounded-xl hover:bg-muted bg-transparent border-0">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0">
-                <SheetHeader className="p-6 border-b">
-                  <SheetTitle className="flex items-center gap-3 text-left">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                      <Package className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <span className="text-xl font-bold text-primary">Thuis3D.be</span>
-                  </SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col p-4 gap-2">
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/")}
-                  >
-                    {t('home')}
+          <div className="flex h-14 sm:h-16 items-center justify-between">
+            {/* Left side: Menu + Logo */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {/* Mobile Menu Button */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 min-h-[40px] min-w-[40px] touch-manipulation flex-shrink-0 rounded-lg hover:bg-white/10">
+                    <Menu className="h-5 w-5" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/productos")}
-                  >
-                    {t('products')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/cotizaciones")}
-                  >
-                    {t('quotes')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/tarjetas-regalo")}
-                  >
-                    {t('giftCards')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/blog")}
-                  >
-                    {t('blog')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                    onClick={() => handleNavigate("/galeria")}
-                  >
-                    {t('gallery')}
-                  </Button>
-                  
-                  {user && (
-                    <>
-                      <div className="my-4 border-t border-border"></div>
-                      <Button
-                        variant="ghost"
-                        className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                        onClick={() => handleNavigate("/mi-cuenta")}
-                      >
-                        <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" />
-                        {t('myAccount')}
-                      </Button>
-                      {isAdmin && (
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0">
+                  <SheetHeader className="p-6 border-b">
+                    <SheetTitle className="flex items-center gap-3 text-left">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                        <Package className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <span className="text-xl font-bold text-primary">Thuis3D.be</span>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col p-4 gap-2">
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/")}
+                    >
+                      {t('home')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/productos")}
+                    >
+                      {t('products')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/cotizaciones")}
+                    >
+                      {t('quotes')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/tarjetas-regalo")}
+                    >
+                      {t('giftCards')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/blog")}
+                    >
+                      {t('blog')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                      onClick={() => handleNavigate("/galeria")}
+                    >
+                      {t('gallery')}
+                    </Button>
+                    
+                    {user && (
+                      <>
+                        <div className="my-4 border-t border-border"></div>
                         <Button
                           variant="ghost"
                           className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
-                          onClick={() => handleNavigate("/admin/dashboard")}
+                          onClick={() => handleNavigate("/mi-cuenta")}
                         >
-                          <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
-                          {t('adminPanel')}
+                          <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" />
+                          {t('myAccount')}
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        className="justify-start text-base h-14 rounded-xl hover:bg-destructive/10 text-destructive hover:text-destructive transition-all active:scale-[0.98]"
-                        onClick={() => {
-                          handleLogout();
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
-                        {t('logout')}
-                      </Button>
-                    </>
-                  )}
-                  
-                  {!user && (
-                    <>
-                      <div className="my-4 border-t border-border"></div>
-                      <Button
-                        variant="default"
-                        className="justify-start text-base h-14 rounded-xl transition-all active:scale-[0.98]"
-                        onClick={() => handleNavigate("/auth")}
-                      >
-                        <User className="mr-3 h-5 w-5 flex-shrink-0" />
-                        {t('login')}
-                      </Button>
-                    </>
-                  )}
-                </nav>
-              </SheetContent>
-            </Sheet>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            className="justify-start text-base h-14 rounded-xl hover:bg-muted transition-all active:scale-[0.98]"
+                            onClick={() => handleNavigate("/admin/dashboard")}
+                          >
+                            <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
+                            {t('adminPanel')}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-base h-14 rounded-xl hover:bg-destructive/10 text-destructive hover:text-destructive transition-all active:scale-[0.98]"
+                          onClick={() => {
+                            handleLogout();
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
+                          {t('logout')}
+                        </Button>
+                      </>
+                    )}
+                    
+                    {!user && (
+                      <>
+                        <div className="my-4 border-t border-border"></div>
+                        <Button
+                          variant="default"
+                          className="justify-start text-base h-14 rounded-xl transition-all active:scale-[0.98]"
+                          onClick={() => handleNavigate("/auth")}
+                        >
+                          <User className="mr-3 h-5 w-5 flex-shrink-0" />
+                          {t('login')}
+                        </Button>
+                      </>
+                    )}
+                  </nav>
+                </SheetContent>
+              </Sheet>
 
-            <Link to="/" className="flex items-center gap-2 notranslate flex-shrink-0">
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                <Package className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-              </div>
-              <span className="text-base md:text-xl font-bold text-primary whitespace-nowrap">
-                Thuis3D.be
-              </span>
-            </Link>
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-1.5 sm:gap-2 notranslate flex-shrink-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <Package className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary-foreground" />
+                </div>
+                <span className="text-sm sm:text-base md:text-xl font-bold text-primary whitespace-nowrap">
+                  Thuis3D.be
+                </span>
+              </Link>
+            </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-3 lg:gap-6">
@@ -253,17 +257,18 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </nav>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Right side: Language + Cart + User */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <LanguageSelector />
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation rounded-xl hover:bg-muted transition-all active:scale-95" 
+                className="relative h-10 w-10 sm:h-12 sm:w-12 min-h-[40px] min-w-[40px] touch-manipulation rounded-lg sm:rounded-xl hover:bg-white/10 transition-all active:scale-95" 
                 onClick={() => navigate("/carrito")}
               >
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-lg">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-semibold shadow-lg text-[10px] sm:text-xs">
                     {cartCount}
                   </span>
                 )}
@@ -274,8 +279,8 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation rounded-xl hover:bg-muted transition-all active:scale-95">
-                      <User className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-12 sm:w-12 min-h-[40px] min-w-[40px] touch-manipulation rounded-lg sm:rounded-xl hover:bg-white/10 transition-all active:scale-95">
+                      <User className="h-5 w-5 sm:h-6 sm:w-6" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
@@ -318,8 +323,8 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-12 w-12 min-h-[48px] min-w-[48px] touch-manipulation hidden md:flex rounded-xl hover:bg-muted" onClick={() => navigate("/auth")}>
-                  <User className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-12 sm:w-12 min-h-[40px] min-w-[40px] touch-manipulation hidden md:flex rounded-lg sm:rounded-xl hover:bg-white/10" onClick={() => navigate("/auth")}>
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               )}
             </div>
