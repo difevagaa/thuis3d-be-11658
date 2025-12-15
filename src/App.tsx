@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
@@ -117,19 +117,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Legacy URL redirects (older English slugs)
-const LegacyRedirect = ({ to }: { to: string }) => {
-  const location = useLocation();
-  return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
-};
-
-const LegacyProductRedirect = () => {
-  const { id } = useParams();
-  const location = useLocation();
-  const target = id ? `/producto/${id}` : "/productos";
-  return <Navigate to={`${target}${location.search}${location.hash}`} replace />;
-};
-
 const App = () => {
   // Load and apply global colors on app start
   useGlobalColors();
@@ -149,15 +136,6 @@ const App = () => {
               <Suspense fallback={<PageLoader />}>
                 <Routes>
             {/* Public routes with Layout */}
-            {/* Legacy redirects (older English slugs) */}
-            <Route path="/products" element={<LegacyRedirect to="/productos" />} />
-            <Route path="/product/:id" element={<LegacyProductRedirect />} />
-            <Route path="/quotes" element={<LegacyRedirect to="/cotizaciones" />} />
-            <Route path="/gift-cards" element={<LegacyRedirect to="/tarjetas-regalo" />} />
-            <Route path="/gallery" element={<LegacyRedirect to="/galeria" />} />
-            <Route path="/my-account" element={<LegacyRedirect to="/mi-cuenta" />} />
-            <Route path="/cart" element={<LegacyRedirect to="/carrito" />} />
-
             <Route path="/" element={<Layout><Home /></Layout>} />
             <Route path="/auth" element={<Layout><Auth /></Layout>} />
             <Route path="/productos" element={<Layout><Products /></Layout>} />

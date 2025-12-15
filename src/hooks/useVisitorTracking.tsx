@@ -134,21 +134,20 @@ export function useVisitorTracking() {
           });
         }
         
-        // Usar sendBeacon/fetch keepalive para garantizar que la petición se envíe incluso al cerrar
+        // Usar sendBeacon para garantizar que la petición se envíe incluso al cerrar
         const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/visitor_sessions`;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
         const payload = JSON.stringify({ is_active: false });
-
+        
         // Alternativa: usar fetch con keepalive
         const url = `${endpoint}?session_id=eq.${sessionId}`;
-
+        
         fetch(url, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'apikey': anonKey,
-            'Authorization': `Bearer ${anonKey}`,
             'Prefer': 'return=minimal'
           },
           body: payload,
