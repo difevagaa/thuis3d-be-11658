@@ -9,17 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Users, Shield, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Shield, Check, X, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logger } from '@/lib/logger';
-import { buildAdminPageOptions } from "@/constants/adminMenu";
+import { allPermissions, getGroupedPermissions, buildAdminPageOptions } from "@/constants/adminMenu";
 
 // All admin pages from central definition
 const allAdminPages = buildAdminPageOptions();
-
-// Group pages by section for easier selection
 const groupedPages = (() => {
   const groups: Record<string, { value: string; label: string }[]> = {};
   for (const page of allAdminPages) {
