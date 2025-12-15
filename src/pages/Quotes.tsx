@@ -3,13 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, Wrench, CheckCircle2, Info, Settings, Package, Shield, TrendingDown } from "lucide-react";
-// Lazy 3D previews are defined below to improve performance
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Upload, FileText, Wrench, CheckCircle2, Info, Package, ChevronRight, ChevronLeft, Palette, MapPin, Send, Loader2, Box, Ruler, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -20,8 +17,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useQuantityDiscounts } from "@/hooks/useQuantityDiscounts";
 import { logger } from "@/lib/logger";
-// RichTextEditor is lazy-loaded below
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 // Lazy-loaded heavy components
 const RandomModelPreview = lazy(() => import('@/components/RandomModelPreview').then(m => ({ default: m.RandomModelPreview })));
@@ -40,35 +37,33 @@ interface Color {
   hex_code: string;
 }
 
+// Steps for 3D quote wizard
+const STEPS = ['upload', 'customize', 'shipping', 'review'] as const;
+type Step = typeof STEPS[number];
+
 const Quotes = () => {
   const { t } = useTranslation('quotes');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  // Ref to prevent multiple submissions (updates synchronously, unlike state)
   const isSubmittingRef = useRef(false);
   const { materials, availableColors, filterColorsByMaterial } = useMaterialColors();
   const { calculateShippingByPostalCode, getAvailableCountries } = useShippingCalculator();
   const { calculateDiscount } = useQuantityDiscounts();
+  
+  // Wizard step state
+  const [currentStep, setCurrentStep] = useState<Step>('upload');
+  
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [analysisResult, setAnalysisResult] = useState<(AnalysisResult & { file: File }) | null>(null);
   const [quantity, setQuantity] = useState(1);
-  
-  // Estados para configuración técnica
   const [supportsRequired, setSupportsRequired] = useState<boolean | null>(null);
-  
-  // Estados para archivos del servicio
   const [serviceFiles, setServiceFiles] = useState<File[]>([]);
-  
-  // Estados para descripciones de texto enriquecido
   const [fileDescription, setFileDescription] = useState('');
   const [serviceDescription, setServiceDescription] = useState('');
   const [serviceFileLink, setServiceFileLink] = useState('');
-  
-  // Altura de capa fija en 0.2mm (estándar)
   const layerHeight = 0.2;
   
-  // Estados para formulario - autocompletar si el usuario está autenticado
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [country, setCountry] = useState('Bélgica');
@@ -80,40 +75,33 @@ const Quotes = () => {
   const [shippingZone, setShippingZone] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
-  // Control de pestañas para evitar suspensión en eventos de entrada
   const [activeTab, setActiveTab] = useState<'3d' | 'service'>('3d');
 
-  // Cargar países disponibles
+  // Load countries
   useEffect(() => {
     const loadCountries = async () => {
       const countries = await getAvailableCountries();
       setAvailableCountries(countries);
-      
-      // Si hay países disponibles y no hay país seleccionado, seleccionar el primero
       if (countries.length > 0 && !country) {
         setCountry(countries[0].country_name);
       }
     };
-    
     loadCountries();
   }, []);
 
-  // Prefetch heavy lazy components to avoid Suspense during user input
+  // Prefetch lazy components
   useEffect(() => {
-    // Preload modules shortly after mount so tab clicks or field focus don't suspend
     import('@/components/RandomModelPreview');
     import('@/components/STLViewer3D');
     import('@/components/RichTextEditor');
   }, []);
 
-  // Cargar datos del usuario autenticado
+  // Load user data
   useEffect(() => {
     const loadUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (user) {
         setIsAuthenticated(true);
-        // Obtener perfil del usuario
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, email, phone, postal_code, country, address, city')
@@ -129,7 +117,6 @@ const Quotes = () => {
           setAddress(profile.address || '');
           setCity(profile.city || '');
         } else {
-          // Si no hay perfil, usar datos básicos del usuario
           setCustomerEmail(user.email || '');
           setCustomerName(user.email || '');
         }
@@ -137,17 +124,14 @@ const Quotes = () => {
         setIsAuthenticated(false);
       }
     };
-    
     loadUserData();
     filterColorsByMaterial(null);
   }, []);
   
-  // Calcular envío cuando cambie el código postal o el total estimado - contexto de cotizaciones
+  // Calculate shipping
   useEffect(() => {
     const calculateShipping = async () => {
       if (postalCode && analysisResult?.weight) {
-        // Usar contexto 'quotes' para aplicar la configuración específica de cotizaciones
-        // Pasar el total estimado para verificar umbrales de envío gratis/reducido
         const orderTotal = analysisResult?.estimatedTotal || 0;
         const result = await calculateShippingByPostalCode(postalCode, analysisResult.weight, country, 'quotes', orderTotal);
         setShippingCost(result.cost);
@@ -157,29 +141,57 @@ const Quotes = () => {
         setShippingZone('');
       }
     };
-    
     calculateShipping();
   }, [postalCode, analysisResult?.weight, analysisResult?.estimatedTotal, country]);
 
-  const handleFileQuote = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    // Prevent multiple submissions using ref (synchronous check)
-    if (isSubmittingRef.current || loading) {
-      logger.log('Quote submission blocked: already submitting');
-      return;
+  // Auto-advance after file analysis
+  useEffect(() => {
+    if (analysisResult && currentStep === 'upload') {
+      setTimeout(() => setCurrentStep('customize'), 500);
     }
-    
-    // Mark as submitting immediately (synchronous)
+  }, [analysisResult]);
+
+  const canProceedToStep = (step: Step): boolean => {
+    switch (step) {
+      case 'upload':
+        return true;
+      case 'customize':
+        return !!analysisResult;
+      case 'shipping':
+        return !!analysisResult && !!selectedMaterial && !!selectedColor;
+      case 'review':
+        return !!analysisResult && !!selectedMaterial && !!selectedColor && !!address && !!city && !!postalCode;
+      default:
+        return false;
+    }
+  };
+
+  const goToNextStep = () => {
+    const currentIndex = STEPS.indexOf(currentStep);
+    if (currentIndex < STEPS.length - 1) {
+      const nextStep = STEPS[currentIndex + 1];
+      if (canProceedToStep(nextStep)) {
+        setCurrentStep(nextStep);
+      }
+    }
+  };
+
+  const goToPrevStep = () => {
+    const currentIndex = STEPS.indexOf(currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(STEPS[currentIndex - 1]);
+    }
+  };
+
+  const handleFileQuote = async () => {
+    if (isSubmittingRef.current || loading) return;
     isSubmittingRef.current = true;
     
-    // Verificar autenticación primero
     let user;
     try {
       const { data } = await supabase.auth.getUser();
       user = data?.user;
     } catch (authError) {
-      logger.error('Error checking auth:', authError);
       isSubmittingRef.current = false;
       toast.error(t('systemConfigError'));
       return;
@@ -207,13 +219,10 @@ const Quotes = () => {
     setLoading(true);
     
     try {
-      // No necesitamos leer el formulario aquí
-      
       const materialName = materials.find(m => m.id === selectedMaterial)?.name;
       const colorName = availableColors.find(c => c.id === selectedColor)?.name;
       const description = `${fileDescription || ''}\nMaterial: ${materialName}\nColor: ${colorName}`;
 
-      // AHORA SÍ subimos el archivo a Supabase
       const sanitizedName = analysisResult.file.name
         .toLowerCase()
         .replace(/\s+/g, '-')
@@ -232,9 +241,8 @@ const Quotes = () => {
 
       if (uploadError) throw uploadError;
 
-      // Guardar/actualizar datos de perfil del usuario si está autenticado
       if (user) {
-        const { error: profileError } = await supabase
+        await supabase
           .from('profiles')
           .upsert({
             id: user.id,
@@ -246,39 +254,24 @@ const Quotes = () => {
             address: address,
             city: city,
             updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'id'
-          });
-        
-        if (profileError) {
-          logger.error('Error al guardar perfil:', profileError);
-        }
+          }, { onConflict: 'id' });
       }
 
       const discount = calculateDiscount(quantity, analysisResult?.estimatedTotal || 0);
       const finalPrice = discount ? discount.finalPrice : (analysisResult?.estimatedTotal || 0);
 
-      // Buscar estado "Pendiente" por slug (independiente del idioma)
       let pendingStatusId: string;
-      try {
-        const { data, error } = await (supabase as any)
-          .from('quote_statuses')
-          .select('id')
-          .eq('slug', 'pending')
-          .is('deleted_at', null)
-          .limit(1);
-        
-        if (error || !data || data.length === 0) {
-          throw new Error('Estado pending no encontrado');
-        }
-        pendingStatusId = data[0].id;
-      } catch (error) {
-        logger.error('No se encontró estado con slug "pending" en quote_statuses');
-        toast.error(t('systemConfigError'));
-        setLoading(false);
-        isSubmittingRef.current = false;
-        return;
+      const { data, error: statusError } = await (supabase as any)
+        .from('quote_statuses')
+        .select('id')
+        .eq('slug', 'pending')
+        .is('deleted_at', null)
+        .limit(1);
+      
+      if (statusError || !data || data.length === 0) {
+        throw new Error('Estado pending no encontrado');
       }
+      pendingStatusId = data[0].id;
 
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id,
@@ -308,7 +301,7 @@ const Quotes = () => {
           })
         } : null,
         supports_required: supportsRequired,
-        layer_height: layerHeight, // Siempre 0.2mm
+        layer_height: layerHeight,
         let_team_decide_supports: false,
         let_team_decide_layer: false,
         country: country,
@@ -321,40 +314,19 @@ const Quotes = () => {
         quantity: quantity || 1,
       });
 
-      if (error) {
-        logger.error('Error al insertar cotización:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Send email to customer
       try {
         await supabase.functions.invoke('send-quote-email', {
-          body: {
-            to: customerEmail,
-            customer_name: customerName,
-            quote_type: 'archivo 3D',
-            description: description
-          }
+          body: { to: customerEmail, customer_name: customerName, quote_type: 'archivo 3D', description }
         });
-      } catch (emailError) {
-        logger.error('Error sending quote email:', emailError);
-        // No bloqueamos el flujo si falla el email
-      }
+      } catch {}
 
       try {
         await supabase.functions.invoke('send-admin-notification', {
-          body: {
-            type: 'quote',
-            subject: 'Nueva Cotización de Archivo 3D',
-            message: `Nueva cotización de ${customerName}`,
-            customer_name: customerName,
-            customer_email: customerEmail,
-            link: '/admin/cotizaciones'
-          }
+          body: { type: 'quote', subject: 'Nueva Cotización de Archivo 3D', message: `Nueva cotización de ${customerName}`, customer_name: customerName, customer_email: customerEmail, link: '/admin/cotizaciones' }
         });
-      } catch (notifError) {
-        logger.error('Error sending admin notification:', notifError);
-      }
+      } catch {}
       
       toast.success(t('quoteSent'));
       navigate("/");
@@ -368,23 +340,14 @@ const Quotes = () => {
 
   const handleServiceQuote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Prevent multiple submissions using ref (synchronous check)
-    if (isSubmittingRef.current || loading) {
-      logger.log('Service quote submission blocked: already submitting');
-      return;
-    }
-    
-    // Mark as submitting immediately (synchronous)
+    if (isSubmittingRef.current || loading) return;
     isSubmittingRef.current = true;
     
-    // Verificar autenticación primero
     let user;
     try {
       const { data } = await supabase.auth.getUser();
       user = data?.user;
-    } catch (authError) {
-      logger.error('Error checking auth:', authError);
+    } catch {
       isSubmittingRef.current = false;
       toast.error(t('systemConfigError'));
       return;
@@ -400,8 +363,6 @@ const Quotes = () => {
     setLoading(true);
     
     try {
-      // Leer enlace desde estado controlado
-      // Validar campos requeridos
       if (!customerName || !customerEmail) {
         toast.error(t('fillNameEmail'));
         setLoading(false);
@@ -418,65 +379,34 @@ const Quotes = () => {
       
       let description = serviceDescription;
       const fileLink = serviceFileLink?.trim();
-      
-      if (fileLink) {
-        description += `\n\nEnlace al archivo: ${fileLink}`;
-      }
+      if (fileLink) description += `\n\nEnlace al archivo: ${fileLink}`;
 
-      // Subir archivos adjuntos a Storage si existen
       const uploadedFiles: string[] = [];
       if (serviceFiles.length > 0) {
         for (const file of serviceFiles) {
           try {
-            const sanitizedName = file.name
-              .toLowerCase()
-              .replace(/\s+/g, '-')
-              .replace(/[^a-z0-9.-]/g, '')
-              .replace(/-+/g, '-');
-            
+            const sanitizedName = file.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/-+/g, '-');
             const fileName = `service_${Date.now()}_${sanitizedName}`;
             const filePath = `${user!.id}/${fileName}`;
             
-            const { error: uploadError } = await supabase.storage
-              .from('quote-files')
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
-
-            if (uploadError) {
-              logger.error('Error uploading file:', uploadError);
-              toast.error(`Error al subir ${file.name}`);
-            } else {
-              uploadedFiles.push(filePath);
-            }
-          } catch (uploadErr) {
-            logger.error('Exception uploading file:', uploadErr);
-          }
+            const { error: uploadError } = await supabase.storage.from('quote-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
+            if (!uploadError) uploadedFiles.push(filePath);
+          } catch {}
         }
       }
 
-      // Lookup status by slug (language-agnostic)
       let pendingStatusId: string;
-      try {
-        const { data, error } = await (supabase as any)
-          .from('quote_statuses')
-          .select('id')
-          .eq('slug', 'pending')
-          .is('deleted_at', null)
-          .limit(1);
-        
-        if (error || !data || data.length === 0) {
-          throw new Error('Estado pending no encontrado');
-        }
-        pendingStatusId = data[0].id;
-      } catch (error) {
-        logger.error('No se encontró estado con slug "pending" en quote_statuses');
-        toast.error(t('systemConfigError'));
-        setLoading(false);
-        isSubmittingRef.current = false;
-        return;
+      const { data, error: statusError } = await (supabase as any)
+        .from('quote_statuses')
+        .select('id')
+        .eq('slug', 'pending')
+        .is('deleted_at', null)
+        .limit(1);
+      
+      if (statusError || !data || data.length === 0) {
+        throw new Error('Estado pending no encontrado');
       }
+      pendingStatusId = data[0].id;
 
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id || null,
@@ -489,41 +419,19 @@ const Quotes = () => {
         service_attachments: uploadedFiles.length > 0 ? uploadedFiles : null,
       });
 
-      if (error) {
-        logger.error('Error al insertar cotización de servicio:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Send email to customer
       try {
         await supabase.functions.invoke('send-quote-email', {
-          body: {
-            to: customerEmail,
-            customer_name: customerName,
-            quote_type: 'servicio',
-            description: description
-          }
+          body: { to: customerEmail, customer_name: customerName, quote_type: 'servicio', description }
         });
-      } catch (emailError) {
-        logger.error('Error sending service quote email:', emailError);
-        // No bloqueamos el flujo si falla el email
-      }
+      } catch {}
 
-      // Send notification to admins
       try {
         await supabase.functions.invoke('send-admin-notification', {
-          body: {
-            type: 'quote',
-            subject: 'Nueva Solicitud de Servicio',
-            message: `Nueva solicitud de ${customerName}`,
-            customer_name: customerName,
-            customer_email: customerEmail,
-            link: '/admin/cotizaciones'
-          }
+          body: { type: 'quote', subject: 'Nueva Solicitud de Servicio', message: `Nueva solicitud de ${customerName}`, customer_name: customerName, customer_email: customerEmail, link: '/admin/cotizaciones' }
         });
-      } catch (notifError) {
-        // Notification error handled silently
-      }
+      } catch {}
       
       toast.success(t('quoteSent'));
       navigate("/");
@@ -535,119 +443,180 @@ const Quotes = () => {
     }
   };
 
+  const getStepIcon = (step: Step) => {
+    switch (step) {
+      case 'upload': return <Upload className="h-4 w-4" />;
+      case 'customize': return <Palette className="h-4 w-4" />;
+      case 'shipping': return <MapPin className="h-4 w-4" />;
+      case 'review': return <Send className="h-4 w-4" />;
+    }
+  };
+
+  const getStepLabel = (step: Step) => {
+    switch (step) {
+      case 'upload': return t('yourFile');
+      case 'customize': return t('personalization');
+      case 'shipping': return t('shippingInfo');
+      case 'review': return t('sendQuote');
+    }
+  };
+
+  const totalEstimated = analysisResult ? (analysisResult.estimatedTotal + (shippingCost || 0)) : 0;
+
   return (
-    <div className="container mx-auto px-4 py-4 md:py-8 lg:py-12">
-      <div className="mb-4 md:mb-6 lg:mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">{t('title')}</h1>
-        <p className="text-sm md:text-base lg:text-lg text-muted-foreground">
-          {t('subtitle')}
-        </p>
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">{t('title')}</h1>
+        <p className="text-sm md:text-base text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      <TooltipProvider>
       <div className="max-w-4xl mx-auto">
         <Tabs value={activeTab} onValueChange={(v) => startTransition(() => setActiveTab(v as '3d' | 'service'))} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="3d" className="text-xs md:text-sm">
-              <Upload className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="3d" className="text-xs md:text-sm gap-2">
+              <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">{t('tab3d')}</span>
               <span className="sm:hidden">3D</span>
             </TabsTrigger>
-            <TabsTrigger value="service" className="text-xs md:text-sm">
-              <Wrench className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <TabsTrigger value="service" className="text-xs md:text-sm gap-2">
+              <Wrench className="h-4 w-4" />
               {t('tabService')}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="3d">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('fileQuoteTitle')}</CardTitle>
-                <CardDescription>
-                  {t('fileQuoteDesc')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleFileQuote} className="space-y-6">
-                  {/* Solo mostrar campos de contacto si el usuario NO está autenticado */}
-                  {!isAuthenticated && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="file-name">{t('fullName')} *</Label>
-                        <Input 
-                          id="file-name" 
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          required 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="file-email">{t('email')} *</Label>
-                        <Input 
-                          id="file-email" 
-                          type="email" 
-                          value={customerEmail}
-                          onChange={(e) => setCustomerEmail(e.target.value)}
-                          required 
-                        />
-                      </div>
-                    </>
+          <TabsContent value="3d" className="space-y-6">
+            {/* Progress Steps */}
+            <div className="flex items-center justify-between mb-8">
+              {STEPS.map((step, index) => {
+                const isActive = step === currentStep;
+                const isCompleted = STEPS.indexOf(currentStep) > index;
+                const canGo = canProceedToStep(step);
+                
+                return (
+                  <div key={step} className="flex items-center flex-1">
+                    <button
+                      onClick={() => canGo && setCurrentStep(step)}
+                      disabled={!canGo}
+                      className={cn(
+                        "flex items-center justify-center gap-2 transition-all",
+                        "w-full py-2 px-3 rounded-lg text-sm font-medium",
+                        isActive && "bg-primary text-primary-foreground shadow-lg",
+                        isCompleted && !isActive && "bg-primary/20 text-primary",
+                        !isActive && !isCompleted && "bg-muted text-muted-foreground",
+                        canGo && !isActive && "hover:bg-primary/10 cursor-pointer",
+                        !canGo && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isCompleted && !isActive ? (
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      ) : (
+                        getStepIcon(step)
+                      )}
+                      <span className="hidden md:inline">{getStepLabel(step)}</span>
+                      <span className="md:hidden">{index + 1}</span>
+                    </button>
+                    {index < STEPS.length - 1 && (
+                      <ChevronRight className={cn(
+                        "h-4 w-4 mx-1 shrink-0",
+                        isCompleted ? "text-primary" : "text-muted-foreground/30"
+                      )} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Step 1: Upload */}
+            {currentStep === 'upload' && (
+              <Card className="border-2 border-dashed">
+                <CardHeader className="text-center pb-2">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    {t('fileQuoteTitle')}
+                  </CardTitle>
+                  <CardDescription>{t('fileQuoteDesc')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <STLUploader
+                    materialId={selectedMaterial}
+                    colorId={selectedColor}
+                    supportsRequired={supportsRequired || false}
+                    layerHeight={layerHeight}
+                    quantity={quantity}
+                    onAnalysisComplete={setAnalysisResult}
+                    onSupportsDetected={(needsSupports) => setSupportsRequired(needsSupports)}
+                  />
+                  
+                  {analysisResult && (
+                    <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800 dark:text-green-200">
+                        <strong>{t('analysisComplete')}</strong> - {analysisResult.file.name}
+                      </AlertDescription>
+                    </Alert>
                   )}
-                  
-                  {/* Información de Envío - siempre visible */}
-                  <Separator className="my-4" />
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    {t('shippingInfo')}
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 2: Customize */}
+            {currentStep === 'customize' && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Palette className="h-5 w-5" />
+                      {t('personalization')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="file-address">{t('address')} *</Label>
-                      <Input 
-                        id="file-address" 
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                          placeholder={t('addressPlaceholder')}
-                          required 
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="file-city">{t('city')} *</Label>
-                        <Input 
-                          id="file-city" 
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          placeholder={t('cityPlaceholder')}
-                          required 
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="file-postal">{t('postalCode')} *</Label>
-                        <Input 
-                          id="file-postal" 
-                          value={postalCode}
-                          onChange={(e) => setPostalCode(e.target.value)}
-                          placeholder={t('postalPlaceholder')}
-                          required 
-                        />
-                      </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="file-country">{t('country')} *</Label>
-                      <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger id="file-country">
-                          <SelectValue placeholder={t('selectCountry')} />
+                      <Label>{t('material')} *</Label>
+                      <Select 
+                        value={selectedMaterial} 
+                        onValueChange={(value) => {
+                          startTransition(() => {
+                            setSelectedMaterial(value);
+                            setSelectedColor("");
+                            filterColorsByMaterial(value);
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectMaterial')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableCountries.length === 0 ? (
-                            <SelectItem value="none" disabled>{t('noCountries')}</SelectItem>
+                          {materials.map((material) => (
+                            <SelectItem key={material.id} value={material.id}>
+                              {material.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>{t('color')} *</Label>
+                      <Select 
+                        value={selectedColor} 
+                        onValueChange={(value) => startTransition(() => setSelectedColor(value))}
+                        disabled={!selectedMaterial}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={!selectedMaterial ? t('selectMaterialFirst') : t('selectColor')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableColors.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">
+                              {!selectedMaterial ? t('selectMaterialFirst') : t('noColorsAvailable')}
+                            </div>
                           ) : (
-                            availableCountries.map((c) => (
-                              <SelectItem key={c.id} value={c.country_name}>
-                                {c.country_name}
+                            availableColors.map((color) => (
+                              <SelectItem key={color.id} value={color.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: color.hex_code }} />
+                                  {color.name}
+                                </div>
                               </SelectItem>
                             ))
                           )}
@@ -655,343 +624,306 @@ const Quotes = () => {
                       </Select>
                     </div>
                     
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="file-phone">{t('phoneOptional')}</Label>
-                        <Input 
-                          id="file-phone" 
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder={t('phonePlaceholder')}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Mostrar costo de envío estimado */}
-                    {analysisResult && shippingCost !== null && (
-                      <Alert>
-                        <Package className="h-4 w-4" />
-                        <AlertDescription>
-                          <div className="space-y-1">
-                            <p className="font-semibold">{t('estimatedShippingCost')}: €{shippingCost.toFixed(2)}</p>
-                            <p className="text-xs text-muted-foreground">{t('zone')}: {shippingZone}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {t('basedOnWeight', { weight: analysisResult.weight.toFixed(0), postalCode })}
-                            </p>
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  
-                  <Separator className="my-4" />
-                  
-                  <Separator className="my-4" />
-                  
-                  {/* Selección de material y color con vista previa 3D */}
-                  <h3 className="font-semibold text-lg">{t('personalization')}</h3>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="file-material">{t('material')} *</Label>
-                        <Select 
-                          value={selectedMaterial} 
-                          onValueChange={(value) => {
-                            startTransition(() => {
-                              setSelectedMaterial(value);
-                              setSelectedColor("");
-                              filterColorsByMaterial(value);
-                            });
-                          }}
+                    <div className="space-y-2">
+                      <Label>{t('quantityUnits')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          disabled={quantity <= 1}
                         >
-                          <SelectTrigger id="file-material">
-                            <SelectValue placeholder={t('selectMaterial')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {materials.map((material) => (
-                              <SelectItem key={material.id} value={material.id}>
-                                {material.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="file-color">{t('color')} *</Label>
-                        <Select 
-                          value={selectedColor} 
-                          onValueChange={(value) => startTransition(() => setSelectedColor(value))}
-                          disabled={!selectedMaterial}
-                        >
-                          <SelectTrigger id="file-color">
-                            <SelectValue placeholder={
-                              !selectedMaterial 
-                                ? t('selectMaterialFirst')
-                                : t('selectColor')
-                            } />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableColors.length === 0 ? (
-                              <div className="p-2 text-sm text-muted-foreground">
-                                {!selectedMaterial 
-                                  ? t('selectMaterialFirst')
-                                  : t('noColorsAvailable')}
-                              </div>
-                            ) : (
-                              availableColors.map((color) => (
-                                <SelectItem key={color.id} value={color.id}>
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="w-4 h-4 rounded-full border"
-                                      style={{ backgroundColor: color.hex_code }}
-                                    />
-                                    {color.name}
-                                  </div>
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {/* Cantidad */}
-                      <div className="space-y-2">
-                        <Label>{t('quantityUnits')} *</Label>
+                          -
+                        </Button>
                         <Input
                           type="number"
                           min="1"
                           max="999"
                           value={quantity}
                           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-20 text-center"
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setQuantity(quantity + 1)}
+                        >
+                          +
+                        </Button>
                       </div>
                     </div>
-                    
-                    {/* Vista previa 3D con el color seleccionado */}
-                    <div className="space-y-2">
-                      <Label>{t('colorPreview')}</Label>
-                      {selectedColor ? (
-                        <Suspense fallback={<div className="w-full h-64 rounded-lg border bg-muted/30 animate-pulse" />}> 
-                          <RandomModelPreview 
-                            color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#cccccc"}
-                          />
-                        </Suspense>
-                      ) : (
-                        <div className="w-full h-64 rounded-lg border bg-muted/30 flex items-center justify-center">
-                          <p className="text-sm text-muted-foreground text-center px-4">
-                            {t('selectColor')}
-                          </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Eye className="h-5 w-5" />
+                      {t('colorPreview')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedColor ? (
+                      <Suspense fallback={<div className="w-full h-64 rounded-lg border bg-muted/30 animate-pulse" />}>
+                        <RandomModelPreview color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#cccccc"} />
+                      </Suspense>
+                    ) : (
+                      <div className="w-full h-64 rounded-lg border bg-muted/30 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground text-center px-4">{t('selectColor')}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Step 3: Shipping */}
+            {currentStep === 'shipping' && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    {t('shippingInfo')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {!isAuthenticated && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>{t('fullName')} *</Label>
+                          <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
                         </div>
-                      )}
+                        <div className="space-y-2">
+                          <Label>{t('email')} *</Label>
+                          <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
+                        </div>
+                      </>
+                    )}
+                    <div className="space-y-2">
+                      <Label>{t('address')} *</Label>
+                      <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('city')} *</Label>
+                      <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('cityPlaceholder')} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('postalCode')} *</Label>
+                      <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder={t('postalPlaceholder')} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('country')} *</Label>
+                      <Select value={country} onValueChange={setCountry}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectCountry')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableCountries.map((c) => (
+                            <SelectItem key={c.id} value={c.country_name}>{c.country_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>{t('phoneOptional')}</Label>
+                      <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
                     </div>
                   </div>
-                  
-                  {/* Información sobre detección automática */}
-                  <Separator className="my-6" />
-                  <Alert>
-                    <Shield className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      ✨ <strong>{t('autoConfiguration')}:</strong> {t('autoConfigDesc')}
-                    </AlertDescription>
-                  </Alert>
-                  <Separator className="my-4" />
-                  
-                  {/* Carga de archivo STL/OBJ/3MF */}
-                  <div className="space-y-2">
-                    <Label>{t('yourFile')} *</Label>
-                    <STLUploader
-                      materialId={selectedMaterial}
-                      colorId={selectedColor}
-                      supportsRequired={supportsRequired || false}
-                      layerHeight={layerHeight}
-                      quantity={quantity}
-                      onAnalysisComplete={setAnalysisResult}
-                      onSupportsDetected={(needsSupports, reason) => {
-                        setSupportsRequired(needsSupports);
-                      }}
-                    />
-                  </div>
-                  
-                  {analysisResult && (
-                    <Card className="bg-primary/5 border-primary/20">
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          {quantity > 1 ? t('analysisCompleteUnits', { count: quantity }) : t('analysisComplete')}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        {/* Datos de pieza */}
-                        <div>
-                          <h3 className="font-semibold mb-3 text-sm">{quantity > 1 ? t('partDataPerUnit') : t('partData')}</h3>
-                           <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-background/80 p-3 rounded-lg">
-                              <p className="text-xs text-muted-foreground mb-1">{t('volume')}</p>
-                              <p className="text-base font-bold">{analysisResult.volume.toFixed(2)} cm³</p>
-                            </div>
-                            <div className="bg-background/80 p-3 rounded-lg">
-                              <p className="text-xs text-muted-foreground mb-1">{t('dimensions')}</p>
-                              <p className="text-xs font-mono">
-                                {analysisResult.dimensions.x.toFixed(1)}×
-                                {analysisResult.dimensions.y.toFixed(1)}×
-                                {analysisResult.dimensions.z.toFixed(1)}cm
-                              </p>
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Vista previa 3D interactiva */}
-                        <div>
-                          <h3 className="font-semibold mb-3 text-sm">{t('interactive3DModel')}</h3>
-                          {analysisResult.stlData ? (
-                            <Suspense fallback={<div className="w-full h-64 rounded-lg border bg-muted/30 animate-pulse" />}> 
-                              <STLViewer3D 
-                                stlData={analysisResult.stlData}
-                                color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#3b82f6"}
-                              />
-                            </Suspense>
-                          ) : (
-                            <div className="rounded-lg overflow-hidden border bg-background/50 max-w-sm mx-auto">
-                              <img 
-                                src={analysisResult.preview} 
-                                alt={t('preview3D')} 
-                                className="w-full h-auto"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Total Aproximado (sin desglose) */}
-                        <div className="space-y-3">
-                          {/* Indicador de política de precio mínimo */}
-                          {quantity > 1 && (
-                            <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                              <Info className="h-4 w-4 text-blue-600" />
-                              <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-                                <strong>📋 {t('minPricePolicy')}:</strong> {t('minPricePolicyDesc')}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
-                            <Info className="h-4 w-4 text-amber-600" />
-                            <AlertDescription className="space-y-3">
-                              <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-semibold text-amber-900 dark:text-amber-100">{t('printingCost')}:</span>
-                                  <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                                    €{analysisResult.estimatedTotal.toFixed(2)}
-                                  </span>
-                                </div>
-                                
-                                {quantity > 1 && (
-                                  <div className="text-xs text-amber-700 dark:text-amber-300 italic">
-                                    {t('pricePerUnit')}: €{(analysisResult.estimatedTotal / quantity).toFixed(2)}
-                                  </div>
-                                )}
-                                
-                                {shippingCost !== null && (
-                                  <>
-                                    <div className="flex justify-between items-center text-sm">
-                                      <span className="text-amber-800 dark:text-amber-200">{t('shipping')} ({shippingZone}):</span>
-                                      <span className="font-semibold text-amber-700 dark:text-amber-300">
-                                        €{shippingCost.toFixed(2)}
-                                      </span>
-                                    </div>
-                                    
-                                    <Separator className="bg-amber-300 dark:bg-amber-700" />
-                                    
-                                    <div className="flex justify-between items-center pt-2">
-                                      <span className="font-bold text-amber-900 dark:text-amber-100 text-lg">{t('totalEstimated')}:</span>
-                                      <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                                        €{(analysisResult.estimatedTotal + shippingCost).toFixed(2)}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                                
-                                {shippingCost === null && postalCode && (
-                                  <p className="text-xs text-amber-800 dark:text-amber-200 italic">
-                                    {t('calculatingShipping')}
-                                  </p>
-                                )}
-                                
-                                {!postalCode && (
-                                  <p className="text-xs text-amber-800 dark:text-amber-200 italic">
-                                    * {t('shippingNotIncluded')}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <p className="text-xs text-amber-800 dark:text-amber-200 mt-2 pt-2 border-t border-amber-300 dark:border-amber-700">
-                                <strong>{t('importantNote')}:</strong> {t('importantNoteDesc')}
-                              </p>
-                            </AlertDescription>
-                          </Alert>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {shippingCost !== null && (
+                    <Alert className="mt-4">
+                      <Package className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>{t('estimatedShippingCost')}: €{shippingCost.toFixed(2)}</strong> ({shippingZone})
+                      </AlertDescription>
+                    </Alert>
                   )}
+                </CardContent>
+              </Card>
+            )}
 
-                  {/* Descripción / Notas */}
-                  <div className="space-y-2">
-                      <Label htmlFor="file-description">{t('notes')}</Label>
-                    <Suspense fallback={<div className="h-40 rounded-md border bg-muted/30 animate-pulse" />}> 
+            {/* Step 4: Review & Submit */}
+            {currentStep === 'review' && analysisResult && (
+              <div className="space-y-6">
+                {/* Summary Card */}
+                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                      {t('analysisComplete')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* File Info */}
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="bg-background/80 p-4 rounded-lg text-center">
+                        <Box className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{t('volume')}</p>
+                        <p className="text-lg font-bold">{analysisResult.volume.toFixed(2)} cm³</p>
+                      </div>
+                      <div className="bg-background/80 p-4 rounded-lg text-center">
+                        <Ruler className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{t('dimensions')}</p>
+                        <p className="text-sm font-mono">
+                          {analysisResult.dimensions.x.toFixed(1)}×{analysisResult.dimensions.y.toFixed(1)}×{analysisResult.dimensions.z.toFixed(1)} cm
+                        </p>
+                      </div>
+                      <div className="bg-background/80 p-4 rounded-lg text-center">
+                        <Package className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{t('quantity')}</p>
+                        <p className="text-lg font-bold">{quantity} {quantity > 1 ? 'unidades' : 'unidad'}</p>
+                      </div>
+                    </div>
+
+                    {/* 3D Preview */}
+                    {analysisResult.stlData && (
+                      <div className="rounded-lg overflow-hidden border">
+                        <Suspense fallback={<div className="w-full h-48 bg-muted/30 animate-pulse" />}>
+                          <STLViewer3D 
+                            stlData={analysisResult.stlData}
+                            color={availableColors.find(c => c.id === selectedColor)?.hex_code || "#3b82f6"}
+                          />
+                        </Suspense>
+                      </div>
+                    )}
+
+                    {/* Selected Options */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="gap-1">
+                        <div className="w-3 h-3 rounded-full border" style={{ backgroundColor: availableColors.find(c => c.id === selectedColor)?.hex_code }} />
+                        {availableColors.find(c => c.id === selectedColor)?.name}
+                      </Badge>
+                      <Badge variant="secondary">
+                        {materials.find(m => m.id === selectedMaterial)?.name}
+                      </Badge>
+                      <Badge variant="outline">
+                        {city}, {country}
+                      </Badge>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>{t('printingCost')}</span>
+                        <span className="font-semibold">€{analysisResult.estimatedTotal.toFixed(2)}</span>
+                      </div>
+                      {shippingCost !== null && (
+                        <div className="flex justify-between text-sm">
+                          <span>{t('shipping')}</span>
+                          <span className="font-semibold">€{shippingCost.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-2 flex justify-between">
+                        <span className="font-bold">{t('totalEstimated')}</span>
+                        <span className="text-xl font-bold text-primary">€{totalEstimated.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{t('notes')}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense fallback={<div className="h-32 rounded-md border bg-muted/30 animate-pulse" />}>
                       <RichTextEditor
                         value={fileDescription}
                         onChange={setFileDescription}
                         placeholder={t('notesPlaceholder')}
                       />
                     </Suspense>
-                  </div>
-                  
-                  <Button type="submit" className="w-full" size="lg" disabled={loading || !analysisResult}>
-                    {loading ? t('analyzing') : t('sendQuote')}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Important Note */}
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>{t('importantNote')}:</strong> {t('importantNoteDesc')}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goToPrevStep}
+                disabled={currentStep === 'upload'}
+                className="gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t('back') || 'Anterior'}
+              </Button>
+              
+              {currentStep === 'review' ? (
+                <Button
+                  onClick={handleFileQuote}
+                  disabled={loading || !canProceedToStep('review')}
+                  className="gap-2"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('sending')}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      {t('sendQuote')}
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={goToNextStep}
+                  disabled={!canProceedToStep(STEPS[STEPS.indexOf(currentStep) + 1] as Step)}
+                  className="gap-2"
+                >
+                  {t('next') || 'Siguiente'}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </TabsContent>
 
+          {/* Service Quote Tab - Simplified */}
           <TabsContent value="service">
             <Card>
               <CardHeader>
-                <CardTitle>{t('serviceQuoteTitle')}</CardTitle>
-                <CardDescription>
-                  {t('serviceQuoteDesc')}
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  {t('serviceQuoteTitle')}
+                </CardTitle>
+                <CardDescription>{t('serviceQuoteDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleServiceQuote} className="space-y-4">
-                  {/* Solo mostrar campos de contacto si el usuario NO está autenticado */}
                   {!isAuthenticated && (
-                    <>
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="service-name">{t('fullName')} *</Label>
-                        <Input 
-                          id="service-name" 
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          required 
-                        />
+                        <Label>{t('fullName')} *</Label>
+                        <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="service-email">{t('email')} *</Label>
-                        <Input 
-                          id="service-email" 
-                          type="email" 
-                          value={customerEmail}
-                          onChange={(e) => setCustomerEmail(e.target.value)}
-                          required 
-                        />
+                        <Label>{t('email')} *</Label>
+                        <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
                       </div>
-                    </>
+                    </div>
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="service-description">{t('projectDescription')} *</Label>
-                    <Suspense fallback={<div className="h-40 rounded-md border bg-muted/30 animate-pulse" />}> 
+                    <Label>{t('projectDescription')} *</Label>
+                    <Suspense fallback={<div className="h-40 rounded-md border bg-muted/30 animate-pulse" />}>
                       <RichTextEditor
                         value={serviceDescription}
                         onChange={setServiceDescription}
@@ -999,56 +931,53 @@ const Quotes = () => {
                       />
                     </Suspense>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="service-file-link">
-                      {t('fileLinkOptional')}
-                    </Label>
-                    <Input 
-                      id="service-file-link" 
-                      name="file_link"
-                      type="url"
-                      placeholder={t('fileLinkPlaceholder')}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t('fileLinkHelp')}
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="service-attachments">
-                      {t('photosOrFiles')}
-                    </Label>
-                    <Input 
-                      id="service-attachments" 
-                      type="file"
-                      multiple
-                      accept="image/*,.pdf,.stl,.obj,.3mf"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setServiceFiles(files);
-                      }}
-                      className="cursor-pointer"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t('attachFilesHelp')}
-                    </p>
-                    {serviceFiles.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold">{t('filesSelected')}:</p>
-                        <ul className="text-xs text-muted-foreground space-y-1">
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('fileLinkOptional')}</Label>
+                      <Input 
+                        type="url"
+                        value={serviceFileLink}
+                        onChange={(e) => setServiceFileLink(e.target.value)}
+                        placeholder={t('fileLinkPlaceholder')}
+                      />
+                      <p className="text-xs text-muted-foreground">{t('fileLinkHelp')}</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>{t('photosOrFiles')}</Label>
+                      <Input 
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.stl,.obj,.3mf"
+                        onChange={(e) => setServiceFiles(Array.from(e.target.files || []))}
+                        className="cursor-pointer"
+                      />
+                      {serviceFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
                           {serviceFiles.map((file, idx) => (
-                            <li key={idx} className="flex items-center gap-2">
+                            <Badge key={idx} variant="secondary" className="text-xs gap-1">
                               <FileText className="h-3 w-3" />
-                              {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                            </li>
+                              {file.name}
+                            </Badge>
                           ))}
-                        </ul>
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
-                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                    {loading ? t('sending') : t('requestService')}
+                  <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t('sending')}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        {t('requestService')}
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>
@@ -1056,7 +985,6 @@ const Quotes = () => {
           </TabsContent>
         </Tabs>
       </div>
-      </TooltipProvider>
     </div>
   );
 };
