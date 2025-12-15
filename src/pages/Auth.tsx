@@ -28,8 +28,8 @@ const Auth = () => {
     fullName: "",
   });
 
-  // Validation schema with translated errors
-  const authSchema = z.object({
+  // Validation schema for signup with strict password requirements
+  const signupSchema = z.object({
     email: z.string().email(t('invalidEmail')),
     password: z.string()
       .min(8, t('passwordMinLength'))
@@ -37,6 +37,12 @@ const Auth = () => {
       .regex(/[0-9]/, t('passwordNumber'))
       .regex(/[^A-Za-z0-9]/, t('passwordSpecial')),
     fullName: z.string().min(2, t('nameMinLength')).optional(),
+  });
+
+  // Simpler validation for login - just email and non-empty password
+  const loginSchema = z.object({
+    email: z.string().email(t('invalidEmail')),
+    password: z.string().min(1, t('passwordRequired', 'Password is required')),
   });
 
   useEffect(() => {
@@ -62,7 +68,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const validated = authSchema.parse(formData);
+      const validated = signupSchema.parse(formData);
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: validated.email,
@@ -107,7 +113,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const validated = authSchema.pick({ email: true, password: true }).parse(formData);
+      const validated = loginSchema.parse(formData);
       
       const { error } = await supabase.auth.signInWithPassword({
         email: validated.email,
