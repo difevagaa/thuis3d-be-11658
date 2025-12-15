@@ -717,37 +717,98 @@
   font-family: 'Inter', sans-serif;
 }
 
+/* Quill Editor Compact Styles */
 .ql-toolbar {
-  @apply border-border bg-muted/50;
+  @apply border-border bg-muted/30 rounded-t-md;
+  padding: 4px 6px !important;
+}
+
+.ql-toolbar .ql-formats {
+  margin-right: 8px !important;
+}
+
+.ql-toolbar button {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 2px !important;
+}
+
+.ql-toolbar button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.ql-toolbar .ql-picker {
+  height: 24px !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  padding: 0 4px !important;
+  font-size: 12px !important;
+  line-height: 24px !important;
+}
+
+.ql-toolbar .ql-picker-label::before {
+  line-height: 20px !important;
+}
+
+.ql-snow .ql-picker.ql-header {
+  width: auto !important;
+  min-width: 70px !important;
+}
+
+.ql-snow .ql-picker.ql-font {
+  width: auto !important;
+  min-width: 80px !important;
+}
+
+.ql-snow .ql-picker.ql-size {
+  width: auto !important;
+  min-width: 70px !important;
+}
+
+.ql-container {
+  @apply border-border rounded-b-md;
 }
 
 .ql-editor {
   @apply text-foreground;
-  min-height: 200px;
+  min-height: 150px;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px;
 }
 
 .ql-editor.ql-blank::before {
   @apply text-muted-foreground italic;
+  font-size: 14px;
 }
 
 .ql-snow .ql-stroke {
-  @apply stroke-foreground;
+  stroke: hsl(var(--foreground)) !important;
 }
 
 .ql-snow .ql-fill {
-  @apply fill-foreground;
+  fill: hsl(var(--foreground)) !important;
 }
 
 .ql-snow .ql-picker-label {
   @apply text-foreground;
+  font-size: 12px !important;
 }
 
 .ql-snow .ql-picker-options {
-  @apply bg-popover border-border;
+  @apply bg-popover border-border shadow-lg rounded-md;
+  padding: 4px !important;
+}
+
+.ql-snow .ql-picker-item {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
 }
 
 .ql-snow .ql-picker-item:hover {
-  @apply text-foreground;
+  @apply text-foreground bg-accent;
 }
 
 /* Rich Text Display Styles */

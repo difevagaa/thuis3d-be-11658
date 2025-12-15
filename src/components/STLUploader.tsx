@@ -20,8 +20,38 @@ interface STLUploaderProps {
 }
 
 export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupportsDetected, supportsRequired = false, layerHeight, quantity = 1 }: STLUploaderProps) => {
-  const { t } = useTranslation('stlUploader');
+  const { t, ready } = useTranslation('stlUploader');
   const [analyzing, setAnalyzing] = useState(false);
+  
+  // Fallback translations if namespace not loaded
+  const translations = {
+    label: ready ? t('label') : 'Archivo 3D (STL)',
+    howItWorks: ready ? t('howItWorks') : '¿Cómo funciona?',
+    step1Upload: ready ? t('step1Upload') : 'Sube tu archivo STL',
+    step2Analyze: ready ? t('step2Analyze') : 'Haz clic en "Analizar" para obtener las dimensiones',
+    step3Customize: ready ? t('step3Customize') : 'Elige material y color en el siguiente paso',
+    step4Submit: ready ? t('step4Submit') : 'Revisa y envía tu cotización',
+    fileReady: ready ? t('fileReady') : 'Archivo listo',
+    changeFile: ready ? t('changeFile') : 'Cambiar archivo',
+    dropHere: ready ? t('dropHere') : 'Arrastra tu archivo STL aquí',
+    orClickToSelect: ready ? t('orClickToSelect') : 'o haz clic para seleccionar',
+    formatInfo: ready ? t('formatInfo') : 'Formato: STL • Máximo: 50MB',
+    analyzeButton: ready ? t('analyzeButton') : 'Analizar Modelo 3D',
+    progressReading: ready ? t('progressReading') : 'Leyendo archivo...',
+    progressAnalyzing: ready ? t('progressAnalyzing') : 'Analizando geometría...',
+    progressCalculating: ready ? t('progressCalculating') : 'Calculando dimensiones...',
+    progressComplete: ready ? t('progressComplete') : 'Análisis completado',
+    completed: ready ? t('completed') : 'completado',
+    privacyText: ready ? t('privacyText') : 'Tu archivo se almacena de forma segura.',
+    analysisCompleteSuccess: ready ? t('analysisCompleteSuccess') : 'Análisis completado',
+    reviewDetailsBelow: ready ? t('reviewDetailsBelow') : 'Continúa al siguiente paso',
+    errorInvalidFile: ready ? t('errorInvalidFile') : 'Archivo STL inválido',
+    errorFileTooLarge: ready ? t('errorFileTooLarge') : 'Archivo demasiado grande',
+    errorNoFile: ready ? t('errorNoFile') : 'Selecciona un archivo',
+    analysisSuccess: ready ? t('analysisSuccess') : 'Análisis completado',
+    errorAnalyzing: ready ? t('errorAnalyzing') : 'Error al analizar',
+    fileSelected: ready ? t('fileSelected') : 'Archivo seleccionado',
+  };
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -35,12 +65,12 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.stl')) {
-      toast.error(t('errorInvalidFile'));
+      toast.error(translations.errorInvalidFile);
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error(t('errorFileTooLarge'));
+      toast.error(translations.errorFileTooLarge);
       return;
     }
 
@@ -48,7 +78,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
     setFileInfo({
       size: (file.size / 1024 / 1024).toFixed(2)
     });
-    toast.success(`${t('fileSelected')}: ${file.name}`);
+    toast.success(`${translations.fileSelected}: ${file.name}`);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -73,7 +103,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
   const handleUploadAndAnalyze = async () => {
     if (!selectedFile) {
-      toast.error(t('errorNoFile'));
+      toast.error(translations.errorNoFile);
       return;
     }
 
@@ -82,20 +112,20 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
     setAnalyzing(true);
     setProgress(10);
-    setProgressMessage(t('progressReading'));
+    setProgressMessage(translations.progressReading);
 
     try {
       const fileURL = URL.createObjectURL(selectedFile);
       
       setProgress(30);
-      setProgressMessage(t('progressAnalyzing'));
+      setProgressMessage(translations.progressAnalyzing);
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const analysis = await analyzeSTLFile(fileURL, analyseMaterialId, '', supportsRequired, layerHeight, quantity, colorId);
 
       setProgress(90);
-      setProgressMessage(t('progressCalculating'));
+      setProgressMessage(translations.progressCalculating);
 
       // Update file info with dimensions
       setFileInfo(prev => ({
@@ -106,17 +136,17 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setProgress(100);
-      setProgressMessage(t('progressComplete'));
+      setProgressMessage(translations.progressComplete);
 
       onAnalysisComplete({ ...analysis, file: selectedFile });
 
       URL.revokeObjectURL(fileURL);
 
-      toast.success(t('analysisSuccess'));
+      toast.success(translations.analysisSuccess);
 
     } catch (error: any) {
       console.error('Error analyzing file:', error);
-      toast.error(error.message || t('errorAnalyzing'));
+      toast.error(error.message || translations.errorAnalyzing);
     } finally {
       setTimeout(() => {
         setAnalyzing(false);
@@ -128,18 +158,18 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
 
   return (
     <div className="space-y-4">
-      <Label className="text-base font-semibold">{t('label')} *</Label>
+      <Label className="text-base font-semibold">{translations.label} *</Label>
       
       {/* Process guide - replaces supports recommendation */}
       <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <Info className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-          <strong>{t('howItWorks')}:</strong>
+          <strong>{translations.howItWorks}:</strong>
           <ol className="mt-2 space-y-1 list-decimal list-inside">
-            <li>{t('step1Upload')}</li>
-            <li>{t('step2Analyze')}</li>
-            <li>{t('step3Customize')}</li>
-            <li>{t('step4Submit')}</li>
+            <li>{translations.step1Upload}</li>
+            <li>{translations.step2Analyze}</li>
+            <li>{translations.step3Customize}</li>
+            <li>{translations.step4Submit}</li>
           </ol>
         </AlertDescription>
       </Alert>
@@ -172,7 +202,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
             <>
               <CheckCircle2 className="h-12 w-12 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">✅ {t('fileReady')}</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">✅ {translations.fileReady}</p>
                 <p className="text-base font-semibold mt-1">{selectedFile.name}</p>
               </div>
               
@@ -202,7 +232,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
                   setFileInfo(null);
                 }}
               >
-                {t('changeFile')}
+                {translations.changeFile}
               </Button>
             </>
           ) : (
@@ -210,13 +240,13 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               <Upload className="h-12 w-12 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">
-                  {t('dropHere')}
+                  {translations.dropHere}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t('orClickToSelect')}
+                  {translations.orClickToSelect}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 opacity-70">
-                  📁 {t('formatInfo')}
+                  📁 {translations.formatInfo}
                 </p>
               </div>
             </>
@@ -233,7 +263,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
           size="lg"
         >
           <FileText className="h-4 w-4 mr-2" />
-          🔍 {t('analyzeButton')}
+          🔍 {translations.analyzeButton}
         </Button>
       )}
 
@@ -248,7 +278,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
               </div>
               <Progress value={progress} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                {progress}% {t('completed')}
+                {progress}% {translations.completed}
               </p>
             </div>
           </CardContent>
@@ -258,7 +288,7 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
       {/* Privacy notice - compact */}
       <p className="text-xs text-muted-foreground flex items-center gap-1">
         <Shield className="h-3 w-3" />
-        🔒 {t('privacyText')}
+        🔒 {translations.privacyText}
       </p>
 
       {/* Success */}
@@ -268,9 +298,9 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
             <div className="flex items-center gap-3 text-green-700 dark:text-green-400">
               <CheckCircle2 className="h-5 w-5" />
               <div>
-                <span className="text-sm font-medium">✅ {t('analysisCompleteSuccess')}</span>
+                <span className="text-sm font-medium">✅ {translations.analysisCompleteSuccess}</span>
                 <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                  {t('reviewDetailsBelow')}
+                  {translations.reviewDetailsBelow}
                 </p>
               </div>
             </div>
