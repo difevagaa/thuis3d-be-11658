@@ -7,13 +7,16 @@ export class TimeoutError extends Error {
 
 /**
  * Promise timeout helper to prevent infinite loading states.
- * Note: it does not cancel the underlying request; it just fails fast.
+ * Accepts PromiseLike (Supabase queries) or Promise.
  */
 export function withTimeout<T>(
-  promise: Promise<T>,
+  promiseLike: PromiseLike<T>,
   ms: number,
   label = "Operación"
 ): Promise<T> {
+  // Convert PromiseLike to real Promise
+  const promise = Promise.resolve(promiseLike);
+  
   let timeoutId: number | undefined;
 
   const timeoutPromise = new Promise<never>((_, reject) => {
