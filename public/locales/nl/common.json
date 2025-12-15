@@ -37,6 +37,12 @@
   "cookies": "Cookiebeleid",
   "legal": "Juridische Kennisgeving",
   "faq": "Veelgestelde Vragen",
+  "cookieConsent": {
+    "title": "We gebruiken cookies",
+    "description": "We gebruiken cookies om je browse-ervaring te verbeteren, content te personaliseren en ons verkeer te analyseren. Door op \"Accepteren\" te klikken, geef je toestemming voor ALLE cookies. Lees ons <0>Cookiebeleid</0> voor meer informatie.",
+    "acceptAll": "Alles accepteren",
+    "reject": "Weigeren"
+  },
   "mustLogin": "Je moet inloggen",
   "unauthorized": "Niet geautoriseerd",
   "notFound": "Niet gevonden",

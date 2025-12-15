@@ -37,6 +37,12 @@
   "cookies": "Cookie Policy",
   "legal": "Legal Notice",
   "faq": "Frequently Asked Questions",
+  "cookieConsent": {
+    "title": "We use cookies",
+    "description": "We use cookies to improve your browsing experience, personalize content and analyze our traffic. By clicking \"Accept\", you consent to the use of ALL cookies. You can read our <0>Cookie Policy</0> for more information.",
+    "acceptAll": "Accept all",
+    "reject": "Reject"
+  },
   "mustLogin": "You must log in",
   "unauthorized": "Unauthorized",
   "notFound": "Not found",
