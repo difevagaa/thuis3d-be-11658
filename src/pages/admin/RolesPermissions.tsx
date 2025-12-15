@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Shield, Check, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logger } from '@/lib/logger';
+import { buildAdminPageOptions } from "@/constants/adminMenu";
+
+// All admin pages from central definition
+const allAdminPages = buildAdminPageOptions();
+
+// Group pages by section for easier selection
+const groupedPages = (() => {
+  const groups: Record<string, { value: string; label: string }[]> = {};
+  for (const page of allAdminPages) {
+    const [section] = page.label.split(' — ');
+    if (!groups[section]) groups[section] = [];
+    groups[section].push(page);
+  }
+  return groups;
+})();
 
 export default function RolesPermissions() {
   const [customRoles, setCustomRoles] = useState<any[]>([]);
@@ -19,7 +36,7 @@ export default function RolesPermissions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [roleUsers, setRoleUsers] = useState<{ [key: string]: number }>({});
-  
+
   const [newRole, setNewRole] = useState({
     name: "",
     display_name: "",
@@ -27,44 +44,31 @@ export default function RolesPermissions() {
     allowed_pages: [] as string[]
   });
 
-  const availablePages = [
-    { value: "/admin", label: "📊 Dashboard Principal" },
-    { value: "/admin/productos", label: "📦 Productos" },
-    { value: "/admin/pedidos", label: "🛒 Pedidos" },
-    { value: "/admin/cotizaciones", label: "💼 Cotizaciones" },
-    { value: "/admin/usuarios", label: "👥 Usuarios" },
-    { value: "/admin/blog", label: "📝 Blog" },
-    { value: "/admin/gift-cards", label: "🎁 Tarjetas Regalo" },
-    { value: "/admin/facturas", label: "📄 Facturas" },
-    { value: "/admin/mensajes", label: "💬 Mensajes" },
-    { value: "/admin/estadisticas", label: "📈 Estadísticas" },
-    { value: "/admin/configuracion", label: "⚙️ Configuración" }
-  ];
+  // Current user role check
+  const [currentUserRoles, setCurrentUserRoles] = useState<string[]>([]);
+  const isSuperAdmin = useMemo(() => currentUserRoles.includes('superadmin'), [currentUserRoles]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+        setCurrentUserRoles((data || []).map(r => String(r.role || '').toLowerCase()));
+      }
+    })();
     loadRoles();
 
-    // Subscribe to realtime changes in custom_roles
     const rolesChannel = supabase
       .channel('custom-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'custom_roles'
-      }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_roles' }, () => {
         logger.log('Custom roles changed, reloading...');
         loadRoles();
       })
       .subscribe();
 
-    // Subscribe to user_roles changes to update counts
     const userRolesChannel = supabase
       .channel('user-roles-count-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_roles'
-      }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
         logger.log('User roles changed, reloading counts...');
         loadRoles();
       })
@@ -86,17 +90,14 @@ export default function RolesPermissions() {
       if (error) throw error;
       setCustomRoles(rolesData || []);
 
-      // Load user counts for each role
+      // Load user counts for system roles
       const counts: { [key: string]: number } = {};
-      for (const role of rolesData || []) {
-        // Only count for valid app_role types
-        if (['admin', 'client', 'moderator'].includes(role.name)) {
-          const { count } = await supabase
-            .from("user_roles")
-            .select("*", { count: 'exact', head: true })
-            .eq("role", role.name as 'admin' | 'client' | 'moderator');
-          counts[role.name] = count || 0;
-        }
+      for (const roleName of ['admin', 'client', 'moderator', 'superadmin']) {
+        const { count } = await supabase
+          .from("user_roles")
+          .select("*", { count: 'exact', head: true })
+          .eq("role", roleName as any);
+        counts[roleName] = count || 0;
       }
       setRoleUsers(counts);
     } catch (error: any) {
@@ -104,6 +105,25 @@ export default function RolesPermissions() {
       toast.error("Error al cargar roles");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleAllPages = (checked: boolean, setter: (pages: string[]) => void) => {
+    if (checked) {
+      setter(allAdminPages.map(p => p.value));
+    } else {
+      setter([]);
+    }
+  };
+
+  const toggleSection = (section: string, currentPages: string[], setter: (pages: string[]) => void) => {
+    const sectionPages = groupedPages[section]?.map(p => p.value) || [];
+    const allSelected = sectionPages.every(p => currentPages.includes(p));
+    
+    if (allSelected) {
+      setter(currentPages.filter(p => !sectionPages.includes(p)));
+    } else {
+      setter([...new Set([...currentPages, ...sectionPages])]);
     }
   };
 
@@ -115,11 +135,9 @@ export default function RolesPermissions() {
       }
 
       const roleName = newRole.name.toLowerCase().replace(/\s+/g, '_');
-      
-      // Prevent creating custom roles with system role names
-      const systemRoleNames = ['admin', 'client', 'moderator'];
+      const systemRoleNames = ['admin', 'client', 'moderator', 'superadmin'];
       if (systemRoleNames.includes(roleName)) {
-        toast.error(`No puedes crear un rol llamado "${roleName}" porque es un rol del sistema. Usa otro nombre.`);
+        toast.error(`No puedes crear un rol llamado "${roleName}" porque es un rol del sistema.`);
         return;
       }
 
@@ -194,14 +212,82 @@ export default function RolesPermissions() {
     }
   };
 
+  const renderPageSelector = (
+    selectedPages: string[],
+    onToggle: (page: string, checked: boolean) => void,
+    onToggleAll: (checked: boolean) => void,
+    onToggleSection: (section: string) => void
+  ) => {
+    const allSelected = selectedPages.length === allAdminPages.length;
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={(checked) => onToggleAll(!!checked)}
+            />
+            <Label className="font-semibold">Seleccionar todas las páginas</Label>
+          </div>
+          <Badge variant="secondary">{selectedPages.length}/{allAdminPages.length}</Badge>
+        </div>
+
+        <ScrollArea className="h-80 pr-4">
+          <div className="space-y-4">
+            {Object.entries(groupedPages).map(([section, pages]) => {
+              const sectionSelected = pages.every(p => selectedPages.includes(p.value));
+              const sectionPartial = pages.some(p => selectedPages.includes(p.value)) && !sectionSelected;
+
+              return (
+                <div key={section} className="space-y-2">
+                  <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
+                    <Checkbox
+                      checked={sectionSelected}
+                      className={sectionPartial ? "data-[state=checked]:bg-primary/50" : ""}
+                      onCheckedChange={() => onToggleSection(section)}
+                    />
+                    <Label className="font-medium text-sm">{section}</Label>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {pages.filter(p => selectedPages.includes(p.value)).length}/{pages.length}
+                    </Badge>
+                  </div>
+                  <div className="pl-6 space-y-1">
+                    {pages.map((page) => (
+                      <div key={page.value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`page-${page.value}`}
+                          checked={selectedPages.includes(page.value)}
+                          onCheckedChange={(checked) => onToggle(page.value, !!checked)}
+                        />
+                        <Label htmlFor={`page-${page.value}`} className="text-sm font-normal cursor-pointer">
+                          {page.label.split(' — ')[1] || page.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  };
+
   if (loading) return <div className="container mx-auto p-6">Cargando...</div>;
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Roles y Permisos</h1>
-          <p className="text-muted-foreground">Gestiona roles personalizados y sus permisos</p>
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-7 w-7" />
+            Roles y Permisos
+          </h1>
+          <p className="text-muted-foreground">
+            Gestiona roles personalizados y sus permisos de acceso a páginas del panel
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -210,78 +296,119 @@ export default function RolesPermissions() {
               Nuevo Rol
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Rol</DialogTitle>
               <DialogDescription>
-                Define un nuevo rol personalizado para tu sistema
+                Define un nuevo rol personalizado con acceso a páginas específicas
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Nombre Interno *</Label>
-                <Input
-                  value={newRole.name}
-                  onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                  placeholder="vendedor, supervisor, etc."
-                />
-              </div>
-              <div>
-                <Label>Nombre Visible *</Label>
-                <Input
-                  value={newRole.display_name}
-                  onChange={(e) => setNewRole({ ...newRole, display_name: e.target.value })}
-                  placeholder="Vendedor, Supervisor, etc."
-                />
-              </div>
-              <div>
-                <Label>Descripción</Label>
-                <Textarea
-                  value={newRole.description}
-                  onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                  placeholder="Descripción del rol y sus responsabilidades..."
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label>🔐 Páginas Permitidas</Label>
-                <div className="space-y-2 mt-2 max-h-60 overflow-y-auto border rounded-md p-3">
-                  {availablePages.map((page) => (
-                    <div key={page.value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`page-${page.value}`}
-                        checked={newRole.allowed_pages.includes(page.value)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setNewRole({ ...newRole, allowed_pages: [...newRole.allowed_pages, page.value] });
-                          } else {
-                            setNewRole({ ...newRole, allowed_pages: newRole.allowed_pages.filter(p => p !== page.value) });
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`page-${page.value}`} className="font-normal cursor-pointer">
-                        {page.label}
-                      </Label>
-                    </div>
-                  ))}
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="info">Información</TabsTrigger>
+                <TabsTrigger value="pages">Páginas Permitidas</TabsTrigger>
+              </TabsList>
+              <TabsContent value="info" className="space-y-4 pt-4">
+                <div>
+                  <Label>Nombre Interno *</Label>
+                  <Input
+                    value={newRole.name}
+                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                    placeholder="vendedor, supervisor, etc."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Se usará internamente (sin espacios)</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Selecciona las páginas a las que este rol tendrá acceso
-                </p>
-              </div>
-            </div>
+                <div>
+                  <Label>Nombre Visible *</Label>
+                  <Input
+                    value={newRole.display_name}
+                    onChange={(e) => setNewRole({ ...newRole, display_name: e.target.value })}
+                    placeholder="Vendedor, Supervisor, etc."
+                  />
+                </div>
+                <div>
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={newRole.description}
+                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                    placeholder="Descripción del rol y sus responsabilidades..."
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="pages" className="pt-4">
+                {renderPageSelector(
+                  newRole.allowed_pages,
+                  (page, checked) => {
+                    if (checked) {
+                      setNewRole({ ...newRole, allowed_pages: [...newRole.allowed_pages, page] });
+                    } else {
+                      setNewRole({ ...newRole, allowed_pages: newRole.allowed_pages.filter(p => p !== page) });
+                    }
+                  },
+                  (checked) => toggleAllPages(checked, (pages) => setNewRole({ ...newRole, allowed_pages: pages })),
+                  (section) => toggleSection(section, newRole.allowed_pages, (pages) => setNewRole({ ...newRole, allowed_pages: pages }))
+                )}
+              </TabsContent>
+            </Tabs>
             <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
               <Button onClick={handleCreateRole}>Crear Rol</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* System Roles Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Roles del Sistema</CardTitle>
+          <CardDescription>Estos roles son predefinidos y no pueden modificarse</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-red-500" />
+                <span className="font-semibold">Superadmin</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Acceso total sin restricciones</p>
+              <Badge>{roleUsers['superadmin'] || 0} usuarios</Badge>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-blue-500" />
+                <span className="font-semibold">Admin</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Administrador con PIN</p>
+              <Badge>{roleUsers['admin'] || 0} usuarios</Badge>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-5 w-5 text-green-500" />
+                <span className="font-semibold">Moderator</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Moderador de contenido</p>
+              <Badge>{roleUsers['moderator'] || 0} usuarios</Badge>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-5 w-5 text-gray-500" />
+                <span className="font-semibold">Client</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Cliente registrado</p>
+              <Badge>{roleUsers['client'] || 0} usuarios</Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom Roles */}
       <Card>
         <CardHeader>
           <CardTitle>Roles Personalizados</CardTitle>
           <CardDescription>
-            Lista de roles personalizados creados en el sistema
+            Lista de roles personalizados con permisos configurables
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -291,8 +418,8 @@ export default function RolesPermissions() {
                 <TableRow>
                   <TableHead>Nombre</TableHead>
                   <TableHead>Descripción</TableHead>
-                  <TableHead>Usuarios Asignados</TableHead>
-                  <TableHead>Fecha Creación</TableHead>
+                  <TableHead>Páginas</TableHead>
+                  <TableHead>Fecha</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -318,9 +445,8 @@ export default function RolesPermissions() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="gap-1">
-                          <Users className="h-3 w-3" />
-                          {roleUsers[role.name] || 0}
+                        <Badge variant="secondary">
+                          {(role.allowed_pages || []).length} páginas
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -355,59 +481,56 @@ export default function RolesPermissions() {
 
       {/* Edit Role Dialog */}
       <Dialog open={!!editingRole} onOpenChange={(open) => !open && setEditingRole(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Rol</DialogTitle>
             <DialogDescription>
-              Actualiza la información del rol personalizado
+              Actualiza la información y permisos del rol
             </DialogDescription>
           </DialogHeader>
           {editingRole && (
-            <div className="space-y-4">
-              <div>
-                <Label>Nombre Interno</Label>
-                <Input value={editingRole.name} disabled className="bg-muted" />
-              </div>
-              <div>
-                <Label>Nombre Visible</Label>
-                <Input
-                  value={editingRole.display_name}
-                  onChange={(e) => setEditingRole({ ...editingRole, display_name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Descripción</Label>
-                <Textarea
-                  value={editingRole.description || ""}
-                  onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label>🔐 Páginas Permitidas</Label>
-                <div className="space-y-2 mt-2 max-h-60 overflow-y-auto border rounded-md p-3">
-                  {availablePages.map((page) => (
-                    <div key={page.value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`edit-page-${page.value}`}
-                        checked={(editingRole.allowed_pages || []).includes(page.value)}
-                        onCheckedChange={(checked) => {
-                          const currentPages = editingRole.allowed_pages || [];
-                          if (checked) {
-                            setEditingRole({ ...editingRole, allowed_pages: [...currentPages, page.value] });
-                          } else {
-                            setEditingRole({ ...editingRole, allowed_pages: currentPages.filter((p: string) => p !== page.value) });
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`edit-page-${page.value}`} className="font-normal cursor-pointer">
-                        {page.label}
-                      </Label>
-                    </div>
-                  ))}
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="info">Información</TabsTrigger>
+                <TabsTrigger value="pages">Páginas Permitidas</TabsTrigger>
+              </TabsList>
+              <TabsContent value="info" className="space-y-4 pt-4">
+                <div>
+                  <Label>Nombre Interno</Label>
+                  <Input value={editingRole.name} disabled className="bg-muted" />
                 </div>
-              </div>
-            </div>
+                <div>
+                  <Label>Nombre Visible</Label>
+                  <Input
+                    value={editingRole.display_name}
+                    onChange={(e) => setEditingRole({ ...editingRole, display_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={editingRole.description || ""}
+                    onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="pages" className="pt-4">
+                {renderPageSelector(
+                  editingRole.allowed_pages || [],
+                  (page, checked) => {
+                    const currentPages = editingRole.allowed_pages || [];
+                    if (checked) {
+                      setEditingRole({ ...editingRole, allowed_pages: [...currentPages, page] });
+                    } else {
+                      setEditingRole({ ...editingRole, allowed_pages: currentPages.filter((p: string) => p !== page) });
+                    }
+                  },
+                  (checked) => toggleAllPages(checked, (pages) => setEditingRole({ ...editingRole, allowed_pages: pages })),
+                  (section) => toggleSection(section, editingRole.allowed_pages || [], (pages) => setEditingRole({ ...editingRole, allowed_pages: pages }))
+                )}
+              </TabsContent>
+            </Tabs>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingRole(null)}>

@@ -4305,7 +4305,7 @@ export type Database = {
       verify_admin_pin: { Args: { pin_input: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "client" | "moderator"
+      app_role: "admin" | "client" | "moderator" | "superadmin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4433,7 +4433,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client", "moderator"],
+      app_role: ["admin", "client", "moderator", "superadmin"],
     },
   },
 } as const
