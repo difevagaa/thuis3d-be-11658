@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Mail, Send, FileText, Users, Settings, BarChart3, Clock, 
   CheckCircle, XCircle, AlertCircle, RefreshCw, Plus, Edit, Trash2,
@@ -2271,7 +2272,7 @@ export default function EmailManagement() {
   );
 }
 
-// Template Form Component
+// Template Form Component with Visual Editor
 function TemplateForm({ 
   template, 
   onSave, 
@@ -2293,6 +2294,119 @@ function TemplateForm({
     is_active: template?.is_active ?? true,
     language: template?.language || "es"
   });
+  const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
+  const [selectedCategory, setSelectedCategory] = useState("Usuario");
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+
+  // Available variables for email templates
+  const TEMPLATE_VARIABLES = [
+    { category: "Usuario", variables: [
+      { key: "{{customer_name}}", label: "Nombre del cliente", description: "Nombre completo" },
+      { key: "{{customer_first_name}}", label: "Primer nombre", description: "Solo primer nombre" },
+      { key: "{{customer_email}}", label: "Email", description: "Correo electrónico" },
+      { key: "{{customer_phone}}", label: "Teléfono", description: "Número de teléfono" },
+      { key: "{{customer_address}}", label: "Dirección", description: "Dirección de envío" },
+      { key: "{{customer_city}}", label: "Ciudad", description: "Ciudad" },
+      { key: "{{customer_country}}", label: "País", description: "País" },
+      { key: "{{customer_postal_code}}", label: "Código postal", description: "Código postal" },
+    ]},
+    { category: "Pedido", variables: [
+      { key: "{{order_number}}", label: "Número de pedido", description: "ID único del pedido" },
+      { key: "{{order_date}}", label: "Fecha del pedido", description: "Fecha de creación" },
+      { key: "{{order_total}}", label: "Total del pedido", description: "Monto total" },
+      { key: "{{order_subtotal}}", label: "Subtotal", description: "Subtotal sin IVA" },
+      { key: "{{order_tax}}", label: "IVA", description: "Impuesto aplicado" },
+      { key: "{{order_shipping}}", label: "Costo de envío", description: "Gastos de envío" },
+      { key: "{{order_status}}", label: "Estado del pedido", description: "Estado actual" },
+      { key: "{{order_items}}", label: "Lista de productos", description: "Productos del pedido" },
+      { key: "{{payment_method}}", label: "Método de pago", description: "Forma de pago" },
+      { key: "{{tracking_number}}", label: "Número de seguimiento", description: "Tracking de envío" },
+    ]},
+    { category: "Factura", variables: [
+      { key: "{{invoice_number}}", label: "Número de factura", description: "ID de la factura" },
+      { key: "{{invoice_date}}", label: "Fecha de factura", description: "Fecha de emisión" },
+      { key: "{{invoice_due_date}}", label: "Fecha de vencimiento", description: "Fecha límite de pago" },
+      { key: "{{invoice_total}}", label: "Total factura", description: "Monto total a pagar" },
+      { key: "{{invoice_link}}", label: "Enlace a factura", description: "URL para ver factura" },
+    ]},
+    { category: "Cotización", variables: [
+      { key: "{{quote_number}}", label: "Número de cotización", description: "ID de la cotización" },
+      { key: "{{quote_date}}", label: "Fecha de cotización", description: "Fecha de creación" },
+      { key: "{{quote_total}}", label: "Total cotización", description: "Monto cotizado" },
+      { key: "{{quote_status}}", label: "Estado cotización", description: "Estado actual" },
+    ]},
+    { category: "Tarjeta Regalo", variables: [
+      { key: "{{gift_card_code}}", label: "Código de tarjeta", description: "Código único" },
+      { key: "{{gift_card_amount}}", label: "Monto de tarjeta", description: "Valor de la tarjeta" },
+      { key: "{{gift_card_balance}}", label: "Saldo disponible", description: "Saldo restante" },
+      { key: "{{gift_card_expires}}", label: "Fecha expiración", description: "Cuándo expira" },
+      { key: "{{gift_card_sender}}", label: "Remitente", description: "Quien envía" },
+      { key: "{{gift_card_message}}", label: "Mensaje personal", description: "Mensaje del remitente" },
+    ]},
+    { category: "Tienda", variables: [
+      { key: "{{store_name}}", label: "Nombre de la tienda", description: "Nombre del negocio" },
+      { key: "{{store_email}}", label: "Email de la tienda", description: "Email de contacto" },
+      { key: "{{store_phone}}", label: "Teléfono tienda", description: "Teléfono de contacto" },
+      { key: "{{store_website}}", label: "Sitio web", description: "URL del sitio" },
+      { key: "{{current_year}}", label: "Año actual", description: "Año en curso" },
+    ]},
+    { category: "Enlaces", variables: [
+      { key: "{{account_link}}", label: "Mi cuenta", description: "Enlace a la cuenta" },
+      { key: "{{orders_link}}", label: "Mis pedidos", description: "Enlace a pedidos" },
+      { key: "{{unsubscribe_link}}", label: "Desuscribirse", description: "Enlace para desuscribirse" },
+      { key: "{{reset_password_link}}", label: "Restablecer contraseña", description: "Enlace de recuperación" },
+    ]},
+  ];
+
+  const insertVariable = (variable: string, target: "subject" | "content") => {
+    if (target === "subject") {
+      const input = subjectRef.current;
+      if (input) {
+        const start = input.selectionStart || formData.subject.length;
+        const end = input.selectionEnd || formData.subject.length;
+        const newValue = formData.subject.substring(0, start) + variable + formData.subject.substring(end);
+        setFormData({ ...formData, subject: newValue });
+      } else {
+        setFormData({ ...formData, subject: formData.subject + variable });
+      }
+    } else {
+      const textarea = contentRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart || formData.html_content.length;
+        const end = textarea.selectionEnd || formData.html_content.length;
+        const newValue = formData.html_content.substring(0, start) + variable + formData.html_content.substring(end);
+        setFormData({ ...formData, html_content: newValue });
+      } else {
+        setFormData({ ...formData, html_content: formData.html_content + variable });
+      }
+    }
+  };
+
+  const currentCategory = TEMPLATE_VARIABLES.find(c => c.category === selectedCategory);
+
+  const formatText = (format: string) => {
+    let wrapper = "";
+    switch (format) {
+      case "bold": wrapper = "<strong>Texto en negrita</strong>"; break;
+      case "italic": wrapper = "<em>Texto en cursiva</em>"; break;
+      case "h1": wrapper = '<h1 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Título Principal</h1>'; break;
+      case "h2": wrapper = '<h2 style="font-size: 20px; font-weight: bold; margin-bottom: 12px;">Subtítulo</h2>'; break;
+      case "paragraph": wrapper = '<p style="margin-bottom: 16px;">Escribe tu párrafo aquí...</p>'; break;
+      case "list": wrapper = '<ul style="margin-left: 20px;"><li>Elemento 1</li><li>Elemento 2</li></ul>'; break;
+      case "button": wrapper = '<a href="#" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">Botón</a>'; break;
+      case "divider": wrapper = '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />'; break;
+    }
+    setFormData({ ...formData, html_content: formData.html_content + wrapper });
+  };
+
+  const previewHtml = () => {
+    const previewWindow = window.open("", "_blank");
+    if (previewWindow) {
+      previewWindow.document.write(formData.html_content);
+      previewWindow.document.close();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -2315,13 +2429,61 @@ function TemplateForm({
         </div>
       </div>
 
+      {/* Subject with variable insertion */}
       <div className="space-y-2">
-        <Label>Asunto del Email</Label>
-        <Input
-          value={formData.subject}
-          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-          placeholder="Tu pedido #{{order_number}} ha sido confirmado"
-        />
+        <Label className="flex items-center gap-2">
+          <Mail className="h-4 w-4" />
+          Asunto del Email
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            ref={subjectRef}
+            value={formData.subject}
+            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+            placeholder="Tu pedido #{{order_number}} ha sido confirmado"
+            className="flex-1"
+          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" title="Insertar variable">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72" align="end">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Insertar variable en asunto</p>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TEMPLATE_VARIABLES.map(cat => (
+                      <SelectItem key={cat.category} value={cat.category}>{cat.category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ScrollArea className="h-40">
+                  <div className="space-y-1">
+                    {currentCategory?.variables.map(v => (
+                      <Button
+                        key={v.key}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-left"
+                        onClick={() => insertVariable(v.key, "subject")}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{v.label}</p>
+                          <p className="text-xs text-muted-foreground">{v.key}</p>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -2378,17 +2540,106 @@ function TemplateForm({
         />
       </div>
 
+      {/* Content Editor with Variable Panel */}
       <div className="space-y-2">
-        <Label>Contenido HTML</Label>
-        <Textarea
-          value={formData.html_content}
-          onChange={(e) => setFormData({ ...formData, html_content: e.target.value })}
-          placeholder="<h1>Hola {{customer_name}}</h1>..."
-          className="min-h-[200px] font-mono text-sm"
-        />
-        <p className="text-xs text-muted-foreground">
-          Variables disponibles: {`{{customer_name}}, {{order_number}}, {{total}}, {{invoice_number}}, etc.`}
-        </p>
+        <div className="flex items-center justify-between">
+          <Label>Contenido del Email</Label>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={previewHtml}>
+              <Eye className="h-4 w-4 mr-1" />
+              Vista Previa
+            </Button>
+          </div>
+        </div>
+        
+        {/* Formatting Toolbar */}
+        <Card className="p-2">
+          <div className="flex flex-wrap gap-1">
+            <Button variant="ghost" size="sm" onClick={() => formatText("h1")} title="Título">H1</Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText("h2")} title="Subtítulo">H2</Button>
+            <Separator orientation="vertical" className="h-6" />
+            <Button variant="ghost" size="sm" onClick={() => formatText("bold")} title="Negrita"><strong>B</strong></Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText("italic")} title="Cursiva"><em>I</em></Button>
+            <Separator orientation="vertical" className="h-6" />
+            <Button variant="ghost" size="sm" onClick={() => formatText("paragraph")} title="Párrafo">¶</Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText("list")} title="Lista">≡</Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText("button")} title="Botón">☐</Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText("divider")} title="Separador">—</Button>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Content Area */}
+          <div className="lg:col-span-2">
+            <Textarea
+              ref={contentRef}
+              value={formData.html_content}
+              onChange={(e) => setFormData({ ...formData, html_content: e.target.value })}
+              placeholder={`Ejemplo de plantilla:
+
+<h1>Hola {{customer_name}},</h1>
+
+<p>Gracias por tu pedido #{{order_number}}.</p>
+
+<p>Tu pedido ha sido confirmado y está siendo procesado.</p>
+
+<p>Total: {{order_total}}</p>
+
+<a href="{{orders_link}}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">Ver mi pedido</a>
+
+<p>Saludos,<br>{{store_name}}</p>`}
+              className="min-h-[300px] font-mono text-sm"
+            />
+          </div>
+
+          {/* Variables Panel */}
+          <div>
+            <Card className="h-full">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Insertar Variable
+                </CardTitle>
+                <CardDescription className="text-xs">Haz clic para agregar</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TEMPLATE_VARIABLES.map(cat => (
+                      <SelectItem key={cat.category} value={cat.category}>{cat.category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <ScrollArea className="h-[220px]">
+                  <div className="space-y-1">
+                    {currentCategory?.variables.map(v => (
+                      <Button
+                        key={v.key}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-left h-auto py-1.5"
+                        onClick={() => insertVariable(v.key, "content")}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-xs">{v.label}</p>
+                          <code className="text-[10px] text-muted-foreground">{v.key}</code>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="text-[10px] text-muted-foreground p-2 bg-muted rounded">
+                  💡 Las variables se reemplazan automáticamente con los datos reales al enviar.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       <DialogFooter>

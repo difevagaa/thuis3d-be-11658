@@ -22,7 +22,9 @@
     "description": "Ontvang aanbiedingen en nieuws",
     "placeholder": "Uw e-mail",
     "subscribe": "Abonneren",
-    "subscribed": "Bedankt voor uw inschrijving!"
+    "subscribed": "Bedankt voor uw inschrijving!",
+    "alreadySubscribed": "U bent al geabonneerd op onze nieuwsbrief",
+    "error": "Fout bij inschrijven. Probeer het opnieuw."
   },
   "payment": {
     "title": "Geaccepteerde betaalmethoden:"
