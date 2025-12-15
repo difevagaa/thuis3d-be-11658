@@ -168,7 +168,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex w-full bg-background">
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-12 sm:h-14 md:h-16 flex items-center justify-between border-b bg-card shadow-sm px-2 sm:px-3 md:px-6 sticky top-0 z-40 shrink-0">
+        <header className="h-12 sm:h-14 md:h-16 flex items-center justify-between border-b bg-card shadow-sm px-2 sm:px-3 md:px-6 sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4 min-w-0 flex-1 overflow-hidden">
             <SidebarTrigger className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8" />
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 min-w-0 overflow-hidden flex-1">
