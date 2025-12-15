@@ -1,4 +1,6 @@
 {
+  "uploadFileFirst": "Sube un archivo STL primero",
+  "phone": "Teléfono",
   "title": "Solicitar Cotización",
   "subtitle": "Obtén un presupuesto personalizado para tu proyecto de impresión 3D",
   "tab3d": "Archivo 3D",
