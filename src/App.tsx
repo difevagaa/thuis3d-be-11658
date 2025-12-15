@@ -93,6 +93,7 @@ const GalleryAdmin = lazy(() => import("./pages/admin/GalleryAdmin"));
 const TranslationManagement = lazy(() => import("./pages/admin/TranslationManagement"));
 const PageBuilder = lazy(() => import("./pages/admin/PageBuilder"));
 const EmailManagement = lazy(() => import("./pages/admin/EmailManagement"));
+const DatabaseAdmin = lazy(() => import("./pages/admin/DatabaseAdmin"));
 
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
@@ -206,6 +207,7 @@ const App = () => {
             <Route path="/admin/traducciones" element={<AdminLayout><TranslationManagement /></AdminLayout>} />
             <Route path="/admin/page-builder" element={<AdminLayout><PageBuilder /></AdminLayout>} />
             <Route path="/admin/emails" element={<AdminLayout><EmailManagement /></AdminLayout>} />
+            <Route path="/admin/database" element={<AdminLayout><DatabaseAdmin /></AdminLayout>} />
             
             {/* 404 route */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />

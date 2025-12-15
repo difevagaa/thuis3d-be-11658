@@ -6,7 +6,7 @@ import {
   Package, Users, UserCog, Palette, Gift, Tag, Award, MessageSquare, 
   FileCode, BookOpen, Star, Trash2, Percent, TrendingUp, TrendingDown, 
   ChevronDown, ChevronRight, Layers, Shield, Activity, CreditCard, Truck, 
-  HardDrive, Gauge, Box, Image, Globe, Calculator, Layout, X
+  HardDrive, Gauge, Box, Image, Globe, Calculator, Layout, X, Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -127,6 +127,7 @@ const menuItems: MenuSection[] = [
     icon: Settings,
     color: "from-slate-500 to-slate-600",
     items: [
+      { icon: Database, label: "Base de Datos", url: "/admin/database", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" },
       { icon: Shield, label: "PINs", url: "/admin/pin", color: "text-slate-700", bgColor: "bg-slate-100 hover:bg-slate-200 border-slate-300" },
       { icon: CreditCard, label: "Pagos", url: "/admin/configuracion-pagos", color: "text-emerald-700", bgColor: "bg-emerald-100 hover:bg-emerald-200 border-emerald-300" },
       { icon: Percent, label: "IVA", url: "/admin/configuracion-iva", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
