@@ -59,14 +59,14 @@ export const Layout = ({ children }: LayoutProps) => {
     setUser(user);
     
     if (user) {
+      // Check for admin OR superadmin roles
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+        .in("role", ["admin", "superadmin"]);
       
-      setIsAdmin(!!data);
+      setIsAdmin((data || []).length > 0);
     }
   };
 
