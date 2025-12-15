@@ -102,26 +102,32 @@ export default function CardPaymentPage() {
     i18nToast.success("success.copiedToClipboard");
   };
 
-  // Effect to handle redirect after overlay
+  const openPaymentTab = () => {
+    return window.open("about:blank", "_blank", "noopener,noreferrer");
+  };
+
+  // Navegar después del overlay (la pestaña se abre DURANTE el click para evitar bloqueos)
   useEffect(() => {
-    if (showRedirectOverlay && pendingOrderInfo && paymentConfig?.card_payment_link) {
+    if (showRedirectOverlay && pendingOrderInfo) {
       const timer = setTimeout(() => {
-        window.open(paymentConfig.card_payment_link, '_blank');
-        navigate("/pago-en-proceso", { 
-          state: { 
+        navigate("/pago-en-proceso", {
+          state: {
             orderNumber: pendingOrderInfo.orderNumber,
             total: pendingOrderInfo.total,
             paymentMethod: "card",
-            isInvoicePayment: pendingOrderInfo.isInvoicePayment
-          } 
+            isInvoicePayment: pendingOrderInfo.isInvoicePayment,
+          },
         });
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [showRedirectOverlay, pendingOrderInfo, paymentConfig, navigate]);
+  }, [showRedirectOverlay, pendingOrderInfo, navigate]);
 
   const handleProceedToPayment = async () => {
     setProcessing(true);
+
+    const gatewayUrl = paymentConfig?.card_payment_link as string | undefined;
+    const paymentTab = gatewayUrl ? openPaymentTab() : null;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -152,20 +158,21 @@ export default function CardPaymentPage() {
         // Clear invoice payment data
         sessionStorage.removeItem("pending_card_invoice");
 
-        // Show redirect overlay and set pending info
-        if (paymentConfig?.card_payment_link) {
+        // Abrir en pestaña nueva (no popup) dentro del gesto del click
+        if (gatewayUrl) {
+          if (paymentTab) paymentTab.location.href = gatewayUrl;
           setPendingOrderInfo({ orderNumber: invoiceNumber, total, isInvoicePayment: true });
           setShowRedirectOverlay(true);
         } else {
           // If no gateway configured, go to instructions page
-          navigate("/pago-instrucciones", { 
-            state: { 
+          navigate("/pago-instrucciones", {
+            state: {
               orderNumber: invoiceNumber,
               method: "card",
               total: total,
               isPending: false,
               isInvoicePayment: true
-            } 
+            }
           });
         }
         return;
@@ -287,7 +294,8 @@ export default function CardPaymentPage() {
       }
 
       // Show redirect overlay
-      if (paymentConfig?.card_payment_link) {
+      if (gatewayUrl) {
+        if (paymentTab) paymentTab.location.href = gatewayUrl;
         setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
@@ -295,6 +303,7 @@ export default function CardPaymentPage() {
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
+      try { paymentTab?.close(); } catch {}
       logger.error("Error creating order:", error);
       i18nToast.error("error.general");
       setProcessing(false);

@@ -76,15 +76,18 @@ export default function OrdersEnhanced() {
           .select(`
             *,
             user:profiles!orders_user_id_fkey(full_name, email, preferred_language),
-            status:order_statuses(name, color, slug)
+            status:order_statuses(name, color)
           `)
           .is("deleted_at", null)
           .order("created_at", { ascending: false }),
         supabase.from("order_statuses").select("*").is("deleted_at", null)
       ]);
 
-      setOrders(ordersRes.data || []);
-      setStatuses(statusesRes.data || []);
+      if (ordersRes.error) throw ordersRes.error;
+      if (statusesRes.error) throw statusesRes.error;
+
+      setOrders(ordersRes.data ?? []);
+      setStatuses(statusesRes.data ?? []);
     } catch (error) {
       toast.error("Error al cargar pedidos");
     } finally {
@@ -140,7 +143,7 @@ export default function OrdersEnhanced() {
 
   const getSelectedStatusSlug = () => {
     const status = statuses.find(s => s.id === selectedStatus);
-    return status?.slug?.toLowerCase() || status?.name?.toLowerCase() || "";
+    return status?.name?.toLowerCase() || "";
   };
 
   const isShippedStatus = () => {
@@ -426,7 +429,7 @@ export default function OrdersEnhanced() {
           <div className="flex items-center gap-3">
             <Truck className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-2xl font-bold">{orders.filter(o => o.status?.slug?.includes('enviado') || o.status?.name?.toLowerCase().includes('enviado')).length}</p>
+              <p className="text-2xl font-bold">{orders.filter(o => o.status?.name?.toLowerCase().includes('enviado')).length}</p>
               <p className="text-sm text-muted-foreground">Enviados</p>
             </div>
           </div>
