@@ -91,54 +91,122 @@ const TranslatedFeaturedProductCard = ({
   );
 };
 
+interface FeaturedCarouselSettings {
+  itemsPerView?: number;
+  itemsPerViewTablet?: number;
+  itemsPerViewMobile?: number;
+  autoRotate?: boolean;
+  rotateInterval?: number;
+  gap?: number;
+  showTitle?: boolean;
+  showViewAll?: boolean;
+  showRefresh?: boolean;
+}
+
 export default function FeaturedProductsCarousel({
   products,
-  maxVisible = 4
-}: FeaturedProductsCarouselProps) {
+  maxVisible = 4,
+  settings
+}: FeaturedProductsCarouselProps & { settings?: FeaturedCarouselSettings }) {
   const { t } = useTranslation('home');
   const [rotationKey, setRotationKey] = useState(0);
+  const [currentItemsPerView, setCurrentItemsPerView] = useState(maxVisible);
+
+  // Responsive items per view calculation
+  useEffect(() => {
+    const calculateItemsPerView = () => {
+      const width = window.innerWidth;
+      
+      if (width < 640) {
+        // Mobile
+        const mobileItems = settings?.itemsPerViewMobile;
+        setCurrentItemsPerView(typeof mobileItems === 'number' ? mobileItems : 1);
+      } else if (width < 1024) {
+        // Tablet
+        const tabletItems = settings?.itemsPerViewTablet;
+        setCurrentItemsPerView(typeof tabletItems === 'number' ? tabletItems : 2);
+      } else {
+        // Desktop
+        const desktopItems = settings?.itemsPerView ?? maxVisible;
+        setCurrentItemsPerView(typeof desktopItems === 'number' ? desktopItems : maxVisible);
+      }
+    };
+
+    calculateItemsPerView();
+    window.addEventListener('resize', calculateItemsPerView);
+    return () => window.removeEventListener('resize', calculateItemsPerView);
+  }, [settings?.itemsPerView, settings?.itemsPerViewTablet, settings?.itemsPerViewMobile, maxVisible]);
 
   // Get random products on each rotation
   const visibleProducts = useMemo(() => {
-    return getRandomProducts(products, maxVisible);
+    return getRandomProducts(products, currentItemsPerView);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rotationKey intentionally triggers re-randomization
-  }, [products, maxVisible, rotationKey]);
+  }, [products, currentItemsPerView, rotationKey]);
 
-  // Auto-rotate every 10 seconds
+  // Auto-rotate based on settings
+  const autoRotate = settings?.autoRotate !== false;
+  const rotateInterval = settings?.rotateInterval || 10000;
+  
   useEffect(() => {
+    if (!autoRotate) return;
+    
     const interval = setInterval(() => {
       setRotationKey(prev => prev + 1);
-    }, 10000); // 10 seconds
+    }, rotateInterval);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [autoRotate, rotateInterval]);
 
   const handleRotate = () => {
     setRotationKey(prev => prev + 1);
   };
 
+  // Dynamic gap
+  const gap = settings?.gap || 16;
+  const showTitle = settings?.showTitle !== false;
+  const showViewAll = settings?.showViewAll !== false;
+  const showRefresh = settings?.showRefresh !== false;
+
+  // Generate dynamic grid classes based on current items per view
+  const getGridCols = () => {
+    // Use CSS grid with dynamic columns
+    return `repeat(${currentItemsPerView}, minmax(0, 1fr))`;
+  };
+
   return (
     <div className="relative">
       {/* Header with View All button */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold">{t('featured.title')}</h2>
+      {(showTitle || showViewAll) && (
+        <div className="flex justify-between items-center mb-4">
+          {showTitle && (
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold">{t('featured.title')}</h2>
+            </div>
+          )}
+          {showViewAll && (
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/productos">
+                <Package2 className="h-4 w-4" />
+                {t('featured.viewAllProducts')}
+              </Link>
+            </Button>
+          )}
         </div>
-        <Button asChild variant="outline" className="gap-2">
-          <Link to="/productos">
-            <Package2 className="h-4 w-4" />
-            {t('featured.viewAllProducts')}
-          </Link>
-        </Button>
-      </div>
+      )}
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 bg-slate-100 dark:bg-slate-900">
+      <div 
+        className="grid bg-slate-100 dark:bg-slate-900"
+        style={{
+          gridTemplateColumns: getGridCols(),
+          gap: `${gap}px`
+        }}
+      >
         {visibleProducts.map((product) => (
           <TranslatedFeaturedProductCard key={product.id} product={product} />
         ))}
       </div>
 
-      {products.length > maxVisible && (
+      {showRefresh && products.length > currentItemsPerView && (
         <div className="flex justify-center items-center gap-4 mt-6">
           <Button variant="outline" onClick={handleRotate} className="gap-2">
             <RefreshCw className="h-4 w-4" />
