@@ -48,7 +48,7 @@ const templates = {
   }
 };
 
-// Status translations
+// Status translations - comprehensive mapping
 const statusNames: Record<string, Record<string, string>> = {
   es: {
     'pending': 'Pendiente',
@@ -56,9 +56,18 @@ const statusNames: Record<string, Record<string, string>> = {
     'shipped': 'Enviado',
     'delivered': 'Entregado',
     'cancelled': 'Cancelado',
+    'rejected': 'Rechazado',
+    'refunded': 'Reembolsado',
     'en camino': 'En Camino',
     'preparando': 'Preparando',
-    'completado': 'Completado'
+    'completado': 'Completado',
+    'enviado': 'Enviado',
+    'entregado': 'Entregado',
+    'cancelado': 'Cancelado',
+    'rechazado': 'Rechazado',
+    'reembolsado': 'Reembolsado',
+    'pendiente': 'Pendiente',
+    'procesando': 'Procesando'
   },
   en: {
     'pending': 'Pending',
@@ -66,9 +75,18 @@ const statusNames: Record<string, Record<string, string>> = {
     'shipped': 'Shipped',
     'delivered': 'Delivered',
     'cancelled': 'Cancelled',
+    'rejected': 'Rejected',
+    'refunded': 'Refunded',
     'en camino': 'On the way',
     'preparando': 'Preparing',
-    'completado': 'Completed'
+    'completado': 'Completed',
+    'enviado': 'Shipped',
+    'entregado': 'Delivered',
+    'cancelado': 'Cancelled',
+    'rechazado': 'Rejected',
+    'reembolsado': 'Refunded',
+    'pendiente': 'Pending',
+    'procesando': 'Processing'
   },
   nl: {
     'pending': 'In afwachting',
@@ -76,9 +94,18 @@ const statusNames: Record<string, Record<string, string>> = {
     'shipped': 'Verzonden',
     'delivered': 'Afgeleverd',
     'cancelled': 'Geannuleerd',
+    'rejected': 'Afgewezen',
+    'refunded': 'Terugbetaald',
     'en camino': 'Onderweg',
     'preparando': 'Voorbereiden',
-    'completado': 'Voltooid'
+    'completado': 'Voltooid',
+    'enviado': 'Verzonden',
+    'entregado': 'Afgeleverd',
+    'cancelado': 'Geannuleerd',
+    'rechazado': 'Afgewezen',
+    'reembolsado': 'Terugbetaald',
+    'pendiente': 'In afwachting',
+    'procesando': 'Verwerken'
   }
 };
 
@@ -89,8 +116,8 @@ function getLang(lang?: string | null): Lang {
 }
 
 function translateStatus(status: string, lang: Lang): string {
-  const lowerStatus = status.toLowerCase();
-  return statusNames[lang][lowerStatus] || status;
+  const lowerStatus = status.toLowerCase().trim();
+  return statusNames[lang][lowerStatus] || statusNames[lang]['pending'] || status;
 }
 
 interface OrderStatusEmailRequest {
@@ -101,6 +128,10 @@ interface OrderStatusEmailRequest {
   customer_name?: string;
   language?: string;
   user_id?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  carrier_name?: string;
+  estimated_delivery_date?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -109,9 +140,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, order_number, old_status, new_status, customer_name, language, user_id }: OrderStatusEmailRequest = await req.json();
+    const { 
+      to, order_number, old_status, new_status, customer_name, language, user_id,
+      tracking_number, tracking_url, carrier_name, estimated_delivery_date
+    }: OrderStatusEmailRequest = await req.json();
     
-    console.log('📧 Processing order status email:', { to, order_number, new_status, language });
+    console.log('📧 Processing order status email:', { to, order_number, new_status, language, tracking_number });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
@@ -180,6 +214,46 @@ const handler = async (req: Request): Promise<Response> => {
       statusColor = '#ef4444';
     }
 
+    // Tracking section HTML
+    const trackingLabels = {
+      es: {
+        trackingTitle: 'Información de Envío',
+        trackingNumber: 'Número de Seguimiento',
+        carrier: 'Transportista',
+        estimatedDelivery: 'Entrega Estimada',
+        trackOrder: 'Rastrear Pedido'
+      },
+      en: {
+        trackingTitle: 'Shipping Information',
+        trackingNumber: 'Tracking Number',
+        carrier: 'Carrier',
+        estimatedDelivery: 'Estimated Delivery',
+        trackOrder: 'Track Order'
+      },
+      nl: {
+        trackingTitle: 'Verzendinformatie',
+        trackingNumber: 'Volgnummer',
+        carrier: 'Vervoerder',
+        estimatedDelivery: 'Geschatte Levering',
+        trackOrder: 'Bestelling Volgen'
+      }
+    };
+    
+    const tLabels = trackingLabels[lang];
+    
+    let trackingHtml = '';
+    if (tracking_number || tracking_url || carrier_name || estimated_delivery_date) {
+      trackingHtml = `
+        <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #2e7d32; margin: 0 0 15px 0;">📦 ${tLabels.trackingTitle}</h3>
+          ${carrier_name ? `<p style="margin: 8px 0;"><strong>${tLabels.carrier}:</strong> ${escapeHtml(carrier_name)}</p>` : ''}
+          ${tracking_number ? `<p style="margin: 8px 0;"><strong>${tLabels.trackingNumber}:</strong> <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${escapeHtml(tracking_number)}</code></p>` : ''}
+          ${estimated_delivery_date ? `<p style="margin: 8px 0;"><strong>${tLabels.estimatedDelivery}:</strong> ${escapeHtml(estimated_delivery_date)}</p>` : ''}
+          ${tracking_url ? `<p style="margin: 15px 0 0 0;"><a href="${escapeHtml(tracking_url)}" target="_blank" style="display: inline-block; background: #4caf50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">🔗 ${tLabels.trackOrder}</a></p>` : ''}
+        </div>
+      `;
+    }
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -212,6 +286,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="status-icon">${statusIcon}</div>
                 <div class="status-text">${safeNewStatus}</div>
               </div>
+              
+              ${trackingHtml}
               
               <p style="margin-top: 30px;">
                 ${lang === 'es' ? 'Puedes ver el detalle completo de tu pedido y seguir su progreso desde tu cuenta:' :
