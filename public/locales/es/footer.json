@@ -22,7 +22,9 @@
     "description": "Recibe ofertas y novedades",
     "placeholder": "Tu email",
     "subscribe": "Suscribirse",
-    "subscribed": "¡Gracias por suscribirte!"
+    "subscribed": "¡Gracias por suscribirte!",
+    "alreadySubscribed": "Ya estás suscrito a nuestro newsletter",
+    "error": "Error al suscribirse. Inténtalo de nuevo."
   },
   "payment": {
     "title": "Métodos de pago aceptados:"

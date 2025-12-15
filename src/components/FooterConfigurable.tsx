@@ -215,11 +215,52 @@ export const FooterConfigurable = () => {
     }
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    toast.success(t('newsletter.subscribed'));
-    setEmail("");
+    if (!email || subscribing) return;
+    
+    setSubscribing(true);
+    try {
+      // Check if already subscribed
+      const { data: existing } = await supabase
+        .from("email_subscribers")
+        .select("id, status")
+        .eq("email", email)
+        .maybeSingle();
+      
+      if (existing) {
+        if (existing.status === "subscribed") {
+          toast.info(t('newsletter.alreadySubscribed', 'Ya estás suscrito'));
+        } else {
+          // Reactivate subscription
+          await supabase
+            .from("email_subscribers")
+            .update({ status: "subscribed", subscribed_at: new Date().toISOString() })
+            .eq("id", existing.id);
+          toast.success(t('newsletter.subscribed'));
+        }
+      } else {
+        // New subscription
+        const { error } = await supabase
+          .from("email_subscribers")
+          .insert({
+            email,
+            status: "subscribed",
+            subscribed_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+        toast.success(t('newsletter.subscribed'));
+      }
+      setEmail("");
+    } catch (error: any) {
+      console.error("Error subscribing:", error);
+      toast.error(t('newsletter.error', 'Error al suscribirse'));
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   // Don't render if footer is disabled

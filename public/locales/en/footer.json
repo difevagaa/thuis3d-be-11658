@@ -22,7 +22,9 @@
     "description": "Receive offers and news",
     "placeholder": "Your email",
     "subscribe": "Subscribe",
-    "subscribed": "Thanks for subscribing!"
+    "subscribed": "Thanks for subscribing!",
+    "alreadySubscribed": "You are already subscribed to our newsletter",
+    "error": "Error subscribing. Please try again."
   },
   "payment": {
     "title": "Accepted payment methods:"
