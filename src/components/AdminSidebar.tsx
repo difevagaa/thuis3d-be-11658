@@ -103,6 +103,7 @@ const menuItems: MenuSection[] = [
     color: "from-sky-500 to-sky-600",
     items: [
       { icon: MessageSquare, label: "Mensajes", url: "/admin/messages", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
+      { icon: FileText, label: "Emails", url: "/admin/emails", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
       { icon: Star, label: "Reseñas", url: "/admin/reviews", color: "text-yellow-700", bgColor: "bg-yellow-100 hover:bg-yellow-200 border-yellow-300" },
       { icon: Activity, label: "Actividad", url: "/admin/visitantes", color: "text-teal-700", bgColor: "bg-teal-100 hover:bg-teal-200 border-teal-300" }
     ]
