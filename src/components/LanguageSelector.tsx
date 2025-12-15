@@ -45,10 +45,10 @@ export function LanguageSelector() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-12 w-12 min-h-[48px] min-w-[48px] rounded-xl hover:bg-muted transition-all active:scale-95 flex-shrink-0 touch-manipulation bg-muted/50"
+          className="h-10 w-10 sm:h-12 sm:w-12 min-h-[40px] min-w-[40px] rounded-lg sm:rounded-xl hover:bg-white/10 transition-all active:scale-95 flex-shrink-0 touch-manipulation"
           aria-label="Seleccionar idioma"
         >
-          <span className="text-2xl">{currentLanguage.flag}</span>
+          <span className="text-xl sm:text-2xl">{currentLanguage.flag}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-50 bg-background border shadow-lg rounded-xl min-w-[160px] p-2">
