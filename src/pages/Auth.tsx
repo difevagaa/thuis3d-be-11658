@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -19,6 +20,8 @@ const Auth = () => {
   const [isSettingNewPassword, setIsSettingNewPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -49,23 +52,42 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar términos y condiciones
+    if (!acceptTerms) {
+      toast.error(t('mustAcceptTerms'));
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const validated = authSchema.parse(formData);
       
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
           data: {
             full_name: formData.fullName,
+            subscribed_newsletter: subscribeNewsletter,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (error) throw error;
+      
+      // Si el usuario quiere suscribirse al newsletter, añadirlo a la tabla
+      if (subscribeNewsletter && signUpData.user) {
+        await supabase.from("email_subscribers").insert({
+          email: validated.email,
+          name: formData.fullName || null,
+          user_id: signUpData.user.id,
+          status: "subscribed",
+          subscribed_at: new Date().toISOString()
+        });
+      }
       
       toast.success(t('accountCreated'));
       navigate("/");
@@ -301,7 +323,46 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  
+                  {/* Checkbox para suscripción al newsletter */}
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="subscribe-newsletter"
+                      checked={subscribeNewsletter}
+                      onCheckedChange={(checked) => setSubscribeNewsletter(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="subscribe-newsletter" 
+                      className="text-sm font-normal cursor-pointer leading-tight"
+                    >
+                      {t('subscribeNewsletter')}
+                    </Label>
+                  </div>
+                  
+                  {/* Checkbox para términos y condiciones */}
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="accept-terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                      required
+                    />
+                    <Label 
+                      htmlFor="accept-terms" 
+                      className="text-sm font-normal cursor-pointer leading-tight"
+                    >
+                      {t('acceptTermsPrefix')}{' '}
+                      <Link to="/legal/terms" className="text-primary underline hover:text-primary/80">
+                        {t('termsAndConditions')}
+                      </Link>
+                      {' '}{t('acceptTermsAnd')}{' '}
+                      <Link to="/legal/privacy" className="text-primary underline hover:text-primary/80">
+                        {t('privacyPolicy')}
+                      </Link>
+                    </Label>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading || !acceptTerms}>
                     {loading ? t('loading', { ns: 'common' }) : t('signUpButton')}
                   </Button>
                 </form>
