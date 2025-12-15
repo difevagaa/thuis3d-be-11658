@@ -17,12 +17,90 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// Multilingual templates
+const templates = {
+  es: {
+    subject: '{{icon}} Actualización de Pedido #{{order_number}} - {{company_name}}',
+    title: 'Actualización de tu Pedido',
+    statusChanged: 'Tu pedido <strong>#{{order_number}}</strong> ha sido actualizado:',
+    viewOrder: 'Ver Mi Pedido',
+    tip: '💡 <strong>Consejo:</strong> Recibirás una notificación cada vez que tu pedido cambie de estado.',
+    footer: 'Este es un correo automático de {{company_name}}',
+    contact: 'Si tienes alguna pregunta, contáctanos en {{email}}'
+  },
+  en: {
+    subject: '{{icon}} Order Update #{{order_number}} - {{company_name}}',
+    title: 'Your Order Update',
+    statusChanged: 'Your order <strong>#{{order_number}}</strong> has been updated:',
+    viewOrder: 'View My Order',
+    tip: '💡 <strong>Tip:</strong> You will receive a notification every time your order status changes.',
+    footer: 'This is an automated email from {{company_name}}',
+    contact: 'If you have any questions, contact us at {{email}}'
+  },
+  nl: {
+    subject: '{{icon}} Orderupdate #{{order_number}} - {{company_name}}',
+    title: 'Update van je Bestelling',
+    statusChanged: 'Je bestelling <strong>#{{order_number}}</strong> is bijgewerkt:',
+    viewOrder: 'Bekijk Mijn Bestelling',
+    tip: '💡 <strong>Tip:</strong> Je ontvangt een melding telkens wanneer de status van je bestelling verandert.',
+    footer: 'Dit is een automatische e-mail van {{company_name}}',
+    contact: 'Als je vragen hebt, neem contact met ons op via {{email}}'
+  }
+};
+
+// Status translations
+const statusNames: Record<string, Record<string, string>> = {
+  es: {
+    'pending': 'Pendiente',
+    'processing': 'Procesando',
+    'shipped': 'Enviado',
+    'delivered': 'Entregado',
+    'cancelled': 'Cancelado',
+    'en camino': 'En Camino',
+    'preparando': 'Preparando',
+    'completado': 'Completado'
+  },
+  en: {
+    'pending': 'Pending',
+    'processing': 'Processing',
+    'shipped': 'Shipped',
+    'delivered': 'Delivered',
+    'cancelled': 'Cancelled',
+    'en camino': 'On the way',
+    'preparando': 'Preparing',
+    'completado': 'Completed'
+  },
+  nl: {
+    'pending': 'In afwachting',
+    'processing': 'Verwerken',
+    'shipped': 'Verzonden',
+    'delivered': 'Afgeleverd',
+    'cancelled': 'Geannuleerd',
+    'en camino': 'Onderweg',
+    'preparando': 'Voorbereiden',
+    'completado': 'Voltooid'
+  }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'nl') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'nl';
+}
+
+function translateStatus(status: string, lang: Lang): string {
+  const lowerStatus = status.toLowerCase();
+  return statusNames[lang][lowerStatus] || status;
+}
+
 interface OrderStatusEmailRequest {
   to: string;
   order_number: string;
   old_status: string;
   new_status: string;
   customer_name?: string;
+  language?: string;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,9 +109,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, order_number, old_status, new_status, customer_name }: OrderStatusEmailRequest = await req.json();
+    const { to, order_number, old_status, new_status, customer_name, language, user_id }: OrderStatusEmailRequest = await req.json();
     
-    console.log('📧 Processing order status email:', { to, order_number, new_status });
+    console.log('📧 Processing order status email:', { to, order_number, new_status, language });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
@@ -41,6 +119,28 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
+    
+    // Get user's preferred language
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', to)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    
+    const lang = getLang(userLang);
+    const t = templates[lang];
     
     const { data: companyInfo } = await supabase
       .from('site_customization')
@@ -50,8 +150,8 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = escapeHtml(companyInfo?.company_name || companyInfo?.site_name || 'Thuis3D.be');
     const companyEmail = escapeHtml(companyInfo?.legal_email || 'info@thuis3d.be');
     const safeOrderNumber = escapeHtml(order_number);
-    const safeNewStatus = escapeHtml(new_status);
-    const safeCustomerName = customer_name ? escapeHtml(customer_name) : '';
+    const safeNewStatus = translateStatus(new_status, lang);
+    const safeCustomerName = customer_name ? ', ' + escapeHtml(customer_name) : '';
     
     if (!RESEND_API_KEY) {
       console.warn('RESEND_API_KEY not configured, skipping email');
@@ -61,20 +161,21 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Determinar el icono y color según el estado
+    // Determine icon and color based on status
     let statusIcon = '📦';
     let statusColor = '#3b82f6';
     
-    if (new_status.toLowerCase().includes('entregado') || new_status.toLowerCase().includes('completado')) {
+    const lowerStatus = new_status.toLowerCase();
+    if (lowerStatus.includes('entregado') || lowerStatus.includes('completado') || lowerStatus.includes('delivered')) {
       statusIcon = '✅';
       statusColor = '#10b981';
-    } else if (new_status.toLowerCase().includes('enviado') || new_status.toLowerCase().includes('en camino')) {
+    } else if (lowerStatus.includes('enviado') || lowerStatus.includes('en camino') || lowerStatus.includes('shipped')) {
       statusIcon = '🚚';
       statusColor = '#8b5cf6';
-    } else if (new_status.toLowerCase().includes('procesando') || new_status.toLowerCase().includes('preparando')) {
+    } else if (lowerStatus.includes('procesando') || lowerStatus.includes('preparando') || lowerStatus.includes('processing')) {
       statusIcon = '⚙️';
       statusColor = '#f59e0b';
-    } else if (new_status.toLowerCase().includes('cancelado')) {
+    } else if (lowerStatus.includes('cancelado') || lowerStatus.includes('cancelled')) {
       statusIcon = '❌';
       statusColor = '#ef4444';
     }
@@ -103,9 +204,9 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="logo">${companyName}</div>
               </div>
               
-              <h2>Actualización de tu Pedido${safeCustomerName ? ', ' + safeCustomerName : ''}</h2>
+              <h2>${t.title}${safeCustomerName}</h2>
               
-              <p>Tu pedido <strong>#${safeOrderNumber}</strong> ha sido actualizado:</p>
+              <p>${t.statusChanged.replace('{{order_number}}', safeOrderNumber)}</p>
               
               <div class="status-box">
                 <div class="status-icon">${statusIcon}</div>
@@ -113,22 +214,24 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <p style="margin-top: 30px;">
-                Puedes ver el detalle completo de tu pedido y seguir su progreso desde tu cuenta:
+                ${lang === 'es' ? 'Puedes ver el detalle completo de tu pedido y seguir su progreso desde tu cuenta:' :
+                  lang === 'en' ? 'You can see the full details of your order and track its progress from your account:' :
+                  'Je kunt de volledige details van je bestelling bekijken en de voortgang volgen vanuit je account:'}
               </p>
               
               <div style="text-align: center;">
                 <a href="https://thuis3d.be/mi-cuenta" class="button">
-                  Ver Mi Pedido
+                  ${t.viewOrder}
                 </a>
               </div>
               
               <p style="margin-top: 30px; font-size: 14px; color: #666; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-                💡 <strong>Consejo:</strong> Recibirás una notificación cada vez que tu pedido cambie de estado.
+                ${t.tip}
               </p>
               
               <div class="footer">
-                <p>Este es un correo automático de ${companyName}</p>
-                <p>Si tienes alguna pregunta, contáctanos en ${companyEmail}</p>
+                <p>${t.footer.replace('{{company_name}}', companyName)}</p>
+                <p>${t.contact.replace('{{email}}', companyEmail)}</p>
               </div>
             </div>
           </div>
@@ -145,7 +248,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [to],
-        subject: `${statusIcon} Actualización de Pedido #${safeOrderNumber} - ${companyName}`,
+        subject: t.subject.replace('{{icon}}', statusIcon).replace('{{order_number}}', safeOrderNumber).replace('{{company_name}}', companyName),
         html: emailHtml,
       }),
     });
@@ -157,7 +260,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || 'Failed to send email');
     }
 
-    console.log('Order status email sent successfully:', data);
+    console.log('✅ Order status email sent successfully:', data);
 
     return new Response(
       JSON.stringify({ success: true, data }),

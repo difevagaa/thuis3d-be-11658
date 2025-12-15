@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// HTML escaping function to prevent XSS attacks in email templates
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
     '&': '&amp;',
@@ -16,6 +15,70 @@ function escapeHtml(text: string): string {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Multilingual templates
+const templates = {
+  es: {
+    subject: '✅ Confirmación de Pedido #{{order_number}} - {{company_name}}',
+    greeting: '¡Gracias por tu pedido{{customer_name}}!',
+    intro: 'Hemos recibido tu pedido correctamente. A continuación encontrarás los detalles:',
+    product: 'Producto',
+    quantity: 'Cantidad',
+    unitPrice: 'Precio Unit.',
+    total: 'Total',
+    subtotal: 'Subtotal',
+    shipping: 'Envío',
+    shippingFree: 'GRATIS',
+    tax: 'IVA (21%)',
+    discount: 'Descuento',
+    totalLabel: 'TOTAL',
+    statusInfo: 'Te mantendremos informado sobre el estado de tu pedido. Recibirás una notificación cuando esté listo para envío.',
+    footer: 'Este es un correo automático de {{company_name}}',
+    contact: 'Si tienes alguna pregunta, contáctanos en {{email}}'
+  },
+  en: {
+    subject: '✅ Order Confirmation #{{order_number}} - {{company_name}}',
+    greeting: 'Thank you for your order{{customer_name}}!',
+    intro: 'We have received your order successfully. Here are the details:',
+    product: 'Product',
+    quantity: 'Quantity',
+    unitPrice: 'Unit Price',
+    total: 'Total',
+    subtotal: 'Subtotal',
+    shipping: 'Shipping',
+    shippingFree: 'FREE',
+    tax: 'VAT (21%)',
+    discount: 'Discount',
+    totalLabel: 'TOTAL',
+    statusInfo: 'We will keep you informed about your order status. You will receive a notification when it is ready for shipping.',
+    footer: 'This is an automated email from {{company_name}}',
+    contact: 'If you have any questions, contact us at {{email}}'
+  },
+  nl: {
+    subject: '✅ Orderbevestiging #{{order_number}} - {{company_name}}',
+    greeting: 'Bedankt voor je bestelling{{customer_name}}!',
+    intro: 'We hebben je bestelling goed ontvangen. Hier zijn de details:',
+    product: 'Product',
+    quantity: 'Aantal',
+    unitPrice: 'Stukprijs',
+    total: 'Totaal',
+    subtotal: 'Subtotaal',
+    shipping: 'Verzending',
+    shippingFree: 'GRATIS',
+    tax: 'BTW (21%)',
+    discount: 'Korting',
+    totalLabel: 'TOTAAL',
+    statusInfo: 'We houden je op de hoogte van de status van je bestelling. Je ontvangt een melding wanneer deze klaar is voor verzending.',
+    footer: 'Dit is een automatische e-mail van {{company_name}}',
+    contact: 'Als je vragen hebt, neem contact met ons op via {{email}}'
+  }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'nl') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'nl';
 }
 
 interface OrderEmailRequest {
@@ -32,6 +95,8 @@ interface OrderEmailRequest {
     unit_price: number;
   }>;
   customer_name?: string;
+  language?: string;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -40,24 +105,46 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, order_number, subtotal, tax, shipping, discount, total, items, customer_name }: OrderEmailRequest = await req.json();
+    const { to, order_number, subtotal, tax, shipping, discount, total, items, customer_name, language, user_id }: OrderEmailRequest = await req.json();
     
-    // Asegurar valores por defecto para evitar undefined
     const safeSubtotal = Number(subtotal) || 0;
     const safeTax = Number(tax) || 0;
     const safeShipping = Number(shipping) || 0;
     const safeDiscount = Number(discount) || 0;
     const safeTotal = Number(total) || 0;
     
-    console.log('📧 Processing order confirmation email:', { to, order_number, total: safeTotal });
+    console.log('📧 Processing order confirmation email:', { to, order_number, total: safeTotal, language });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
-    // Get company info from site_customization
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
+    
+    // Get user's preferred language from profile if not provided
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    
+    // Also try to get language by email if still not found
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', to)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    
+    const lang = getLang(userLang);
+    const t = templates[lang];
     
     const { data: companyInfo } = await supabase
       .from('site_customization')
@@ -67,7 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = escapeHtml(companyInfo?.company_name || companyInfo?.site_name || 'Thuis3D.be');
     const companyEmail = escapeHtml(companyInfo?.legal_email || 'info@thuis3d.be');
     const safeOrderNumber = escapeHtml(order_number);
-    const safeCustomerName = customer_name ? escapeHtml(customer_name) : '';
+    const safeCustomerName = customer_name ? ', ' + escapeHtml(customer_name) : '';
     
     if (!RESEND_API_KEY) {
       console.warn('RESEND_API_KEY not configured, skipping email');
@@ -111,19 +198,19 @@ const handler = async (req: Request): Promise<Response> => {
             <div class="card">
               <div class="header">
                 <div class="logo">${companyName}</div>
-                <div class="order-number">Pedido #${safeOrderNumber}</div>
+                <div class="order-number">${lang === 'nl' ? 'Bestelling' : lang === 'en' ? 'Order' : 'Pedido'} #${safeOrderNumber}</div>
               </div>
               
-              <h2>¡Gracias por tu pedido${safeCustomerName ? ', ' + safeCustomerName : ''}!</h2>
-              <p>Hemos recibido tu pedido correctamente. A continuación encontrarás los detalles:</p>
+              <h2>${t.greeting.replace('{{customer_name}}', safeCustomerName)}</h2>
+              <p>${t.intro}</p>
               
               <table>
                 <thead>
                   <tr style="background: #f5f5f5;">
-                    <th style="padding: 12px; text-align: left;">Producto</th>
-                    <th style="padding: 12px; text-align: center;">Cantidad</th>
-                    <th style="padding: 12px; text-align: right;">Precio Unit.</th>
-                    <th style="padding: 12px; text-align: right;">Total</th>
+                    <th style="padding: 12px; text-align: left;">${t.product}</th>
+                    <th style="padding: 12px; text-align: center;">${t.quantity}</th>
+                    <th style="padding: 12px; text-align: right;">${t.unitPrice}</th>
+                    <th style="padding: 12px; text-align: right;">${t.total}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -133,41 +220,38 @@ const handler = async (req: Request): Promise<Response> => {
               
               <div style="background: #f5f5f5; padding: 20px; border-radius: 5px; margin-top: 20px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                  <span>Subtotal:</span>
+                  <span>${t.subtotal}:</span>
                   <span style="font-weight: bold;">€${safeSubtotal.toFixed(2)}</span>
                 </div>
                 ${safeShipping > 0 ? `
                   <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span>Envío:</span>
+                    <span>${t.shipping}:</span>
                     <span style="font-weight: bold;">€${safeShipping.toFixed(2)}</span>
                   </div>
-                ` : '<div style="display: flex; justify-content: space-between; padding: 8px 0;"><span>Envío:</span><span style="font-weight: bold; color: #10b981;">GRATIS</span></div>'}
+                ` : `<div style="display: flex; justify-content: space-between; padding: 8px 0;"><span>${t.shipping}:</span><span style="font-weight: bold; color: #10b981;">${t.shippingFree}</span></div>`}
                 ${safeTax > 0 ? `
                   <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span>IVA (21%):</span>
+                    <span>${t.tax}:</span>
                     <span style="font-weight: bold;">€${safeTax.toFixed(2)}</span>
                   </div>
                 ` : ''}
                 ${safeDiscount > 0 ? `
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #10b981;">
-                    <span>Descuento:</span>
+                    <span>${t.discount}:</span>
                     <span style="font-weight: bold;">-€${safeDiscount.toFixed(2)}</span>
                   </div>
                 ` : ''}
                 <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 2px solid #ddd; margin-top: 10px;">
-                  <span style="font-size: 20px; font-weight: bold;">TOTAL:</span>
+                  <span style="font-size: 20px; font-weight: bold;">${t.totalLabel}:</span>
                   <span style="font-size: 24px; font-weight: bold; color: #3b82f6;">€${safeTotal.toFixed(2)}</span>
                 </div>
               </div>
               
-              <p style="margin-top: 30px;">
-                Te mantendremos informado sobre el estado de tu pedido.
-                Recibirás una notificación cuando esté listo para envío.
-              </p>
+              <p style="margin-top: 30px;">${t.statusInfo}</p>
               
               <div class="footer">
-                <p>Este es un correo automático de ${companyName}</p>
-                <p>Si tienes alguna pregunta, contáctanos en ${companyEmail}</p>
+                <p>${t.footer.replace('{{company_name}}', companyName)}</p>
+                <p>${t.contact.replace('{{email}}', companyEmail)}</p>
               </div>
             </div>
           </div>
@@ -184,7 +268,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [to],
-        subject: `✅ Confirmación de Pedido #${safeOrderNumber} - ${companyName}`,
+        subject: t.subject.replace('{{order_number}}', safeOrderNumber).replace('{{company_name}}', companyName),
         html: emailHtml,
       }),
     });
@@ -196,7 +280,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || 'Failed to send email');
     }
 
-    console.log('Order confirmation email sent successfully:', data);
+    console.log('✅ Order confirmation email sent successfully:', data);
 
     return new Response(
       JSON.stringify({ success: true, data }),
