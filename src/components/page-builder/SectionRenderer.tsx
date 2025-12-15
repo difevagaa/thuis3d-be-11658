@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AdvancedCarousel } from "./AdvancedCarousel";
 import { useTranslation } from "react-i18next";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
+import { withTimeout, TimeoutError } from "@/lib/asyncUtils";
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
@@ -2105,43 +2106,55 @@ export function usePageSections(pageKey: string) {
   useEffect(() => {
     async function loadSections() {
       try {
-        // Use the already-imported supabase client (avoid dynamic import that can hang on slow/mobile connections)
-
         // Get page by key (use maybeSingle to avoid error when no page exists)
-        const { data: page, error: pageError } = await supabase
-          .from('page_builder_pages')
-          .select('id')
-          .eq('page_key', pageKey)
-          .eq('is_enabled', true)
-          .maybeSingle();
+        const pageRes = await withTimeout(
+          supabase
+            .from('page_builder_pages')
+            .select('id')
+            .eq('page_key', pageKey)
+            .eq('is_enabled', true)
+            .maybeSingle(),
+          12000,
+          'Cargar página'
+        );
+
+        const { data: page, error: pageError } = pageRes;
 
         if (pageError) {
           console.error('Error loading page:', pageError);
           setSections([]);
-          setLoading(false);
           return;
         }
 
         if (!page) {
           // No page configured - this is OK, just show empty
           setSections([]);
-          setLoading(false);
           return;
         }
 
         // Get sections for this page
-        const { data: sectionsData, error: sectionsError } = await supabase
-          .from('page_builder_sections')
-          .select('*')
-          .eq('page_id', page.id)
-          .eq('is_visible', true)
-          .order('display_order');
+        const sectionsRes = await withTimeout(
+          supabase
+            .from('page_builder_sections')
+            .select('*')
+            .eq('page_id', page.id)
+            .eq('is_visible', true)
+            .order('display_order'),
+          12000,
+          'Cargar secciones'
+        );
+
+        const { data: sectionsData, error: sectionsError } = sectionsRes;
 
         if (sectionsError) throw sectionsError;
         setSections(sectionsData || []);
       } catch (error) {
         console.error('Error loading page sections:', error);
         setSections([]);
+
+        if (error instanceof TimeoutError) {
+          toast.error(error.message);
+        }
       } finally {
         setLoading(false);
       }
