@@ -93,5 +93,7 @@
   "dimensions": "Afmetingen",
   "interactive3DModel": "Interactieve Voorvertoning van je Model",
   "preview3D": "3D-voorbeeld",
-  "shippingNotIncluded": "Voer hierboven je verzendadres in om de geschatte verzendkosten te zien."
+  "shippingNotIncluded": "Voer je adres in om verzendkosten te zien.",
+  "back": "Vorige",
+  "next": "Volgende"
 }
