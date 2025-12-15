@@ -134,9 +134,18 @@ export default function CardPaymentPage() {
 
         i18nToast.success("success.orderCreated");
 
-        // Redirect to card payment gateway (uses card_payment_link, not revolut_link)
+        // Open payment gateway in new tab
         if (paymentConfig?.card_payment_link) {
-          window.location.href = paymentConfig.card_payment_link;
+          window.open(paymentConfig.card_payment_link, '_blank');
+          // Navigate to processing page
+          navigate("/pago-en-proceso", { 
+            state: { 
+              orderNumber: invoiceNumber,
+              total: total,
+              paymentMethod: "card",
+              isInvoicePayment: true
+            } 
+          });
         } else {
           // If no gateway configured, go to instructions page
           navigate("/pago-instrucciones", { 
@@ -269,9 +278,18 @@ export default function CardPaymentPage() {
 
       i18nToast.success("success.orderCreated");
 
-      // Redirect to card payment gateway (uses card_payment_link, independent from revolut_link)
+      // Open payment gateway in new tab
       if (paymentConfig?.card_payment_link) {
-        window.location.href = paymentConfig.card_payment_link;
+        window.open(paymentConfig.card_payment_link, '_blank');
+        // Navigate to processing page
+        navigate("/pago-en-proceso", { 
+          state: { 
+            orderNumber: order.order_number,
+            total: finalTotal,
+            paymentMethod: "card",
+            isInvoicePayment: false
+          } 
+        });
       } else {
         i18nToast.error("error.general");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });

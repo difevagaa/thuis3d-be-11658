@@ -134,9 +134,18 @@ export default function RevolutPaymentPage() {
 
         toast.success(t('payment:messages.paymentRegistered'));
 
-        // Redirect to payment gateway
+        // Open payment gateway in new tab
         if (paymentConfig?.revolut_link) {
-          window.location.href = paymentConfig.revolut_link;
+          window.open(paymentConfig.revolut_link, '_blank');
+          // Navigate to processing page
+          navigate("/pago-en-proceso", { 
+            state: { 
+              orderNumber: invoiceNumber,
+              total: total,
+              paymentMethod: "revolut",
+              isInvoicePayment: true
+            } 
+          });
         } else {
           // If no gateway configured, go to instructions page
           navigate("/pago-instrucciones", { 
@@ -269,9 +278,18 @@ export default function RevolutPaymentPage() {
 
       toast.success(t('payment:messages.orderCreated'));
 
-      // Redirect to payment gateway
+      // Open payment gateway in new tab
       if (paymentConfig?.revolut_link) {
-        window.location.href = paymentConfig.revolut_link;
+        window.open(paymentConfig.revolut_link, '_blank');
+        // Navigate to processing page
+        navigate("/pago-en-proceso", { 
+          state: { 
+            orderNumber: order.order_number,
+            total: finalTotal,
+            paymentMethod: "revolut",
+            isInvoicePayment: false
+          } 
+        });
       } else {
         toast.error("Configuración de pago no disponible");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
