@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, MessageSquare, Check, Plus, Minus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, MessageSquare, Check, Plus, Minus, Leaf, Gift, Star, Sparkles, TrendingUp, Clock, Shield, Truck, Package, Info, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,6 +32,28 @@ interface Product {
   shipping_type?: string;
   custom_shipping_cost?: number;
   product_code?: string;
+  // New fields for customer display
+  is_featured?: boolean;
+  is_new?: boolean;
+  is_bestseller?: boolean;
+  is_on_sale?: boolean;
+  sale_price?: number;
+  compare_at_price?: number;
+  brand?: string;
+  manufacturer?: string;
+  origin_country?: string;
+  warranty_months?: number;
+  return_policy?: string;
+  estimated_delivery_days?: number;
+  is_preorder?: boolean;
+  preorder_release_date?: string;
+  is_gift_wrappable?: boolean;
+  gift_wrap_price?: number;
+  is_eco_friendly?: boolean;
+  materials_info?: string;
+  care_instructions?: string;
+  age_restriction?: number;
+  sku?: string;
 }
 
 interface Material {
@@ -503,7 +526,52 @@ const ProductDetail = () => {
               </div>
             )}
             
-            {/* Solo mostrar si el producto tiene envío gratis configurado */}
+            {/* Product Badges */}
+            <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-3">
+              {product.is_new && (
+                <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  {t('badges.new')}
+                </Badge>
+              )}
+              {product.is_bestseller && (
+                <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  {t('badges.bestseller')}
+                </Badge>
+              )}
+              {product.is_featured && (
+                <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs">
+                  <Star className="w-3 h-3 mr-1" />
+                  {t('badges.featured')}
+                </Badge>
+              )}
+              {product.is_on_sale && product.sale_price && (
+                <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs">
+                  {t('badges.onSale')}
+                </Badge>
+              )}
+              {product.is_eco_friendly && (
+                <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs">
+                  <Leaf className="w-3 h-3 mr-1" />
+                  {t('badges.ecoFriendly')}
+                </Badge>
+              )}
+              {product.is_preorder && (
+                <Badge variant="outline" className="border-orange-500 text-orange-600 text-xs">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {t('badges.preorder')}
+                </Badge>
+              )}
+              {product.is_gift_wrappable && (
+                <Badge variant="outline" className="border-pink-500 text-pink-600 text-xs">
+                  <Gift className="w-3 h-3 mr-1" />
+                  {t('badges.giftWrap')}
+                </Badge>
+              )}
+            </div>
+
+            {/* Free Shipping Banner */}
             {product.shipping_type === 'free' && (
               <div className="bg-success border border-success/30 rounded-lg p-2 md:p-3 lg:p-4 mb-2 md:mb-3 lg:mb-4 shadow-medium">
                 <p className="text-xs md:text-sm lg:text-base xl:text-lg font-bold text-center text-success-foreground">
@@ -511,9 +579,72 @@ const ProductDetail = () => {
                 </p>
               </div>
             )}
-            <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-2 md:mb-3 lg:mb-4">
-              €{product.price}
-            </p>
+
+            {/* Price Section with Sale/Compare */}
+            <div className="mb-2 md:mb-3 lg:mb-4">
+              {product.is_on_sale && product.sale_price ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-red-500">
+                      €{product.sale_price.toFixed(2)}
+                    </p>
+                    <p className="text-lg md:text-xl text-muted-foreground line-through">
+                      €{product.price.toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="text-sm text-green-600 font-medium">
+                    {t('details.youSave')}: €{(product.price - product.sale_price).toFixed(2)} ({Math.round((1 - product.sale_price / product.price) * 100)}%)
+                  </p>
+                </div>
+              ) : product.compare_at_price && product.compare_at_price > product.price ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
+                      €{product.price.toFixed(2)}
+                    </p>
+                    <p className="text-lg md:text-xl text-muted-foreground line-through">
+                      {t('details.comparePrice')}: €{product.compare_at_price.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
+                  €{product.price.toFixed(2)}
+                </p>
+              )}
+            </div>
+
+            {/* Stock info */}
+            {product.stock > 0 && (
+              <p className="text-sm text-green-600 mb-2">
+                <Check className="w-4 h-4 inline mr-1" />
+                {t('details.inStock')}: {product.stock} {t('details.available')}
+              </p>
+            )}
+
+            {/* Brand/Manufacturer Info */}
+            {(product.brand || product.manufacturer || product.origin_country) && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mb-2 md:mb-3">
+                {product.brand && (
+                  <span><strong>{t('details.brand')}:</strong> {product.brand}</span>
+                )}
+                {product.manufacturer && (
+                  <span><strong>{t('details.manufacturer')}:</strong> {product.manufacturer}</span>
+                )}
+                {product.origin_country && (
+                  <span><strong>{t('details.originCountry')}:</strong> {product.origin_country}</span>
+                )}
+              </div>
+            )}
+
+            {/* SKU */}
+            {product.sku && (
+              <p className="text-xs text-muted-foreground mb-2">
+                <strong>{t('sku')}:</strong> {product.sku}
+              </p>
+            )}
+
+            {/* Description */}
             <div className="text-muted-foreground text-sm md:text-base text-justify">
               <RichTextDisplay content={translatedProduct.description} />
             </div>
@@ -537,6 +668,113 @@ const ProductDetail = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Additional Product Info Grid */}
+            {(product.warranty_months || product.estimated_delivery_days || product.return_policy || 
+              product.materials_info || product.care_instructions || product.age_restriction ||
+              product.is_preorder || product.is_gift_wrappable) && (
+              <div className="mt-3 md:mt-4 space-y-3">
+                {/* Warranty & Delivery Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+                  {product.warranty_months && product.warranty_months > 0 && (
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                      <Shield className="w-5 h-5 text-blue-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-blue-700 dark:text-blue-400">{t('details.warranty')}</p>
+                        <p className="text-sm text-blue-600 dark:text-blue-300">
+                          {t('details.warrantyMonths', { months: product.warranty_months })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {product.estimated_delivery_days && product.estimated_delivery_days > 0 && (
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                      <Truck className="w-5 h-5 text-green-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-green-700 dark:text-green-400">{t('details.estimatedDelivery')}</p>
+                        <p className="text-sm text-green-600 dark:text-green-300">
+                          {t('details.estimatedDeliveryDays', { days: product.estimated_delivery_days })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pre-order date */}
+                {product.is_preorder && product.preorder_release_date && (
+                  <div className="flex items-center gap-2 p-2 md:p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
+                    <Clock className="w-5 h-5 text-orange-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-orange-700 dark:text-orange-400">{t('details.preorderDate')}</p>
+                      <p className="text-sm text-orange-600 dark:text-orange-300">
+                        {new Date(product.preorder_release_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Gift wrap option */}
+                {product.is_gift_wrappable && (
+                  <div className="flex items-center gap-2 p-2 md:p-3 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
+                    <Gift className="w-5 h-5 text-pink-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-pink-700 dark:text-pink-400">{t('details.giftWrapAvailable')}</p>
+                      {product.gift_wrap_price && product.gift_wrap_price > 0 && (
+                        <p className="text-sm text-pink-600 dark:text-pink-300">
+                          {t('details.giftWrapPrice', { price: product.gift_wrap_price.toFixed(2) })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Age Restriction */}
+                {product.age_restriction && product.age_restriction > 0 && (
+                  <div className="flex items-center gap-2 p-2 md:p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-red-700 dark:text-red-400">{t('details.ageRestriction')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">
+                        {t('details.ageRestrictionYears', { years: product.age_restriction })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Materials Info */}
+                {product.materials_info && (
+                  <div className="p-2 md:p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-xs font-medium">{t('details.materialsInfo')}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{product.materials_info}</p>
+                  </div>
+                )}
+
+                {/* Care Instructions */}
+                {product.care_instructions && (
+                  <div className="p-2 md:p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Info className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-xs font-medium">{t('details.careInstructions')}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{product.care_instructions}</p>
+                  </div>
+                )}
+
+                {/* Return Policy */}
+                {product.return_policy && (
+                  <div className="p-2 md:p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Shield className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-xs font-medium">{t('details.returnPolicy')}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{product.return_policy}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

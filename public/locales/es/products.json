@@ -26,6 +26,7 @@
   "noProducts": "No se encontraron productos con estos filtros",
   "loading": "Cargando producto...",
   "code": "Código",
+  "sku": "SKU",
   "specifications": "Especificaciones",
   "weight": "Peso",
   "dimensions": "Dimensiones",
@@ -51,5 +52,35 @@
     "title": "Personalización",
     "selectColorFor": "Seleccionar color para",
     "selectImageFor": "Seleccionar imagen para"
+  },
+  "badges": {
+    "new": "NUEVO",
+    "bestseller": "MÁS VENDIDO",
+    "featured": "DESTACADO",
+    "onSale": "EN OFERTA",
+    "ecoFriendly": "ECO-AMIGABLE",
+    "preorder": "PRE-PEDIDO",
+    "giftWrap": "ENVOLTORIO REGALO"
+  },
+  "details": {
+    "brand": "Marca",
+    "manufacturer": "Fabricante",
+    "originCountry": "País de Origen",
+    "warranty": "Garantía",
+    "warrantyMonths": "{{months}} meses de garantía",
+    "returnPolicy": "Política de Devolución",
+    "estimatedDelivery": "Entrega Estimada",
+    "estimatedDeliveryDays": "{{days}} días hábiles",
+    "preorderDate": "Disponible",
+    "giftWrapAvailable": "Envoltorio de Regalo Disponible",
+    "giftWrapPrice": "+€{{price}}",
+    "materialsInfo": "Materiales",
+    "careInstructions": "Instrucciones de Cuidado",
+    "ageRestriction": "Restricción de Edad",
+    "ageRestrictionYears": "+{{years}} años",
+    "comparePrice": "Antes",
+    "youSave": "Ahorras",
+    "inStock": "En Stock",
+    "available": "disponibles"
   }
 }
