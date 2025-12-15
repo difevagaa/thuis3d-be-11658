@@ -83,5 +83,21 @@
     "inStock": "En Stock",
     "available": "disponibles"
   },
+  "stock": {
+    "outOfStock": "Sin stock",
+    "lowStock": "¡Solo quedan {{count}}!",
+    "inStock": "{{count}} disponibles",
+    "onlyAvailable": "Solo hay {{count}} unidades disponibles",
+    "insufficientTitle": "Stock insuficiente",
+    "insufficientDescription": "Solo hay {{available}} unidades disponibles",
+    "joinWaitlist": "Notifícame cuando esté disponible",
+    "leaveWaitlist": "Cancelar notificación",
+    "waitlistSuccess": "¡Te avisaremos!",
+    "waitlistDescription": "Recibirás una notificación cuando el producto esté disponible",
+    "waitlistError": "Error al unirse a la lista de espera",
+    "leftWaitlist": "Has cancelado la notificación",
+    "waitlistNote": "Te notificaremos cuando haya stock disponible",
+    "reservationNote": "El stock se reserva por 30 minutos al añadir al carrito"
+  },
   "viewAllProducts": "Ver todos los productos"
 }

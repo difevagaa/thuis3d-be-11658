@@ -83,5 +83,21 @@
     "inStock": "In Stock",
     "available": "available"
   },
+  "stock": {
+    "outOfStock": "Out of stock",
+    "lowStock": "Only {{count}} left!",
+    "inStock": "{{count}} available",
+    "onlyAvailable": "Only {{count}} units available",
+    "insufficientTitle": "Insufficient stock",
+    "insufficientDescription": "Only {{available}} units available",
+    "joinWaitlist": "Notify me when available",
+    "leaveWaitlist": "Cancel notification",
+    "waitlistSuccess": "We'll notify you!",
+    "waitlistDescription": "You will receive a notification when the product is available",
+    "waitlistError": "Error joining waitlist",
+    "leftWaitlist": "Notification cancelled",
+    "waitlistNote": "We'll notify you when stock is available",
+    "reservationNote": "Stock is reserved for 30 minutes when added to cart"
+  },
   "viewAllProducts": "View all products"
 }

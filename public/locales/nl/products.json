@@ -83,5 +83,21 @@
     "inStock": "Op Voorraad",
     "available": "beschikbaar"
   },
+  "stock": {
+    "outOfStock": "Niet op voorraad",
+    "lowStock": "Nog maar {{count}} over!",
+    "inStock": "{{count}} beschikbaar",
+    "onlyAvailable": "Slechts {{count}} stuks beschikbaar",
+    "insufficientTitle": "Onvoldoende voorraad",
+    "insufficientDescription": "Slechts {{available}} stuks beschikbaar",
+    "joinWaitlist": "Meld me wanneer beschikbaar",
+    "leaveWaitlist": "Melding annuleren",
+    "waitlistSuccess": "We laten het u weten!",
+    "waitlistDescription": "U ontvangt een melding wanneer het product beschikbaar is",
+    "waitlistError": "Fout bij deelname wachtlijst",
+    "leftWaitlist": "Melding geannuleerd",
+    "waitlistNote": "We laten u weten wanneer er voorraad is",
+    "reservationNote": "Voorraad wordt 30 minuten gereserveerd bij toevoegen aan winkelwagen"
+  },
   "viewAllProducts": "Bekijk alle producten"
 }
