@@ -1207,7 +1207,13 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       // Build query based on settings
       const sortBy = settings?.sortBy || 'created_at';
       const sortOrder = settings?.sortOrder || 'desc';
-      const limit = settings?.limit || 10;
+
+      // Respect product limit settings from all editor variants
+      const limit =
+        (typeof settings?.productLimit === 'number' ? settings.productLimit : undefined) ??
+        (typeof content?.limit === 'number' ? content.limit : undefined) ??
+        (typeof settings?.limit === 'number' ? settings.limit : undefined) ??
+        10;
       
       const { data, error } = await supabase
         .from('products')

@@ -199,21 +199,41 @@ export function AdvancedCarousel({
   // Get container width class
   const getWidthClass = () => {
     switch (settings.carouselWidth) {
-      case 'full': return 'w-full';
-      case 'wide': return 'w-[90%] mx-auto';
-      case 'narrow': return 'w-[60%] mx-auto';
+      case 'full':
+        return 'w-full';
+      case 'wide':
+        return 'w-[90%]';
+      case 'narrow':
+        return 'w-[60%]';
       case 'container':
-      default: return 'w-[80%] mx-auto';
+      default:
+        return 'w-[80%]';
     }
   };
 
-  // Get alignment class
+  // Alignment for the carousel container (NOT the slide track)
+  const getWrapperAlignClass = () => {
+    switch (settings.carouselPosition) {
+      case 'left':
+        return 'mr-auto';
+      case 'right':
+        return 'ml-auto';
+      case 'center':
+      default:
+        return 'mx-auto';
+    }
+  };
+
+  // Alignment for pagination dots
   const getAlignmentClass = () => {
     switch (settings.carouselPosition) {
-      case 'left': return 'justify-start';
-      case 'right': return 'justify-end';
+      case 'left':
+        return 'justify-start';
+      case 'right':
+        return 'justify-end';
       case 'center':
-      default: return 'justify-center';
+      default:
+        return 'justify-center';
     }
   };
 
@@ -259,12 +279,11 @@ export function AdvancedCarousel({
       }}
     >
       {/* Carousel track wrapper with proper overflow handling */}
-      <div className={cn('overflow-hidden', getWidthClass())}>
+      <div className={cn('overflow-hidden', getWidthClass(), getWrapperAlignClass())}>
         <div 
           className={cn(
-            'flex transition-transform',
-            settings.direction === 'vertical' ? 'flex-col' : 'flex-row',
-            getAlignmentClass()
+            'flex transition-transform justify-start',
+            settings.direction === 'vertical' ? 'flex-col' : 'flex-row'
           )}
           style={{
             transform: getTransform(),
