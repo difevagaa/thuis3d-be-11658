@@ -1,0 +1,23 @@
+{
+  "pricing": {
+    "featured": "Destacado",
+    "selectPlan": "Seleccionar plan"
+  },
+  "form": {
+    "namePlaceholder": "Tu nombre",
+    "emailPlaceholder": "tu@email.com",
+    "phonePlaceholder": "+34 600 000 000",
+    "messagePlaceholder": "Tu mensaje",
+    "submit": "Enviar mensaje",
+    "sending": "Enviando...",
+    "success": "Formulario enviado. Te contactaremos pronto!",
+    "error": "Error al enviar el formulario. Por favor, intenta de nuevo."
+  },
+  "newsletter": {
+    "emailPlaceholder": "tu@email.com",
+    "button": "Suscribirse",
+    "sending": "...",
+    "success": "¡Gracias por suscribirte!",
+    "error": "Error al suscribirse. Por favor, intenta de nuevo."
+  }
+}

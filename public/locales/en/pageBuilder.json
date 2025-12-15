@@ -1,0 +1,23 @@
+{
+  "pricing": {
+    "featured": "Featured",
+    "selectPlan": "Select plan"
+  },
+  "form": {
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "you@email.com",
+    "phonePlaceholder": "+32 470 00 00 00",
+    "messagePlaceholder": "Your message",
+    "submit": "Send message",
+    "sending": "Sending...",
+    "success": "Form sent. We'll contact you soon!",
+    "error": "Error sending the form. Please try again."
+  },
+  "newsletter": {
+    "emailPlaceholder": "you@email.com",
+    "button": "Subscribe",
+    "sending": "...",
+    "success": "Thanks for subscribing!",
+    "error": "Error subscribing. Please try again."
+  }
+}
