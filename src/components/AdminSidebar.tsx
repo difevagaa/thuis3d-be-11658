@@ -155,17 +155,17 @@ function AdminMenuItem({
     <button
       onClick={handleClick}
       className={cn(
-        "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-all duration-200",
+        "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left transition-all duration-200 min-h-[36px]",
         isActive 
           ? "bg-primary text-primary-foreground font-medium" 
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
       <Icon className={cn(
-        "h-3.5 w-3.5 flex-shrink-0",
+        "h-4 w-4 flex-shrink-0",
         isActive ? "text-primary-foreground" : "text-primary"
       )} />
-      <span className="text-xs truncate">{item.label}</span>
+      <span className="text-sm leading-tight">{item.label}</span>
     </button>
   );
 }
@@ -184,35 +184,35 @@ function AdminMenuSection({
   const hasActiveItem = section.items.some(item => location.pathname === item.url);
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-all duration-200",
+          "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-200 min-h-[40px]",
           hasActiveItem 
             ? "bg-primary/10 text-primary" 
             : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
         )}
       >
         <div className={cn(
-          "flex items-center justify-center w-6 h-6 rounded-md",
+          "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
           hasActiveItem ? "bg-primary text-primary-foreground" : "bg-sidebar-accent text-primary"
         )}>
-          <SectionIcon className="h-3.5 w-3.5" />
+          <SectionIcon className="h-4 w-4" />
         </div>
-        <span className="flex-1 text-left text-xs font-semibold truncate">
+        <span className="flex-1 text-left text-sm font-semibold leading-tight">
           {section.title}
         </span>
         <div className={cn(
           "transition-transform duration-200 flex-shrink-0",
           isOpen ? "rotate-0" : "-rotate-90"
         )}>
-          <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground/50" />
+          <ChevronDown className="h-4 w-4 text-sidebar-foreground/50" />
         </div>
       </button>
       
       {isOpen && (
-        <div className="ml-3 pl-2 border-l border-sidebar-border/50 space-y-0.5">
+        <div className="ml-4 pl-3 border-l border-sidebar-border/50 space-y-0.5">
           {section.items.map((item) => (
             <AdminMenuItem 
               key={item.url} 

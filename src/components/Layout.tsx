@@ -104,7 +104,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header - Compact on mobile */}
+      {/* Header - Compact on mobile, no extra spacing */}
       <header 
         className="sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/80"
         style={{ 
@@ -113,15 +113,15 @@ export const Layout = ({ children }: LayoutProps) => {
         }}
       >
         <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-6">
-          {/* Force horizontal with flex-row and nowrap */}
-          <div className="flex flex-row flex-nowrap h-12 sm:h-14 md:h-16 items-center justify-between gap-1 sm:gap-2">
-            {/* Left side: Menu + Logo - Force row */}
-            <div className="flex flex-row flex-nowrap items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
-              {/* Mobile Menu Button */}
+          {/* Compact header row - reduced height on mobile */}
+          <div className="flex flex-row flex-nowrap h-11 sm:h-14 md:h-16 items-center justify-between gap-1 sm:gap-2">
+            {/* Left side: Menu + Logo - Compact */}
+            <div className="flex flex-row flex-nowrap items-center gap-1 flex-shrink-0 min-w-0">
+              {/* Mobile Menu Button - Smaller on mobile */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 rounded-lg">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 rounded-md">
+                    <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[280px] p-0">
@@ -235,12 +235,12 @@ export const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              {/* Logo */}
-              <Link to="/" className="flex items-center gap-1.5 notranslate flex-shrink-0 min-w-0">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary-foreground" />
+              {/* Logo - More compact on mobile */}
+              <Link to="/" className="flex items-center gap-1 notranslate flex-shrink-0 min-w-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 bg-gradient-to-br from-primary to-primary/80 rounded-md flex items-center justify-center flex-shrink-0">
+                  <Package className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary-foreground" />
                 </div>
-                <span className="text-sm sm:text-base md:text-lg font-bold text-primary truncate max-w-[100px] sm:max-w-none">
+                <span className="text-xs sm:text-base md:text-lg font-bold text-primary truncate max-w-[80px] sm:max-w-none">
                   Thuis3D.be
                 </span>
               </Link>
@@ -268,19 +268,19 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </nav>
 
-            {/* Right side: Actions - Force horizontal row */}
-            <div className="flex flex-row flex-nowrap items-center gap-0.5 sm:gap-1 flex-shrink-0">
+            {/* Right side: Actions - Compact buttons */}
+            <div className="flex flex-row flex-nowrap items-center gap-0 sm:gap-1 flex-shrink-0">
               <LanguageSelector />
               
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-lg" 
+                className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-md" 
                 onClick={() => navigate("/carrito")}
               >
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[9px] sm:text-[10px] rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 flex items-center justify-center font-semibold">
                     {cartCount > 9 ? '9+' : cartCount}
                   </span>
                 )}
@@ -291,7 +291,7 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md">
                       <User className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -335,7 +335,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg" onClick={() => navigate("/auth")}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md" onClick={() => navigate("/auth")}>
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
