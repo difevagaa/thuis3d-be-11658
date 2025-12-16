@@ -1154,43 +1154,43 @@ function ProductCardCompact({ product }: {
   return (
     <a 
       href={`/producto/${product.id}`}
-      className="block h-full bg-card border border-border/50 rounded-md overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 group"
+      className="block h-full bg-card border border-border/50 rounded-lg overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 group"
     >
-      {/* Image Container - Square aspect ratio, contain (not cropped) */}
-      <div className="aspect-square bg-muted/30 overflow-hidden relative flex items-center justify-center p-2">
+      {/* Image Container - Square aspect ratio, full coverage */}
+      <div className="aspect-square bg-muted/30 overflow-hidden relative">
         {firstImage ? (
           <img 
             src={firstImage} 
             alt={translatedName}
-            className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
         
-        {/* Free Shipping Badge - Amazon style */}
+        {/* Free Shipping Badge */}
         {product.shipping_type === 'free' && (
-          <div className="absolute top-1 left-1 bg-green-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+          <div className="absolute top-1.5 left-1.5 bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
             Envío gratis
           </div>
         )}
       </div>
       
-      {/* Info - Amazon style: compact with prominent price */}
-      <div className="p-2 space-y-0.5">
-        <h3 className="text-[11px] sm:text-xs font-medium line-clamp-2 leading-tight min-h-[2rem] text-foreground group-hover:text-primary transition-colors">
+      {/* Info - Compact with prominent price */}
+      <div className="p-2.5 sm:p-3">
+        <h3 className="text-xs sm:text-sm font-medium line-clamp-2 leading-snug min-h-[2.5rem] text-foreground group-hover:text-primary transition-colors">
           {translatedName}
         </h3>
         
-        {/* Price - Amazon style */}
-        <div className="flex items-baseline gap-0.5">
-          <span className="text-[9px] text-muted-foreground">€</span>
-          <span className="text-primary font-bold text-sm sm:text-base leading-none">{product.price}</span>
+        {/* Price */}
+        <div className="flex items-baseline gap-0.5 mt-1">
+          <span className="text-xs text-muted-foreground">€</span>
+          <span className="text-primary font-bold text-base sm:text-lg leading-none">{product.price}</span>
         </div>
       </div>
     </a>
@@ -1377,6 +1377,10 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     );
   }
   
+  // Mobile-optimized padding
+  const paddingY = styles?.paddingY ?? styles?.padding ?? 32;
+  const paddingX = styles?.paddingX ?? 12;
+  
   return (
     <section
       id={settings?.sectionId}
@@ -1392,7 +1396,10 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         backgroundPosition: styles?.backgroundPosition || 'center',
         backgroundAttachment: styles?.backgroundAttachment || 'scroll',
         color: styles?.textColor,
-        padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        paddingTop: `${paddingY}px`,
+        paddingBottom: `${paddingY}px`,
+        paddingLeft: `${paddingX}px`,
+        paddingRight: `${paddingX}px`,
         marginTop: `${styles?.marginTop || 0}px`,
         marginBottom: `${styles?.marginBottom || 0}px`,
         minHeight: settings?.minHeight || 'auto',
@@ -1442,17 +1449,17 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
           items={products}
           settings={{
             ...toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {})),
-            // Forzar carrusel horizontal en móvil con 2 items
             displayMode: 'carousel',
             itemsPerViewMobile: settings?.itemsPerViewMobile ?? 2,
-            showNavigation: true,
-            showPagination: settings?.showPagination ?? true,
+            spaceBetween: settings?.spaceBetween ?? 8,
+            showNavigation: settings?.showNavigation !== false,
+            showPagination: settings?.showPagination ?? false,
           }}
           renderItem={(product: any) => (
             <ProductCardCompact 
               product={product} 
               imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 180}
-              imageFit={settings?.imageFit ?? 'contain'}
+              imageFit={settings?.imageFit ?? 'cover'}
             />
           )}
         />

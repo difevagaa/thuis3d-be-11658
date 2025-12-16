@@ -14,11 +14,12 @@ interface CarouselSettingsProps {
 export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) {
   return (
     <Tabs defaultValue="display" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="display">Visualización</TabsTrigger>
-        <TabsTrigger value="timing">Tiempo</TabsTrigger>
-        <TabsTrigger value="layout">Diseño</TabsTrigger>
-        <TabsTrigger value="advanced">Avanzado</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-5 text-xs">
+        <TabsTrigger value="display" className="text-xs px-1">Vista</TabsTrigger>
+        <TabsTrigger value="spacing" className="text-xs px-1">Espacios</TabsTrigger>
+        <TabsTrigger value="timing" className="text-xs px-1">Tiempo</TabsTrigger>
+        <TabsTrigger value="layout" className="text-xs px-1">Diseño</TabsTrigger>
+        <TabsTrigger value="advanced" className="text-xs px-1">Más</TabsTrigger>
       </TabsList>
 
       {/* Display Settings */}
@@ -110,7 +111,123 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
         </Card>
       </TabsContent>
 
-      {/* Timing Settings */}
+      {/* Spacing Settings - NEW */}
+      <TabsContent value="spacing" className="space-y-4">
+        <Card className="p-4 space-y-4">
+          <h4 className="font-medium text-sm border-b pb-2">Espaciado de Sección</h4>
+          
+          <div className="space-y-2">
+            <Label>Padding vertical (px)</Label>
+            <Slider
+              value={[settings?.paddingY || 32]}
+              onValueChange={(value) => onUpdate('paddingY', value[0])}
+              min={0}
+              max={120}
+              step={4}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.paddingY || 32}px
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Padding horizontal (px)</Label>
+            <Slider
+              value={[settings?.paddingX || 12]}
+              onValueChange={(value) => onUpdate('paddingX', value[0])}
+              min={0}
+              max={60}
+              step={4}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.paddingX || 12}px
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Margen superior (px)</Label>
+            <Slider
+              value={[settings?.marginTop || 0]}
+              onValueChange={(value) => onUpdate('marginTop', value[0])}
+              min={0}
+              max={100}
+              step={4}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.marginTop || 0}px
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Margen inferior (px)</Label>
+            <Slider
+              value={[settings?.marginBottom || 0]}
+              onValueChange={(value) => onUpdate('marginBottom', value[0])}
+              min={0}
+              max={100}
+              step={4}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.marginBottom || 0}px
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 space-y-4">
+          <h4 className="font-medium text-sm border-b pb-2">Tarjetas de Producto</h4>
+          
+          <div className="space-y-2">
+            <Label>Tamaño del título (px)</Label>
+            <Slider
+              value={[settings?.titleSize || 16]}
+              onValueChange={(value) => onUpdate('titleSize', value[0])}
+              min={10}
+              max={32}
+              step={1}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.titleSize || 16}px
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tamaño del precio (px)</Label>
+            <Slider
+              value={[settings?.priceSize || 18]}
+              onValueChange={(value) => onUpdate('priceSize', value[0])}
+              min={12}
+              max={36}
+              step={1}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {settings?.priceSize || 18}px
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Ajuste de imagen</Label>
+            <Select
+              value={settings?.imageFit || 'cover'}
+              onValueChange={(value) => onUpdate('imageFit', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cover">Cubrir (recortada)</SelectItem>
+                <SelectItem value="contain">Contener (completa)</SelectItem>
+                <SelectItem value="fill">Llenar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+      </TabsContent>
       <TabsContent value="timing" className="space-y-4">
         <Card className="p-4 space-y-4">
           <div className="flex items-center justify-between">
