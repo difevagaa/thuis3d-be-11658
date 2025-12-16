@@ -251,17 +251,9 @@ export const useGlobalColors = () => {
 
     loadAndApplyColors();
 
-    // Subscribe to changes in real-time
-    const channel = supabase
-      .channel('site-customization-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'site_customization'
-      }, () => {
-        loadAndApplyColors();
-      })
-      .subscribe();
+    // REMOVED: Realtime subscription was causing performance issues
+    // The colors are loaded once and cached - admin changes require page refresh
+    // This trade-off significantly improves initial page load time
 
     // Observar cambios de tema dark/light para reaplicar paleta y colores avanzados
     const observer = new MutationObserver((mutations) => {
@@ -294,7 +286,6 @@ export const useGlobalColors = () => {
 
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
       observer.disconnect();
     };
   }, []);
