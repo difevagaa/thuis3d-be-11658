@@ -51,22 +51,22 @@ const TranslatedFeaturedProductCard = ({
       <div ref={cardRef} className="will-change-transform h-full">
         <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer h-full border-border/50">
           {product.images && product.images.length > 0 ? (
-            <div className="relative aspect-square bg-muted flex items-center justify-center">
+            <div className="relative aspect-[4/5] sm:aspect-square bg-muted flex items-center justify-center">
               <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
             </div>
           ) : (
-            <div className="aspect-square bg-muted flex items-center justify-center">
-              <Printer className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground/30" />
+            <div className="aspect-[4/5] sm:aspect-square bg-muted flex items-center justify-center">
+              <Printer className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/30" />
             </div>
           )}
-          <CardHeader className="p-2 sm:p-3">
-            <CardTitle className="text-xs sm:text-sm md:text-base group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+          <CardHeader className="p-2 xs:p-2.5 sm:p-3">
+            <CardTitle className="text-sm xs:text-base sm:text-sm md:text-base group-hover:text-primary transition-colors line-clamp-2 leading-tight">
               {translatedName}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 p-2 sm:p-3">
+          <CardContent className="pt-0 p-2 xs:p-2.5 sm:p-3">
             {product.price && (
-              <p className="text-base sm:text-lg md:text-xl font-bold text-primary">
+              <p className="text-lg xs:text-xl sm:text-lg md:text-xl font-bold text-primary">
                 €{Number(product.price).toFixed(2)}
               </p>
             )}
@@ -222,13 +222,13 @@ export default function FeaturedProductsCarousel({
       
       {useCarouselMode ? (
         /* Carousel Mode - Strictly Horizontal */
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden px-2 sm:px-4">
           <div 
             className="flex transition-transform ease-out carousel-track"
             style={{
               transform: `translateX(-${currentIndex * (100 / currentItemsPerView)}%)`,
               transitionDuration: `${transitionDuration}ms`,
-              gap: `${gap}px`
+              gap: `${Math.max(6, gap)}px`
             }}
           >
             {products.map((product) => (
@@ -236,7 +236,7 @@ export default function FeaturedProductsCarousel({
                 key={product.id}
                 className="flex-shrink-0"
                 style={{
-                  width: `calc((100% - ${gap * (currentItemsPerView - 1)}px) / ${currentItemsPerView})`
+                  width: `calc((100% - ${Math.max(6, gap) * (currentItemsPerView - 1)}px) / ${currentItemsPerView})`
                 }}
               >
                 <TranslatedFeaturedProductCard product={product} />
@@ -244,26 +244,26 @@ export default function FeaturedProductsCarousel({
             ))}
           </div>
           
-          {/* Navigation arrows - Always visible on hover */}
+          {/* Navigation arrows - Always visible, positioned outside cards */}
           {showNavigation && products.length > currentItemsPerView && (
             <>
               <Button
                 variant="outline"
                 size="icon"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 hover:bg-background"
+                className="absolute -left-1 sm:-left-3 top-1/3 -translate-y-1/2 z-20 bg-background shadow-lg hover:bg-background border-border h-8 w-8 sm:h-10 sm:w-10"
                 onClick={goToPrev}
                 disabled={!loop && currentIndex === 0}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 hover:bg-background"
+                className="absolute -right-1 sm:-right-3 top-1/3 -translate-y-1/2 z-20 bg-background shadow-lg hover:bg-background border-border h-8 w-8 sm:h-10 sm:w-10"
                 onClick={goToNext}
                 disabled={!loop && currentIndex >= maxIndex}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </>
           )}
