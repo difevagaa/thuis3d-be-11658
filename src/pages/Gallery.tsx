@@ -97,14 +97,14 @@ export default function Gallery() {
                     <img
                       src={item.media_url}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       loading="lazy"
                     />
                   ) : (
                     <div className="relative w-full h-full">
                       <video
                         src={item.media_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         controls
                         preload="metadata"
                         onPlay={() => handleVideoPlay(item.id)}

@@ -463,12 +463,7 @@ const ProductDetail = () => {
         <div className="space-y-3">
           {/* Main Image - Clean, simple display */}
           <div 
-            className="bg-muted rounded-xl overflow-hidden mx-auto"
-            style={{ 
-              width: '100%', 
-              maxWidth: '400px',
-              aspectRatio: '1/1'
-            }}
+            className="bg-muted rounded-xl overflow-hidden mx-auto w-full max-w-[320px] sm:max-w-[400px] aspect-square"
           >
             {productImages.length > 0 ? (
               <img 
