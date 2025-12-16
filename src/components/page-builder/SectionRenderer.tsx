@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AdvancedCarousel } from "./AdvancedCarousel";
 import { useTranslation } from "react-i18next";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
+import { normalizeCarouselSettings, toAdvancedCarouselSettings } from "@/lib/carouselSettingsNormalizer";
 // Utility function to generate comprehensive inline styles from section styles
 const generateSectionStyles = (styles: Record<string, any> | undefined): CSSProperties => {
   if (!styles) return {};
@@ -1347,23 +1348,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         
         <AdvancedCarousel
           items={products}
-          settings={{
-            ...settings,
-            // Use direct settings names from CarouselSettings (itemsPerView, etc.)
-            // Fall back to legacy names (carouselProductsPerView, etc.) for backwards compatibility
-            itemsPerView: settings?.itemsPerView ?? settings?.carouselProductsPerView ?? 4,
-            itemsPerViewTablet: settings?.itemsPerViewTablet ?? settings?.carouselProductsPerViewTablet ?? 3,
-            itemsPerViewMobile: settings?.itemsPerViewMobile ?? settings?.carouselProductsPerViewMobile ?? 1,
-            spaceBetween: settings?.spaceBetween ?? settings?.carouselGap ?? 16,
-            showPagination: settings?.showPagination ?? settings?.carouselShowDots ?? false,
-            showNavigation: settings?.showNavigation ?? settings?.carouselShowArrows ?? true,
-            autoplay: settings?.autoplay ?? settings?.carouselAutoplay ?? false,
-            autoplayDelay: settings?.autoplayDelay ?? settings?.carouselAutoplaySpeed ?? 3,
-            transitionDuration: settings?.transitionSpeed ?? settings?.carouselTransitionSpeed ?? 600,
-            effect: settings?.transitionEffect ?? settings?.carouselTransition ?? 'slide',
-            loop: settings?.loop ?? settings?.carouselLoop ?? true,
-            centeredSlides: settings?.centeredSlides ?? settings?.carouselCentered ?? false
-          }}
+          settings={toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {}))}
           renderItem={(product: any) => (
             <ProductCard 
               product={product} 
@@ -1531,20 +1516,15 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
         
         <AdvancedCarousel
           items={images}
-          settings={{
+          settings={toAdvancedCarouselSettings(normalizeCarouselSettings({
             ...settings,
             itemsPerView: imageCarouselPerView,
-            itemsPerViewTablet: settings?.itemsPerViewTablet || 2,
-            itemsPerViewMobile: settings?.itemsPerViewMobile || 1,
-            spaceBetween: settings?.gap || 20,
-            showPagination: settings?.showPagination ?? settings?.showDots ?? true,
-            showNavigation: settings?.showNavigation ?? true,
             autoplay: imageCarouselAutoplay,
-            autoplayDelay: imageCarouselAutoplaySpeed || 4, // AdvancedCarousel expects seconds, not ms
+            autoplayDelay: imageCarouselAutoplaySpeed,
             effect: imageCarouselTransition,
-            loop: settings?.loop !== false,
-            pauseOnHover: settings?.pauseOnHover ?? true
-          }}
+            imageHeight: imageCarouselHeight,
+            imageFit: imageCarouselFit
+          }))}
           renderItem={(image: any, index: number) => (
             <div 
               className={cn(
