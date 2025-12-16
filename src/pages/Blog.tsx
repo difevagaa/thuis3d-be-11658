@@ -159,7 +159,7 @@ export default function Blog() {
         </div>
         
         {/* Posts Grid */}
-        <div className="grid gap-4 md:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-3 mb-8 md:mb-12">
+        <div className="grid gap-2 sm:gap-4 md:gap-6 lg:gap-8 grid-cols-2 lg:grid-cols-3 mb-8 md:mb-12">
           {posts.map((post) => {
             const readingTime = calculateReadingTime(post.content || '');
             const plainExcerpt = stripHtml(post.excerpt || '');
@@ -169,7 +169,7 @@ export default function Blog() {
               <Link to={`/blog/${post.slug}`} key={post.id} className="group">
                 <Card className="h-full overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border hover:border-primary/50 bg-card/50 backdrop-blur-sm">
                   {post.featured_image ? (
-                    <div className="relative overflow-hidden h-40 md:h-48 lg:h-56">
+                    <div className="relative overflow-hidden h-28 sm:h-40 md:h-48 lg:h-56">
                       <img
                         src={post.featured_image}
                         alt={post.title}
@@ -183,11 +183,11 @@ export default function Blog() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-40 md:h-48 lg:h-56 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-primary/40" />
+                    <div className="h-28 sm:h-40 md:h-48 lg:h-56 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <BookOpen className="w-8 h-8 sm:w-12 sm:h-12 text-primary/40" />
                     </div>
                   )}
-                  <CardHeader className="space-y-2 md:space-y-3 p-4 md:p-5">
+                  <CardHeader className="space-y-1.5 sm:space-y-2 md:space-y-3 p-2 sm:p-4 md:p-5">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       {post.category && (
                         <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-0 text-xs">
@@ -203,16 +203,16 @@ export default function Blog() {
                         })}
                       </div>
                     </div>
-                    <CardTitle className="text-base md:text-lg lg:text-xl group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                    <CardTitle className="text-xs sm:text-base md:text-lg lg:text-xl group-hover:text-primary transition-colors line-clamp-2 leading-snug">
                       {post.title}
                     </CardTitle>
                     {plainExcerpt && (
-                      <CardDescription className="text-xs md:text-sm line-clamp-2 md:line-clamp-3 text-muted-foreground/80">
+                      <CardDescription className="hidden sm:block text-xs md:text-sm line-clamp-2 md:line-clamp-3 text-muted-foreground/80">
                         {plainExcerpt}
                       </CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent className="flex items-center justify-between pt-0 p-4 md:p-5 md:pt-0">
+                  <CardContent className="hidden sm:flex items-center justify-between pt-0 p-4 md:p-5 md:pt-0">
                     <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 md:gap-1.5 truncate">
                       <User className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
                       <span className="truncate">{post.profiles?.full_name || t('author')}</span>

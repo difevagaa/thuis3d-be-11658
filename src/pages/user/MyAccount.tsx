@@ -596,7 +596,7 @@ export default function MyAccount() {
             </CardHeader>
             <CardContent>
               {giftCards.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <div className="grid gap-3 grid-cols-1 sm:gap-6 sm:grid-cols-1 lg:grid-cols-2">
                   {giftCards.map((card) => {
                     const { userMessage, themeId, iconId } = parseGiftCardMessage(card.message);
                     return (
@@ -781,7 +781,7 @@ export default function MyAccount() {
         <TabsContent value="points">
           <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
