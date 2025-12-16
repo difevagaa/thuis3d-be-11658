@@ -104,18 +104,18 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header - Full width background, centered content */}
+      {/* Header - Full width background, pinned to top with no gap */}
       <header 
-        className="sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/80"
+        className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
         style={{ 
-          backgroundColor: 'var(--home-menu-bg, var(--header-bg, var(--navbar-bg, hsl(var(--background)))))',
+          backgroundColor: 'var(--home-menu-bg, var(--header-bg, hsl(var(--background))))',
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        {/* Centered container for header content - max-width 1280px */}
+        {/* Centered container for header content */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Compact header row - reduced height on mobile */}
-          <div className="flex flex-row flex-nowrap h-12 sm:h-14 md:h-16 items-center justify-between gap-2 sm:gap-3">
+          {/* Compact header row - consistent height */}
+          <div className="flex flex-row flex-nowrap h-14 items-center justify-between gap-2 sm:gap-3">
             {/* Left side: Menu + Logo - Compact */}
             <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0 min-w-0">
               {/* Mobile Menu Button - Smaller on mobile */}
@@ -236,12 +236,12 @@ export const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              {/* Logo - More compact on mobile */}
-              <Link to="/" className="flex items-center gap-1 notranslate flex-shrink-0 min-w-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 bg-gradient-to-br from-primary to-primary/80 rounded-md flex items-center justify-center flex-shrink-0">
-                  <Package className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary-foreground" />
+              {/* Logo - Consistent sizing */}
+              <Link to="/" className="flex items-center gap-1.5 notranslate flex-shrink-0 min-w-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Package className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="text-xs sm:text-base md:text-lg font-bold text-primary truncate max-w-[80px] sm:max-w-none">
+                <span className="text-sm sm:text-base font-bold text-primary truncate max-w-[100px] sm:max-w-none">
                   Thuis3D.be
                 </span>
               </Link>
@@ -269,19 +269,19 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </nav>
 
-            {/* Right side: Actions - Compact buttons */}
-            <div className="flex flex-row flex-nowrap items-center gap-0 sm:gap-1 flex-shrink-0">
+            {/* Right side: Actions - Standardized 24px icons with consistent button sizes */}
+            <div className="flex flex-row flex-nowrap items-center gap-1 flex-shrink-0">
               <LanguageSelector />
               
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-md" 
+                className="relative h-9 w-9 rounded-lg hover:bg-accent" 
                 onClick={() => navigate("/carrito")}
               >
-                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[9px] sm:text-[10px] rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 flex items-center justify-center font-semibold">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
                     {cartCount > 9 ? '9+' : cartCount}
                   </span>
                 )}
@@ -292,8 +292,8 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md">
-                      <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-accent">
+                      <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52 rounded-xl p-1.5">
@@ -336,8 +336,8 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md" onClick={() => navigate("/auth")}>
-                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-accent" onClick={() => navigate("/auth")}>
+                  <User className="h-5 w-5" />
                 </Button>
               )}
             </div>

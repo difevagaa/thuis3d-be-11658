@@ -2078,3 +2078,221 @@ img {
 .animate-rotate {
   animation: rotate 0.6s ease-out;
 }
+
+/* ==========================================================
+   UI/UX POLISH - Professional E-commerce Standards
+   ========================================================== */
+
+/* Global Typography - Professional, Balanced Hierarchy */
+h1 {
+  @apply text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight;
+}
+
+h2 {
+  @apply text-lg sm:text-xl md:text-2xl font-semibold tracking-tight;
+}
+
+h3 {
+  @apply text-base sm:text-lg md:text-xl font-medium;
+}
+
+h4, h5, h6 {
+  @apply text-sm sm:text-base font-medium;
+}
+
+/* Video Gallery Fix - Remove letterboxing */
+.video-container, 
+video,
+[class*="video"] {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: transparent;
+  width: 100%;
+  max-width: 100%;
+}
+
+.video-container video,
+.video-wrapper video {
+  background: transparent !important;
+  object-fit: cover !important;
+}
+
+/* Button Safety - Text must never overflow */
+.btn-safe,
+button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-wrap {
+  white-space: normal !important;
+  word-wrap: break-word;
+  text-align: center;
+}
+
+/* Carousel - Strictly Horizontal */
+.carousel-horizontal {
+  display: flex;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.carousel-horizontal::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-horizontal > * {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* Text Truncation with Read More */
+.text-truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Search Bar - Contained Results */
+.search-results-container {
+  position: relative;
+  z-index: 50;
+}
+
+.search-results-container > * {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Dashboard Spacing - Better Section Gaps */
+.dashboard-section {
+  @apply space-y-4 md:space-y-6;
+}
+
+.dashboard-grid {
+  @apply grid gap-4 md:gap-6;
+}
+
+/* Invoice Table - Badge Visibility */
+.status-badge {
+  @apply inline-flex items-center justify-center px-2.5 py-1;
+  @apply text-xs font-medium whitespace-nowrap;
+  @apply rounded-full min-w-[80px] text-center;
+}
+
+/* Payment Method Icons - Controlled Size */
+.payment-icon {
+  @apply w-10 h-10 md:w-12 md:h-12;
+  @apply object-contain;
+}
+
+.payment-icon-sm {
+  @apply w-8 h-8;
+  @apply object-contain;
+}
+
+/* Z-index Layers - Proper Stacking */
+.z-banner { z-index: 10; }
+.z-content { z-index: 20; }
+.z-overlay { z-index: 30; }
+.z-header { z-index: 40; }
+.z-dropdown { z-index: 50; }
+.z-modal { z-index: 60; }
+.z-toast { z-index: 70; }
+
+/* Clean & Minimalist Containers */
+.container-clean {
+  @apply p-4 md:p-6 lg:p-8;
+}
+
+.container-compact {
+  @apply p-3 md:p-4;
+}
+
+/* Shipping Summary - No Pink Bar */
+.shipping-summary {
+  @apply bg-card border border-border rounded-lg p-4;
+}
+
+.shipping-summary > * {
+  @apply bg-transparent;
+}
+
+/* My Account - Better Tab Spacing */
+.account-tabs [role="tablist"] {
+  @apply flex gap-2 overflow-x-auto pb-2;
+  scrollbar-width: none;
+}
+
+.account-tabs [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
+.account-tabs [role="tab"] {
+  @apply px-4 py-2.5 text-sm font-medium whitespace-nowrap;
+  @apply rounded-lg transition-colors;
+}
+
+/* View All Button - Ensure Visibility */
+.view-all-btn {
+  position: relative;
+  z-index: 25;
+}
+
+/* Horizontal Carousel Scrollbar Hidden */
+.carousel-track {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Product Grid - Standardized */
+.product-grid {
+  @apply grid gap-4 md:gap-6;
+  @apply grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+}
+
+/* Header Icons - Standardized 24px */
+.header-icon {
+  @apply h-5 w-5;
+}
+
+/* Dropdown Background Fix */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+[role="menu"],
+[role="listbox"],
+.dropdown-content {
+  @apply bg-popover border border-border shadow-lg;
+  z-index: 50;
+}
+
+/* Form Inputs - Consistent */
+.input-standard {
+  @apply h-10 px-3 text-sm border border-input rounded-md;
+  @apply focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+/* Card Hover States */
+.card-interactive {
+  @apply transition-all duration-200;
+  @apply hover:shadow-md hover:border-primary/20;
+}

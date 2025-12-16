@@ -381,45 +381,45 @@ export default function MyAccount() {
     );
   };
 
-  if (loading) return <div>{t('account:loading')}</div>;
+  if (loading) return <div className="flex items-center justify-center min-h-[50vh]">{t('account:loading')}</div>;
 
   return (
-    <div className="container mx-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-12 min-h-screen">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{t('account:title')}</h1>
+    <div className="w-full max-w-7xl mx-auto px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-12">
+      <h1 className="text-2xl font-semibold mb-6">{t('account:title')}</h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-xl overflow-x-auto flex flex-nowrap gap-1.5">
-          <TabsTrigger value="profile" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full account-tabs">
+        <TabsList className="w-full h-auto p-1.5 bg-muted/50 rounded-xl overflow-x-auto flex flex-nowrap gap-1 mb-6">
+          <TabsTrigger value="profile" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <User className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.profile')}</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="orders" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <Package className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.orders')}</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="invoices" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <FileText className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.invoices')}</span>
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="quotes" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <MessageSquare className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.quotes')}</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="messages" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <MessageSquare className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.messages')}</span>
           </TabsTrigger>
-          <TabsTrigger value="points" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="points" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <Award className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.points')}</span>
           </TabsTrigger>
-          <TabsTrigger value="giftcards" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
+          <TabsTrigger value="giftcards" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <Gift className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.giftcards')}</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="mt-0">
           <Card>
             <CardHeader>
               <CardTitle>{t('account:profile.title')}</CardTitle>
