@@ -101,7 +101,10 @@ export function normalizeCarouselSettings(settings: Record<string, any> = {}): N
     carouselPosition: get(['carouselPosition', 'position'], 'center'),
     displayMode: get(['displayMode', 'carouselDisplayMode'], 'carousel'),
     carouselHeight: get(['carouselHeight', 'height'], 'auto'),
-    carouselWidth: (get(['carouselWidth', 'width'], 'full') === 'contained' ? 'container' : get(['carouselWidth', 'width'], 'full')) as any,
+    carouselWidth: (() => {
+      const width = get<string>(['carouselWidth', 'width'], 'full');
+      return width === 'contained' ? 'container' : width;
+    })() as 'full' | 'container' | 'narrow' | 'wide',
     centeredSlides: get(['centeredSlides', 'carouselCentered'], false),
     freeMode: get(['freeMode', 'carouselFreeMode'], false),
     
