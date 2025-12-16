@@ -181,34 +181,65 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* CRITICAL: Prevent any element from causing horizontal overflow */
+    max-width: 100%;
+    box-sizing: border-box;
   }
+  
+  /* CRITICAL: Global overflow prevention */
+  html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Font rendering óptimo */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* CRITICAL: Prevent horizontal overflow */
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    position: relative;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    /* Asegurar texto nítido en encabezados */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* CRITICAL: All containers must respect viewport */
+  #root, main, .main-content, [class*="Layout"], [class*="container"] {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
   }
   
   /* Ensure all images are responsive by default */
   img, video, iframe, embed, object {
-    max-width: 100%;
+    max-width: 100% !important;
     height: auto;
   }
   
-  /* Prevent horizontal overflow */
-  html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
+  /* Prevent text from causing overflow */
+  p, span, a, li, td, th, label, h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Cards and containers must stay within bounds */
+  .card, [class*="Card"], [class*="card"] {
+    max-width: 100% !important;
+    overflow: hidden;
   }
   
   /* ==========================================================
