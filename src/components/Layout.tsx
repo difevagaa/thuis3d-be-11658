@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
-import { ClientChatWidget } from "./ClientChatWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { FooterConfigurable } from "./FooterConfigurable";
 import { LanguageSelector } from "./LanguageSelector";
@@ -404,9 +403,6 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* Footer - Hidden on mobile for cleaner look */}
       {!isMobile && !isTablet && <FooterConfigurable />}
-      
-      {/* Client Chat Widget - for authenticated users */}
-      {user && <ClientChatWidget />}
     </div>
   );
 };
