@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { Layout } from "./components/Layout";
@@ -126,13 +127,14 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ErrorBoundary>
-              <SEOHead />
-              <ScrollToTop />
+        <ResponsiveProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ErrorBoundary>
+                <SEOHead />
+                <ScrollToTop />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
             {/* Public routes with Layout */}
@@ -214,14 +216,15 @@ const App = () => {
             {/* 404 route */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
-          </Suspense>
-          <ClientChatWidget />
-          <CookieConsent />
-            </ErrorBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+            </Suspense>
+            <ClientChatWidget />
+            <CookieConsent />
+              </ErrorBoundary>
+          </BrowserRouter>
+        </TooltipProvider>
+        </ResponsiveProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 
