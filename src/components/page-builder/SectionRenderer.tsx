@@ -1537,11 +1537,13 @@ function ImageCarouselSection({ section }: { section: SectionData }) {
             itemsPerViewTablet: settings?.itemsPerViewTablet || 2,
             itemsPerViewMobile: settings?.itemsPerViewMobile || 1,
             spaceBetween: settings?.gap || 20,
-            showPagination: settings?.showDots !== false,
+            showPagination: settings?.showPagination ?? settings?.showDots ?? true,
+            showNavigation: settings?.showNavigation ?? true,
             autoplay: imageCarouselAutoplay,
-            autoplayDelay: (imageCarouselAutoplaySpeed || 4) * 1000,
+            autoplayDelay: imageCarouselAutoplaySpeed || 4, // AdvancedCarousel expects seconds, not ms
             effect: imageCarouselTransition,
-            loop: settings?.loop !== false
+            loop: settings?.loop !== false,
+            pauseOnHover: settings?.pauseOnHover ?? true
           }}
           renderItem={(image: any, index: number) => (
             <div 
