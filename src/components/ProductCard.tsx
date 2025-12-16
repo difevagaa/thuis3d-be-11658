@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, Euro } from "lucide-react";
+import { Printer } from "lucide-react";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -12,6 +12,7 @@ interface ProductCardProps {
   firstImage?: string;
 }
 
+// Amazon-style product card: square image (contain, not cropped), prominent price, 2-line title
 export function ProductCard({ product, firstImage }: ProductCardProps) {
   const { t } = useTranslation('products');
   const { content } = useTranslatedContent(
@@ -22,49 +23,52 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
   );
 
   return (
-    <Link to={`/producto/${product.id}`}>
-      <Card className="hover:shadow-md transition-all cursor-pointer group overflow-hidden border-0 shadow-sm bg-card">
+    <Link to={`/producto/${product.id}`} className="block group">
+      <Card className="h-full overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200 bg-card">
         <CardContent className="p-0">
-          {/* Image Container - Square aspect ratio */}
-          <div className="aspect-square bg-muted overflow-hidden relative">
+          {/* Image Container - Square aspect ratio with contain (not cropped) */}
+          <div className="aspect-square bg-muted/30 overflow-hidden relative flex items-center justify-center p-2">
             {firstImage ? (
               <img 
                 src={firstImage} 
                 alt={content.name} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <Printer className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground/50" />
+              <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                <Printer className="h-10 w-10 md:h-16 md:w-16 text-muted-foreground/40" />
               </div>
             )}
             
-            {/* Free Shipping Badge - Top left corner */}
+            {/* Free Shipping Badge - Amazon style */}
             {product.shipping_type === 'free' && (
-              <div className="absolute top-1.5 left-1.5 bg-green-500 text-white text-[9px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded">
+              <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-green-600 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
                 {t('freeShipping')}
               </div>
             )}
           </div>
           
-          {/* Product Info */}
+          {/* Product Info - Amazon style */}
           <div className="p-2 md:p-3 space-y-1">
             {/* Product Name - 2 lines max */}
-            <h3 className="font-medium text-xs md:text-sm leading-tight line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] group-hover:text-primary transition-colors">
+            <h3 className="font-medium text-[11px] md:text-sm leading-tight line-clamp-2 min-h-[2.2rem] md:min-h-[2.5rem] text-foreground group-hover:text-primary transition-colors">
               {content.name}
             </h3>
             
-            {/* Product Code */}
+            {/* Product Code - Small, mono */}
             {product.product_code && (
-              <p className="text-[9px] md:text-[10px] text-muted-foreground font-mono">
+              <p className="text-[8px] md:text-[10px] text-muted-foreground font-mono tracking-wide">
                 #{product.product_code}
               </p>
             )}
             
-            {/* Price */}
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-primary font-bold text-sm md:text-base">€{product.price}</span>
+            {/* Price - Amazon style: prominent, orange/red */}
+            <div className="flex items-baseline gap-1 pt-0.5">
+              <span className="text-[10px] md:text-xs text-muted-foreground">€</span>
+              <span className="text-primary font-bold text-base md:text-lg leading-none">
+                {product.price}
+              </span>
             </div>
           </div>
         </CardContent>

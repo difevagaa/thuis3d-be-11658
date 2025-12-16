@@ -1136,47 +1136,62 @@ function VideoSection({ section }: { section: SectionData }) {
   );
 }
 
-// Compact Product Card for Mobile Carousel - Images shown complete (contain) not cropped
-function ProductCardCompact({ product, imageHeight = 180, imageFit = 'contain' }: { 
+// Amazon-style Compact Product Card for Carousel - Square images, prominent price
+function ProductCardCompact({ product }: { 
   product: any; 
   imageHeight?: number;
   imageFit?: 'cover' | 'contain' | 'fill' | 'scale-down';
 }) {
   const firstImage = product.images?.[0]?.image_url;
+  const { content } = useTranslatedContent(
+    'products',
+    product.id,
+    ['name', 'description'],
+    product
+  );
+  const translatedName = content.name || product.name;
   
   return (
     <a 
       href={`/producto/${product.id}`}
-      className="block bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="block h-full bg-card border border-border/50 rounded-md overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 group"
     >
-      {/* Image - using contain to show full image without cropping */}
-      <div 
-        className="w-full bg-muted flex items-end justify-center"
-        style={{ height: `${imageHeight}px` }}
-      >
+      {/* Image Container - Square aspect ratio, contain (not cropped) */}
+      <div className="aspect-square bg-muted/30 overflow-hidden relative flex items-center justify-center p-2">
         {firstImage ? (
           <img 
             src={firstImage} 
-            alt={product.name}
-            className="max-w-full max-h-full"
-            style={{ 
-              objectFit: imageFit,
-              objectPosition: 'bottom center'
-            }}
+            alt={translatedName}
+            className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-            Sin imagen
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
+        
+        {/* Free Shipping Badge - Amazon style */}
+        {product.shipping_type === 'free' && (
+          <div className="absolute top-1 left-1 bg-green-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+            Envío gratis
           </div>
         )}
       </div>
-      {/* Info - compact */}
-      <div className="p-2">
-        <h3 className="text-xs font-medium line-clamp-2 leading-tight min-h-[2rem]">
-          {product.name}
+      
+      {/* Info - Amazon style: compact with prominent price */}
+      <div className="p-2 space-y-0.5">
+        <h3 className="text-[11px] sm:text-xs font-medium line-clamp-2 leading-tight min-h-[2rem] text-foreground group-hover:text-primary transition-colors">
+          {translatedName}
         </h3>
-        <p className="text-sm font-bold text-primary mt-1">€{product.price}</p>
+        
+        {/* Price - Amazon style */}
+        <div className="flex items-baseline gap-0.5">
+          <span className="text-[9px] text-muted-foreground">€</span>
+          <span className="text-primary font-bold text-sm sm:text-base leading-none">{product.price}</span>
+        </div>
       </div>
     </a>
   );
