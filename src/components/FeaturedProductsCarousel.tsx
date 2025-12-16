@@ -221,10 +221,10 @@ export default function FeaturedProductsCarousel({
       )}
       
       {useCarouselMode ? (
-        /* Carousel Mode */
+        /* Carousel Mode - Strictly Horizontal */
         <div className="relative overflow-hidden">
           <div 
-            className="flex transition-transform"
+            className="flex transition-transform ease-out carousel-track"
             style={{
               transform: `translateX(-${currentIndex * (100 / currentItemsPerView)}%)`,
               transitionDuration: `${transitionDuration}ms`,
@@ -244,7 +244,7 @@ export default function FeaturedProductsCarousel({
             ))}
           </div>
           
-          {/* Navigation arrows */}
+          {/* Navigation arrows - Always visible on hover */}
           {showNavigation && products.length > currentItemsPerView && (
             <>
               <Button

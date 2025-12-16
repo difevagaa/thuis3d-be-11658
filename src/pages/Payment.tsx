@@ -1060,13 +1060,13 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("bank_transfer")}
                   disabled={processing}
-                  className="w-full h-auto min-h-[4rem] md:h-20 text-sm md:text-lg py-3"
+                  className="w-full h-auto min-h-[3.5rem] py-3 px-4"
                   variant="outline"
                 >
-                  <Banknote className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
-                  <div className="text-left min-w-0">
-                    <div className="font-semibold text-sm md:text-base">{t('payment:methods.bankTransfer')}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t('payment:methodDescriptions.bankTransfer')}</div>
+                  <Banknote className="h-5 w-5 mr-3 flex-shrink-0" />
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="font-semibold text-sm">{t('payment:methods.bankTransfer')}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{t('payment:methodDescriptions.bankTransfer')}</div>
                   </div>
                 </Button>
               )}
@@ -1075,13 +1075,13 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("card")}
                   disabled={processing}
-                  className="w-full h-auto min-h-[4rem] md:h-20 text-sm md:text-lg py-3"
+                  className="w-full h-auto min-h-[3.5rem] py-3 px-4"
                   variant="outline"
                 >
-                  <CreditCard className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 flex-shrink-0" />
-                  <div className="text-left min-w-0">
-                    <div className="font-semibold text-sm md:text-base">{t('payment:methods.creditCard')}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t('payment:methodDescriptions.creditCard')}</div>
+                  <CreditCard className="h-5 w-5 mr-3 flex-shrink-0" />
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="font-semibold text-sm">{t('payment:methods.creditCard')}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{t('payment:methodDescriptions.creditCard')}</div>
                   </div>
                 </Button>
               )}
@@ -1090,16 +1090,16 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("paypal")}
                   disabled={processing}
-                  className="w-full h-20 text-lg"
+                  className="w-full h-auto min-h-[3.5rem] py-3 px-4"
                   variant="outline"
                 >
-                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="h-5 w-5 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 00-.794.68l-.04.22-.63 3.993-.028.15a.806.806 0 01-.795.68H8.934c-.414 0-.629-.29-.535-.67l.105-.67.629-3.99.04-.22a.806.806 0 01.794-.68h.5c3.238 0 5.774-1.314 6.514-5.12.256-1.313.192-2.447-.3-3.327z"/>
                     <path d="M19.107 5.663c-.382-.636-1.016-1.04-1.922-1.04H9.772C9.274 4.623 8.9 5.05 8.817 5.584L6.456 20.883c-.1.536.22.977.756.977h4.124l1.035-6.572-.032.202c.083-.534.457-.96.955-.96h1.99c3.904 0 6.96-1.586 7.85-6.172.025-.127.048-.251.068-.374.258-1.656-.006-2.78-.745-3.76-.236-.313-.516-.58-.85-.797z"/>
                   </svg>
-                  <div className="text-left">
-                    <div className="font-semibold">{t('payment:methods.paypal')}</div>
-                    <div className="text-xs text-muted-foreground">{t('payment:methodDescriptions.paypal')}</div>
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="font-semibold text-sm">{t('payment:methods.paypal')}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{t('payment:methodDescriptions.paypal')}</div>
                   </div>
                 </Button>
               )}
@@ -1108,15 +1108,15 @@ export default function Payment() {
                 <Button
                   onClick={() => handlePayment("revolut")}
                   disabled={processing}
-                  className="w-full h-20 text-lg"
+                  className="w-full h-auto min-h-[3.5rem] py-3 px-4"
                   variant="outline"
                 >
-                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="h-5 w-5 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
                   </svg>
-                  <div className="text-left">
-                    <div className="font-semibold">{t('payment:methods.revolut')}</div>
-                    <div className="text-xs text-muted-foreground">{t('payment:methodDescriptions.revolut')}</div>
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="font-semibold text-sm">{t('payment:methods.revolut')}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{t('payment:methodDescriptions.revolut')}</div>
                   </div>
                 </Button>
               )}
