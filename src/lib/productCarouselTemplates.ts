@@ -44,7 +44,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 3,
       itemsPerViewTablet: 2,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 24,
       autoplay: true,
       autoplayDelay: 5,
@@ -72,7 +72,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 4,
       itemsPerViewTablet: 3,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 20,
       autoplay: true,
       autoplayDelay: 6,
@@ -100,7 +100,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 1,
       itemsPerViewTablet: 1,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 0,
       autoplay: true,
       autoplayDelay: 4,
@@ -129,7 +129,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 3,
       itemsPerViewTablet: 2,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 16,
       autoplay: false,
       autoplayDelay: 5,
@@ -186,7 +186,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 3,
       itemsPerViewTablet: 2,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 30,
       autoplay: true,
       autoplayDelay: 5,
@@ -215,7 +215,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 2,
       itemsPerViewTablet: 2,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 40,
       autoplay: true,
       autoplayDelay: 6,
@@ -272,7 +272,7 @@ export const productCarouselTemplates: ProductCarouselTemplate[] = [
     settings: {
       itemsPerView: 3,
       itemsPerViewTablet: 2,
-      itemsPerViewMobile: 1,
+      itemsPerViewMobile: 2,
       spaceBetween: 24,
       autoplay: true,
       autoplayDelay: 5,
