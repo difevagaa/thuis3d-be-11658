@@ -464,7 +464,7 @@ const Quotes = () => {
   const totalEstimated = analysisResult ? (analysisResult.estimatedTotal + (shippingCost || 0)) : 0;
 
   return (
-    <div className="container mx-auto px-4 py-4 md:py-8">
+    <div className="page-section pb-24 md:pb-12">
       <div className="mb-6 text-center">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-sm md:text-base text-muted-foreground">{t('subtitle')}</p>

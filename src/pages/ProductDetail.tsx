@@ -447,7 +447,7 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="page-section">
         <div className="text-center">{t('loading')}</div>
       </div>
     );
@@ -458,7 +458,7 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="w-full px-3 sm:px-4 md:container md:mx-auto md:px-4 py-3 md:py-6 lg:py-8" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div className="page-section pb-24 md:pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-10">
         <div className="space-y-3">
           {/* Main Image - Clean, simple display */}

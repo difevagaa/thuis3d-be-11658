@@ -169,7 +169,7 @@ export default function ShippingInfo() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
+      <div className="narrow-container py-12">
         <Card>
           <CardContent className="p-8 text-center">
             <p>{t('shipping:messages.loading')}</p>
@@ -180,7 +180,7 @@ export default function ShippingInfo() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-2xl">
+    <div className="narrow-container py-6 md:py-10 pb-24 md:pb-12">
       <Card>
         <CardHeader className="px-4 md:px-6">
           <CardTitle className="text-lg md:text-xl lg:text-2xl">{t('shipping:title')}</CardTitle>

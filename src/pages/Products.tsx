@@ -259,11 +259,11 @@ const Products = () => {
   );
 
   return (
-    <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-4 py-3 md:py-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
       {/* Header - Compact on mobile */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-4">
         <Package className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
-        <h1 className="text-base md:text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-lg md:text-2xl lg:text-3xl font-bold">{t('title')}</h1>
       </div>
 
       {/* Search by Code - Compact */}
