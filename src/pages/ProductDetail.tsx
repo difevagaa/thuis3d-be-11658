@@ -458,16 +458,24 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-4 py-3 md:py-6 lg:py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 lg:gap-10">
-        <div className="space-y-2">
-          {/* Main Image - Constrained height on mobile */}
-          <div className="aspect-square max-h-[60vh] md:max-h-none bg-muted rounded-lg overflow-hidden mx-auto w-full max-w-md md:max-w-none">
+    <div className="w-full px-3 sm:px-4 md:container md:mx-auto md:px-4 py-3 md:py-6 lg:py-8" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-10">
+        <div className="space-y-3">
+          {/* Main Image - Clean, simple display */}
+          <div 
+            className="bg-muted rounded-xl overflow-hidden mx-auto"
+            style={{ 
+              width: '100%', 
+              maxWidth: '400px',
+              aspectRatio: '1/1'
+            }}
+          >
             {productImages.length > 0 ? (
               <img 
                 src={productImages[currentImageIndex]} 
                 alt={product.name}
                 className="w-full h-full object-contain"
+                style={{ display: 'block' }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -476,21 +484,38 @@ const ProductDetail = () => {
             )}
           </div>
           
-          {/* Thumbnail Gallery - Horizontal scroll on mobile with proper sizing */}
+          {/* Thumbnail Gallery - Simple horizontal row */}
           {productImages.length > 1 && (
-            <div className="flex flex-row flex-nowrap gap-2 overflow-x-auto pb-2 px-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <div 
+              className="flex justify-center gap-2 px-2"
+              style={{ 
+                overflowX: 'auto', 
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
               {productImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                    index === currentImageIndex ? 'border-primary ring-2 ring-primary/30' : 'border-muted hover:border-muted-foreground/50'
+                  className={`rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentImageIndex 
+                      ? 'border-primary ring-2 ring-primary/30' 
+                      : 'border-muted hover:border-primary/50'
                   }`}
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    minWidth: '60px',
+                    flexShrink: 0
+                  }}
                 >
                   <img 
                     src={image} 
                     alt={`${product.name} - ${index + 1}`}
                     className="w-full h-full object-cover"
+                    style={{ display: 'block' }}
                   />
                 </button>
               ))}
