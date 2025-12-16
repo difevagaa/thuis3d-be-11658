@@ -92,7 +92,7 @@ export default function Gallery() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 md:gap-6">
             {items.map((item) => (
               <Card key={item.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
-                <div className="relative aspect-[4/3] sm:aspect-square bg-muted">
+                <div className="relative aspect-video bg-background">
                   {item.media_type === 'image' ? (
                     <img
                       src={item.media_url}
@@ -101,10 +101,10 @@ export default function Gallery() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="relative w-full h-full">
+                    <div className="relative w-full h-full bg-black">
                       <video
                         src={item.media_url}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         controls
                         preload="metadata"
                         onPlay={() => handleVideoPlay(item.id)}

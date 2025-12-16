@@ -220,9 +220,16 @@
     max-width: 100% !important;
   }
 
-  main, .main-content, [class*="Layout"], [class*="container"] {
+  /* Root + main should be responsive without breaking our centered container system */
+  #root {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  /* IMPORTANT: do NOT target "*container*" classnames here (it breaks page-container/narrow-container/admin-container) */
+  main, .main-content, [class*="Layout"] {
+    width: 100%;
+    max-width: 100%;
   }
   
   /* Ensure all images are responsive by default */
