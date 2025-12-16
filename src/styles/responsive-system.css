@@ -233,7 +233,13 @@
   }
 }
 
-/* Mobile header */
+/* Mobile header - ALWAYS horizontal */
+.mobile-header,
+header .flex {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
 .mobile-header {
   position: sticky;
   top: 0;
@@ -547,4 +553,71 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ---------- SCROLLBAR HIDE ---------- */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- THUMBNAIL GALLERY MOBILE ---------- */
+.thumbnail-gallery-mobile {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.25rem;
+}
+
+.thumbnail-gallery-mobile::-webkit-scrollbar {
+  display: none;
+}
+
+.thumbnail-gallery-mobile > * {
+  flex-shrink: 0;
+}
+
+/* ---------- FORCE HORIZONTAL LAYOUTS ---------- */
+.force-horizontal {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+/* ---------- HEADER ACTIONS ROW ---------- */
+.header-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+@media (min-width: 640px) {
+  .header-actions {
+    gap: 0.25rem;
+  }
+}
+
+/* ---------- MOBILE IMAGE CONSTRAINTS ---------- */
+@media (max-width: 639px) {
+  .product-main-image {
+    max-height: 50vh;
+    width: 100%;
+    object-fit: contain;
+  }
+  
+  .product-thumbnail {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
 }

@@ -476,15 +476,15 @@ const ProductDetail = () => {
             )}
           </div>
           
-          {/* Thumbnail Gallery - Horizontal scroll on mobile */}
+          {/* Thumbnail Gallery - Horizontal scroll on mobile with proper sizing */}
           {productImages.length > 1 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex flex-row flex-nowrap gap-2 overflow-x-auto pb-2 px-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
               {productImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                    index === currentImageIndex ? 'border-primary' : 'border-muted'
+                  className={`flex-shrink-0 w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                    index === currentImageIndex ? 'border-primary ring-2 ring-primary/30' : 'border-muted hover:border-muted-foreground/50'
                   }`}
                 >
                   <img 
