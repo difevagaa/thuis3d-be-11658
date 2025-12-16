@@ -388,41 +388,34 @@ export default function MyAccount() {
       <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{t('account:title')}</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 gap-1 h-auto p-1 bg-muted/50">
-          <TabsTrigger value="profile" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+        <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-xl overflow-x-auto flex flex-nowrap gap-1.5">
+          <TabsTrigger value="profile" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <User className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.profile')}</span>
-            <span className="md:hidden">{t('account:tabs.profileShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.profile')}</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="orders" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <Package className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.orders')}</span>
-            <span className="md:hidden">{t('account:tabs.ordersShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.orders')}</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="invoices" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <FileText className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.invoices')}</span>
-            <span className="md:hidden">{t('account:tabs.invoicesShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.invoices')}</span>
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="quotes" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <MessageSquare className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.quotes')}</span>
-            <span className="md:hidden">{t('account:tabs.quotesShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.quotes')}</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="messages" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <MessageSquare className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.messages')}</span>
-            <span className="md:hidden">{t('account:tabs.messagesShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.messages')}</span>
           </TabsTrigger>
-          <TabsTrigger value="points" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="points" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <Award className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.points')}</span>
-            <span className="md:hidden">{t('account:tabs.pointsShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.points')}</span>
           </TabsTrigger>
-          <TabsTrigger value="giftcards" className="flex-col md:flex-row gap-1 py-2 md:py-2.5 text-xs md:text-sm">
+          <TabsTrigger value="giftcards" className="shrink-0 h-11 px-3 flex items-center gap-2 text-xs">
             <Gift className="h-4 w-4" />
-            <span className="hidden md:inline">{t('account:tabs.giftcards')}</span>
-            <span className="md:hidden">{t('account:tabs.giftcardsShort')}</span>
+            <span className="whitespace-nowrap">{t('account:tabs.giftcards')}</span>
           </TabsTrigger>
         </TabsList>
 

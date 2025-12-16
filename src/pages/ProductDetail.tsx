@@ -487,9 +487,8 @@ const ProductDetail = () => {
           {/* Thumbnail Gallery - Simple horizontal row */}
           {productImages.length > 1 && (
             <div 
-              className="flex justify-center gap-2 px-2"
+              className="flex flex-nowrap gap-2 px-2 pb-1 overflow-x-auto"
               style={{ 
-                overflowX: 'auto', 
                 WebkitOverflowScrolling: 'touch',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
