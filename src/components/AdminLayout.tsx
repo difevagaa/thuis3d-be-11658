@@ -58,8 +58,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     // Start the timer
     resetAutoHideTimer();
 
-    // Listen for user interactions
-    window.addEventListener('mousemove', handleUserActivity);
+    // Listen for user interactions (avoid mousemove here to reduce event spam)
     window.addEventListener('click', handleUserActivity);
     window.addEventListener('keydown', handleUserActivity);
     window.addEventListener('scroll', handleUserActivity);
@@ -68,7 +67,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       if (autoHideTimerRef.current) {
         clearTimeout(autoHideTimerRef.current);
       }
-      window.removeEventListener('mousemove', handleUserActivity);
       window.removeEventListener('click', handleUserActivity);
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('scroll', handleUserActivity);
@@ -264,14 +262,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   const checkAdminAccess = useCallback(async () => {
-    // Set a timeout to prevent infinite loading
+    // Set a timeout to prevent infinite loading (increase to avoid false "logout" on slow networks)
     const timeoutId = setTimeout(() => {
       if (loading) {
         logger.error("Admin access check timed out");
-        toast.error("Tiempo de espera agotado. Por favor, inicia sesión nuevamente.");
+        toast.error("La verificación está tardando demasiado. Intenta recargar.");
+        // Do not force sign-out; just redirect to login if session is missing.
         navigate("/auth");
       }
-    }, 10000); // 10 second timeout
+    }, 30000); // 30 seconds
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
