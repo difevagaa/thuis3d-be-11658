@@ -1721,90 +1721,77 @@ html, body {
 /* ---------- 40. AUTH PAGE MOBILE FIXES ---------- */
 
 @media (max-width: 640px) {
-  /* Auth card improvements */
-  .auth-card,
-  [class*="Card"] {
+  /* Auth card improvements (scoped) */
+  .auth-card {
     margin: 0.5rem;
     max-width: calc(100vw - 1rem);
   }
-  
-  /* Checkbox + label rows - prevent overflow */
-  .flex.items-start.gap-3,
-  .flex.items-start.space-x-2,
-  [class*="checkbox"] + label,
-  .checkbox-row {
+
+  /* Checkbox + label rows - prevent overflow (auth) */
+  .auth-card .flex.items-start.gap-3,
+  .auth-card .flex.items-start.space-x-2,
+  .auth-card [class*="checkbox"] + label,
+  .auth-card .checkbox-row {
     display: flex !important;
     align-items: flex-start !important;
     gap: 0.75rem !important;
     width: 100% !important;
     max-width: 100% !important;
   }
-  
+
   /* Checkbox container fix */
-  [data-state="checked"],
-  [data-state="unchecked"],
-  button[role="checkbox"] {
+  .auth-card [data-state="checked"],
+  .auth-card [data-state="unchecked"],
+  .auth-card button[role="checkbox"] {
     flex-shrink: 0 !important;
     min-width: 20px !important;
     width: 20px !important;
     height: 20px !important;
     margin-top: 2px !important;
   }
-  
+
   /* Labels next to checkboxes - word wrap properly */
-  .flex.items-start label,
-  [class*="checkbox"] ~ label,
-  label[for*="subscribe"],
-  label[for*="accept"],
-  label[for*="terms"] {
+  .auth-card .flex.items-start label,
+  .auth-card [class*="checkbox"] ~ label,
+  .auth-card label[for*="subscribe"],
+  .auth-card label[for*="accept"],
+  .auth-card label[for*="terms"] {
     flex: 1 !important;
     min-width: 0 !important;
-    word-wrap: break-word !important;
     overflow-wrap: break-word !important;
     hyphens: auto !important;
     line-height: 1.5 !important;
     font-size: 0.875rem !important;
   }
-  
+
   /* Auth form inputs */
-  input[type="email"],
-  input[type="password"],
-  input[type="text"],
-  input[type="tel"] {
+  .auth-card input[type="email"],
+  .auth-card input[type="password"],
+  .auth-card input[type="text"],
+  .auth-card input[type="tel"] {
     width: 100% !important;
     max-width: 100% !important;
     min-height: 48px !important;
-    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
     padding: 0.75rem 1rem !important;
     box-sizing: border-box !important;
   }
-  
-  /* Form space-y containers */
-  .space-y-4 > * + * {
-    margin-top: 1rem !important;
-  }
-  
+
   /* Tabs in auth page */
-  [role="tablist"] {
+  .auth-card [role="tablist"] {
     width: 100% !important;
     overflow: hidden !important;
   }
-  
-  [role="tab"] {
+
+  .auth-card [role="tab"] {
     flex: 1 !important;
     white-space: nowrap !important;
     font-size: 0.875rem !important;
     padding: 0.5rem 0.75rem !important;
   }
-  
-  /* Links inside labels */
-  label a {
-    word-break: break-word !important;
-  }
-  
-  /* Button full width on mobile */
-  form button[type="submit"],
-  .w-full {
+
+  /* Button full width on auth submit only */
+  .auth-card form button[type="submit"] {
     width: 100% !important;
     min-height: 48px !important;
   }
@@ -1813,62 +1800,46 @@ html, body {
 /* ---------- 41. GLOBAL TEXT OVERFLOW PREVENTION ---------- */
 
 @media (max-width: 640px) {
-  /* Prevent text overflow everywhere */
-  p, span, label, h1, h2, h3, h4, h5, h6, a, li, td, th, div {
+  /* Prevent text overflow in actual text elements (avoid forcing on all divs) */
+  p, span, label, h1, h2, h3, h4, h5, h6, a, li, td, th {
     max-width: 100%;
     overflow-wrap: break-word;
     word-wrap: break-word;
   }
-  
-  /* Cards should not overflow */
+
+  /* Cards/sections should stay within viewport without changing layout */
   [class*="Card"],
   .card,
   article,
   section {
-    max-width: 100vw;
-    overflow-x: hidden;
+    max-width: 100%;
   }
-  
+
   /* Images should scale */
   img {
     max-width: 100%;
     height: auto;
   }
-  
+
   /* Tables scroll horizontally */
   table {
     display: block;
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
-  /* Flex containers should wrap */
-  .flex {
-    flex-wrap: wrap;
-  }
-  
-  /* Grid containers should be single column on mobile */
-  .grid {
-    grid-template-columns: 1fr !important;
-  }
-  
-  /* Exception for 2-column grids that make sense on mobile */
-  .grid-cols-2:not(.no-mobile-stack) {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  /* Container padding */
+
+  /* Container padding (tailwind .container utility only) */
   .container {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     max-width: 100% !important;
   }
-  
-  /* Page content padding */
+
+  /* Keep bottom safe-area space for the mobile nav without forcing global side padding */
   main,
   .main-content,
   [role="main"] {
-    padding: 1rem;
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }

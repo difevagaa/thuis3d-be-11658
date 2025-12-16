@@ -225,19 +225,21 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
+    <div className="space-y-6 p-3 sm:p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
       {/* Professional Header */}
-      <div className="flex items-center justify-between p-6 rounded-xl bg-white shadow-md border border-gray-200">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-6 rounded-xl bg-white shadow-md border border-gray-200">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent truncate">
             Dashboard Principal
           </h1>
-          <p className="text-gray-600 font-medium mt-2">Resumen completo de tu negocio en tiempo real</p>
+          <p className="text-gray-600 font-medium mt-1 sm:mt-2 text-sm sm:text-base">
+            Resumen completo de tu negocio en tiempo real
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg">
             <Clock className="h-4 w-4" />
-            <span>Actualizado: {lastUpdate.toLocaleTimeString('es-ES')}</span>
+            <span className="truncate">Actualizado: {lastUpdate.toLocaleTimeString('es-ES')}</span>
           </div>
           <Button
             variant="outline"
@@ -338,18 +340,18 @@ export default function AdminDashboard() {
 
         {/* Último Pedido */}
         <Card 
-          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 col-span-2 bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200/50 hover:border-indigo-300"
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 md:col-span-2 bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200/50 hover:border-indigo-300"
           onClick={() => navigate('/admin/pedidos')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <CardTitle className="text-sm font-bold text-indigo-700 mb-2">Último Pedido</CardTitle>
               {stats.lastOrderDate ? (
                 <>
-                  <div className="text-2xl font-bold text-indigo-600">
+                  <div className="text-xl sm:text-2xl font-bold text-indigo-600">
                     {stats.lastOrderDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
                     {stats.lastOrderNumber && (
                       <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
                         #{stats.lastOrderNumber}
@@ -373,24 +375,24 @@ export default function AdminDashboard() {
                 <div className="text-xl font-bold text-indigo-400">Sin pedidos aún</div>
               )}
             </div>
-            <div className="w-16 h-16 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg">
-              <span className="text-4xl">🛍️</span>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg flex-shrink-0">
+              <span className="text-3xl sm:text-4xl">🛍️</span>
             </div>
           </CardHeader>
         </Card>
 
         {/* Actividad en Tiempo Real */}
         <Card 
-          className="col-span-2 bg-gradient-to-br from-teal-50 to-green-50 border-2 border-teal-200/50 hover:border-teal-300 cursor-pointer hover:shadow-lg transition-all"
+          className="md:col-span-2 bg-gradient-to-br from-teal-50 to-green-50 border-2 border-teal-200/50 hover:border-teal-300 cursor-pointer hover:shadow-lg transition-all"
           onClick={() => navigate('/admin/visitantes')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <CardTitle className="text-sm font-bold text-teal-700">Actividad en Tiempo Real</CardTitle>
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               </div>
-              <div className="text-2xl font-bold text-teal-600">
+              <div className="text-xl sm:text-2xl font-bold text-teal-600">
                 {stats.onlineVisitors > 0 
                   ? `${stats.onlineVisitors} ${stats.onlineVisitors === 1 ? 'Visitante' : 'Visitantes'}` 
                   : 'Sin visitantes activos'}
@@ -406,8 +408,8 @@ export default function AdminDashboard() {
                 </Badge>
               </div>
             </div>
-            <div className="w-16 h-16 rounded-xl bg-teal-500 flex items-center justify-center shadow-lg">
-              <span className="text-4xl">{stats.onlineVisitors > 0 ? '🔥' : '💤'}</span>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-teal-500 flex items-center justify-center shadow-lg flex-shrink-0">
+              <span className="text-3xl sm:text-4xl">{stats.onlineVisitors > 0 ? '🔥' : '💤'}</span>
             </div>
           </CardHeader>
         </Card>

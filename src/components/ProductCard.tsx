@@ -50,23 +50,23 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
           </div>
           
           {/* Product Info - Amazon style */}
-          <div className="p-2 md:p-3 space-y-1">
-            {/* Product Name - 2 lines max */}
-            <h3 className="font-medium text-[11px] md:text-sm leading-tight line-clamp-2 min-h-[2.2rem] md:min-h-[2.5rem] text-foreground group-hover:text-primary transition-colors">
+          <div className="p-2 md:p-3 space-y-1 min-w-0">
+            {/* Product Name - 2 lines max (no fixed min-height; prevents clipping on mobile) */}
+            <h3 className="font-medium text-[11px] md:text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
               {content.name}
             </h3>
-            
+
             {/* Product Code - Small, mono */}
             {product.product_code && (
-              <p className="text-[8px] md:text-[10px] text-muted-foreground font-mono tracking-wide">
+              <p className="text-[8px] md:text-[10px] text-muted-foreground font-mono tracking-wide truncate">
                 #{product.product_code}
               </p>
             )}
-            
-            {/* Price - Amazon style: prominent, orange/red */}
-            <div className="flex items-baseline gap-1 pt-0.5">
+
+            {/* Price - Amazon style */}
+            <div className="flex items-baseline gap-1 pt-0.5 min-w-0">
               <span className="text-[10px] md:text-xs text-muted-foreground">€</span>
-              <span className="text-primary font-bold text-base md:text-lg leading-none">
+              <span className="text-primary font-bold text-base md:text-lg leading-none truncate">
                 {product.price}
               </span>
             </div>
