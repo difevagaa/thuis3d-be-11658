@@ -191,15 +191,15 @@ const Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 md:py-12 pb-24 md:pb-12">
-        <Card className="max-w-2xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 pb-24 md:pb-12">
+        <Card className="max-w-lg mx-auto">
           <CardContent className="p-6 md:p-12 text-center">
             <ShoppingBag className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 text-muted-foreground" />
             <h2 className="text-xl md:text-2xl font-bold mb-2">{t('cart:empty.title')}</h2>
             <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
               {t('cart:empty.description')}
             </p>
-            <Button onClick={() => navigate("/productos")} size="sm" className="md:h-10">
+            <Button onClick={() => navigate("/productos")} className="h-10">
               {t('cart:empty.button')}
             </Button>
           </CardContent>
@@ -209,8 +209,8 @@ const Cart = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12">
-      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-8">{t('cart:title')}</h1>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-10 pb-24 md:pb-12">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">{t('cart:title')}</h1>
       
       <div className="grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
         <div className="lg:col-span-2 space-y-3 md:space-y-4">

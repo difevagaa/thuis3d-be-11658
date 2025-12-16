@@ -104,7 +104,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header - Compact on mobile, no extra spacing */}
+      {/* Header - Full width background, centered content */}
       <header 
         className="sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/80"
         style={{ 
@@ -112,11 +112,12 @@ export const Layout = ({ children }: LayoutProps) => {
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-6">
+        {/* Centered container for header content - max-width 1280px */}
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Compact header row - reduced height on mobile */}
-          <div className="flex flex-row flex-nowrap h-11 sm:h-14 md:h-16 items-center justify-between gap-1 sm:gap-2">
+          <div className="flex flex-row flex-nowrap h-12 sm:h-14 md:h-16 items-center justify-between gap-2 sm:gap-3">
             {/* Left side: Menu + Logo - Compact */}
-            <div className="flex flex-row flex-nowrap items-center gap-1 flex-shrink-0 min-w-0">
+            <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0 min-w-0">
               {/* Mobile Menu Button - Smaller on mobile */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
@@ -344,13 +345,15 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      {/* Main Content - Add padding bottom for mobile nav */}
-      <main className={`flex-1 ${isMobile || isTablet ? 'pb-16' : 'pb-0'}`}>{children}</main>
+      {/* Main Content - Centered container with max-width */}
+      <main className={`flex-1 w-full ${isMobile || isTablet ? 'pb-20' : 'pb-0'}`}>
+        {children}
+      </main>
 
       {/* Mobile Bottom Navigation - AliExpress style */}
       {(isMobile || isTablet) && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t safe-area-bottom">
-          <div className="flex items-center justify-around h-14">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t safe-area-bottom shadow-lg">
+          <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
             <button 
               onClick={() => navigate("/")}
               className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}

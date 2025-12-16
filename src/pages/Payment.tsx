@@ -841,14 +841,14 @@ export default function Payment() {
   };
 
   if (!shippingInfo) {
-    return <div className="container mx-auto px-4 py-12">{t('common:loading')}</div>;
+    return <div className="page-section">{t('common:loading')}</div>;
   }
 
   // Check if this is an invoice payment
   const isInvoicePayment = shippingInfo.isInvoicePayment;
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-12 pb-24 md:pb-12 max-w-4xl">
+    <div className="medium-container py-6 md:py-10 pb-24 md:pb-12">
       <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">{t('payment:title')}</h1>
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Order Summary */}

@@ -463,7 +463,62 @@
 }
 
 @layer utilities {
-  /* Gradient utilities */
+  /* ============================================
+     AMAZON/ALIEXPRESS STYLE CONTAINER SYSTEM
+     ============================================ */
+  
+  /* Main content container - centered with max-width */
+  .page-container {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Page container with vertical padding */
+  .page-section {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12;
+  }
+  
+  /* Full-width wrapper with centered content (for backgrounds) */
+  .full-width-section {
+    @apply w-full;
+  }
+  
+  .full-width-section > .page-container {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Admin container - slightly wider */
+  .admin-container {
+    @apply w-full max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6 lg:px-8;
+  }
+  
+  /* Narrow container for forms/text content */
+  .narrow-container {
+    @apply w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Medium container for checkout/cart */
+  .medium-container {
+    @apply w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Product grid - Amazon style */
+  .product-grid {
+    @apply grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5;
+  }
+  
+  /* Cards grid - 1-3 columns */
+  .cards-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6;
+  }
+  
+  /* Features grid - 1-4 columns */
+  .features-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6;
+  }
+  
+  /* ============================================
+     GRADIENT UTILITIES
+     ============================================ */
   .bg-gradient-primary {
     background: var(--gradient-primary);
   }
