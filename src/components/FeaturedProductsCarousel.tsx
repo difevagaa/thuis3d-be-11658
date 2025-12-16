@@ -49,28 +49,28 @@ const TranslatedFeaturedProductCard = ({
   return (
     <Link to={`/producto/${product.id}`}>
       <div ref={cardRef} className="will-change-transform h-full">
-        <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer h-full">
+        <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer h-full border-border/50">
           {product.images && product.images.length > 0 ? (
-            <div className="relative h-28 sm:h-40 md:h-48 lg:h-56 bg-muted flex items-center justify-center">
+            <div className="relative aspect-square bg-muted flex items-center justify-center">
               <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
             </div>
           ) : (
-            <div className="h-28 sm:h-40 md:h-48 lg:h-56 bg-muted flex items-center justify-center">
-              <Printer className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 text-muted-foreground/30" />
+            <div className="aspect-square bg-muted flex items-center justify-center">
+              <Printer className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground/30" />
             </div>
           )}
-          <CardHeader className="p-1.5 sm:p-2 md:p-2.5 lg:pb-2">
-            <CardTitle className="text-[11px] sm:text-xs md:text-sm lg:text-base group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+          <CardHeader className="p-2 sm:p-3">
+            <CardTitle className="text-xs sm:text-sm md:text-base group-hover:text-primary transition-colors line-clamp-2 leading-snug">
               {translatedName}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-0.5 sm:space-y-1 md:space-y-1.5 pt-0 p-1.5 sm:p-2 md:p-2.5">
+          <CardContent className="pt-0 p-2 sm:p-3">
             {product.price && (
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-primary">
+              <p className="text-base sm:text-lg md:text-xl font-bold text-primary">
                 €{Number(product.price).toFixed(2)}
               </p>
             )}
-            <div className="hidden sm:flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors mt-1">
               <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
               <span>{t('featured.viewDetails')}</span>
               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
