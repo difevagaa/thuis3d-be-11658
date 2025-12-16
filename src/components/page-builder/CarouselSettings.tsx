@@ -57,7 +57,7 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
           <div className="space-y-2">
             <Label>Items por vista (Móvil)</Label>
             <Slider
-              value={[settings?.itemsPerViewMobile || 1]}
+              value={[settings?.itemsPerViewMobile || 2]}
               onValueChange={(value) => onUpdate('itemsPerViewMobile', value[0])}
               min={1}
               max={4}
@@ -65,7 +65,7 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
               className="w-full"
             />
             <div className="text-sm text-muted-foreground text-right">
-              {settings?.itemsPerViewMobile || 1} items
+              {settings?.itemsPerViewMobile || 2} items
             </div>
           </div>
 

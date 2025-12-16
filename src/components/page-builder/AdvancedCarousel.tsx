@@ -81,8 +81,8 @@ export function AdvancedCarousel({
     // Mobile: < 640px (sm breakpoint)
     if (width < 640) {
       const mobileItems = settings.itemsPerViewMobile;
-      // Only use default if explicitly undefined/null, not if set to a specific number
-      return typeof mobileItems === 'number' ? mobileItems : 1;
+      // Default to 2 items on mobile for better space usage
+      return typeof mobileItems === 'number' ? mobileItems : 2;
     }
     
     // Tablet: >= 640px and < 1024px (md-lg breakpoint)
