@@ -58,8 +58,10 @@ header, footer, nav {
 
 /* ---------- CSS VARIABLES FOR BREAKPOINTS ---------- */
 :root {
+  /* Foldable device breakpoints (Galaxy Z Fold) */
+  --breakpoint-xs: 374px;  /* Cover screen */
   --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
+  --breakpoint-md: 768px;  /* Unfolded screen */
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
@@ -83,6 +85,7 @@ header, footer, nav {
   --text-4xl: clamp(1.875rem, 1.5rem + 1.5vw, 2.25rem);
   
   /* Container max widths */
+  --container-xs: 374px;
   --container-sm: 640px;
   --container-md: 768px;
   --container-lg: 1024px;
@@ -731,5 +734,130 @@ header .flex {
     width: 64px;
     height: 64px;
     flex-shrink: 0;
+  }
+}
+
+/* ==========================================================
+   FOLDABLE DEVICE SUPPORT (Galaxy Z Fold, etc.)
+   Cover screen: ~374px | Main screen: ~768px
+   ========================================================== */
+
+/* Extra small screens - Galaxy Z Fold cover (320px - 400px) */
+@media (max-width: 400px) {
+  /* Larger product cards with taller images */
+  .product-card-mobile-image,
+  .aspect-square,
+  [class*="aspect-square"] {
+    aspect-ratio: 4/5 !important;
+  }
+  
+  /* Larger text for small screens */
+  .product-card-mobile-title {
+    font-size: 0.9375rem;
+    line-height: 1.25;
+  }
+  
+  .product-card-mobile-price {
+    font-size: 1.0625rem;
+  }
+  
+  /* Reduce gaps for better space usage */
+  .responsive-product-grid {
+    gap: 0.375rem;
+  }
+  
+  /* Larger touch targets */
+  button, a, .touch-target {
+    min-height: 44px;
+  }
+  
+  /* Ensure carousel navigation stays visible */
+  .carousel-nav-button {
+    opacity: 1 !important;
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* Small foldable screens (400px - 500px) - Galaxy Z Fold cover unfolded slightly */
+@media (min-width: 401px) and (max-width: 500px) {
+  .product-card-mobile-image,
+  .aspect-square {
+    aspect-ratio: 1/1;
+  }
+  
+  .product-card-mobile-title {
+    font-size: 0.875rem;
+  }
+  
+  .product-card-mobile-price {
+    font-size: 1rem;
+  }
+  
+  .responsive-product-grid {
+    gap: 0.5rem;
+  }
+}
+
+/* Medium foldable screens (500px - 768px) - Galaxy Z Fold main screen */
+@media (min-width: 501px) and (max-width: 768px) {
+  .product-card-mobile-image,
+  .aspect-square {
+    aspect-ratio: 1/1;
+  }
+  
+  .product-card-mobile-title {
+    font-size: 0.9375rem;
+  }
+  
+  .product-card-mobile-price {
+    font-size: 1.0625rem;
+  }
+  
+  /* Can fit 3 columns on wider foldable */
+  .responsive-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+/* ==========================================================
+   CAROUSEL OPTIMIZATIONS FOR FOLDABLES
+   ========================================================== */
+
+/* Force carousel navigation always visible on mobile */
+@media (max-width: 768px) {
+  .carousel-track {
+    scroll-behavior: smooth;
+  }
+  
+  /* Larger product images in carousel on mobile */
+  .carousel-track [class*="aspect-"] {
+    aspect-ratio: 4/5;
+  }
+  
+  /* Navigation buttons always visible */
+  [class*="carousel"] button[class*="absolute"],
+  .carousel-nav {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}
+
+/* Ensure proper sizing for xs breakpoint */
+@media (max-width: 374px) {
+  /* Single column for very small screens */
+  .responsive-product-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  /* Full-width cards */
+  .product-card-mobile {
+    width: 100%;
+  }
+  
+  .product-card-mobile-image {
+    aspect-ratio: 16/12;
   }
 }
