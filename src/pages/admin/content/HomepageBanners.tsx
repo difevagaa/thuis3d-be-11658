@@ -606,14 +606,14 @@ export default function HomepageBanners() {
                 Nuevo Banner
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-3xl h-[90dvh] max-h-[90dvh] overflow-hidden flex flex-col">
               <DialogHeader className="flex-shrink-0">
                 <DialogTitle>{editingBanner ? "Editar" : "Crear"} Banner</DialogTitle>
                 <DialogDescription>
                   Configura el banner para la página de inicio
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 overflow-y-auto flex-1 px-1">
+              <div className="space-y-4 overflow-y-auto flex-1 min-h-0 px-1">
                 <Tabs defaultValue="content" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="content">Contenido</TabsTrigger>
