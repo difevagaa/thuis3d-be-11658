@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Printer, Package2, RefreshCw, ShoppingCart } from "lucide-react";
+import { ArrowRight, Printer, Package2, RefreshCw, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCarousel from "./ProductCarousel";
 import { useParallax } from "@/hooks/useParallax";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
+import { cn } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -22,16 +23,6 @@ interface FeaturedProductsCarouselProps {
   products: Product[];
   maxVisible?: number;
 }
-
-// Helper function to shuffle array using Fisher-Yates algorithm (more uniform distribution)
-const getRandomProducts = (array: Product[], count: number) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, Math.min(count, array.length));
-};
 
 // Translated Product Card Component - properly uses the translation hook
 const TranslatedFeaturedProductCard = ({ 
@@ -57,8 +48,8 @@ const TranslatedFeaturedProductCard = ({
 
   return (
     <Link to={`/producto/${product.id}`}>
-      <div ref={cardRef} className="will-change-transform">
-        <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer">
+      <div ref={cardRef} className="will-change-transform h-full">
+        <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-2 overflow-hidden cursor-pointer h-full">
           {product.images && product.images.length > 0 ? (
             <div className="relative h-40 md:h-48 lg:h-56 bg-muted flex items-center justify-center">
               <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
@@ -91,10 +82,25 @@ const TranslatedFeaturedProductCard = ({
   );
 };
 
-interface FeaturedCarouselSettings {
+export interface FeaturedCarouselSettings {
+  // Display mode
+  displayMode?: 'carousel' | 'grid';
+  
+  // Items per view
   itemsPerView?: number;
   itemsPerViewTablet?: number;
   itemsPerViewMobile?: number;
+  
+  // Carousel behavior
+  autoplay?: boolean;
+  autoplayDelay?: number; // in seconds
+  showNavigation?: boolean;
+  showPagination?: boolean;
+  loop?: boolean;
+  pauseOnHover?: boolean;
+  transitionDuration?: number;
+  
+  // Legacy support
   autoRotate?: boolean;
   rotateInterval?: number;
   gap?: number;
@@ -109,7 +115,8 @@ export default function FeaturedProductsCarousel({
   settings
 }: FeaturedProductsCarouselProps & { settings?: FeaturedCarouselSettings }) {
   const { t } = useTranslation('home');
-  const [rotationKey, setRotationKey] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const [currentItemsPerView, setCurrentItemsPerView] = useState(maxVisible);
 
   // Responsive items per view calculation
@@ -137,28 +144,43 @@ export default function FeaturedProductsCarousel({
     return () => window.removeEventListener('resize', calculateItemsPerView);
   }, [settings?.itemsPerView, settings?.itemsPerViewTablet, settings?.itemsPerViewMobile, maxVisible]);
 
-  // Get random products on each rotation
-  const visibleProducts = useMemo(() => {
-    return getRandomProducts(products, currentItemsPerView);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- rotationKey intentionally triggers re-randomization
-  }, [products, currentItemsPerView, rotationKey]);
+  // Max index for carousel navigation
+  const maxIndex = Math.max(0, products.length - currentItemsPerView);
 
-  // Auto-rotate based on settings
-  const autoRotate = settings?.autoRotate !== false;
-  const rotateInterval = settings?.rotateInterval || 10000;
-  
+  // Autoplay functionality
+  const autoplay = settings?.autoplay ?? settings?.autoRotate ?? false;
+  const autoplayDelay = (settings?.autoplayDelay ?? (settings?.rotateInterval ? settings.rotateInterval / 1000 : 5)) * 1000;
+  const loop = settings?.loop ?? true;
+  const pauseOnHover = settings?.pauseOnHover ?? true;
+
   useEffect(() => {
-    if (!autoRotate) return;
-    
+    if (!autoplay || products.length <= currentItemsPerView) return;
+
     const interval = setInterval(() => {
-      setRotationKey(prev => prev + 1);
-    }, rotateInterval);
+      if (pauseOnHover && isHovered) return;
+
+      setCurrentIndex(prev => {
+        if (loop) {
+          return prev >= maxIndex ? 0 : prev + 1;
+        }
+        return Math.min(prev + 1, maxIndex);
+      });
+    }, Math.max(autoplayDelay, 2000));
 
     return () => clearInterval(interval);
-  }, [autoRotate, rotateInterval]);
+  }, [autoplay, autoplayDelay, pauseOnHover, loop, isHovered, maxIndex, currentItemsPerView, products.length]);
 
-  const handleRotate = () => {
-    setRotationKey(prev => prev + 1);
+  // Navigation functions
+  const goToPrev = () => {
+    setCurrentIndex(prev => (loop && prev === 0 ? maxIndex : Math.max(0, prev - 1)));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex(prev => (loop && prev >= maxIndex ? 0 : Math.min(maxIndex, prev + 1)));
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(Math.max(0, Math.min(index, maxIndex)));
   };
 
   // Dynamic gap
@@ -166,15 +188,19 @@ export default function FeaturedProductsCarousel({
   const showTitle = settings?.showTitle !== false;
   const showViewAll = settings?.showViewAll !== false;
   const showRefresh = settings?.showRefresh !== false;
+  const showNavigation = settings?.showNavigation ?? true;
+  const showPagination = settings?.showPagination ?? true;
+  const transitionDuration = settings?.transitionDuration || 600;
 
-  // Generate dynamic grid classes based on current items per view
-  const getGridCols = () => {
-    // Use CSS grid with dynamic columns
-    return `repeat(${currentItemsPerView}, minmax(0, 1fr))`;
-  };
+  // Determine if we should use carousel or grid mode
+  const useCarouselMode = settings?.displayMode === 'carousel' || products.length > currentItemsPerView;
 
   return (
-    <div className="relative">
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Header with View All button */}
       {(showTitle || showViewAll) && (
         <div className="flex justify-between items-center mb-4">
@@ -194,21 +220,91 @@ export default function FeaturedProductsCarousel({
         </div>
       )}
       
-      <div 
-        className="grid bg-slate-100 dark:bg-slate-900"
-        style={{
-          gridTemplateColumns: getGridCols(),
-          gap: `${gap}px`
-        }}
-      >
-        {visibleProducts.map((product) => (
-          <TranslatedFeaturedProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {useCarouselMode ? (
+        /* Carousel Mode */
+        <div className="relative overflow-hidden">
+          <div 
+            className="flex transition-transform"
+            style={{
+              transform: `translateX(-${currentIndex * (100 / currentItemsPerView)}%)`,
+              transitionDuration: `${transitionDuration}ms`,
+              gap: `${gap}px`
+            }}
+          >
+            {products.map((product) => (
+              <div 
+                key={product.id}
+                className="flex-shrink-0"
+                style={{
+                  width: `calc((100% - ${gap * (currentItemsPerView - 1)}px) / ${currentItemsPerView})`
+                }}
+              >
+                <TranslatedFeaturedProductCard product={product} />
+              </div>
+            ))}
+          </div>
+          
+          {/* Navigation arrows */}
+          {showNavigation && products.length > currentItemsPerView && (
+            <>
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 hover:bg-background"
+                onClick={goToPrev}
+                disabled={!loop && currentIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/80 hover:bg-background"
+                onClick={goToNext}
+                disabled={!loop && currentIndex >= maxIndex}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          
+          {/* Pagination dots */}
+          {showPagination && products.length > currentItemsPerView && (
+            <div className="flex gap-2 mt-4 justify-center">
+              {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    'w-2 h-2 rounded-full transition-all',
+                    index === currentIndex 
+                      ? 'bg-primary w-8' 
+                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  )}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Grid Mode (when products fit in view) */
+        <div 
+          className="grid"
+          style={{
+            gridTemplateColumns: `repeat(${currentItemsPerView}, minmax(0, 1fr))`,
+            gap: `${gap}px`
+          }}
+        >
+          {products.map((product) => (
+            <TranslatedFeaturedProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
 
       {showRefresh && products.length > currentItemsPerView && (
         <div className="flex justify-center items-center gap-4 mt-6">
-          <Button variant="outline" onClick={handleRotate} className="gap-2">
+          <Button variant="outline" onClick={() => setCurrentIndex(0)} className="gap-2">
             <RefreshCw className="h-4 w-4" />
             {t('featured.refreshProducts')}
           </Button>
