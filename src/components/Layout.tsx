@@ -1,8 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift, X } from "lucide-react";
-
+import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { ClientChatWidget } from "./ClientChatWidget";
@@ -10,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FooterConfigurable } from "./FooterConfigurable";
 import { LanguageSelector } from "./LanguageSelector";
 import { logger } from "@/lib/logger";
+import { useResponsiveSafe } from "@/contexts/ResponsiveContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetClose,
 } from "@/components/ui/sheet";
 import { i18nToast } from "@/lib/i18nToast";
 
@@ -36,6 +35,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const { t } = useTranslation(['navigation']);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isMobile, isTablet } = useResponsiveSafe();
   const [cartCount, setCartCount] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -345,64 +345,64 @@ export const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main Content - Add padding bottom for mobile nav */}
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className={`flex-1 ${isMobile || isTablet ? 'pb-16' : 'pb-0'}`}>{children}</main>
 
       {/* Mobile Bottom Navigation - AliExpress style */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t md:hidden safe-area-bottom">
-        <div className="flex items-center justify-around h-14">
-          <button 
-            onClick={() => navigate("/")}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{t('home')}</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/productos")}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/producto') ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <Package className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{t('products')}</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/cotizaciones")}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/cotizaciones') ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <Search className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{t('quotes')}</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/carrito")}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative ${isActive('/carrito') ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <div className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full h-3.5 w-3.5 flex items-center justify-center font-bold">
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] font-medium">{t('cart', 'Carrito')}</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate(user ? "/mi-cuenta" : "/auth")}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/mi-cuenta') || isActive('/auth') ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <User className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{user ? t('account', 'Cuenta') : t('login')}</span>
-          </button>
-        </div>
-      </nav>
+      {(isMobile || isTablet) && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t safe-area-bottom">
+          <div className="flex items-center justify-around h-14">
+            <button 
+              onClick={() => navigate("/")}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <Home className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{t('home')}</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/productos")}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/producto') ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <Package className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{t('products')}</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/cotizaciones")}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/cotizaciones') ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <Search className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{t('quotes')}</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/carrito")}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative ${isActive('/carrito') ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <div className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full h-3.5 w-3.5 flex items-center justify-center font-bold">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-medium">{t('cart', 'Carrito')}</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate(user ? "/mi-cuenta" : "/auth")}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/mi-cuenta') || isActive('/auth') ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <User className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{user ? t('account', 'Cuenta') : t('login')}</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* Footer - Hidden on mobile for cleaner look */}
-      <div className="hidden md:block">
-        <FooterConfigurable />
-      </div>
+      {!isMobile && !isTablet && <FooterConfigurable />}
       
       {/* Client Chat Widget - for authenticated users */}
       {user && <ClientChatWidget />}
