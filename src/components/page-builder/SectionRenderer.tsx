@@ -1192,21 +1192,28 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       setLoading(true);
       
       // Get user roles for filtering
-      const { data: { user } } = await supabase.auth.getUser();
       let userRoles: string[] = [];
       
-      if (user) {
-        const { data: rolesData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-        userRoles = (rolesData || [])
-          .map(r => String(r.role || '').trim().toLowerCase())
-          .filter(role => role.length > 0);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: rolesData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id);
+          userRoles = (rolesData || [])
+            .map(r => String(r.role || '').trim().toLowerCase())
+            .filter(role => role.length > 0);
+        }
+      } catch (authError) {
+        // User not authenticated, continue with empty roles
+        logger.info('User not authenticated, showing public products only');
       }
       
-      // Build query based on settings
-      const sortBy = settings?.sortBy || 'created_at';
+      // Build query based on settings - validate sortBy column
+      const validSortColumns = ['created_at', 'name', 'price', 'updated_at'];
+      const rawSortBy = settings?.sortBy || 'created_at';
+      const sortBy = validSortColumns.includes(rawSortBy) ? rawSortBy : 'created_at';
       const sortOrder = settings?.sortOrder || 'desc';
 
       // Respect product limit settings from all editor variants
@@ -1229,15 +1236,18 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       
       if (error) throw error;
       
-      // Filter by roles
+      // Filter by roles - products without roles are visible to everyone
       const visibleProducts = (data || []).filter((product: any) => {
         const productRolesList = product.product_roles || [];
         const productRolesNormalized = productRolesList
           .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
           .filter((role: string) => role.length > 0);
         
+        // Products without roles are visible to everyone
         if (productRolesNormalized.length === 0) return true;
-        if (!user || userRoles.length === 0) return false;
+        
+        // Products with roles require user to have matching role
+        if (userRoles.length === 0) return false;
         
         return productRolesNormalized.some((productRole: string) => 
           userRoles.includes(productRole)
@@ -1252,6 +1262,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         ) || []
       }));
       
+      logger.info(`ProductsCarouselSection loaded ${productsWithSortedImages.length} products`);
       setProducts(productsWithSortedImages);
     } catch (error) {
       logger.error('Error loading products for carousel:', error);
@@ -1282,7 +1293,27 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   }
   
   if (products.length === 0) {
-    return null;
+    // Show section with "no products" message instead of hiding
+    return (
+      <section
+        className={cn(
+          settings?.fullWidth ? "w-full" : "container mx-auto",
+        )}
+        style={{
+          backgroundColor: styles?.backgroundColor,
+          padding: `${styles?.paddingY || styles?.padding || 60}px ${styles?.paddingX || (styles?.padding ? styles.padding / 2 : 30)}px`,
+        }}
+      >
+        <div className="text-center py-8">
+          {content?.title && (
+            <h2 className="font-bold mb-4" style={{ fontSize: `${settings?.titleSize || 32}px` }}>
+              {content.title}
+            </h2>
+          )}
+          <p className="text-muted-foreground">No hay productos disponibles en este momento.</p>
+        </div>
+      </section>
+    );
   }
   
   return (
