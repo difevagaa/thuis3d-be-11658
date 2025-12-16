@@ -82,7 +82,7 @@ export function normalizeCarouselSettings(settings: Record<string, any> = {}): N
     // Display
     itemsPerView: get(['itemsPerView', 'carouselProductsPerView', 'imageCarouselPerView', 'slidesToShow'], 3),
     itemsPerViewTablet: get(['itemsPerViewTablet', 'carouselProductsPerViewTablet'], 2),
-    itemsPerViewMobile: get(['itemsPerViewMobile', 'carouselProductsPerViewMobile'], 1),
+    itemsPerViewMobile: get(['itemsPerViewMobile', 'carouselProductsPerViewMobile'], 2),
     spaceBetween: get(['spaceBetween', 'carouselGap', 'gap'], 20),
     showNavigation: get(['showNavigation', 'carouselShowArrows', 'arrows'], true),
     showPagination: get(['showPagination', 'showDots', 'carouselShowDots', 'dots'], false),
