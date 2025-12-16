@@ -499,7 +499,7 @@ export default function ProductsAdminEnhanced() {
               <DialogTrigger asChild>
                 <Button onClick={resetForm}><Plus className="h-4 w-4 mr-2" />Crear Producto</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+              <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-6xl h-[95dvh] max-h-[95dvh] overflow-hidden flex flex-col">
                 <DialogHeader className="flex-shrink-0">
                   <DialogTitle className="flex items-center gap-2">
                     {editingProductId ? <><Pencil className="h-5 w-5" />Editar Producto</> : <><Plus className="h-5 w-5" />Crear Nuevo Producto</>}
@@ -507,19 +507,19 @@ export default function ProductsAdminEnhanced() {
                   {editingProductId && <Badge variant="secondary" className="w-fit">ID: {editingProductId.slice(0, 8)}...</Badge>}
                 </DialogHeader>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                  <TabsList className="grid grid-cols-8 mb-4 flex-shrink-0">
-                    <TabsTrigger value="basic" className="flex items-center gap-1 text-xs"><Info className="h-3.5 w-3.5" /><span className="hidden lg:inline">Básico</span></TabsTrigger>
-                    <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs"><DollarSign className="h-3.5 w-3.5" /><span className="hidden lg:inline">Precios</span></TabsTrigger>
-                    <TabsTrigger value="inventory" className="flex items-center gap-1 text-xs"><Box className="h-3.5 w-3.5" /><span className="hidden lg:inline">Inventario</span></TabsTrigger>
-                    <TabsTrigger value="badges" className="flex items-center gap-1 text-xs"><Star className="h-3.5 w-3.5" /><span className="hidden lg:inline">Destacados</span></TabsTrigger>
-                    <TabsTrigger value="shipping" className="flex items-center gap-1 text-xs"><Truck className="h-3.5 w-3.5" /><span className="hidden lg:inline">Envío</span></TabsTrigger>
-                    <TabsTrigger value="seo" className="flex items-center gap-1 text-xs"><Search className="h-3.5 w-3.5" /><span className="hidden lg:inline">SEO</span></TabsTrigger>
-                    <TabsTrigger value="media" className="flex items-center gap-1 text-xs"><Image className="h-3.5 w-3.5" /><span className="hidden lg:inline">Media</span></TabsTrigger>
-                    <TabsTrigger value="advanced" className="flex items-center gap-1 text-xs"><Settings2 className="h-3.5 w-3.5" /><span className="hidden lg:inline">Avanzado</span></TabsTrigger>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+                  <TabsList className="w-full flex flex-nowrap items-center justify-start gap-1 mb-4 flex-shrink-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    <TabsTrigger value="basic" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Info className="h-3.5 w-3.5" /><span className="hidden lg:inline">Básico</span></TabsTrigger>
+                    <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><DollarSign className="h-3.5 w-3.5" /><span className="hidden lg:inline">Precios</span></TabsTrigger>
+                    <TabsTrigger value="inventory" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Box className="h-3.5 w-3.5" /><span className="hidden lg:inline">Inventario</span></TabsTrigger>
+                    <TabsTrigger value="badges" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Star className="h-3.5 w-3.5" /><span className="hidden lg:inline">Destacados</span></TabsTrigger>
+                    <TabsTrigger value="shipping" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Truck className="h-3.5 w-3.5" /><span className="hidden lg:inline">Envío</span></TabsTrigger>
+                    <TabsTrigger value="seo" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Search className="h-3.5 w-3.5" /><span className="hidden lg:inline">SEO</span></TabsTrigger>
+                    <TabsTrigger value="media" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Image className="h-3.5 w-3.5" /><span className="hidden lg:inline">Media</span></TabsTrigger>
+                    <TabsTrigger value="advanced" className="flex items-center gap-1 text-xs shrink-0 min-w-[44px]"><Settings2 className="h-3.5 w-3.5" /><span className="hidden lg:inline">Avanzado</span></TabsTrigger>
                   </TabsList>
 
-                  <ScrollArea className="flex-1 pr-4">
+                  <ScrollArea className="flex-1 min-h-0 pr-4">
                     {/* TAB: BÁSICO */}
                     <TabsContent value="basic" className="space-y-4 mt-0">
                       <Card>
