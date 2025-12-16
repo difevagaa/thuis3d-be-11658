@@ -248,15 +248,15 @@
      MOBILE APP-LIKE EXPERIENCE - Native App Feel
      ========================================================== */
   
-  /* Mobile-first: Larger, more readable text for app-like feel */
+  /* Mobile-first: Readable text without breaking calculations */
   @media (max-width: 640px) {
     html {
-      /* Global mobile scale (-30%) */
-      font-size: 11.2px; /* 16px * 0.7 */
+      /* Use standard 16px to avoid breaking width calculations */
+      font-size: 16px;
     }
     
     body {
-      font-size: 1rem;
+      font-size: 0.875rem; /* 14px for mobile */
       line-height: 1.5;
     }
     
@@ -329,25 +329,25 @@
    MOBILE APP STYLES - Native Mobile Experience
    ========================================================== */
 
-/* App-like mobile cards */
+/* App-like mobile cards - Amazon style */
 @media (max-width: 640px) {
-  /* Full-width cards with rounded corners */
+  /* Compact cards with subtle shadow */
   .card, [class*="Card"] {
-    border-radius: 1rem !important;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
   }
   
-  /* Generous card padding */
+  /* Compact card padding for product cards */
   .card > *, [class*="CardContent"], [class*="CardHeader"] {
-    padding: 1.25rem !important;
+    padding: 0 !important; /* Let components control their own padding */
   }
   
-  /* Large, tappable buttons (scaled down on mobile) */
+  /* Reasonable button sizes - not too big */
   button, [role="button"], .btn, a[class*="Button"] {
-    min-height: 40px;
-    min-width: 40px;
-    font-size: 1rem;
+    min-height: 36px;
+    min-width: 36px;
+    font-size: 0.875rem;
     font-weight: 500;
     border-radius: 0.75rem;
     touch-action: manipulation;
