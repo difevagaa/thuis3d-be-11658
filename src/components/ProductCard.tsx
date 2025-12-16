@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, ShoppingCart, Euro } from "lucide-react";
+import { Printer, Euro } from "lucide-react";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -23,43 +23,49 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
 
   return (
     <Link to={`/producto/${product.id}`}>
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-        <CardContent className="p-2 md:p-3 lg:p-4">
-          <div className="aspect-square bg-muted rounded-md mb-2 md:mb-3 lg:mb-4 overflow-hidden flex items-center justify-center">
+      <Card className="hover:shadow-md transition-all cursor-pointer group overflow-hidden border-0 shadow-sm bg-card">
+        <CardContent className="p-0">
+          {/* Image Container - Square aspect ratio */}
+          <div className="aspect-square bg-muted overflow-hidden relative">
             {firstImage ? (
-              <img src={firstImage} alt={content.name} className="w-full h-full object-cover" />
+              <img 
+                src={firstImage} 
+                alt={content.name} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                loading="lazy"
+              />
             ) : (
-              <Printer className="h-10 w-10 md:h-12 md:w-12 lg:h-16 lg:w-16 text-muted-foreground" />
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <Printer className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground/50" />
+              </div>
+            )}
+            
+            {/* Free Shipping Badge - Top left corner */}
+            {product.shipping_type === 'free' && (
+              <div className="absolute top-1.5 left-1.5 bg-green-500 text-white text-[9px] md:text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                {t('freeShipping')}
+              </div>
             )}
           </div>
-          <h3 className="font-semibold mb-1 md:mb-2 text-xs md:text-sm lg:text-base line-clamp-2 group-hover:text-primary transition-colors">
-            {content.name}
-          </h3>
           
-          {/* Product Code */}
-          {product.product_code && (
-            <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mb-1 font-mono">
-              {product.product_code}
-            </p>
-          )}
-          
-          {/* Free Shipping Badge */}
-          {product.shipping_type === 'free' && (
-            <div className="bg-success/10 border border-success/30 rounded-md p-1 md:p-2 mb-2 md:mb-3">
-              <p className="text-[9px] md:text-[10px] lg:text-xs font-semibold text-success text-center leading-tight">
-                {t('freeShipping')}
+          {/* Product Info */}
+          <div className="p-2 md:p-3 space-y-1">
+            {/* Product Name - 2 lines max */}
+            <h3 className="font-medium text-xs md:text-sm leading-tight line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] group-hover:text-primary transition-colors">
+              {content.name}
+            </h3>
+            
+            {/* Product Code */}
+            {product.product_code && (
+              <p className="text-[9px] md:text-[10px] text-muted-foreground font-mono">
+                #{product.product_code}
               </p>
+            )}
+            
+            {/* Price */}
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-primary font-bold text-sm md:text-base">€{product.price}</span>
             </div>
-          )}
-          
-          <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-primary mb-2 md:mb-3 lg:mb-4 flex items-center gap-1">
-            <Euro className="h-4 w-4 md:h-5 md:w-5" />
-            {product.price}
-          </p>
-          
-          <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors">
-            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
-            <span>{t('viewDetails')}</span>
           </div>
         </CardContent>
       </Card>

@@ -458,33 +458,33 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 lg:py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
-        <div className="space-y-2 md:space-y-3 lg:space-y-4">
-          {/* Main Image */}
-          <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+    <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-4 py-3 md:py-6 lg:py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 lg:gap-10">
+        <div className="space-y-2">
+          {/* Main Image - Constrained height on mobile */}
+          <div className="aspect-square max-h-[60vh] md:max-h-none bg-muted rounded-lg overflow-hidden mx-auto w-full max-w-md md:max-w-none">
             {productImages.length > 0 ? (
               <img 
                 src={productImages[currentImageIndex]} 
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <p className="text-muted-foreground text-sm md:text-base">Sin imagen</p>
+                <p className="text-muted-foreground text-sm">Sin imagen</p>
               </div>
             )}
           </div>
           
-          {/* Thumbnail Gallery */}
+          {/* Thumbnail Gallery - Horizontal scroll on mobile */}
           {productImages.length > 1 && (
-            <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-1 md:gap-2">
+            <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
               {productImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`aspect-square rounded-md md:rounded-lg overflow-hidden border-2 transition-colors ${
-                    index === currentImageIndex ? 'border-primary' : 'border-transparent'
+                  className={`flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                    index === currentImageIndex ? 'border-primary' : 'border-muted'
                   }`}
                 >
                   <img 
