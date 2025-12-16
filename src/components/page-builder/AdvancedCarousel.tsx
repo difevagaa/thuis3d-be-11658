@@ -1,6 +1,13 @@
 /**
  * Advanced Carousel Component
  * Supports all carousel configuration options from CarouselSettings
+ * 
+ * IMPORTANT: This component expects settings already normalized.
+ * Use normalizeCarouselSettings() from carouselSettingsNormalizer.ts before passing settings.
+ * 
+ * Key expectations:
+ * - autoplayDelay: in SECONDS (not milliseconds)
+ * - transitionDuration: in MILLISECONDS
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,12 +25,12 @@ export interface CarouselSettings {
   showPagination?: boolean;
   loop?: boolean;
   
-  // Timing
+  // Timing - autoplayDelay is in SECONDS
   autoplay?: boolean;
   autoplayDelay?: number;
   pauseOnHover?: boolean;
   stopOnInteraction?: boolean;
-  transitionDuration?: number;
+  transitionDuration?: number; // in milliseconds
   effect?: 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip';
   
   // Layout
