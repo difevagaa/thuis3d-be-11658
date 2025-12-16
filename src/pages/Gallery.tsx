@@ -89,10 +89,10 @@ export default function Gallery() {
             <p className="text-muted-foreground">{t('empty')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 md:gap-6">
             {items.map((item) => (
               <Card key={item.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
-                <div className="relative aspect-square bg-muted">
+                <div className="relative aspect-[4/3] sm:aspect-square bg-muted">
                   {item.media_type === 'image' ? (
                     <img
                       src={item.media_url}
@@ -120,12 +120,12 @@ export default function Gallery() {
                   )}
                 </div>
                 
-                <CardContent className="p-3 md:p-4">
-                  <h3 className="font-semibold text-base md:text-lg mb-1 md:mb-2">{item.title}</h3>
+                <CardContent className="p-2 sm:p-3 md:p-4">
+                  <h3 className="font-semibold text-xs sm:text-base md:text-lg mb-0.5 sm:mb-1 md:mb-2 line-clamp-1">{item.title}</h3>
                   {item.description && (
                     <RichTextDisplay 
                       content={item.description} 
-                      className="text-xs md:text-sm text-muted-foreground line-clamp-2 md:line-clamp-3 [&_p]:mb-0"
+                      className="text-[10px] sm:text-xs md:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2 md:line-clamp-3 [&_p]:mb-0"
                     />
                   )}
                 </CardContent>
