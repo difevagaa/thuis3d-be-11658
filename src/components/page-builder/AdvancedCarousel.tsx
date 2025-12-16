@@ -275,6 +275,9 @@ export function AdvancedCarousel({
     );
   }
 
+  const hasNavigation = settings.showNavigation !== false && items.length > itemsPerView;
+  const usesHorizontalNav = hasNavigation && settings.direction !== 'vertical';
+
   return (
     <div 
       ref={carouselRef}
@@ -285,54 +288,57 @@ export function AdvancedCarousel({
         height: settings.carouselHeight || 'auto'
       }}
     >
-      {/* Carousel track wrapper with proper overflow handling */}
-      <div className={cn('overflow-hidden', getWidthClass(), getWrapperAlignClass())}>
-        <div 
-          className={cn(
-            'flex transition-transform justify-start',
-            settings.direction === 'vertical' ? 'flex-col' : 'flex-row'
-          )}
-          style={{
-            transform: getTransform(),
-            transitionDuration: `${settings.transitionDuration || 600}ms`,
-            gap: `${settings.spaceBetween || 20}px`,
-            // Ensure proper width calculation for mobile
-            width: settings.direction === 'vertical' ? '100%' : undefined
-          }}
-        >
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className={cn(
-                'flex-shrink-0',
-                settings.effect === 'fade' && index !== currentIndex && 'opacity-0'
-              )}
-              style={{
-                width: settings.direction === 'vertical' 
-                  ? '100%' 
-                  : `calc((100% - ${(settings.spaceBetween || 20) * (itemsPerView - 1)}px) / ${itemsPerView})`,
-                transitionProperty: settings.effect === 'fade' ? 'opacity' : 'none',
-                transitionDuration: `${settings.transitionDuration || 600}ms`,
-                // Prevent content overflow on mobile
-                minWidth: 0
-              }}
-            >
-              <div className="w-full h-full">
-                {renderItem(item, index)}
+      {/* Inner gutter so arrows never tap the cards */}
+      <div className={cn(usesHorizontalNav ? 'px-10 sm:px-12' : '')}>
+        {/* Carousel track wrapper with proper overflow handling */}
+        <div className={cn('overflow-hidden', getWidthClass(), getWrapperAlignClass())}>
+          <div 
+            className={cn(
+              'flex transition-transform justify-start',
+              settings.direction === 'vertical' ? 'flex-col' : 'flex-row'
+            )}
+            style={{
+              transform: getTransform(),
+              transitionDuration: `${settings.transitionDuration || 600}ms`,
+              gap: `${settings.spaceBetween || 20}px`,
+              // Ensure proper width calculation for mobile
+              width: settings.direction === 'vertical' ? '100%' : undefined
+            }}
+          >
+            {items.map((item, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'flex-shrink-0',
+                  settings.effect === 'fade' && index !== currentIndex && 'opacity-0'
+                )}
+                style={{
+                  width: settings.direction === 'vertical' 
+                    ? '100%' 
+                    : `calc((100% - ${(settings.spaceBetween || 20) * (itemsPerView - 1)}px) / ${itemsPerView})`,
+                  transitionProperty: settings.effect === 'fade' ? 'opacity' : 'none',
+                  transitionDuration: `${settings.transitionDuration || 600}ms`,
+                  // Prevent content overflow on mobile
+                  minWidth: 0
+                }}
+              >
+                <div className="w-full h-full">
+                  {renderItem(item, index)}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Navigation arrows */}
-      {settings.showNavigation !== false && items.length > itemsPerView && (
+      {hasNavigation && (
         <>
           <Button
             variant="outline"
             size="icon"
             className={cn(
-              'absolute top-1/2 -translate-y-1/2 z-10',
+              'absolute top-1/2 -translate-y-1/2 z-30 bg-background/95 shadow-lg border-border',
               settings.direction === 'vertical' ? 'left-1/2 -translate-x-1/2 top-0' : 'left-2'
             )}
             onClick={goToPrev}
@@ -344,7 +350,7 @@ export function AdvancedCarousel({
             variant="outline"
             size="icon"
             className={cn(
-              'absolute top-1/2 -translate-y-1/2 z-10',
+              'absolute top-1/2 -translate-y-1/2 z-30 bg-background/95 shadow-lg border-border',
               settings.direction === 'vertical' ? 'left-1/2 -translate-x-1/2 bottom-0 top-auto' : 'right-2'
             )}
             onClick={goToNext}

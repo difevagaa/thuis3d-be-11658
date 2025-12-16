@@ -1136,43 +1136,74 @@ function VideoSection({ section }: { section: SectionData }) {
   );
 }
 
-// Amazon-style Compact Product Card for Carousel - Square images, prominent price
-function ProductCardCompact({ product }: { 
-  product: any; 
+// Amazon-style Compact Product Card for Carousel - configurable sizing
+function ProductCardCompact({
+  product,
+  imageHeight = 180,
+  imageFit = 'cover',
+  imageAspectRatio = '1/1',
+  titleSize = 13,
+  priceSize = 18,
+}: {
+  product: any;
   imageHeight?: number;
   imageFit?: 'cover' | 'contain' | 'fill' | 'scale-down';
+  imageAspectRatio?: string;
+  titleSize?: number;
+  priceSize?: number;
 }) {
   const firstImage = product.images?.[0]?.image_url;
-  const { content } = useTranslatedContent(
-    'products',
-    product.id,
-    ['name', 'description'],
-    product
-  );
+  const { content } = useTranslatedContent('products', product.id, ['name', 'description'], product);
   const translatedName = content.name || product.name;
-  
+
+  const aspectClass =
+    imageAspectRatio === '4/5'
+      ? 'aspect-[4/5]'
+      : imageAspectRatio === '16/9'
+        ? 'aspect-video'
+        : imageAspectRatio === '3/4'
+          ? 'aspect-[3/4]'
+          : 'aspect-square';
+
+  const imageContainerStyle: React.CSSProperties | undefined =
+    typeof imageHeight === 'number' && Number.isFinite(imageHeight)
+      ? { height: `${Math.max(80, imageHeight)}px` }
+      : undefined;
+
   return (
-    <a 
+    <a
       href={`/producto/${product.id}`}
       className="block h-full bg-card border border-border/50 rounded-lg overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 group"
     >
-      {/* Image Container - Square aspect ratio, full coverage */}
-      <div className="aspect-square bg-muted/30 overflow-hidden relative">
+      {/* Image Container */}
+      <div
+        className={cn(
+          'bg-muted/30 overflow-hidden relative',
+          imageContainerStyle ? '' : aspectClass
+        )}
+        style={imageContainerStyle}
+      >
         {firstImage ? (
-          <img 
-            src={firstImage} 
+          <img
+            src={firstImage}
             alt={translatedName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            style={{ objectFit: imageFit as any }}
             loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
           </div>
         )}
-        
+
         {/* Free Shipping Badge */}
         {product.shipping_type === 'free' && (
           <div className="absolute top-1.5 left-1.5 bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
@@ -1180,18 +1211,25 @@ function ProductCardCompact({ product }: {
           </div>
         )}
       </div>
-      
-      {/* Info - Compact with prominent price */}
+
+      {/* Info */}
       <div className="p-2.5 sm:p-3">
-        <h3 className="text-xs sm:text-sm font-medium line-clamp-2 leading-snug min-h-[2.5rem] text-foreground group-hover:text-primary transition-colors">
+        <h3
+          className="font-medium line-clamp-2 leading-snug text-foreground group-hover:text-primary transition-colors hyphens-none break-words"
+          style={{ fontSize: `${Math.max(10, titleSize)}px` }}
+        >
           {translatedName}
         </h3>
-        
+
         {/* Price */}
-        <div className="flex items-baseline gap-0.5 mt-1">
-          <span className="text-xs text-muted-foreground">€</span>
-          <span className="text-primary font-bold text-base sm:text-lg leading-none">{product.price}</span>
-        </div>
+        {product.price !== null && product.price !== undefined && product.price !== '' && (
+          <div className="flex items-baseline gap-0.5 mt-1">
+            <span className="text-xs text-muted-foreground">€</span>
+            <span className="text-primary font-bold leading-none" style={{ fontSize: `${Math.max(12, priceSize)}px` }}>
+              {Number(product.price).toFixed(2)}
+            </span>
+          </div>
+        )}
       </div>
     </a>
   );
@@ -1385,7 +1423,7 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
     <section
       id={settings?.sectionId}
       className={cn(
-        "relative overflow-hidden",
+        "relative",
         settings?.fullWidth ? "w-full" : "container mx-auto",
         settings?.customClass
       )}
@@ -1457,9 +1495,12 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
           }}
           renderItem={(product: any) => (
             <ProductCardCompact 
-              product={product} 
+              product={product}
               imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 180}
               imageFit={settings?.imageFit ?? 'cover'}
+              imageAspectRatio={styles?.imageAspectRatio ?? settings?.imageAspectRatio ?? '1/1'}
+              titleSize={settings?.cardTitleSize ?? settings?.titleSize ?? 13}
+              priceSize={settings?.cardPriceSize ?? settings?.priceSize ?? 18}
             />
           )}
         />

@@ -183,30 +183,30 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
           <div className="space-y-2">
             <Label>Tamaño del título (px)</Label>
             <Slider
-              value={[settings?.titleSize || 16]}
-              onValueChange={(value) => onUpdate('titleSize', value[0])}
+              value={[settings?.cardTitleSize || 13]}
+              onValueChange={(value) => onUpdate('cardTitleSize', value[0])}
               min={10}
-              max={32}
+              max={24}
               step={1}
               className="w-full"
             />
             <div className="text-sm text-muted-foreground text-right">
-              {settings?.titleSize || 16}px
+              {settings?.cardTitleSize || 13}px
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Tamaño del precio (px)</Label>
             <Slider
-              value={[settings?.priceSize || 18]}
-              onValueChange={(value) => onUpdate('priceSize', value[0])}
+              value={[settings?.cardPriceSize || 18]}
+              onValueChange={(value) => onUpdate('cardPriceSize', value[0])}
               min={12}
               max={36}
               step={1}
               className="w-full"
             />
             <div className="text-sm text-muted-foreground text-right">
-              {settings?.priceSize || 18}px
+              {settings?.cardPriceSize || 18}px
             </div>
           </div>
 
@@ -376,15 +376,15 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
           <div className="space-y-2">
             <Label>Ancho del carrusel</Label>
             <Select
-              value={settings?.width || 'full'}
-              onValueChange={(value) => onUpdate('width', value)}
+              value={settings?.width ?? settings?.carouselWidth ?? 'full'}
+              onValueChange={(value) => onUpdate('carouselWidth', value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="full">Ancho completo</SelectItem>
-                <SelectItem value="contained">Contenedor</SelectItem>
+                <SelectItem value="container">Contenedor</SelectItem>
                 <SelectItem value="narrow">Estrecho</SelectItem>
                 <SelectItem value="wide">Ancho</SelectItem>
               </SelectContent>
