@@ -37,7 +37,6 @@ const LegalPage = lazy(() => import("./pages/LegalPage"));
 import CookieConsent from "./components/CookieConsent";
 import ScrollToTop from "./components/ScrollToTop";
 import NotFound from "./pages/NotFound";
-import { ClientChatWidget } from "./components/ClientChatWidget";
 import { SEOHead } from "./components/SEOHead";
 
 // User pages - lazy loaded
@@ -217,7 +216,6 @@ const App = () => {
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
             </Suspense>
-            <ClientChatWidget />
             <CookieConsent />
               </ErrorBoundary>
           </BrowserRouter>
