@@ -335,7 +335,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 hidden md:flex rounded-lg" onClick={() => navigate("/auth")}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg" onClick={() => navigate("/auth")}>
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
