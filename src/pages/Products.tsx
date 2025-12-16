@@ -11,6 +11,7 @@ import { Filter, Layers, Box, Euro, ArrowUpDown, Package, Search, X, SlidersHori
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
+import { useResponsiveSafe } from "@/contexts/ResponsiveContext";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,7 @@ import {
 
 const Products = () => {
   const { t } = useTranslation('products');
+  const { isMobile, isTablet, itemsPerRow } = useResponsiveSafe();
   const [products, setProducts] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -32,6 +34,8 @@ const Products = () => {
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  
+  const showMobileFilters = isMobile || isTablet;
 
   useEffect(() => {
     loadData();
@@ -298,83 +302,89 @@ const Products = () => {
         </CardContent>
       </Card>
       
-      {/* Mobile: Filter button + Sort + Count */}
-      <div className="flex items-center justify-between gap-2 mb-3 md:hidden">
-        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="text-xs">{t('filters.title')}</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px]">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                {t('filters.title')}
-              </SheetTitle>
-            </SheetHeader>
-            <div className="mt-4">
-              <FilterContent />
-            </div>
-          </SheetContent>
-        </Sheet>
+      {/* Mobile/Tablet: Filter button + Sort + Count */}
+      {showMobileFilters && (
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="text-xs">{t('filters.title')}</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px]">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  {t('filters.title')}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <FilterContent />
+              </div>
+            </SheetContent>
+          </Sheet>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {filteredProducts.length} {t('productsFound')}
-          </span>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[100px] h-9 text-xs">
-              <ArrowUpDown className="h-3 w-3 mr-1" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest" className="text-xs">{t('sort.newest')}</SelectItem>
-              <SelectItem value="price-asc" className="text-xs">{t('sort.priceAsc')}</SelectItem>
-              <SelectItem value="price-desc" className="text-xs">{t('sort.priceDesc')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredProducts.length} {t('productsFound')}
+            </span>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[100px] h-9 text-xs">
+                <ArrowUpDown className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest" className="text-xs">{t('sort.newest')}</SelectItem>
+                <SelectItem value="price-asc" className="text-xs">{t('sort.priceAsc')}</SelectItem>
+                <SelectItem value="price-desc" className="text-xs">{t('sort.priceDesc')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Desktop Layout */}
       <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
         {/* Desktop Filters Sidebar */}
-        <aside className="hidden md:block w-full lg:w-56 xl:w-64 space-y-4">
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b">
-                <Filter className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">{t('filters.title')}</h3>
-              </div>
-              <FilterContent />
-            </CardContent>
-          </Card>
-        </aside>
+        {!showMobileFilters && (
+          <aside className="w-full lg:w-56 xl:w-64 space-y-4">
+            <Card>
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <Filter className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">{t('filters.title')}</h3>
+                </div>
+                <FilterContent />
+              </CardContent>
+            </Card>
+          </aside>
+        )}
 
         {/* Products Grid */}
         <div className="flex-1">
           {/* Desktop: Count + Sort */}
-          <div className="hidden md:flex justify-between items-center mb-4">
-            <p className="text-muted-foreground text-sm flex items-center gap-1">
-              <Package className="h-4 w-4" />
-              {filteredProducts.length} {t('productsFound')}
-            </p>
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48 h-10 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest" className="text-sm">{t('sort.newest')}</SelectItem>
-                  <SelectItem value="price-asc" className="text-sm">{t('sort.priceAsc')}</SelectItem>
-                  <SelectItem value="price-desc" className="text-sm">{t('sort.priceDesc')}</SelectItem>
-                </SelectContent>
-              </Select>
+          {!showMobileFilters && (
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-muted-foreground text-sm flex items-center gap-1">
+                <Package className="h-4 w-4" />
+                {filteredProducts.length} {t('productsFound')}
+              </p>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-48 h-10 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest" className="text-sm">{t('sort.newest')}</SelectItem>
+                    <SelectItem value="price-asc" className="text-sm">{t('sort.priceAsc')}</SelectItem>
+                    <SelectItem value="price-desc" className="text-sm">{t('sort.priceDesc')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Products Grid - 2 columns mobile, 3-4 desktop */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
