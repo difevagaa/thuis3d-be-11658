@@ -1136,6 +1136,52 @@ function VideoSection({ section }: { section: SectionData }) {
   );
 }
 
+// Compact Product Card for Mobile Carousel - Images shown complete (contain) not cropped
+function ProductCardCompact({ product, imageHeight = 180, imageFit = 'contain' }: { 
+  product: any; 
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain' | 'fill' | 'scale-down';
+}) {
+  const firstImage = product.images?.[0]?.image_url;
+  
+  return (
+    <a 
+      href={`/producto/${product.id}`}
+      className="block bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+    >
+      {/* Image - using contain to show full image without cropping */}
+      <div 
+        className="w-full bg-muted flex items-end justify-center"
+        style={{ height: `${imageHeight}px` }}
+      >
+        {firstImage ? (
+          <img 
+            src={firstImage} 
+            alt={product.name}
+            className="max-w-full max-h-full"
+            style={{ 
+              objectFit: imageFit,
+              objectPosition: 'bottom center'
+            }}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+            Sin imagen
+          </div>
+        )}
+      </div>
+      {/* Info - compact */}
+      <div className="p-2">
+        <h3 className="text-xs font-medium line-clamp-2 leading-tight min-h-[2rem]">
+          {product.name}
+        </h3>
+        <p className="text-sm font-bold text-primary mt-1">€{product.price}</p>
+      </div>
+    </a>
+  );
+}
+
 // View All Button Component for Carousels
 function ViewAllButton({ settings }: { settings: any }) {
   const { t } = useTranslation(['products']);
@@ -1379,13 +1425,19 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         
         <AdvancedCarousel
           items={products}
-          settings={toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {}))}
+          settings={{
+            ...toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {})),
+            // Forzar carrusel horizontal en móvil con 2 items
+            displayMode: 'carousel',
+            itemsPerViewMobile: settings?.itemsPerViewMobile ?? 2,
+            showNavigation: true,
+            showPagination: settings?.showPagination ?? true,
+          }}
           renderItem={(product: any) => (
-            <ProductCard 
+            <ProductCardCompact 
               product={product} 
-              imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 250}
-              titleSize={settings?.titleSize ?? settings?.carouselTitleSize ?? 16}
-              priceSize={settings?.priceSize ?? settings?.carouselPriceSize ?? 18}
+              imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 180}
+              imageFit={settings?.imageFit ?? 'contain'}
             />
           )}
         />
