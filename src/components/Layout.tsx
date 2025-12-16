@@ -114,9 +114,10 @@ export const Layout = ({ children }: LayoutProps) => {
         }}
       >
         <div className="w-full px-2 sm:px-4 md:container md:mx-auto md:px-6">
-          <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between gap-2">
-            {/* Left side: Menu + Logo */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
+          {/* Force horizontal with flex-row and nowrap */}
+          <div className="flex flex-row flex-nowrap h-12 sm:h-14 md:h-16 items-center justify-between gap-1 sm:gap-2">
+            {/* Left side: Menu + Logo - Force row */}
+            <div className="flex flex-row flex-nowrap items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
               {/* Mobile Menu Button */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
@@ -268,8 +269,8 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </nav>
 
-            {/* Right side: Actions - Horizontal compact */}
-            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+            {/* Right side: Actions - Force horizontal row */}
+            <div className="flex flex-row flex-nowrap items-center gap-0.5 sm:gap-1 flex-shrink-0">
               <LanguageSelector />
               
               <Button 
