@@ -325,31 +325,33 @@ const Auth = () => {
                   </div>
                   
                   {/* Checkbox para suscripción al newsletter */}
-                  <div className="flex items-start space-x-2">
+                  <div className="flex items-start gap-3">
                     <Checkbox
                       id="subscribe-newsletter"
                       checked={subscribeNewsletter}
                       onCheckedChange={(checked) => setSubscribeNewsletter(checked === true)}
+                      className="mt-0.5 shrink-0"
                     />
                     <Label 
                       htmlFor="subscribe-newsletter" 
-                      className="text-sm font-normal cursor-pointer leading-tight"
+                      className="text-sm font-normal cursor-pointer leading-relaxed flex-1"
                     >
                       {t('subscribeNewsletter')}
                     </Label>
                   </div>
                   
                   {/* Checkbox para términos y condiciones */}
-                  <div className="flex items-start space-x-2">
+                  <div className="flex items-start gap-3">
                     <Checkbox
                       id="accept-terms"
                       checked={acceptTerms}
                       onCheckedChange={(checked) => setAcceptTerms(checked === true)}
                       required
+                      className="mt-0.5 shrink-0"
                     />
                     <Label 
                       htmlFor="accept-terms" 
-                      className="text-sm font-normal cursor-pointer leading-tight"
+                      className="text-sm font-normal cursor-pointer leading-relaxed flex-1"
                     >
                       {t('acceptTermsPrefix')}{' '}
                       <Link to="/legal/terms" className="text-primary underline hover:text-primary/80">
