@@ -81,17 +81,19 @@ export const Layout = ({ children }: LayoutProps) => {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartCount(cart.length);
     };
-    
+
     updateCartCount();
     window.addEventListener("storage", updateCartCount);
-    
-    const interval = setInterval(updateCartCount, 500);
-    
+
+    // Reduce render pressure: polling every 500ms was causing constant re-renders
+    const interval = setInterval(updateCartCount, 2000);
+
     return () => {
       window.removeEventListener("storage", updateCartCount);
       clearInterval(interval);
     };
   }, []);
+
 
   const handleNavigate = (path: string) => {
     navigate(path);
