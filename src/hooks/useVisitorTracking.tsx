@@ -80,13 +80,14 @@ export function useVisitorTracking() {
       }
     };
 
-    // Heartbeat: Actualizar actividad cada 30 segundos (solo usuarios autenticados)
+    // Heartbeat: Actualizar actividad cada 60 segundos (reducido de 30s para menor carga)
     const updateActivity = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Use cached session instead of calling getUser() every time
+        const session = (await supabase.auth.getSession()).data.session;
         
         // Solo actualizar si hay usuario autenticado
-        if (!user?.id) return;
+        if (!session?.user?.id) return;
         
         // Actualizar visitor_sessions (silencioso)
         try {
@@ -105,7 +106,7 @@ export function useVisitorTracking() {
         // Actualizar estado en profiles (silencioso)
         try {
           await supabase.rpc('update_user_activity', {
-            user_id_param: user.id,
+            user_id_param: session.user.id,
             page_path: window.location.pathname
           });
         } catch {
@@ -119,8 +120,8 @@ export function useVisitorTracking() {
     // Registrar al cargar
     registerVisitor();
 
-    // Heartbeat cada 30 segundos (balance entre precisión y carga del servidor)
-    updateIntervalRef.current = setInterval(updateActivity, 30000);
+    // Heartbeat cada 60 segundos (reducido de 30s)
+    updateIntervalRef.current = setInterval(updateActivity, 60000);
 
     // Marcar como inactivo al salir (beforeunload/pagehide)
     const handleBeforeUnload = async () => {

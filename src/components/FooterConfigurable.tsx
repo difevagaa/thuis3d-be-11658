@@ -133,38 +133,7 @@ export const FooterConfigurable = () => {
   const [footerLinks, setFooterLinks] = useState<any[]>([]);
 
   useEffect(() => {
-    // Subscribe to real-time changes
-    const footerChannel = supabase
-      .channel('footer-config-realtime')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'footer_settings'
-      }, loadFooterData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'site_settings'
-      }, loadFooterData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'footer_links'
-      }, loadFooterData)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'site_customization'
-      }, loadFooterData)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(footerChannel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
+    // Load data only once on mount and language change - Realtime is overkill for footer
     loadFooterData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i18n.language]);
