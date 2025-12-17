@@ -1444,6 +1444,11 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
   // Mobile-optimized padding
   const paddingY = styles?.paddingY ?? styles?.padding ?? 32;
   const paddingX = styles?.paddingX ?? 12;
+
+  // View-all button placement defaults to: after title (and subtitle) but before products
+  const viewAllPos = settings?.viewAllButtonPosition || 'top-center';
+  const showViewAllTop = !!settings?.showViewAllButton && viewAllPos.startsWith('top');
+  const showViewAllBottom = !!settings?.showViewAllButton && viewAllPos.startsWith('bottom');
   
   return (
     <section
@@ -1479,16 +1484,16 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center')
       )}>
         {/* Header with title, subtitle, and View All button - all in the same flow */}
-        {(content?.title || content?.subtitle || (settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top'))) && (
+        {(content?.title || content?.subtitle || showViewAllTop) && (
           <div className="mb-6">
             {/* Title row with View All button for top-right position */}
             {content?.title && (
               <div className={cn(
-                "flex items-center gap-4 mb-2",
-                settings?.viewAllButtonPosition === 'top-left' ? 'flex-row-reverse justify-end' : '',
-                settings?.viewAllButtonPosition === 'top-center' ? 'flex-col items-center' : '',
-                settings?.viewAllButtonPosition === 'top-right' ? 'justify-between' : '',
-                !settings?.showViewAllButton || !settings?.viewAllButtonPosition?.startsWith('top') ? 'justify-center' : ''
+                "flex flex-wrap items-center gap-3 mb-2",
+                viewAllPos === 'top-left' ? 'flex-row-reverse justify-end' : '',
+                viewAllPos === 'top-center' ? 'flex-col items-center' : '',
+                viewAllPos === 'top-right' ? 'justify-between' : '',
+                !showViewAllTop ? 'justify-center' : ''
               )}>
                 <h2 
                   className="font-bold" 
@@ -1503,8 +1508,8 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
                   {content.title}
                 </h2>
                 {/* View All Button - Inline with title */}
-                {settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top') && settings?.viewAllButtonPosition !== 'top-center' && (
-                  <ViewAllButtonInline settings={settings} />
+                {showViewAllTop && viewAllPos !== 'top-center' && (
+                  <ViewAllButtonInline settings={{ ...settings, viewAllButtonPosition: viewAllPos }} />
                 )}
               </div>
             )}
@@ -1523,9 +1528,9 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
             )}
             
             {/* View All Button - Center position (below title/subtitle) */}
-            {settings?.showViewAllButton && settings?.viewAllButtonPosition === 'top-center' && (
+            {showViewAllTop && viewAllPos === 'top-center' && (
               <div className="flex justify-center mt-4">
-                <ViewAllButtonInline settings={settings} />
+                <ViewAllButtonInline settings={{ ...settings, viewAllButtonPosition: viewAllPos }} />
               </div>
             )}
           </div>
@@ -1556,9 +1561,9 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
           />
         </div>
         
-        {/* View All Button - Bottom Position */}
-        {settings?.showViewAllButton && (!settings?.viewAllButtonPosition || settings?.viewAllButtonPosition?.startsWith('bottom')) && (
-          <ViewAllButton settings={settings} />
+        {/* View All Button - Bottom Position (only when explicitly configured) */}
+        {showViewAllBottom && (
+          <ViewAllButton settings={{ ...settings, viewAllButtonPosition: viewAllPos }} />
         )}
       </div>
       
