@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { SectionRenderer, usePageSections } from "@/components/page-builder/SectionRenderer";
+import { SectionRenderer } from "@/components/page-builder/SectionRenderer";
+import { usePageSections } from "@/hooks/usePageSections";
 
 const Home = () => {
   const { t } = useTranslation(["home", "common"]);
