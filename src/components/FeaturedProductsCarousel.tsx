@@ -47,11 +47,11 @@ const TranslatedFeaturedProductCard = ({
   const translatedName = content.name || product.name;
 
   return (
-    <Link to={`/producto/${product.id}`}>
-      <div ref={cardRef} className="will-change-transform h-full">
-        <Card className="group hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer h-full border-border/30 bg-card">
+    <Link to={`/producto/${product.id}`} className="block">
+      <div ref={cardRef} className="will-change-transform">
+        <Card className="group hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer border-border/30 bg-card">
           {product.images && product.images.length > 0 ? (
-            <div className="relative aspect-square bg-muted/30 overflow-hidden">
+            <div className="relative aspect-square overflow-hidden">
               <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
             </div>
           ) : (
@@ -59,12 +59,12 @@ const TranslatedFeaturedProductCard = ({
               <Printer className="h-8 w-8 text-muted-foreground/30" />
             </div>
           )}
-          <div className="p-2 sm:p-3 space-y-0.5">
+          <div className="p-2 sm:p-3">
             <h3 className="text-xs sm:text-sm font-medium text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
               {translatedName}
             </h3>
             {product.price && (
-              <p className="text-sm sm:text-base font-bold text-primary">
+              <p className="text-sm sm:text-base font-bold text-primary mt-1">
                 €{Number(product.price).toFixed(2)}
               </p>
             )}

@@ -26,24 +26,24 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
     <Link to={`/producto/${product.id}`} className="block group">
       <Card className="h-full overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200 bg-card">
         <CardContent className="p-0">
-          {/* Image Container - Square aspect ratio with contain (not cropped) */}
-          <div className="aspect-square bg-muted/30 overflow-hidden relative flex items-center justify-center p-2">
+          {/* Image Container - Square aspect ratio */}
+          <div className="aspect-square overflow-hidden relative">
             {firstImage ? (
               <img 
                 src={firstImage} 
                 alt={content.name} 
-                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted/50">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
                 <Printer className="h-10 w-10 md:h-16 md:w-16 text-muted-foreground/40" />
               </div>
             )}
             
             {/* Free Shipping Badge - Amazon style */}
             {product.shipping_type === 'free' && (
-              <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-green-600 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+              <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-green-600 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide z-10">
                 {t('freeShipping')}
               </div>
             )}

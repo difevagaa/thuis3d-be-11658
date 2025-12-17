@@ -49,28 +49,28 @@ export default function ProductCarousel({
     setCurrentIndex(prev => (prev + 1) % images.length);
   };
   if (!images || images.length === 0) {
-    return <div className="w-full h-full bg-muted flex items-center justify-center">
+    return <div className="absolute inset-0 bg-muted flex items-center justify-center">
       <span className="text-muted-foreground text-sm">Sin imagen</span>
     </div>;
   }
   if (images.length === 1) {
-    return <div className="w-full h-full">
-        {!imageError.has(0) ? <img src={images[0].image_url} alt={alt} className="w-full h-full object-cover" onError={() => setImageError(prev => new Set([...prev, 0]))} /> : <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" />}
+    return <div className="absolute inset-0">
+        {!imageError.has(0) ? <img src={images[0].image_url} alt={alt} className="absolute inset-0 w-full h-full object-cover" onError={() => setImageError(prev => new Set([...prev, 0]))} /> : <div className="absolute inset-0 flex items-center justify-center"><Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" /></div>}
       </div>;
   }
   const isCurrentImageLoaded = loadedImages.has(currentIndex);
   const hasCurrentImageError = imageError.has(currentIndex);
-  return <div className="relative w-full h-full">
-      {!hasCurrentImageError && isCurrentImageLoaded ? <img src={images[currentIndex].image_url} alt={`${alt} - imagen ${currentIndex + 1}`} onError={() => setImageError(prev => new Set([...prev, currentIndex]))} className="w-full h-full object-cover" /> : hasCurrentImageError ? <Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" /> : <div className="w-full h-full bg-muted/30 animate-pulse" />}
+  return <div className="absolute inset-0">
+      {!hasCurrentImageError && isCurrentImageLoaded ? <img src={images[currentIndex].image_url} alt={`${alt} - imagen ${currentIndex + 1}`} onError={() => setImageError(prev => new Set([...prev, currentIndex]))} className="absolute inset-0 w-full h-full object-cover" /> : hasCurrentImageError ? <div className="absolute inset-0 flex items-center justify-center"><Printer className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground/30" /></div> : <div className="absolute inset-0 bg-muted/30 animate-pulse" />}
       
-      <Button variant="ghost" size="icon" className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => {
+      <Button variant="ghost" size="icon" className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => {
       e.preventDefault();
       goToPrevious();
     }}>
         <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
       </Button>
       
-      <Button variant="ghost" size="icon" className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => {
+      <Button variant="ghost" size="icon" className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => {
       e.preventDefault();
       goToNext();
     }}>
