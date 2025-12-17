@@ -1235,7 +1235,36 @@ function ProductCardCompact({
   );
 }
 
-// View All Button Component for Carousels
+// View All Button Component for Carousels - Inline version for header
+function ViewAllButtonInline({ settings }: { settings: any }) {
+  const { t } = useTranslation(['products']);
+  const variant = settings?.viewAllButtonVariant || 'default';
+  const text = settings?.viewAllButtonText || t('products:viewAllProducts');
+  const url = settings?.viewAllButtonUrl || '/productos';
+  const bgColor = settings?.viewAllButtonBgColor;
+  const textColor = settings?.viewAllButtonTextColor;
+  
+  const buttonStyle: React.CSSProperties = {};
+  if (bgColor && variant === 'default') {
+    buttonStyle.backgroundColor = bgColor;
+  }
+  if (textColor) {
+    buttonStyle.color = textColor;
+  }
+
+  return (
+    <Button
+      variant={variant as any}
+      onClick={() => safeNavigate(url)}
+      style={buttonStyle}
+      className="font-semibold shrink-0"
+    >
+      {text}
+    </Button>
+  );
+}
+
+// View All Button Component for Carousels - Bottom position
 function ViewAllButton({ settings }: { settings: any }) {
   const { t } = useTranslation(['products']);
   const position = settings?.viewAllButtonPosition || 'bottom-center';
@@ -1245,13 +1274,10 @@ function ViewAllButton({ settings }: { settings: any }) {
   const bgColor = settings?.viewAllButtonBgColor;
   const textColor = settings?.viewAllButtonTextColor;
   
-  const positionClasses: Record<string, string> = {
-    'top-left': 'justify-start mt-0 mb-6',
-    'top-center': 'justify-center mt-0 mb-6',
-    'top-right': 'justify-end mt-0 mb-6',
-    'bottom-left': 'justify-start mt-6 mb-0',
-    'bottom-center': 'justify-center mt-6 mb-0',
-    'bottom-right': 'justify-end mt-6 mb-0',
+  const justifyClasses: Record<string, string> = {
+    'bottom-left': 'justify-start',
+    'bottom-center': 'justify-center',
+    'bottom-right': 'justify-end',
   };
   
   const buttonStyle: React.CSSProperties = {};
@@ -1263,7 +1289,7 @@ function ViewAllButton({ settings }: { settings: any }) {
   }
 
   return (
-    <div className={cn("flex w-full", positionClasses[position] || positionClasses['bottom-center'])}>
+    <div className={cn("flex w-full mt-6 relative z-10", justifyClasses[position] || justifyClasses['bottom-center'])}>
       <Button
         variant={variant as any}
         onClick={() => safeNavigate(url)}
@@ -1452,58 +1478,83 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
         "max-w-7xl mx-auto",
         getTextAlignClass(settings?.textAlign || styles?.textAlign || 'center')
       )}>
-        {content?.title && (
-          <h2 
-            className="font-bold mb-4" 
-            style={{ 
-              color: styles?.textColor,
-              fontFamily: styles?.fontFamily,
-              fontSize: `${settings?.titleSize || 32}px`,
-              fontWeight: settings?.titleWeight || 'bold',
-              lineHeight: settings?.lineHeight || 1.2
-            }}
-          >
-            {content.title}
-          </h2>
-        )}
-        {content?.subtitle && (
-          <p 
-            className="mb-8 opacity-90" 
-            style={{ 
-              color: styles?.textColor,
-              fontSize: `${settings?.textSize || 18}px`
-            }}
-          >
-            {content.subtitle}
-          </p>
+        {/* Header with title, subtitle, and View All button - all in the same flow */}
+        {(content?.title || content?.subtitle || (settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top'))) && (
+          <div className="mb-6">
+            {/* Title row with View All button for top-right position */}
+            {content?.title && (
+              <div className={cn(
+                "flex items-center gap-4 mb-2",
+                settings?.viewAllButtonPosition === 'top-left' ? 'flex-row-reverse justify-end' : '',
+                settings?.viewAllButtonPosition === 'top-center' ? 'flex-col items-center' : '',
+                settings?.viewAllButtonPosition === 'top-right' ? 'justify-between' : '',
+                !settings?.showViewAllButton || !settings?.viewAllButtonPosition?.startsWith('top') ? 'justify-center' : ''
+              )}>
+                <h2 
+                  className="font-bold" 
+                  style={{ 
+                    color: styles?.textColor,
+                    fontFamily: styles?.fontFamily,
+                    fontSize: `${settings?.titleSize || 32}px`,
+                    fontWeight: settings?.titleWeight || 'bold',
+                    lineHeight: settings?.lineHeight || 1.2
+                  }}
+                >
+                  {content.title}
+                </h2>
+                {/* View All Button - Inline with title */}
+                {settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top') && settings?.viewAllButtonPosition !== 'top-center' && (
+                  <ViewAllButtonInline settings={settings} />
+                )}
+              </div>
+            )}
+            
+            {/* Subtitle */}
+            {content?.subtitle && (
+              <p 
+                className="opacity-90" 
+                style={{ 
+                  color: styles?.textColor,
+                  fontSize: `${settings?.textSize || 18}px`
+                }}
+              >
+                {content.subtitle}
+              </p>
+            )}
+            
+            {/* View All Button - Center position (below title/subtitle) */}
+            {settings?.showViewAllButton && settings?.viewAllButtonPosition === 'top-center' && (
+              <div className="flex justify-center mt-4">
+                <ViewAllButtonInline settings={settings} />
+              </div>
+            )}
+          </div>
         )}
         
-        {/* View All Button - Top Position */}
-        {settings?.showViewAllButton && settings?.viewAllButtonPosition?.startsWith('top') && (
-          <ViewAllButton settings={settings} />
-        )}
-        
-        <AdvancedCarousel
-          items={products}
-          settings={{
-            ...toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {})),
-            displayMode: 'carousel',
-            itemsPerViewMobile: settings?.itemsPerViewMobile ?? 2,
-            spaceBetween: settings?.spaceBetween ?? 8,
-            showNavigation: settings?.showNavigation !== false,
-            showPagination: settings?.showPagination ?? false,
-          }}
-          renderItem={(product: any) => (
-            <ProductCardCompact 
-              product={product}
-              imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 180}
-              imageFit={settings?.imageFit ?? 'cover'}
-              imageAspectRatio={styles?.imageAspectRatio ?? settings?.imageAspectRatio ?? '1/1'}
-              titleSize={settings?.cardTitleSize ?? settings?.titleSize ?? 13}
-              priceSize={settings?.cardPriceSize ?? settings?.priceSize ?? 18}
-            />
-          )}
-        />
+        {/* Carousel with relative positioning to keep buttons above it */}
+        <div className="relative">
+          <AdvancedCarousel
+            items={products}
+            settings={{
+              ...toAdvancedCarouselSettings(normalizeCarouselSettings(settings || {})),
+              displayMode: 'carousel',
+              itemsPerViewMobile: settings?.itemsPerViewMobile ?? 2,
+              spaceBetween: settings?.spaceBetween ?? 8,
+              showNavigation: settings?.showNavigation !== false,
+              showPagination: settings?.showPagination ?? false,
+            }}
+            renderItem={(product: any) => (
+              <ProductCardCompact 
+                product={product}
+                imageHeight={settings?.imageHeight ?? settings?.carouselImageHeight ?? 180}
+                imageFit={settings?.imageFit ?? 'cover'}
+                imageAspectRatio={styles?.imageAspectRatio ?? settings?.imageAspectRatio ?? '1/1'}
+                titleSize={settings?.cardTitleSize ?? settings?.titleSize ?? 13}
+                priceSize={settings?.cardPriceSize ?? settings?.priceSize ?? 18}
+              />
+            )}
+          />
+        </div>
         
         {/* View All Button - Bottom Position */}
         {settings?.showViewAllButton && (!settings?.viewAllButtonPosition || settings?.viewAllButtonPosition?.startsWith('bottom')) && (
