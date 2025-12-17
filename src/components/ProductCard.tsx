@@ -27,12 +27,12 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
       <Card className="h-full overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200 bg-card">
         <CardContent className="p-0">
           {/* Image Container - Square aspect ratio */}
-          <div className="aspect-square overflow-hidden relative">
+          <div className="aspect-square overflow-hidden relative product-media-frame">
             {firstImage ? (
               <img 
                 src={firstImage} 
                 alt={content.name} 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy"
               />
             ) : (

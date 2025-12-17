@@ -121,10 +121,22 @@ header, footer, nav {
     margin-right: auto !important;
   }
 
-  /* Images must be contained */
+  /* Images must be contained (do NOT force height:auto with !important; it breaks aspect-ratio cards) */
   img, video, iframe, canvas, svg {
     max-width: 100% !important;
-    height: auto !important;
+    height: auto;
+  }
+
+  /* Product image frames: prevent cropped images + gray gaps on mobile */
+  .product-media-frame {
+    background: hsl(var(--card));
+  }
+
+  .product-media-frame img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    background: hsl(var(--card));
   }
 
   /* Tables scroll horizontally inside a container */
