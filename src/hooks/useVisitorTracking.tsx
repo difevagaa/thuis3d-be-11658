@@ -19,7 +19,6 @@ export function useVisitorTracking() {
     crypto.randomUUID()
   );
   const updateIntervalRef = useRef<NodeJS.Timeout>();
-  const isRegistering = useRef(false);
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;
@@ -27,20 +26,15 @@ export function useVisitorTracking() {
     // Guardar session ID
     sessionStorage.setItem('visitor_session_id', sessionId);
     
-    // Registrar visitante (silencioso - no bloquea la app si falla)
-    const registerVisitor = async () => {
-      if (isRegistering.current) return;
-      isRegistering.current = true;
-      
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id || null;
+    // Registrar visitante de forma COMPLETAMENTE NO-BLOQUEANTE
+    // Usa requestIdleCallback para ejecutar cuando el navegador esté libre
+    const registerVisitor = () => {
+      // Obtener sesión de forma asíncrona sin bloquear
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const userId = session?.user?.id;
         
-        // Solo intentar si hay usuario autenticado (evitar errores RLS)
-        if (!userId) {
-          isRegistering.current = false;
-          return;
-        }
+        // Solo registrar si hay usuario autenticado
+        if (!userId) return;
         
         const visitorData = {
           session_id: sessionId,
@@ -52,113 +46,69 @@ export function useVisitorTracking() {
           device_type: getDeviceType()
         };
         
-        // Operación silenciosa - no bloquea la app
-        try {
-          await supabase
-            .from('visitor_sessions')
-            .upsert(visitorData, {
-              onConflict: 'session_id',
-              ignoreDuplicates: false
-            });
-        } catch {
-          // Silenciar errores RLS
-        }
+        // Upsert silencioso
+        supabase
+          .from('visitor_sessions')
+          .upsert(visitorData, { onConflict: 'session_id' })
+          .then(() => {}, () => {});
         
-        // Actualizar estado en profiles (silencioso)
-        try {
-          await supabase.rpc('update_user_activity', {
-            user_id_param: userId,
-            page_path: window.location.pathname
-          });
-        } catch {
-          // Silenciar errores
-        }
-      } catch {
-        // Silenciar excepciones
-      } finally {
-        isRegistering.current = false;
-      }
+        // Actualizar perfil silencioso
+        supabase.rpc('update_user_activity', {
+          user_id_param: userId,
+          page_path: window.location.pathname
+        }).then(() => {}, () => {});
+      }).then(() => {}, () => {});
     };
 
-    // Heartbeat: Actualizar actividad cada 60 segundos (reducido de 30s para menor carga)
-    const updateActivity = async () => {
-      try {
-        // Use cached session instead of calling getUser() every time
-        const session = (await supabase.auth.getSession()).data.session;
-        
-        // Solo actualizar si hay usuario autenticado
+    // Heartbeat cada 60 segundos - también no-bloqueante
+    const updateActivity = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session?.user?.id) return;
         
-        // Actualizar visitor_sessions (silencioso)
-        try {
-          await supabase
-            .from('visitor_sessions')
-            .update({
-              last_seen_at: new Date().toISOString(),
-              page_path: window.location.pathname,
-              is_active: true
-            })
-            .eq('session_id', sessionId);
-        } catch {
-          // Silenciar errores
-        }
+        supabase
+          .from('visitor_sessions')
+          .update({
+            last_seen_at: new Date().toISOString(),
+            page_path: window.location.pathname,
+            is_active: true
+          })
+          .eq('session_id', sessionId)
+          .then(() => {}, () => {});
         
-        // Actualizar estado en profiles (silencioso)
-        try {
-          await supabase.rpc('update_user_activity', {
-            user_id_param: session.user.id,
-            page_path: window.location.pathname
-          });
-        } catch {
-          // Silenciar errores
-        }
-      } catch {
-        // Silenciar excepciones
-      }
+        supabase.rpc('update_user_activity', {
+          user_id_param: session.user.id,
+          page_path: window.location.pathname
+        }).then(() => {}, () => {});
+      }).then(() => {}, () => {});
     };
 
-    // Registrar al cargar
-    registerVisitor();
+    // Registrar DESPUÉS de que la página cargue completamente (no bloquea)
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => registerVisitor(), { timeout: 5000 });
+    } else {
+      setTimeout(registerVisitor, 2000); // Fallback: esperar 2s después de montar
+    }
 
     // Heartbeat cada 60 segundos (reducido de 30s)
     updateIntervalRef.current = setInterval(updateActivity, 60000);
 
-    // Marcar como inactivo al salir (beforeunload/pagehide)
-    const handleBeforeUnload = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // Marcar usuario como offline si está autenticado
-        if (user?.id) {
-          await supabase.rpc('mark_user_offline', {
-            user_id_param: user.id
-          });
-        }
-        
-        // Usar sendBeacon para garantizar que la petición se envíe incluso al cerrar
-        const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/visitor_sessions`;
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        const payload = JSON.stringify({ is_active: false });
-        
-        // Alternativa: usar fetch con keepalive
-        const url = `${endpoint}?session_id=eq.${sessionId}`;
-        
-        fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': anonKey,
-            'Prefer': 'return=minimal'
-          },
-          body: payload,
-          keepalive: true // ✅ CRÍTICO: Mantiene la petición viva al cerrar
-        }).catch(() => {
-          // Ignorar errores en beforeunload
-        });
-      } catch (error) {
-        // Ignorar errores al cerrar
-      }
+    // Marcar como inactivo al salir - usar sendBeacon para máxima fiabilidad
+    const handleBeforeUnload = () => {
+      const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/visitor_sessions`;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const url = `${endpoint}?session_id=eq.${sessionId}`;
+      
+      // Usar fetch con keepalive (más confiable que sendBeacon para PATCH)
+      fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: false }),
+        keepalive: true
+      }).catch(() => {});
     };
 
     // Detectar cuando el usuario cierra/abandona la página
