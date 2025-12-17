@@ -2284,50 +2284,5 @@ export function SectionRenderer({ sections, className }: SectionRendererProps) {
   );
 }
 
-// Hook to load page sections
-export function usePageSections(pageKey: string) {
-  const [sections, setSections] = useState<SectionData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadSections() {
-      try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        
-        // Get page by key
-        const { data: page, error: pageError } = await supabase
-          .from('page_builder_pages')
-          .select('id')
-          .eq('page_key', pageKey)
-          .eq('is_enabled', true)
-          .single();
-
-        if (pageError || !page) {
-          setSections([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get sections for this page
-        const { data: sectionsData, error: sectionsError } = await supabase
-          .from('page_builder_sections')
-          .select('*')
-          .eq('page_id', page.id)
-          .eq('is_visible', true)
-          .order('display_order');
-
-        if (sectionsError) throw sectionsError;
-        setSections(sectionsData || []);
-      } catch (error) {
-        console.error('Error loading page sections:', error);
-        setSections([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadSections();
-  }, [pageKey]);
-
-  return { sections, loading };
-}
+// Re-export usePageSections from dedicated hook for backwards compatibility
+export { usePageSections } from "@/hooks/usePageSections";
