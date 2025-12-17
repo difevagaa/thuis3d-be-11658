@@ -744,11 +744,9 @@ header .flex {
 
 /* Extra small screens - Galaxy Z Fold cover (320px - 400px) */
 @media (max-width: 400px) {
-  /* Larger product cards with taller images */
-  .product-card-mobile-image,
-  .aspect-square,
-  [class*="aspect-square"] {
-    aspect-ratio: 4/5 !important;
+  /* Product cards keep square aspect ratio */
+  .product-card-mobile-image {
+    aspect-ratio: 1/1;
   }
   
   /* Larger text for small screens */
@@ -829,11 +827,6 @@ header .flex {
 @media (max-width: 768px) {
   .carousel-track {
     scroll-behavior: smooth;
-  }
-  
-  /* Larger product images in carousel on mobile */
-  .carousel-track [class*="aspect-"] {
-    aspect-ratio: 4/5;
   }
   
   /* Navigation buttons always visible */
