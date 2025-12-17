@@ -51,11 +51,11 @@ const TranslatedFeaturedProductCard = ({
       <div ref={cardRef} className="will-change-transform h-full">
         <Card className="group hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer h-full border-border/30 bg-card">
           {product.images && product.images.length > 0 ? (
-            <div className="relative aspect-square bg-muted overflow-hidden">
+            <div className="relative aspect-square bg-muted/30 overflow-hidden">
               <ProductCarousel images={product.images} alt={translatedName} autoRotate={true} />
             </div>
           ) : (
-            <div className="aspect-square bg-muted flex items-center justify-center">
+            <div className="aspect-square bg-muted/30 flex items-center justify-center">
               <Printer className="h-8 w-8 text-muted-foreground/30" />
             </div>
           )}
