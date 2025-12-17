@@ -1267,7 +1267,7 @@ function ViewAllButtonInline({ settings }: { settings: any }) {
 // View All Button Component for Carousels - Bottom position
 function ViewAllButton({ settings }: { settings: any }) {
   const { t } = useTranslation(['products']);
-  const position = settings?.viewAllButtonPosition || 'bottom-center';
+  const position = settings?.viewAllButtonPosition || 'top-right';
   const variant = settings?.viewAllButtonVariant || 'default';
   const text = settings?.viewAllButtonText || t('products:viewAllProducts');
   const url = settings?.viewAllButtonUrl || '/productos';
@@ -1289,12 +1289,12 @@ function ViewAllButton({ settings }: { settings: any }) {
   }
 
   return (
-    <div className={cn("flex w-full mt-6 relative z-10", justifyClasses[position] || justifyClasses['bottom-center'])}>
+    <div className={cn("flex w-full mt-4", justifyClasses[position] || justifyClasses['bottom-center'])}>
       <Button
         variant={variant as any}
         onClick={() => safeNavigate(url)}
         style={buttonStyle}
-        className="font-semibold"
+        className="font-medium text-sm"
       >
         {text}
       </Button>
