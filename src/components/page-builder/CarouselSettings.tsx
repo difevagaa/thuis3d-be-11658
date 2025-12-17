@@ -563,19 +563,19 @@ export function CarouselSettings({ settings, onUpdate }: CarouselSettingsProps) 
               <div className="space-y-2">
                 <Label>Posición del botón</Label>
                 <Select
-                  value={settings?.viewAllButtonPosition || 'bottom-center'}
+                  value={settings?.viewAllButtonPosition || 'top-right'}
                   onValueChange={(value) => onUpdate('viewAllButtonPosition', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="top-left">Arriba izquierda</SelectItem>
-                    <SelectItem value="top-center">Arriba centro</SelectItem>
-                    <SelectItem value="top-right">Arriba derecha</SelectItem>
-                    <SelectItem value="bottom-left">Abajo izquierda</SelectItem>
-                    <SelectItem value="bottom-center">Abajo centro</SelectItem>
-                    <SelectItem value="bottom-right">Abajo derecha</SelectItem>
+                    <SelectItem value="top-right">Junto al título (derecha)</SelectItem>
+                    <SelectItem value="top-left">Junto al título (izquierda)</SelectItem>
+                    <SelectItem value="top-center">Debajo del título (centro)</SelectItem>
+                    <SelectItem value="bottom-left">Debajo del carrusel (izquierda)</SelectItem>
+                    <SelectItem value="bottom-center">Debajo del carrusel (centro)</SelectItem>
+                    <SelectItem value="bottom-right">Debajo del carrusel (derecha)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
