@@ -1777,6 +1777,209 @@ export type Database = {
         }
         Relationships: []
       }
+      lithophany_lamp_templates: {
+        Row: {
+          base_price: number | null
+          base_type: string | null
+          category: string | null
+          corner_radius: number | null
+          created_at: string
+          curve_radius: number | null
+          default_height_mm: number
+          default_width_mm: number
+          description: string | null
+          description_en: string | null
+          description_es: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          max_height_mm: number | null
+          max_width_mm: number | null
+          min_height_mm: number | null
+          min_width_mm: number | null
+          name: string
+          name_en: string | null
+          name_es: string | null
+          preview_3d_model_url: string | null
+          preview_image_url: string | null
+          price_per_cm2: number | null
+          requires_custom_base: boolean | null
+          segments: number | null
+          shape_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number | null
+          base_type?: string | null
+          category?: string | null
+          corner_radius?: number | null
+          created_at?: string
+          curve_radius?: number | null
+          default_height_mm?: number
+          default_width_mm?: number
+          description?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_height_mm?: number | null
+          max_width_mm?: number | null
+          min_height_mm?: number | null
+          min_width_mm?: number | null
+          name: string
+          name_en?: string | null
+          name_es?: string | null
+          preview_3d_model_url?: string | null
+          preview_image_url?: string | null
+          price_per_cm2?: number | null
+          requires_custom_base?: boolean | null
+          segments?: number | null
+          shape_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number | null
+          base_type?: string | null
+          category?: string | null
+          corner_radius?: number | null
+          created_at?: string
+          curve_radius?: number | null
+          default_height_mm?: number
+          default_width_mm?: number
+          description?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_height_mm?: number | null
+          max_width_mm?: number | null
+          min_height_mm?: number | null
+          min_width_mm?: number | null
+          name?: string
+          name_en?: string | null
+          name_es?: string | null
+          preview_3d_model_url?: string | null
+          preview_image_url?: string | null
+          price_per_cm2?: number | null
+          requires_custom_base?: boolean | null
+          segments?: number | null
+          shape_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lithophany_orders: {
+        Row: {
+          base_custom_settings: Json | null
+          base_depth_mm: number | null
+          base_height_mm: number | null
+          base_stl_url: string | null
+          base_type: string | null
+          base_width_mm: number | null
+          calculated_price: number | null
+          combined_stl_url: string | null
+          created_at: string
+          final_price: number | null
+          id: string
+          image_settings: Json | null
+          lamp_curve_radius: number | null
+          lamp_custom_settings: Json | null
+          lamp_depth_mm: number | null
+          lamp_height_mm: number
+          lamp_type: string
+          lamp_width_mm: number
+          light_hole_depth_mm: number | null
+          light_hole_diameter_mm: number | null
+          lithophany_stl_url: string | null
+          notes: string | null
+          order_id: string | null
+          original_image_url: string
+          paid_at: string | null
+          preview_image_url: string | null
+          processed_at: string | null
+          processed_image_url: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          base_custom_settings?: Json | null
+          base_depth_mm?: number | null
+          base_height_mm?: number | null
+          base_stl_url?: string | null
+          base_type?: string | null
+          base_width_mm?: number | null
+          calculated_price?: number | null
+          combined_stl_url?: string | null
+          created_at?: string
+          final_price?: number | null
+          id?: string
+          image_settings?: Json | null
+          lamp_curve_radius?: number | null
+          lamp_custom_settings?: Json | null
+          lamp_depth_mm?: number | null
+          lamp_height_mm?: number
+          lamp_type?: string
+          lamp_width_mm?: number
+          light_hole_depth_mm?: number | null
+          light_hole_diameter_mm?: number | null
+          lithophany_stl_url?: string | null
+          notes?: string | null
+          order_id?: string | null
+          original_image_url: string
+          paid_at?: string | null
+          preview_image_url?: string | null
+          processed_at?: string | null
+          processed_image_url?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          base_custom_settings?: Json | null
+          base_depth_mm?: number | null
+          base_height_mm?: number | null
+          base_stl_url?: string | null
+          base_type?: string | null
+          base_width_mm?: number | null
+          calculated_price?: number | null
+          combined_stl_url?: string | null
+          created_at?: string
+          final_price?: number | null
+          id?: string
+          image_settings?: Json | null
+          lamp_curve_radius?: number | null
+          lamp_custom_settings?: Json | null
+          lamp_depth_mm?: number | null
+          lamp_height_mm?: number
+          lamp_type?: string
+          lamp_width_mm?: number
+          light_hole_depth_mm?: number | null
+          light_hole_diameter_mm?: number | null
+          lithophany_stl_url?: string | null
+          notes?: string | null
+          order_id?: string | null
+          original_image_url?: string
+          paid_at?: string | null
+          preview_image_url?: string | null
+          processed_at?: string | null
+          processed_image_url?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lithophany_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_adjustments: {
         Row: {
           admin_id: string | null
