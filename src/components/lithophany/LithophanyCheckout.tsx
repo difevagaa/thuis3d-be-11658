@@ -151,6 +151,18 @@ export const LithophanyCheckout = ({
       setOrderId(order.id);
       setOrderCreated(true);
 
+      // Trigger STL generation in background
+      try {
+        const { error: stlError } = await supabase.functions.invoke('generate-lithophany-stl', {
+          body: { orderId: order.id, generateBase: true }
+        });
+        if (stlError) {
+          console.error('STL generation error:', stlError);
+        }
+      } catch (stlErr) {
+        console.error('Failed to trigger STL generation:', stlErr);
+      }
+
       toast.success(language === 'es' 
         ? '¡Pedido creado correctamente!'
         : 'Order created successfully!');
