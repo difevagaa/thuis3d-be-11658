@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,19 +8,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Box, 
-  HelpCircle, 
-  Check,
-  Square,
-  Circle,
-  Hexagon,
-  Triangle,
-  Star,
-  Heart
-} from "lucide-react";
+import { Box, HelpCircle, Check } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 import { cn } from "@/lib/utils";
+
+// Import lamp preview images
+import lampFlatSquare from "@/assets/lithophany/lamp-flat-square.jpg";
+import lampFlatRectangle from "@/assets/lithophany/lamp-flat-rectangle.jpg";
+import lampCylinderSmall from "@/assets/lithophany/lamp-cylinder-small.jpg";
+import lampCylinderMedium from "@/assets/lithophany/lamp-cylinder-medium.jpg";
+import lampCylinderLarge from "@/assets/lithophany/lamp-cylinder-large.jpg";
+import lampHalfCylinder from "@/assets/lithophany/lamp-half-cylinder.jpg";
+import lampCircular from "@/assets/lithophany/lamp-circular.jpg";
+import lampPanoramic from "@/assets/lithophany/lamp-panoramic.jpg";
+import lampPortrait from "@/assets/lithophany/lamp-portrait.jpg";
+import lampFramedSquare from "@/assets/lithophany/lamp-framed-square.jpg";
+import lampCurvedSoft from "@/assets/lithophany/lamp-curved-soft.jpg";
+import lampCurvedDeep from "@/assets/lithophany/lamp-curved-deep.jpg";
+import lampDiamond from "@/assets/lithophany/lamp-diamond.jpg";
+import lampArch from "@/assets/lithophany/lamp-arch.jpg";
+import lampGothic from "@/assets/lithophany/lamp-gothic.jpg";
+import lampOrnamental from "@/assets/lithophany/lamp-ornamental.jpg";
+import lampFlatOval from "@/assets/lithophany/lamp-flat-oval.jpg";
+import lampHeart from "@/assets/lithophany/lamp-heart.jpg";
+import lampWave from "@/assets/lithophany/lamp-wave.jpg";
+import lampHexagonal from "@/assets/lithophany/lamp-hexagonal.jpg";
+import lampOctagonal from "@/assets/lithophany/lamp-octagonal.jpg";
+import lampStar from "@/assets/lithophany/lamp-star.jpg";
+import lampCloud from "@/assets/lithophany/lamp-cloud.jpg";
+import lampMoon from "@/assets/lithophany/lamp-moon.jpg";
+import lampMinimalist from "@/assets/lithophany/lamp-minimalist.jpg";
 
 interface LithophanyLampSelectorProps {
   templates: LampTemplate[];
@@ -32,18 +48,33 @@ interface LithophanyLampSelectorProps {
   isLoading: boolean;
 }
 
-// Icon mapping for lamp shapes
-const shapeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  flat: Square,
-  curved: Circle,
-  cylinder: Circle,
-  sphere: Circle,
-  heart: Heart,
-  star: Star,
-  hexagon: Hexagon,
-  triangle: Triangle,
-  oval: Circle,
-  arc: Circle,
+// Image mapping for lamp shapes
+const shapeImages: Record<string, string> = {
+  flat_square: lampFlatSquare,
+  flat_rectangle: lampFlatRectangle,
+  cylinder_small: lampCylinderSmall,
+  cylinder_medium: lampCylinderMedium,
+  cylinder_large: lampCylinderLarge,
+  half_cylinder: lampHalfCylinder,
+  circular: lampCircular,
+  panoramic: lampPanoramic,
+  portrait: lampPortrait,
+  framed_square: lampFramedSquare,
+  curved_soft: lampCurvedSoft,
+  curved_deep: lampCurvedDeep,
+  diamond: lampDiamond,
+  arch: lampArch,
+  gothic: lampGothic,
+  ornamental: lampOrnamental,
+  flat_oval: lampFlatOval,
+  heart: lampHeart,
+  wave: lampWave,
+  hexagonal: lampHexagonal,
+  octagonal: lampOctagonal,
+  star: lampStar,
+  cloud: lampCloud,
+  moon: lampMoon,
+  minimalist: lampMinimalist,
 };
 
 // Category labels
@@ -147,7 +178,6 @@ export const LithophanyLampSelector = ({
               <ScrollArea className="h-[400px] pr-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {templatesByCategory[category]?.map(template => {
-                    const ShapeIcon = shapeIcons[template.shape_type] || Box;
                     const isSelected = selectedLamp?.id === template.id;
 
                     return (
@@ -165,15 +195,21 @@ export const LithophanyLampSelector = ({
                           </div>
                         )}
                         
-                        <div className="aspect-square bg-muted flex items-center justify-center p-4">
-                          {template.preview_image_url ? (
+                        <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+                          {shapeImages[template.shape_type] ? (
+                            <img 
+                              src={shapeImages[template.shape_type]} 
+                              alt={getTemplateName(template)}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : template.preview_image_url ? (
                             <img 
                               src={template.preview_image_url} 
                               alt={getTemplateName(template)}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-cover"
                             />
                           ) : (
-                            <ShapeIcon className="h-16 w-16 text-muted-foreground/50" />
+                            <Box className="h-16 w-16 text-muted-foreground/50" />
                           )}
                         </div>
                         
