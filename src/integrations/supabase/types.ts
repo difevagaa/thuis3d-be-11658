@@ -4783,6 +4783,10 @@ export type Database = {
         Args: { pin_input: string; target_user_id: string }
         Returns: undefined
       }
+      set_user_role: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: undefined
+      }
       update_user_activity: {
         Args: { page_path?: string; user_id_param: string }
         Returns: undefined
