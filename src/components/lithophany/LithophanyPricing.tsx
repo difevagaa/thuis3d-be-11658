@@ -1,20 +1,21 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calculator, HelpCircle, Tag, Box, Printer, Layers } from "lucide-react";
+import { Calculator, HelpCircle, Check } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 
 interface LithophanyPricingProps {
   selectedLamp: LampTemplate | null;
   dimensions: { width: number; height: number };
+  showDetails?: boolean;
 }
 
 export const LithophanyPricing = ({
   selectedLamp,
-  dimensions
+  dimensions,
+  showDetails = false
 }: LithophanyPricingProps) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
@@ -67,7 +68,7 @@ export const LithophanyPricing = ({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            {language === 'es' ? 'Precio Estimado' : 'Estimated Price'}
+            {language === 'es' ? 'Precio' : 'Price'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -87,7 +88,7 @@ export const LithophanyPricing = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            {language === 'es' ? 'Precio Estimado' : 'Estimated Price'}
+            {language === 'es' ? 'Precio Total' : 'Total Price'}
           </CardTitle>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -102,91 +103,53 @@ export const LithophanyPricing = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Line items */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              <span>{language === 'es' ? 'Precio base' : 'Base price'}</span>
-            </div>
-            <span>€{pricing.basePrice.toFixed(2)}</span>
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {language === 'es' ? 'Área' : 'Area'} ({pricing.areaCm2.toFixed(1)} cm²)
-              </span>
-            </div>
-            <span>€{pricing.areaPrice.toFixed(2)}</span>
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Box className="h-4 w-4 text-muted-foreground" />
-              <span>{language === 'es' ? 'Base con soporte LED' : 'Base with LED support'}</span>
-            </div>
-            <span>€{pricing.baseCost.toFixed(2)}</span>
-          </div>
-
-          {pricing.sizeMultiplier > 1 && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Printer className="h-4 w-4" />
-                <span>{language === 'es' ? 'Ajuste por tamaño' : 'Size adjustment'}</span>
-              </div>
-              <span>×{pricing.sizeMultiplier.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Subtotal */}
-        <div className="flex items-center justify-between text-sm">
-          <span>{language === 'es' ? 'Subtotal' : 'Subtotal'}</span>
-          <span>€{pricing.subtotal.toFixed(2)}</span>
-        </div>
-
-        {/* Tax */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>IVA (21%)</span>
-          <span>€{pricing.tax.toFixed(2)}</span>
-        </div>
-
-        <Separator />
-
-        {/* Total */}
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold">
-            {language === 'es' ? 'Total' : 'Total'}
-          </span>
-          <span className="text-2xl font-bold text-primary">
+        {/* Total Price - PROMINENTLY DISPLAYED */}
+        <div className="text-center py-4 bg-primary/5 rounded-lg">
+          <span className="text-4xl font-bold text-primary">
             €{pricing.total.toFixed(2)}
           </span>
+          <p className="text-sm text-muted-foreground mt-1">
+            {language === 'es' ? 'IVA incluido' : 'VAT included'}
+          </p>
         </div>
 
         {/* Included items */}
-        <div className="pt-2">
-          <p className="text-xs text-muted-foreground mb-2">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">
             {language === 'es' ? 'Incluye:' : 'Includes:'}
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="secondary" className="text-xs">
-              {language === 'es' ? 'Litofanía impresa' : 'Printed lithophane'}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              {language === 'es' ? 'Base con soporte LED' : 'Base with LED support'}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              {language === 'es' ? 'Archivo STL' : 'STL file'}
-            </Badge>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>{language === 'es' ? 'Litofanía impresa en 3D' : '3D printed lithophane'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>{language === 'es' ? 'Base con soporte para LED' : 'Base with LED support'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>{language === 'es' ? 'Archivo STL descargable' : 'Downloadable STL file'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>{language === 'es' ? 'Orificio para luz LED Bambu' : 'Bambu LED light hole'}</span>
+            </div>
           </div>
         </div>
 
+        {/* Size info */}
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Badge variant="secondary">
+            {dimensions.width}×{dimensions.height}mm
+          </Badge>
+          <Badge variant="outline">
+            {pricing.areaCm2.toFixed(1)} cm²
+          </Badge>
+        </div>
+
         {/* Note about LED */}
-        <p className="text-xs text-muted-foreground italic">
+        <p className="text-xs text-muted-foreground italic border-t pt-3">
           {language === 'es' 
             ? 'Nota: La luz LED Bambu Labs no está incluida.'
             : 'Note: Bambu Labs LED light not included.'}
