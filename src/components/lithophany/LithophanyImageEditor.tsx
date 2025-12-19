@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   HelpCircle, 
   RotateCcw, 
@@ -39,7 +39,8 @@ import {
   Droplet,
   Split,
   Camera,
-  Search
+  Search,
+  AlertTriangle
 } from "lucide-react";
 import { EDITING_CATEGORIES, EDITING_OPTIONS, type EditingOption, type EditingCategory } from "@/constants/lithophanyOptions";
 import { cn } from "@/lib/utils";
@@ -75,13 +76,15 @@ export const LithophanyImageEditor = ({
   const { i18n } = useTranslation();
   const language = i18n.language;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   
   const [showOriginal, setShowOriginal] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('basic');
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['basic']);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [compareMode, setCompareMode] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageQuality, setImageQuality] = useState<'good' | 'warning' | 'error'>('good');
 
   // Group options by category
   const optionsByCategory = EDITING_OPTIONS.reduce((acc, option) => {
@@ -100,64 +103,355 @@ export const LithophanyImageEditor = ({
       )
     : null;
 
-  // Apply image processing
+  // Load image once
   useEffect(() => {
-    if (!originalImage || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
+    if (!originalImage) return;
+    
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
+      imageRef.current = img;
+      setImageLoaded(true);
       
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Apply transformations
-      ctx.save();
-      
-      // Build filter string
-      const filters: string[] = [];
-      
-      // Basic adjustments
-      const brightness = (settings.brightness as number || 0);
-      const contrast = (settings.contrast as number || 0);
-      const saturation = (settings.saturation as number || 0);
-      const hue = (settings.hue as number || 0);
-      const sepia = (settings.sepia as number || 0);
-      const grayscale = settings.grayscale ? 100 : 0;
-      const invert = settings.invert ? 100 : 0;
-      
-      filters.push(`brightness(${100 + brightness}%)`);
-      filters.push(`contrast(${100 + contrast}%)`);
-      filters.push(`saturate(${100 + saturation}%)`);
-      filters.push(`hue-rotate(${hue}deg)`);
-      filters.push(`sepia(${sepia}%)`);
-      filters.push(`grayscale(${grayscale}%)`);
-      filters.push(`invert(${invert}%)`);
-      
-      // Blur
-      const blur = (settings.gaussianBlur as number || 0);
-      if (blur > 0) {
-        filters.push(`blur(${blur}px)`);
+      // Check image quality for lithophany
+      if (img.width < 100 || img.height < 100) {
+        setImageQuality('error');
+      } else if (img.width < 300 || img.height < 300) {
+        setImageQuality('warning');
+      } else {
+        setImageQuality('good');
       }
-      
-      ctx.filter = filters.join(' ');
-      
-      // Draw image
-      ctx.drawImage(img, 0, 0);
-      
-      ctx.restore();
-      
-      // Get processed image data
-      const processedDataUrl = canvas.toDataURL('image/png');
-      onImageProcessed(processedDataUrl);
     };
     img.src = originalImage;
-  }, [originalImage, settings, onImageProcessed]);
+  }, [originalImage]);
+
+  // Apply ALL image processing effects
+  useEffect(() => {
+    if (!imageLoaded || !imageRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const img = imageRef.current;
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    // Start with clean canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // === STEP 1: Apply CSS Filters ===
+    const cssFilters: string[] = [];
+    
+    // Basic adjustments
+    const brightness = 100 + (settings.brightness as number || 0);
+    const contrast = 100 + (settings.contrast as number || 0);
+    const saturation = 100 + (settings.saturation as number || 0);
+    const hue = settings.hue as number || 0;
+    const sepia = settings.sepia as number || 0;
+    const blur = settings.gaussianBlur as number || 0;
+    
+    cssFilters.push(`brightness(${brightness}%)`);
+    cssFilters.push(`contrast(${contrast}%)`);
+    cssFilters.push(`saturate(${saturation}%)`);
+    cssFilters.push(`hue-rotate(${hue}deg)`);
+    cssFilters.push(`sepia(${sepia}%)`);
+    
+    if (settings.grayscale) {
+      cssFilters.push('grayscale(100%)');
+    }
+    if (settings.invert) {
+      cssFilters.push('invert(100%)');
+    }
+    if (blur > 0) {
+      cssFilters.push(`blur(${blur}px)`);
+    }
+    
+    ctx.filter = cssFilters.join(' ');
+    ctx.drawImage(img, 0, 0);
+    ctx.filter = 'none';
+
+    // === STEP 2: Pixel-level manipulations ===
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Exposure adjustment
+    const exposure = settings.exposure as number || 0;
+    const exposureMultiplier = Math.pow(2, exposure);
+
+    // Highlights and Shadows
+    const highlights = (settings.highlights as number || 0) / 100;
+    const shadows = (settings.shadows as number || 0) / 100;
+    const whites = (settings.whites as number || 0) / 100;
+    const blacks = (settings.blacks as number || 0) / 100;
+
+    // Vibrance
+    const vibrance = (settings.vibrance as number || 0) / 100;
+
+    // Temperature and Tint
+    const temperature = (settings.temperature as number || 0) / 100;
+    const tint = (settings.tint as number || 0) / 100;
+
+    // Clarity and Definition
+    const clarity = (settings.clarity as number || 0) / 100;
+    const definition = (settings.definition as number || 0) / 100;
+
+    // Gamma
+    const gamma = settings.gamma as number || 1;
+
+    // Posterize
+    const posterize = settings.posterize as number || 256;
+
+    // Threshold
+    const thresholdEnabled = settings.thresholdEnabled as boolean || false;
+    const threshold = settings.threshold as number || 128;
+
+    // Vignette
+    const vignetteAmount = (settings.vignetteAmount as number || 0) / 100;
+    const vignetteMidpoint = (settings.vignetteMidpoint as number || 50) / 100;
+    const vignetteFeather = (settings.vignetteFeather as number || 50) / 100;
+
+    // Grain/Noise
+    const grainAmount = (settings.grainAmount as number || 0) / 100;
+
+    // Film simulation
+    const filmSimulation = settings.filmSimulation as string || 'none';
+
+    // Center for vignette
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+
+      // Exposure
+      if (exposure !== 0) {
+        r = Math.min(255, r * exposureMultiplier);
+        g = Math.min(255, g * exposureMultiplier);
+        b = Math.min(255, b * exposureMultiplier);
+      }
+
+      // Gamma correction
+      if (gamma !== 1) {
+        r = 255 * Math.pow(r / 255, 1 / gamma);
+        g = 255 * Math.pow(g / 255, 1 / gamma);
+        b = 255 * Math.pow(b / 255, 1 / gamma);
+      }
+
+      // Calculate luminance
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      // Highlights adjustment (affects bright areas)
+      if (highlights !== 0) {
+        const highlightFactor = luminance / 255;
+        const adjustment = highlights * highlightFactor * 50;
+        r = Math.min(255, Math.max(0, r + adjustment));
+        g = Math.min(255, Math.max(0, g + adjustment));
+        b = Math.min(255, Math.max(0, b + adjustment));
+      }
+
+      // Shadows adjustment (affects dark areas)
+      if (shadows !== 0) {
+        const shadowFactor = 1 - (luminance / 255);
+        const adjustment = shadows * shadowFactor * 50;
+        r = Math.min(255, Math.max(0, r + adjustment));
+        g = Math.min(255, Math.max(0, g + adjustment));
+        b = Math.min(255, Math.max(0, b + adjustment));
+      }
+
+      // Whites adjustment
+      if (whites !== 0 && luminance > 200) {
+        const whiteFactor = (luminance - 200) / 55;
+        const adjustment = whites * whiteFactor * 30;
+        r = Math.min(255, Math.max(0, r + adjustment));
+        g = Math.min(255, Math.max(0, g + adjustment));
+        b = Math.min(255, Math.max(0, b + adjustment));
+      }
+
+      // Blacks adjustment
+      if (blacks !== 0 && luminance < 55) {
+        const blackFactor = (55 - luminance) / 55;
+        const adjustment = blacks * blackFactor * 30;
+        r = Math.min(255, Math.max(0, r + adjustment));
+        g = Math.min(255, Math.max(0, g + adjustment));
+        b = Math.min(255, Math.max(0, b + adjustment));
+      }
+
+      // Vibrance (smart saturation)
+      if (vibrance !== 0) {
+        const max = Math.max(r, g, b);
+        const avg = (r + g + b) / 3;
+        const amt = ((Math.abs(max - avg) * 2 / 255) * vibrance) / 2;
+        r = r + (r - avg) * amt;
+        g = g + (g - avg) * amt;
+        b = b + (b - avg) * amt;
+      }
+
+      // Temperature (warm/cool)
+      if (temperature !== 0) {
+        r = Math.min(255, Math.max(0, r + temperature * 30));
+        b = Math.min(255, Math.max(0, b - temperature * 30));
+      }
+
+      // Tint (green/magenta)
+      if (tint !== 0) {
+        g = Math.min(255, Math.max(0, g + tint * 30));
+      }
+
+      // Clarity/Definition (local contrast simulation)
+      if (clarity !== 0 || definition !== 0) {
+        const factor = 1 + (clarity + definition) * 0.3;
+        const intercept = 128 * (1 - factor);
+        r = Math.min(255, Math.max(0, factor * r + intercept));
+        g = Math.min(255, Math.max(0, factor * g + intercept));
+        b = Math.min(255, Math.max(0, factor * b + intercept));
+      }
+
+      // Film simulation effects
+      if (filmSimulation !== 'none') {
+        switch (filmSimulation) {
+          case 'kodak':
+            r = Math.min(255, r * 1.1);
+            g = Math.min(255, g * 1.05);
+            b = b * 0.9;
+            break;
+          case 'fuji':
+            r = r * 0.95;
+            g = Math.min(255, g * 1.1);
+            b = Math.min(255, b * 1.05);
+            break;
+          case 'polaroid':
+            r = Math.min(255, r * 1.15);
+            g = Math.min(255, g * 1.05);
+            b = b * 0.85;
+            // Add slight fade
+            r = r * 0.9 + 25;
+            g = g * 0.9 + 25;
+            b = b * 0.9 + 25;
+            break;
+          case 'vintage':
+            const vintageSepia = 0.3;
+            const vr = r, vg = g, vb = b;
+            r = Math.min(255, vr * (1 - vintageSepia) + (vr * 0.393 + vg * 0.769 + vb * 0.189) * vintageSepia);
+            g = Math.min(255, vg * (1 - vintageSepia) + (vr * 0.349 + vg * 0.686 + vb * 0.168) * vintageSepia);
+            b = Math.min(255, vb * (1 - vintageSepia) + (vr * 0.272 + vg * 0.534 + vb * 0.131) * vintageSepia);
+            break;
+          case 'noir':
+            const gray = luminance;
+            r = gray;
+            g = gray;
+            b = gray;
+            // Increase contrast
+            r = Math.min(255, Math.max(0, (r - 128) * 1.3 + 128));
+            g = Math.min(255, Math.max(0, (g - 128) * 1.3 + 128));
+            b = Math.min(255, Math.max(0, (b - 128) * 1.3 + 128));
+            break;
+        }
+      }
+
+      // Posterize
+      if (posterize < 256) {
+        const levels = posterize;
+        const step = 255 / (levels - 1);
+        r = Math.round(Math.round(r / step) * step);
+        g = Math.round(Math.round(g / step) * step);
+        b = Math.round(Math.round(b / step) * step);
+      }
+
+      // Threshold (pure black and white)
+      if (thresholdEnabled) {
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        const val = lum > threshold ? 255 : 0;
+        r = val;
+        g = val;
+        b = val;
+      }
+
+      // Grain/Noise
+      if (grainAmount > 0) {
+        const noise = (Math.random() - 0.5) * grainAmount * 100;
+        r = Math.min(255, Math.max(0, r + noise));
+        g = Math.min(255, Math.max(0, g + noise));
+        b = Math.min(255, Math.max(0, b + noise));
+      }
+
+      // Vignette
+      if (vignetteAmount > 0) {
+        const px = (i / 4) % canvas.width;
+        const py = Math.floor((i / 4) / canvas.width);
+        const dist = Math.sqrt(Math.pow(px - centerX, 2) + Math.pow(py - centerY, 2));
+        const normalizedDist = dist / maxDist;
+        
+        if (normalizedDist > vignetteMidpoint) {
+          const falloff = (normalizedDist - vignetteMidpoint) / (1 - vignetteMidpoint);
+          const smoothFalloff = Math.pow(falloff, 1 / (vignetteFeather + 0.01));
+          const darken = 1 - (vignetteAmount * smoothFalloff);
+          r *= darken;
+          g *= darken;
+          b *= darken;
+        }
+      }
+
+      // Clamp values
+      data[i] = Math.min(255, Math.max(0, Math.round(r)));
+      data[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
+      data[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // === STEP 3: Apply Frame/Border ===
+    const frameEnabled = settings.frameEnabled as boolean || false;
+    const frameWidth = settings.frameWidth as number || 0;
+    const frameColor = settings.frameColor as string || '#ffffff';
+
+    if (frameEnabled && frameWidth > 0) {
+      ctx.strokeStyle = frameColor;
+      ctx.lineWidth = frameWidth * 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // === STEP 4: Lens Flare Effect ===
+    const lensFlareEnabled = settings.lensFlareEnabled as boolean || false;
+    const lensFlareIntensity = (settings.lensFlareIntensity as number || 50) / 100;
+
+    if (lensFlareEnabled && lensFlareIntensity > 0) {
+      const flareX = canvas.width * 0.7;
+      const flareY = canvas.height * 0.3;
+      const flareRadius = Math.min(canvas.width, canvas.height) * 0.15 * lensFlareIntensity;
+      
+      const gradient = ctx.createRadialGradient(flareX, flareY, 0, flareX, flareY, flareRadius);
+      gradient.addColorStop(0, `rgba(255, 255, 200, ${0.8 * lensFlareIntensity})`);
+      gradient.addColorStop(0.3, `rgba(255, 200, 100, ${0.4 * lensFlareIntensity})`);
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(flareX, flareY, flareRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // === STEP 5: Drop Shadow (drawn outside canvas bounds effect) ===
+    const dropShadowEnabled = settings.dropShadowEnabled as boolean || false;
+    const dropShadowOpacity = (settings.dropShadowOpacity as number || 50) / 100;
+    const dropShadowOffset = settings.dropShadowOffset as number || 10;
+
+    if (dropShadowEnabled && dropShadowOpacity > 0) {
+      // Shadow effect is visual only, we'll add it as an overlay indicator
+      ctx.fillStyle = `rgba(0, 0, 0, ${dropShadowOpacity * 0.3})`;
+      ctx.fillRect(dropShadowOffset, canvas.height - 20, canvas.width - dropShadowOffset, 20);
+      ctx.fillRect(canvas.width - 20, dropShadowOffset, 20, canvas.height - dropShadowOffset);
+    }
+
+    // Get processed image data
+    const processedDataUrl = canvas.toDataURL('image/png');
+    onImageProcessed(processedDataUrl);
+  }, [imageLoaded, settings, onImageProcessed]);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 
@@ -168,7 +462,6 @@ export const LithophanyImageEditor = ({
   };
 
   const renderOption = (option: EditingOption) => {
-    // Skip advanced options if not showing
     if (option.advanced && !showAdvanced) return null;
     
     const name = language === 'es' ? option.nameEs : option.name;
@@ -249,6 +542,15 @@ export const LithophanyImageEditor = ({
             className="w-full"
           />
         )}
+
+        {option.type === 'color' && (
+          <Input
+            type="color"
+            value={value as string}
+            onChange={(e) => onUpdateSetting(option.id, e.target.value)}
+            className="w-full h-10"
+          />
+        )}
       </div>
     );
   };
@@ -324,7 +626,6 @@ export const LithophanyImageEditor = ({
             <ScrollArea className="h-[60vh]">
               <div className="p-4 pt-0">
                 {filteredOptions ? (
-                  // Show search results
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground mb-3">
                       {filteredOptions.length} {language === 'es' ? 'resultados' : 'results'}
@@ -332,7 +633,6 @@ export const LithophanyImageEditor = ({
                     {filteredOptions.map(renderOption)}
                   </div>
                 ) : (
-                  // Show categories
                   EDITING_CATEGORIES.map(category => {
                     const categoryOptions = optionsByCategory[category.id] || [];
                     const visibleOptions = showAdvanced 
@@ -423,6 +723,23 @@ export const LithophanyImageEditor = ({
             </div>
           </CardHeader>
           <CardContent>
+            {/* Image Quality Warning */}
+            {imageQuality !== 'good' && (
+              <Alert variant={imageQuality === 'error' ? 'destructive' : 'default'} className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {imageQuality === 'error' 
+                    ? (language === 'es' 
+                        ? 'La imagen es muy pequeña (menos de 100×100px). La calidad de la litofanía será muy baja.'
+                        : 'Image is too small (less than 100×100px). Lithophane quality will be very poor.')
+                    : (language === 'es'
+                        ? 'La imagen es pequeña. Para mejores resultados, usa una imagen de al menos 300×300px.'
+                        : 'Image is small. For best results, use an image of at least 300×300px.')
+                  }
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className={cn(
               "relative rounded-lg overflow-hidden bg-muted",
               compareMode ? "grid grid-cols-2 gap-1" : ""
@@ -469,9 +786,9 @@ export const LithophanyImageEditor = ({
             <canvas ref={canvasRef} className="hidden" />
 
             <div className="mt-6 flex justify-end">
-              <Button onClick={onNext} size="lg">
+              <Button onClick={onNext} size="lg" disabled={imageQuality === 'error'}>
                 {language === 'es' ? 'Continuar' : 'Continue'}
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </CardContent>
