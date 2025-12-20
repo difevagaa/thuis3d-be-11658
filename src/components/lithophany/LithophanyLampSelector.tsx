@@ -118,15 +118,18 @@ export const LithophanyLampSelector = ({
     return template.description;
   };
 
+  // Enforce minimum 10mm dimensions
+  const ABSOLUTE_MIN = 10;
+
   const handleWidthChange = (value: number) => {
-    const minWidth = selectedLamp?.min_width_mm || 50;
+    const minWidth = Math.max(selectedLamp?.min_width_mm || 50, ABSOLUTE_MIN);
     const maxWidth = selectedLamp?.max_width_mm || 300;
     const clampedValue = Math.max(minWidth, Math.min(maxWidth, value));
     onDimensionsChange(clampedValue, dimensions.height);
   };
 
   const handleHeightChange = (value: number) => {
-    const minHeight = selectedLamp?.min_height_mm || 50;
+    const minHeight = Math.max(selectedLamp?.min_height_mm || 50, ABSOLUTE_MIN);
     const maxHeight = selectedLamp?.max_height_mm || 300;
     const clampedValue = Math.max(minHeight, Math.min(maxHeight, value));
     onDimensionsChange(dimensions.width, clampedValue);
