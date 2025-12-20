@@ -43,9 +43,25 @@ export const LithophanyImageUploader = ({ onImageUpload }: LithophanyImageUpload
     reader.onload = (e) => {
       const result = e.target?.result as string;
       
-      // Get image dimensions
+      // Get image dimensions and validate
       const img = new Image();
       img.onload = () => {
+        // Validate minimum dimensions for lithophane quality
+        const MIN_DIMENSION = 100;
+        if (img.width < MIN_DIMENSION || img.height < MIN_DIMENSION) {
+          toast.error(language === 'es' 
+            ? `La imagen es muy pequeña. Mínimo ${MIN_DIMENSION}x${MIN_DIMENSION} píxeles. Tu imagen: ${img.width}x${img.height}px`
+            : `Image is too small. Minimum ${MIN_DIMENSION}x${MIN_DIMENSION} pixels. Your image: ${img.width}x${img.height}px`);
+          return;
+        }
+
+        // Warning for low quality images
+        if (img.width < 400 || img.height < 400) {
+          toast.warning(language === 'es' 
+            ? 'La imagen es de baja resolución. Para mejores resultados usa imágenes de al menos 800x600 píxeles.'
+            : 'Image has low resolution. For best results use images of at least 800x600 pixels.');
+        }
+
         setImageInfo({
           width: img.width,
           height: img.height,

@@ -314,12 +314,22 @@ export const LithophanyCheckout = ({
         </Card>
       </div>
 
-      {/* Pricing & Submit */}
+      {/* Submit Only - Pricing shown in summary */}
       <div className="space-y-6">
-        <LithophanyPricing 
-          selectedLamp={lampTemplate} 
-          dimensions={dimensions} 
-        />
+        {/* Price summary card */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-1">
+              {language === 'es' ? 'Total a pagar' : 'Total to pay'}
+            </p>
+            <p className="text-3xl font-bold text-primary">
+              €{calculatePrice().toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {language === 'es' ? 'IVA incluido' : 'VAT included'}
+            </p>
+          </CardContent>
+        </Card>
 
         <Button 
           onClick={handleSubmitOrder}
