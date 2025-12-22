@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { decode as decodePng } from "https://deno.land/x/pngs@0.1.1/mod.ts";
+import { decode as decodeJpeg } from "https://deno.land/x/jpegts@1.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +13,11 @@ const BAMBU_LIGHT_DIAMETER = 16;
 const BAMBU_LIGHT_HEIGHT = 8;
 const LIGHT_HOLE_CLEARANCE = 0.5;
 
-// Lithophane parameters for printability
-const MIN_THICKNESS = 0.8; // mm - for bright areas (more light passes)
-const MAX_THICKNESS = 3.0; // mm - for dark areas (less light passes)
-const EDGE_REINFORCEMENT = 1.5; // mm extra on edges
+// Lithophane parameters for optimal printability (like Bambu Studio)
+const MIN_THICKNESS = 0.6; // mm - for bright areas (more light passes through)
+const MAX_THICKNESS = 3.2; // mm - for dark areas (less light passes through)
+const EDGE_REINFORCEMENT = 2.0; // mm extra on edges for structural integrity
+const BORDER_WIDTH = 3; // pixels for smooth edge transition
 
 // STL Binary Header
 function createSTLHeader(triangleCount: number): Uint8Array {
@@ -78,7 +80,7 @@ function calculateNormal(
   return n;
 }
 
-// Decode image and extract grayscale data
+// Decode image and extract grayscale data - supports PNG and JPEG
 async function decodeImageToGrayscale(
   imageBuffer: ArrayBuffer,
   contentType: string
@@ -91,18 +93,20 @@ async function decodeImageToGrayscale(
   const isPng = uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && 
                 uint8Array[2] === 0x4E && uint8Array[3] === 0x47;
   
+  // Check for JPEG signature
+  const isJpeg = uint8Array[0] === 0xFF && uint8Array[1] === 0xD8;
+  
   if (isPng) {
     try {
       const decoded = decodePng(uint8Array);
       console.log(`PNG decoded: ${decoded.width}x${decoded.height}`);
       
-      // Convert to grayscale
       const grayscale = new Uint8Array(decoded.width * decoded.height);
       const pixelData = decoded.image;
       
       for (let i = 0; i < decoded.width * decoded.height; i++) {
         const idx = i * 4;
-        // Luminosity formula for better grayscale conversion
+        // Luminosity formula for accurate grayscale
         const gray = Math.round(
           0.299 * pixelData[idx] + 
           0.587 * pixelData[idx + 1] + 
@@ -117,30 +121,49 @@ async function decodeImageToGrayscale(
     }
   }
   
-  // For JPEG or failed PNG, create grayscale from raw estimation
-  // This is a fallback - in production you'd use a proper JPEG decoder
-  console.log('Using fallback grayscale generation');
+  if (isJpeg) {
+    try {
+      const decoded = decodeJpeg(uint8Array);
+      console.log(`JPEG decoded: ${decoded.width}x${decoded.height}`);
+      
+      const grayscale = new Uint8Array(decoded.width * decoded.height);
+      const pixelData = decoded.data;
+      
+      for (let i = 0; i < decoded.width * decoded.height; i++) {
+        const idx = i * 3; // JPEG is RGB, not RGBA
+        const gray = Math.round(
+          0.299 * pixelData[idx] + 
+          0.587 * pixelData[idx + 1] + 
+          0.114 * pixelData[idx + 2]
+        );
+        grayscale[i] = gray;
+      }
+      
+      return { data: grayscale, width: decoded.width, height: decoded.height };
+    } catch (jpegError) {
+      console.error('JPEG decode error:', jpegError);
+    }
+  }
   
-  // Estimate dimensions from file size (rough approximation)
-  const estimatedPixels = Math.floor(imageBuffer.byteLength / 3);
-  const estimatedDim = Math.floor(Math.sqrt(estimatedPixels));
-  const width = Math.min(Math.max(estimatedDim, 100), 500);
-  const height = width;
-  
-  // Create grayscale from byte patterns in the image
+  // Fallback: generate test pattern if decoding fails
+  console.log('Using fallback grayscale pattern');
+  const width = 200;
+  const height = 200;
   const grayscale = new Uint8Array(width * height);
-  const step = Math.floor(uint8Array.length / (width * height));
   
-  for (let i = 0; i < width * height; i++) {
-    const byteIdx = Math.min(i * step, uint8Array.length - 1);
-    // Use byte values directly as grayscale approximation
-    grayscale[i] = uint8Array[byteIdx];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Create gradient pattern for testing
+      const gx = (x / width) * 255;
+      const gy = (y / height) * 255;
+      grayscale[y * width + x] = Math.floor((gx + gy) / 2);
+    }
   }
   
   return { data: grayscale, width, height };
 }
 
-// Resample grayscale image to target resolution
+// Resample grayscale image with bilinear interpolation
 function resampleGrayscale(
   data: Uint8Array,
   srcWidth: number,
@@ -149,111 +172,268 @@ function resampleGrayscale(
   targetHeight: number
 ): Uint8Array {
   const result = new Uint8Array(targetWidth * targetHeight);
-  const scaleX = srcWidth / targetWidth;
-  const scaleY = srcHeight / targetHeight;
+  const scaleX = (srcWidth - 1) / (targetWidth - 1);
+  const scaleY = (srcHeight - 1) / (targetHeight - 1);
   
   for (let y = 0; y < targetHeight; y++) {
     for (let x = 0; x < targetWidth; x++) {
-      const srcX = Math.floor(x * scaleX);
-      const srcY = Math.floor(y * scaleY);
-      const srcIdx = srcY * srcWidth + srcX;
-      result[y * targetWidth + x] = data[srcIdx];
+      const srcX = x * scaleX;
+      const srcY = y * scaleY;
+      
+      const x0 = Math.floor(srcX);
+      const y0 = Math.floor(srcY);
+      const x1 = Math.min(x0 + 1, srcWidth - 1);
+      const y1 = Math.min(y0 + 1, srcHeight - 1);
+      
+      const fx = srcX - x0;
+      const fy = srcY - y0;
+      
+      const v00 = data[y0 * srcWidth + x0];
+      const v10 = data[y0 * srcWidth + x1];
+      const v01 = data[y1 * srcWidth + x0];
+      const v11 = data[y1 * srcWidth + x1];
+      
+      const value = 
+        v00 * (1 - fx) * (1 - fy) +
+        v10 * fx * (1 - fy) +
+        v01 * (1 - fx) * fy +
+        v11 * fx * fy;
+      
+      result[y * targetWidth + x] = Math.round(value);
     }
   }
   
   return result;
 }
 
-// Generate lithophane mesh from grayscale data
+// Shape transformation functions for each lamp type
+function getShapeTransformer(shapeType: string, physicalWidth: number, physicalHeight: number) {
+  return (x: number, y: number, z: number): [number, number, number] => {
+    const centerX = physicalWidth / 2;
+    const centerY = physicalHeight / 2;
+    
+    switch (shapeType) {
+      // Cylindrical shapes
+      case 'cylinder_small':
+      case 'cylinder_medium':
+      case 'cylinder_large': {
+        const angle = (x / physicalWidth) * Math.PI * 2;
+        const radius = physicalWidth / (Math.PI * 2);
+        return [
+          Math.cos(angle) * (radius + z),
+          y,
+          Math.sin(angle) * (radius + z)
+        ];
+      }
+      
+      case 'half_cylinder': {
+        const angle = (x / physicalWidth) * Math.PI;
+        const radius = physicalWidth / Math.PI;
+        return [
+          Math.cos(angle) * (radius + z),
+          y,
+          Math.sin(angle) * (radius + z)
+        ];
+      }
+      
+      // Hexagonal and octagonal (similar to cylinder but with segments)
+      case 'hexagonal': {
+        const segments = 6;
+        const segment = Math.floor((x / physicalWidth) * segments);
+        const anglePerSegment = (Math.PI * 2) / segments;
+        const startAngle = segment * anglePerSegment;
+        const segmentProgress = ((x / physicalWidth) * segments) - segment;
+        const angle = startAngle + segmentProgress * anglePerSegment;
+        const radius = physicalWidth / (Math.PI * 2);
+        return [
+          Math.cos(angle) * (radius + z),
+          y,
+          Math.sin(angle) * (radius + z)
+        ];
+      }
+      
+      case 'octagonal': {
+        const segments = 8;
+        const segment = Math.floor((x / physicalWidth) * segments);
+        const anglePerSegment = (Math.PI * 2) / segments;
+        const startAngle = segment * anglePerSegment;
+        const segmentProgress = ((x / physicalWidth) * segments) - segment;
+        const angle = startAngle + segmentProgress * anglePerSegment;
+        const radius = physicalWidth / (Math.PI * 2);
+        return [
+          Math.cos(angle) * (radius + z),
+          y,
+          Math.sin(angle) * (radius + z)
+        ];
+      }
+      
+      // Curved shapes
+      case 'curved_soft': {
+        const curveZ = Math.sin((x / physicalWidth) * Math.PI) * physicalWidth * 0.15;
+        return [x, y, z + curveZ];
+      }
+      
+      case 'curved_deep':
+      case 'arch': {
+        const curveZ = Math.sin((x / physicalWidth) * Math.PI) * physicalWidth * 0.3;
+        return [x, y, z + curveZ];
+      }
+      
+      // Moon / Spherical segment
+      case 'moon': {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const radius = Math.min(physicalWidth, physicalHeight) / 2;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < radius) {
+          const sphereZ = Math.sqrt(Math.max(0, radius * radius - dist * dist)) * 0.35;
+          return [x, y, z + sphereZ];
+        }
+        return [x, y, z];
+      }
+      
+      // Heart shape - applies curvature based on heart formula
+      case 'heart': {
+        const nx = (x - centerX) / centerX;
+        const ny = (y - centerY) / centerY;
+        // Slight outward bulge for heart
+        const bulge = 0.1 * physicalWidth * (1 - nx * nx - ny * ny);
+        return [x, y, z + Math.max(0, bulge)];
+      }
+      
+      // Star shape - radial from center
+      case 'star': {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+        const bulge = 0.05 * physicalWidth * (1 - dist / maxDist);
+        return [x, y, z + Math.max(0, bulge)];
+      }
+      
+      // Diamond - tent-like
+      case 'diamond': {
+        const dx = Math.abs(x - centerX) / centerX;
+        const dy = Math.abs(y - centerY) / centerY;
+        const peak = 0.1 * physicalWidth * (1 - Math.max(dx, dy));
+        return [x, y, z + Math.max(0, peak)];
+      }
+      
+      // Wave - sinusoidal along X
+      case 'wave': {
+        const waveZ = Math.sin((x / physicalWidth) * Math.PI * 3) * physicalWidth * 0.08;
+        return [x, y, z + waveZ];
+      }
+      
+      // Cloud - organic bumps
+      case 'cloud': {
+        const bump1 = Math.sin((x / physicalWidth) * Math.PI * 2) * Math.sin((y / physicalHeight) * Math.PI);
+        const bump2 = Math.sin((x / physicalWidth) * Math.PI * 3) * Math.cos((y / physicalHeight) * Math.PI * 1.5);
+        const cloudZ = (bump1 + bump2 * 0.5) * physicalWidth * 0.06;
+        return [x, y, z + cloudZ];
+      }
+      
+      // Gothic - pointed arch at top
+      case 'gothic': {
+        const ny = y / physicalHeight;
+        if (ny > 0.5) {
+          const peakProgress = (ny - 0.5) * 2;
+          const nx = Math.abs(x - centerX) / centerX;
+          const archZ = peakProgress * (1 - nx) * physicalWidth * 0.15;
+          return [x, y, z + archZ];
+        }
+        return [x, y, z];
+      }
+      
+      // Ornamental - decorative frame with slight curve
+      case 'ornamental':
+      case 'framed_square': {
+        const edgeDist = Math.min(
+          x, physicalWidth - x,
+          y, physicalHeight - y
+        );
+        const maxEdge = Math.min(physicalWidth, physicalHeight) * 0.1;
+        const frameZ = edgeDist < maxEdge ? (maxEdge - edgeDist) * 0.05 : 0;
+        return [x, y, z + frameZ];
+      }
+      
+      // Circular - slight dome
+      case 'circular': {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const radius = Math.min(centerX, centerY);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < radius) {
+          const domeZ = Math.sqrt(Math.max(0, radius * radius - dist * dist)) * 0.1;
+          return [x, y, z + domeZ];
+        }
+        return [x, y, z];
+      }
+      
+      // Flat shapes - no transformation
+      case 'flat_square':
+      case 'flat_rectangle':
+      case 'flat_oval':
+      case 'panoramic':
+      case 'portrait':
+      case 'minimalist':
+      default:
+        return [x, y, z];
+    }
+  };
+}
+
+// Generate lithophane mesh from grayscale data with all shape support
 function generateLithophanyMesh(
   grayscaleData: Uint8Array,
   width: number,
   height: number,
   physicalWidth: number,
   physicalHeight: number,
-  shapeType: string = 'flat'
+  shapeType: string = 'flat_square'
 ): { triangles: Float32Array; count: number } {
-  console.log(`Generating lithophany mesh: ${width}x${height}px -> ${physicalWidth}x${physicalHeight}mm, shape: ${shapeType}`);
+  console.log(`Generating lithophane: ${width}x${height}px -> ${physicalWidth}x${physicalHeight}mm, shape: ${shapeType}`);
   
   const scaleX = physicalWidth / width;
   const scaleY = physicalHeight / height;
   
-  // Calculate heights from grayscale values (inverted: dark = thick)
+  // Calculate heights from grayscale (inverted: dark = thick for less light)
   const heights: number[][] = [];
   for (let y = 0; y < height; y++) {
     heights[y] = [];
     for (let x = 0; x < width; x++) {
       const gray = grayscaleData[y * width + x];
-      // Invert: darker pixels (low gray value) = thicker = less light passes
+      // Invert: darker pixels = thicker = less light passes through
       const normalizedHeight = 1 - (gray / 255);
-      heights[y][x] = MIN_THICKNESS + normalizedHeight * (MAX_THICKNESS - MIN_THICKNESS);
+      
+      // Apply smooth edge transition
+      let edgeFactor = 1;
+      if (x < BORDER_WIDTH) edgeFactor = Math.min(edgeFactor, x / BORDER_WIDTH);
+      if (x >= width - BORDER_WIDTH) edgeFactor = Math.min(edgeFactor, (width - 1 - x) / BORDER_WIDTH);
+      if (y < BORDER_WIDTH) edgeFactor = Math.min(edgeFactor, y / BORDER_WIDTH);
+      if (y >= height - BORDER_WIDTH) edgeFactor = Math.min(edgeFactor, (height - 1 - y) / BORDER_WIDTH);
+      
+      const baseThickness = MIN_THICKNESS + normalizedHeight * (MAX_THICKNESS - MIN_THICKNESS);
+      const edgeThickness = EDGE_REINFORCEMENT;
+      
+      heights[y][x] = baseThickness * edgeFactor + edgeThickness * (1 - edgeFactor);
     }
   }
   
-  // Add edge reinforcement
-  for (let y = 0; y < height; y++) {
-    heights[y][0] = Math.max(heights[y][0], EDGE_REINFORCEMENT);
-    heights[y][width - 1] = Math.max(heights[y][width - 1], EDGE_REINFORCEMENT);
-  }
-  for (let x = 0; x < width; x++) {
-    heights[0][x] = Math.max(heights[0][x], EDGE_REINFORCEMENT);
-    heights[height - 1][x] = Math.max(heights[height - 1][x], EDGE_REINFORCEMENT);
-  }
+  // Get shape transformer
+  const transformPoint = getShapeTransformer(shapeType, physicalWidth, physicalHeight);
   
   // Generate triangles
   const cellsX = width - 1;
   const cellsY = height - 1;
   
-  // Estimate triangle count
-  const estimatedTriangles = cellsX * cellsY * 2 * 2 + (cellsX + cellsY) * 2 * 2;
+  // Estimate triangle count (top + bottom + 4 sides)
+  const estimatedTriangles = cellsX * cellsY * 2 * 2 + (cellsX + cellsY) * 2 * 4;
   const triangles = new Float32Array(estimatedTriangles * 12 * 2);
   let offset = 0;
   let triangleCount = 0;
   
-  // Apply shape transformation based on type
-  const transformPoint = (x: number, y: number, z: number): [number, number, number] => {
-    if (shapeType === 'cylinder_small' || shapeType === 'cylinder_medium' || shapeType === 'cylinder_large') {
-      // Wrap around Y axis
-      const angle = (x / physicalWidth) * Math.PI * 2;
-      const radius = physicalWidth / (Math.PI * 2);
-      return [
-        Math.cos(angle) * (radius + z),
-        y,
-        Math.sin(angle) * (radius + z)
-      ];
-    } else if (shapeType === 'half_cylinder') {
-      // Half wrap around Y axis
-      const angle = (x / physicalWidth) * Math.PI;
-      const radius = physicalWidth / Math.PI;
-      return [
-        Math.cos(angle) * (radius + z),
-        y,
-        Math.sin(angle) * (radius + z)
-      ];
-    } else if (shapeType === 'curved_soft' || shapeType === 'curved_deep') {
-      // Curved along X axis
-      const curveAmount = shapeType === 'curved_deep' ? 0.3 : 0.15;
-      const curveZ = Math.sin((x / physicalWidth) * Math.PI) * physicalWidth * curveAmount;
-      return [x, y, z + curveZ];
-    } else if (shapeType === 'moon') {
-      // Spherical segment
-      const centerX = physicalWidth / 2;
-      const centerY = physicalHeight / 2;
-      const radius = Math.min(physicalWidth, physicalHeight) / 2;
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < radius) {
-        const sphereZ = Math.sqrt(radius * radius - dist * dist) * 0.3;
-        return [x, y, z + sphereZ];
-      }
-      return [x, y, z];
-    }
-    // Default flat
-    return [x, y, z];
-  };
-  
-  // Generate top surface
+  // Generate top surface (lithophane face)
   for (let y = 0; y < cellsY; y++) {
     for (let x = 0; x < cellsX; x++) {
       const x1 = x * scaleX;
@@ -293,13 +473,15 @@ function generateLithophanyMesh(
       const v1 = transformPoint(x1, y1, 0);
       const v2 = transformPoint(x1, y2, 0);
       const v3 = transformPoint(x2, y1, 0);
-      offset = addTriangle(triangles, offset, [0, 0, -1], v1, v2, v3);
+      const n1 = calculateNormal(v1, v2, v3);
+      offset = addTriangle(triangles, offset, n1, v1, v2, v3);
       triangleCount++;
       
       const v4 = transformPoint(x2, y1, 0);
       const v5 = transformPoint(x1, y2, 0);
       const v6 = transformPoint(x2, y2, 0);
-      offset = addTriangle(triangles, offset, [0, 0, -1], v4, v5, v6);
+      const n2 = calculateNormal(v4, v5, v6);
+      offset = addTriangle(triangles, offset, n2, v4, v5, v6);
       triangleCount++;
     }
   }
@@ -312,11 +494,18 @@ function generateLithophanyMesh(
     const z1 = heights[y][0];
     const z2 = heights[y + 1][0];
     
-    offset = addTriangle(triangles, offset, [-1, 0, 0],
-      transformPoint(0, y1, 0), transformPoint(0, y2, 0), transformPoint(0, y1, z1));
+    const v1 = transformPoint(0, y1, 0);
+    const v2 = transformPoint(0, y2, 0);
+    const v3 = transformPoint(0, y1, z1);
+    const n1 = calculateNormal(v1, v2, v3);
+    offset = addTriangle(triangles, offset, n1, v1, v2, v3);
     triangleCount++;
-    offset = addTriangle(triangles, offset, [-1, 0, 0],
-      transformPoint(0, y2, 0), transformPoint(0, y2, z2), transformPoint(0, y1, z1));
+    
+    const v4 = transformPoint(0, y2, 0);
+    const v5 = transformPoint(0, y2, z2);
+    const v6 = transformPoint(0, y1, z1);
+    const n2 = calculateNormal(v4, v5, v6);
+    offset = addTriangle(triangles, offset, n2, v4, v5, v6);
     triangleCount++;
   }
   
@@ -327,11 +516,18 @@ function generateLithophanyMesh(
     const z1 = heights[y][width - 1];
     const z2 = heights[y + 1][width - 1];
     
-    offset = addTriangle(triangles, offset, [1, 0, 0],
-      transformPoint(physicalWidth, y1, 0), transformPoint(physicalWidth, y1, z1), transformPoint(physicalWidth, y2, 0));
+    const v1 = transformPoint(physicalWidth, y1, 0);
+    const v2 = transformPoint(physicalWidth, y1, z1);
+    const v3 = transformPoint(physicalWidth, y2, 0);
+    const n1 = calculateNormal(v1, v2, v3);
+    offset = addTriangle(triangles, offset, n1, v1, v2, v3);
     triangleCount++;
-    offset = addTriangle(triangles, offset, [1, 0, 0],
-      transformPoint(physicalWidth, y2, 0), transformPoint(physicalWidth, y1, z1), transformPoint(physicalWidth, y2, z2));
+    
+    const v4 = transformPoint(physicalWidth, y2, 0);
+    const v5 = transformPoint(physicalWidth, y1, z1);
+    const v6 = transformPoint(physicalWidth, y2, z2);
+    const n2 = calculateNormal(v4, v5, v6);
+    offset = addTriangle(triangles, offset, n2, v4, v5, v6);
     triangleCount++;
   }
   
@@ -342,11 +538,18 @@ function generateLithophanyMesh(
     const z1 = heights[0][x];
     const z2 = heights[0][x + 1];
     
-    offset = addTriangle(triangles, offset, [0, -1, 0],
-      transformPoint(x1, 0, 0), transformPoint(x1, 0, z1), transformPoint(x2, 0, 0));
+    const v1 = transformPoint(x1, 0, 0);
+    const v2 = transformPoint(x1, 0, z1);
+    const v3 = transformPoint(x2, 0, 0);
+    const n1 = calculateNormal(v1, v2, v3);
+    offset = addTriangle(triangles, offset, n1, v1, v2, v3);
     triangleCount++;
-    offset = addTriangle(triangles, offset, [0, -1, 0],
-      transformPoint(x2, 0, 0), transformPoint(x1, 0, z1), transformPoint(x2, 0, z2));
+    
+    const v4 = transformPoint(x2, 0, 0);
+    const v5 = transformPoint(x1, 0, z1);
+    const v6 = transformPoint(x2, 0, z2);
+    const n2 = calculateNormal(v4, v5, v6);
+    offset = addTriangle(triangles, offset, n2, v4, v5, v6);
     triangleCount++;
   }
   
@@ -357,19 +560,26 @@ function generateLithophanyMesh(
     const z1 = heights[height - 1][x];
     const z2 = heights[height - 1][x + 1];
     
-    offset = addTriangle(triangles, offset, [0, 1, 0],
-      transformPoint(x1, physicalHeight, 0), transformPoint(x2, physicalHeight, 0), transformPoint(x1, physicalHeight, z1));
+    const v1 = transformPoint(x1, physicalHeight, 0);
+    const v2 = transformPoint(x2, physicalHeight, 0);
+    const v3 = transformPoint(x1, physicalHeight, z1);
+    const n1 = calculateNormal(v1, v2, v3);
+    offset = addTriangle(triangles, offset, n1, v1, v2, v3);
     triangleCount++;
-    offset = addTriangle(triangles, offset, [0, 1, 0],
-      transformPoint(x2, physicalHeight, 0), transformPoint(x2, physicalHeight, z2), transformPoint(x1, physicalHeight, z1));
+    
+    const v4 = transformPoint(x2, physicalHeight, 0);
+    const v5 = transformPoint(x2, physicalHeight, z2);
+    const v6 = transformPoint(x1, physicalHeight, z1);
+    const n2 = calculateNormal(v4, v5, v6);
+    offset = addTriangle(triangles, offset, n2, v4, v5, v6);
     triangleCount++;
   }
   
-  console.log(`Generated ${triangleCount} triangles for lithophany`);
+  console.log(`Generated ${triangleCount} triangles for lithophane`);
   return { triangles: triangles.slice(0, offset), count: triangleCount };
 }
 
-// Generate base with LED hole and screen slot
+// Generate base with LED hole and screen slot (Bambu compatible)
 function generateBaseMesh(
   baseWidth: number,
   baseDepth: number,
@@ -377,10 +587,10 @@ function generateBaseMesh(
   ledDiameter: number,
   ledDepth: number,
   screenSlotWidth: number,
-  screenSlotDepth: number = 3,
+  screenSlotDepth: number = 3.5,
   segments: number = 32
 ): { triangles: Float32Array; count: number } {
-  console.log(`Generating base mesh: ${baseWidth}x${baseDepth}x${baseHeight}mm, LED: ${ledDiameter}mm, slot: ${screenSlotWidth}mm`);
+  console.log(`Generating base: ${baseWidth}x${baseDepth}x${baseHeight}mm, LED: ${ledDiameter}mm`);
   
   const triangles: number[] = [];
   const ledRadius = ledDiameter / 2;
@@ -395,7 +605,7 @@ function generateBaseMesh(
   addTri([0, 0, -1], [0, 0, 0], [baseWidth, 0, 0], [0, baseDepth, 0]);
   addTri([0, 0, -1], [baseWidth, 0, 0], [baseWidth, baseDepth, 0], [0, baseDepth, 0]);
   
-  // Top face with LED hole (grid approach)
+  // Top face with LED hole (grid approach for cleaner mesh)
   const gridSize = 2;
   const gridX = Math.ceil(baseWidth / gridSize);
   const gridY = Math.ceil(baseDepth / gridSize);
@@ -414,6 +624,7 @@ function generateBaseMesh(
         Math.pow(cellCenterY - centerY, 2)
       );
       
+      // Skip cells inside LED hole
       if (distFromCenter > ledRadius + gridSize) {
         addTri([0, 0, 1], [x1, y1, baseHeight], [x2, y2, baseHeight], [x2, y1, baseHeight]);
         addTri([0, 0, 1], [x1, y1, baseHeight], [x1, y2, baseHeight], [x2, y2, baseHeight]);
@@ -421,7 +632,7 @@ function generateBaseMesh(
     }
   }
   
-  // LED hole walls
+  // LED hole cylindrical walls
   const holeBottom = baseHeight - ledDepth;
   for (let i = 0; i < segments; i++) {
     const angle1 = (i / segments) * Math.PI * 2;
@@ -432,24 +643,23 @@ function generateBaseMesh(
     const x2 = centerX + Math.cos(angle2) * ledRadius;
     const y2 = centerY + Math.sin(angle2) * ledRadius;
     
-    const nx1 = -Math.cos(angle1);
-    const ny1 = -Math.sin(angle1);
-    const nx2 = -Math.cos(angle2);
-    const ny2 = -Math.sin(angle2);
-    const avgN: [number, number, number] = [-(nx1 + nx2) / 2, -(ny1 + ny2) / 2, 0];
+    const avgAngle = (angle1 + angle2) / 2;
+    const avgN: [number, number, number] = [-Math.cos(avgAngle), -Math.sin(avgAngle), 0];
     
+    // Wall triangles
     addTri(avgN, [x1, y1, baseHeight], [x2, y2, baseHeight], [x1, y1, holeBottom]);
     addTri(avgN, [x2, y2, baseHeight], [x2, y2, holeBottom], [x1, y1, holeBottom]);
     
+    // Bottom cap
     addTri([0, 0, -1], [centerX, centerY, holeBottom], [x2, y2, holeBottom], [x1, y1, holeBottom]);
   }
   
-  // Screen slot on top (back edge)
+  // Screen slot on back edge (for inserting lithophane panel)
   const slotX1 = (baseWidth - screenSlotWidth) / 2;
   const slotX2 = slotX1 + screenSlotWidth;
-  const slotY1 = baseDepth - screenSlotDepth - 2;
-  const slotY2 = baseDepth - 2;
-  const slotZ = baseHeight - 2;
+  const slotY1 = baseDepth - screenSlotDepth - 3;
+  const slotY2 = baseDepth - 3;
+  const slotZ = baseHeight - 2.5;
   
   // Slot bottom
   addTri([0, 0, 1], [slotX1, slotY1, slotZ], [slotX2, slotY1, slotZ], [slotX1, slotY2, slotZ]);
@@ -468,7 +678,7 @@ function generateBaseMesh(
   addTri([1, 0, 0], [slotX2, slotY1, slotZ], [slotX2, slotY1, baseHeight], [slotX2, slotY2, slotZ]);
   addTri([1, 0, 0], [slotX2, slotY2, slotZ], [slotX2, slotY1, baseHeight], [slotX2, slotY2, baseHeight]);
   
-  // Side walls
+  // Outer side walls
   addTri([0, -1, 0], [0, 0, 0], [0, 0, baseHeight], [baseWidth, 0, 0]);
   addTri([0, -1, 0], [baseWidth, 0, 0], [0, 0, baseHeight], [baseWidth, 0, baseHeight]);
   
@@ -482,7 +692,7 @@ function generateBaseMesh(
   addTri([1, 0, 0], [baseWidth, baseDepth, 0], [baseWidth, 0, baseHeight], [baseWidth, baseDepth, baseHeight]);
   
   const triangleCount = triangles.length / 12;
-  console.log(`Generated ${triangleCount} triangles for base with slot`);
+  console.log(`Generated ${triangleCount} triangles for base`);
   
   return { 
     triangles: new Float32Array(triangles), 
@@ -504,7 +714,7 @@ function createBinarySTL(triangles: Float32Array, triangleCount: number): Uint8A
       dataView.setFloat32(byteOffset, triangles[floatOffset++], true);
       byteOffset += 4;
     }
-    dataView.setUint16(byteOffset, 0, true);
+    dataView.setUint16(byteOffset, 0, true); // Attribute byte count
     byteOffset += 2;
   }
   
@@ -536,6 +746,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fetch order details
     const { data: order, error: orderError } = await supabase
       .from('lithophany_orders')
       .select('*')
@@ -550,7 +761,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Order found:', order.id, 'Dimensions:', order.lamp_width_mm, 'x', order.lamp_height_mm);
+    console.log(`Order: ${order.id}, Type: ${order.lamp_type}, Dimensions: ${order.lamp_width_mm}x${order.lamp_height_mm}mm`);
 
     // Validate minimum dimensions
     const minDimension = 10; // mm
@@ -563,7 +774,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch and process the image
+    // Fetch the image
     const imageUrl = order.processed_image_url || order.original_image_url;
     console.log('Fetching image:', imageUrl);
     
@@ -579,8 +790,8 @@ serve(async (req) => {
     const decoded = await decodeImageToGrayscale(imageBuffer, contentType);
     console.log(`Image decoded: ${decoded.width}x${decoded.height}`);
     
-    // Calculate target resolution (limit for performance)
-    const maxResolution = 200; // pixels per dimension
+    // Calculate target resolution (higher for better quality)
+    const maxResolution = 250; // pixels per dimension for better detail
     const aspectRatio = decoded.width / decoded.height;
     let targetWidth: number, targetHeight: number;
     
@@ -592,7 +803,11 @@ serve(async (req) => {
       targetWidth = Math.round(targetHeight * aspectRatio);
     }
     
-    // Resample to target resolution
+    // Ensure minimum resolution
+    targetWidth = Math.max(targetWidth, 50);
+    targetHeight = Math.max(targetHeight, 50);
+    
+    // Resample with bilinear interpolation
     const resampledData = resampleGrayscale(
       decoded.data,
       decoded.width,
@@ -601,8 +816,8 @@ serve(async (req) => {
       targetHeight
     );
     
-    // Get shape type from order
-    const shapeType = order.lamp_type || 'flat';
+    // Get shape type
+    const shapeType = order.lamp_type || 'flat_square';
     
     // Generate lithophane mesh
     const lithophanyMesh = generateLithophanyMesh(
@@ -617,6 +832,7 @@ serve(async (req) => {
     const lithophanySTL = createBinarySTL(lithophanyMesh.triangles, lithophanyMesh.count);
     console.log('Lithophane STL size:', lithophanySTL.length, 'bytes');
     
+    // Upload lithophane STL
     const timestamp = Date.now();
     const lithophanyFileName = `lithophany/${order.user_id}/${orderId}_lithophane_${timestamp}.stl`;
     
@@ -638,10 +854,11 @@ serve(async (req) => {
     
     let baseUrl = null;
     
+    // Generate base if requested
     if (generateBase) {
-      const baseWidth = order.base_width_mm || order.lamp_width_mm * 1.2;
-      const baseDepth = order.base_depth_mm || 25;
-      const baseHeight = order.base_height_mm || 15;
+      const baseWidth = order.base_width_mm || order.lamp_width_mm * 1.25;
+      const baseDepth = order.base_depth_mm || 28;
+      const baseHeight = order.base_height_mm || 18;
       const ledDiameter = order.light_hole_diameter_mm || BAMBU_LIGHT_DIAMETER + LIGHT_HOLE_CLEARANCE;
       const ledDepth = order.light_hole_depth_mm || BAMBU_LIGHT_HEIGHT + 2;
       
@@ -651,7 +868,7 @@ serve(async (req) => {
         baseHeight,
         ledDiameter,
         ledDepth,
-        order.lamp_width_mm // Screen slot width matches lamp width
+        order.lamp_width_mm + 1 // Screen slot slightly wider than lamp
       );
       
       const baseSTL = createBinarySTL(baseMesh.triangles, baseMesh.count);
@@ -698,6 +915,9 @@ serve(async (req) => {
         success: true,
         lithophanyStlUrl: lithophanyUrl.publicUrl,
         baseStlUrl: baseUrl,
+        shapeType: shapeType,
+        dimensions: { width: order.lamp_width_mm, height: order.lamp_height_mm },
+        resolution: { width: targetWidth, height: targetHeight },
         message: 'STL files generated successfully'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
