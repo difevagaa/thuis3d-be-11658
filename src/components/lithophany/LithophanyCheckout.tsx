@@ -19,10 +19,12 @@ import {
   AlertCircle,
   Loader2,
   ShoppingCart,
-  FileDown
+  FileDown,
+  Download
 } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 import { LithophanyPricing } from "./LithophanyPricing";
+import { generateLithophaneSTL, downloadSTL } from "@/lib/lithophaneSTLGenerator";
 
 interface LithophanyCheckoutProps {
   processedImage: string;
@@ -47,6 +49,7 @@ export const LithophanyCheckout = ({
   const [notes, setNotes] = useState('');
   const [orderCreated, setOrderCreated] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [isGeneratingSTL, setIsGeneratingSTL] = useState(false);
 
   // Check if user is authenticated
   const { data: session } = useQuery({
@@ -183,6 +186,43 @@ export const LithophanyCheckout = ({
     }
   };
 
+  const handleGenerateSTL = async () => {
+    setIsGeneratingSTL(true);
+    try {
+      // Extract lithophany-specific settings from editorSettings
+      const lithSettings = {
+        minThickness: (editorSettings.lithMinThickness as number) || 0.6,
+        maxThickness: (editorSettings.lithMaxThickness as number) || 3.5,
+        resolution: (editorSettings.lithResolution as 'low' | 'medium' | 'high' | 'ultra') || 'high',
+        border: (editorSettings.lithBorder as number) || 2,
+        curve: (editorSettings.lithCurve as number) || 0,
+        negative: (editorSettings.lithNegative as boolean) || false,
+        smoothing: (editorSettings.lithSmoothing as number) || 20,
+      };
+
+      const stlBuffer = await generateLithophaneSTL({
+        processedImage,
+        lampTemplate,
+        dimensions,
+        settings: lithSettings
+      });
+
+      const filename = `lithophane_${lampTemplate.shape_type}_${dimensions.width}x${dimensions.height}mm.stl`;
+      downloadSTL(stlBuffer, filename);
+
+      toast.success(language === 'es' 
+        ? '¡Archivo STL generado correctamente!'
+        : 'STL file generated successfully!');
+    } catch (error) {
+      console.error('Error generating STL:', error);
+      toast.error(language === 'es' 
+        ? 'Error al generar el archivo STL'
+        : 'Error generating STL file');
+    } finally {
+      setIsGeneratingSTL(false);
+    }
+  };
+
   if (orderCreated) {
     return (
       <Card className="max-w-2xl mx-auto">
@@ -210,6 +250,32 @@ export const LithophanyCheckout = ({
             <Button variant="outline" onClick={() => navigate('/mi-cuenta')}>
               {language === 'es' ? 'Ver Mis Pedidos' : 'View My Orders'}
             </Button>
+          </div>
+
+          <div className="mt-4">
+            <Button 
+              onClick={handleGenerateSTL} 
+              disabled={isGeneratingSTL}
+              variant="secondary"
+              className="w-full"
+            >
+              {isGeneratingSTL ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {language === 'es' ? 'Generando STL...' : 'Generating STL...'}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  {language === 'es' ? 'Descargar Archivo STL' : 'Download STL File'}
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              {language === 'es' 
+                ? 'Descarga el archivo STL para imprimir tu litofanía'
+                : 'Download STL file to print your lithophane'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -349,6 +415,27 @@ export const LithophanyCheckout = ({
             </>
           )}
         </Button>
+
+        <div className="mt-3">
+          <Button 
+            onClick={handleGenerateSTL} 
+            disabled={isGeneratingSTL}
+            variant="outline"
+            className="w-full"
+          >
+            {isGeneratingSTL ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {language === 'es' ? 'Generando...' : 'Generating...'}
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Solo Descargar STL' : 'Just Download STL'}
+              </>
+            )}
+          </Button>
+        </div>
 
         <p className="text-xs text-center text-muted-foreground">
           {language === 'es' 
