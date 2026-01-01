@@ -453,7 +453,8 @@ function createBinarySTL(triangles: Triangle[]): ArrayBuffer {
 }
 
 /**
- * Generate base STL (separate from lithophane panel)
+ * Generate base STL (integrated with lithophane panel)
+ * Based on BambuStudio lithophane base design
  */
 export async function generateBaseSTL(
   lampTemplate: LampTemplate,
@@ -465,22 +466,281 @@ export async function generateBaseSTL(
     slotWidth: number;
     slotDepth: number;
     ledHoleDiameter: number;
+    ledHoleDepth: number;
   }
 ): Promise<ArrayBuffer> {
   const triangles: Triangle[] = [];
   
-  // Generate simple rectangular base with slot
-  const { width, height, depth, slotWidth, slotDepth } = baseSettings;
+  const { width, height, depth, slotWidth, slotDepth, ledHoleDiameter, ledHoleDepth } = baseSettings;
   const halfWidth = width / 2;
   const halfDepth = depth / 2;
+  const slotHalfWidth = slotWidth / 2;
   
-  // TODO: Implement base geometry generation
-  // This would create:
-  // - Base platform
-  // - Slot for lithophane panel
-  // - LED mounting hole
+  // Base platform vertices
+  const baseTop = 0;
+  const baseBottom = -height;
+  
+  // Top surface of base (with slot cutout)
+  // Front section (before slot)
+  const frontDepth = halfDepth - slotDepth / 2;
+  
+  // Create base top surface (rectangular with slot)
+  // Front rectangle
+  addRectangle(triangles,
+    { x: -halfWidth, y: frontDepth, z: baseTop },
+    { x: halfWidth, y: frontDepth, z: baseTop },
+    { x: halfWidth, y: halfDepth, z: baseTop },
+    { x: -halfWidth, y: halfDepth, z: baseTop }
+  );
+  
+  // Back rectangle  
+  addRectangle(triangles,
+    { x: -halfWidth, y: -halfDepth, z: baseTop },
+    { x: halfWidth, y: -halfDepth, z: baseTop },
+    { x: halfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: -halfWidth, y: -halfDepth + frontDepth, z: baseTop }
+  );
+  
+  // Left side of slot
+  addRectangle(triangles,
+    { x: -halfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: frontDepth, z: baseTop },
+    { x: -halfWidth, y: frontDepth, z: baseTop }
+  );
+  
+  // Right side of slot
+  addRectangle(triangles,
+    { x: slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: halfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: halfWidth, y: frontDepth, z: baseTop },
+    { x: slotHalfWidth, y: frontDepth, z: baseTop }
+  );
+  
+  // Slot interior walls
+  const slotBottom = baseTop - slotDepth;
+  
+  // Slot back wall
+  addRectangle(triangles,
+    { x: -slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: slotHalfWidth, y: -halfDepth + frontDepth, z: slotBottom },
+    { x: -slotHalfWidth, y: -halfDepth + frontDepth, z: slotBottom }
+  );
+  
+  // Slot front wall
+  addRectangle(triangles,
+    { x: slotHalfWidth, y: frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: frontDepth, z: slotBottom },
+    { x: slotHalfWidth, y: frontDepth, z: slotBottom }
+  );
+  
+  // Slot left wall (inner)
+  addRectangle(triangles,
+    { x: -slotHalfWidth, y: frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: -slotHalfWidth, y: -halfDepth + frontDepth, z: slotBottom },
+    { x: -slotHalfWidth, y: frontDepth, z: slotBottom }
+  );
+  
+  // Slot right wall (inner)
+  addRectangle(triangles,
+    { x: slotHalfWidth, y: -halfDepth + frontDepth, z: baseTop },
+    { x: slotHalfWidth, y: frontDepth, z: baseTop },
+    { x: slotHalfWidth, y: frontDepth, z: slotBottom },
+    { x: slotHalfWidth, y: -halfDepth + frontDepth, z: slotBottom }
+  );
+  
+  // Slot bottom (with LED hole)
+  addSlotBottomWithLEDHole(triangles, slotHalfWidth, frontDepth, -halfDepth + frontDepth, slotBottom, ledHoleDiameter / 2);
+  
+  // Base exterior walls
+  // Front wall
+  addRectangle(triangles,
+    { x: -halfWidth, y: halfDepth, z: baseTop },
+    { x: halfWidth, y: halfDepth, z: baseTop },
+    { x: halfWidth, y: halfDepth, z: baseBottom },
+    { x: -halfWidth, y: halfDepth, z: baseBottom }
+  );
+  
+  // Back wall
+  addRectangle(triangles,
+    { x: halfWidth, y: -halfDepth, z: baseTop },
+    { x: -halfWidth, y: -halfDepth, z: baseTop },
+    { x: -halfWidth, y: -halfDepth, z: baseBottom },
+    { x: halfWidth, y: -halfDepth, z: baseBottom }
+  );
+  
+  // Left wall
+  addRectangle(triangles,
+    { x: -halfWidth, y: -halfDepth, z: baseTop },
+    { x: -halfWidth, y: halfDepth, z: baseTop },
+    { x: -halfWidth, y: halfDepth, z: baseBottom },
+    { x: -halfWidth, y: -halfDepth, z: baseBottom }
+  );
+  
+  // Right wall
+  addRectangle(triangles,
+    { x: halfWidth, y: halfDepth, z: baseTop },
+    { x: halfWidth, y: -halfDepth, z: baseTop },
+    { x: halfWidth, y: -halfDepth, z: baseBottom },
+    { x: halfWidth, y: halfDepth, z: baseBottom }
+  );
+  
+  // Bottom
+  addRectangle(triangles,
+    { x: -halfWidth, y: -halfDepth, z: baseBottom },
+    { x: halfWidth, y: -halfDepth, z: baseBottom },
+    { x: halfWidth, y: halfDepth, z: baseBottom },
+    { x: -halfWidth, y: halfDepth, z: baseBottom }
+  );
   
   return createBinarySTL(triangles);
+}
+
+/**
+ * Helper: Add a rectangular face (two triangles)
+ */
+function addRectangle(
+  triangles: Triangle[],
+  v1: Vector3,
+  v2: Vector3,
+  v3: Vector3,
+  v4: Vector3
+): void {
+  triangles.push(createTriangle(v1, v2, v3));
+  triangles.push(createTriangle(v1, v3, v4));
+}
+
+/**
+ * Add slot bottom with LED mounting hole
+ */
+function addSlotBottomWithLEDHole(
+  triangles: Triangle[],
+  slotHalfWidth: number,
+  frontY: number,
+  backY: number,
+  z: number,
+  ledRadius: number
+): void {
+  // For simplicity, create bottom with hole as segmented rectangles
+  // In production, would create proper circular hole with segments
+  
+  const centerY = (frontY + backY) / 2;
+  const segments = 16;
+  
+  // Create rectangles around the hole
+  // Left section
+  addRectangle(triangles,
+    { x: -slotHalfWidth, y: backY, z },
+    { x: -ledRadius, y: backY, z },
+    { x: -ledRadius, y: frontY, z },
+    { x: -slotHalfWidth, y: frontY, z }
+  );
+  
+  // Right section
+  addRectangle(triangles,
+    { x: ledRadius, y: backY, z },
+    { x: slotHalfWidth, y: backY, z },
+    { x: slotHalfWidth, y: frontY, z },
+    { x: ledRadius, y: frontY, z }
+  );
+  
+  // Front section (above hole)
+  addRectangle(triangles,
+    { x: -ledRadius, y: centerY + ledRadius, z },
+    { x: ledRadius, y: centerY + ledRadius, z },
+    { x: ledRadius, y: frontY, z },
+    { x: -ledRadius, y: frontY, z }
+  );
+  
+  // Back section (below hole)
+  addRectangle(triangles,
+    { x: -ledRadius, y: backY, z },
+    { x: ledRadius, y: backY, z },
+    { x: ledRadius, y: centerY - ledRadius, z },
+    { x: -ledRadius, y: centerY - ledRadius, z }
+  );
+}
+
+/**
+ * Generate combined STL: lithophane panel + base
+ * This is what admins will download
+ */
+export async function generateCombinedSTL(options: STLGenerationOptions): Promise<ArrayBuffer> {
+  // Generate lithophane panel
+  const panelBuffer = await generateLithophaneSTL(options);
+  
+  // Calculate base dimensions based on lamp template
+  const baseWidth = options.dimensions.width * 1.3; // 30% wider than panel
+  const baseHeight = 18; // Standard base height
+  const baseDepth = 28; // Standard base depth
+  const slotWidth = options.dimensions.width + 1; // 1mm clearance
+  const slotDepth = options.settings.maxThickness + 0.5; // 0.5mm clearance
+  const ledHoleDiameter = 16; // Standard 16mm LED
+  const ledHoleDepth = 10; // 10mm deep
+  
+  // Generate base
+  const baseBuffer = await generateBaseSTL(
+    options.lampTemplate,
+    options.dimensions,
+    {
+      width: baseWidth,
+      height: baseHeight,
+      depth: baseDepth,
+      slotWidth,
+      slotDepth,
+      ledHoleDiameter,
+      ledHoleDepth
+    }
+  );
+  
+  // Combine both STL files
+  return combineSTLBuffers(panelBuffer, baseBuffer);
+}
+
+/**
+ * Combine two STL buffers into one
+ */
+function combineSTLBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): ArrayBuffer {
+  const view1 = new DataView(buffer1);
+  const view2 = new DataView(buffer2);
+  
+  // Read triangle counts
+  const count1 = view1.getUint32(80, true);
+  const count2 = view2.getUint32(80, true);
+  const totalCount = count1 + count2;
+  
+  // Create new buffer
+  const headerSize = 80;
+  const triangleSize = 50;
+  const newSize = headerSize + 4 + (totalCount * triangleSize);
+  const newBuffer = new ArrayBuffer(newSize);
+  const newView = new DataView(newBuffer);
+  
+  // Write header
+  const header = 'Combined Lithophane + Base by Thuis3D';
+  for (let i = 0; i < Math.min(80, header.length); i++) {
+    newView.setUint8(i, header.charCodeAt(i));
+  }
+  
+  // Write total count
+  newView.setUint32(80, totalCount, true);
+  
+  // Copy triangles from first buffer
+  let offset = 84;
+  for (let i = 0; i < count1 * triangleSize; i++) {
+    newView.setUint8(offset + i, view1.getUint8(84 + i));
+  }
+  offset += count1 * triangleSize;
+  
+  // Copy triangles from second buffer  
+  for (let i = 0; i < count2 * triangleSize; i++) {
+    newView.setUint8(offset + i, view2.getUint8(84 + i));
+  }
+  
+  return newBuffer;
 }
 
 /**
