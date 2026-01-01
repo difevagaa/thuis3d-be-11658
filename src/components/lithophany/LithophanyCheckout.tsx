@@ -18,8 +18,7 @@ import {
   CheckCircle2, 
   AlertCircle,
   Loader2,
-  ShoppingCart,
-  FileDown
+  ShoppingCart
 } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 import { LithophanyPricing } from "./LithophanyPricing";
