@@ -417,11 +417,14 @@ const handler = async (req: Request): Promise<Response> => {
       const invoiceMessage = existingInvoice
         ? `La factura ${invoiceNumber} ya existía`
         : `Se generó automáticamente la factura ${invoiceNumber} (€${total.toFixed(2)})`;
+      const emailNotice = (!existingInvoice && RESEND_API_KEY && quote.customer_email)
+        ? ' El cliente ha sido notificado por email.'
+        : '';
       const adminNotifications = adminUsers.map(admin => ({
         user_id: admin.user_id,
         type: 'system',
         title: adminTitle,
-        message: `${invoiceMessage} para la cotización de ${quote.customer_name}.${orderMessage} El cliente ha sido notificado por email.`,
+        message: `${invoiceMessage} para la cotización de ${quote.customer_name}.${orderMessage}${emailNotice}`,
         link: `/admin/facturas`,
         is_read: false
       }));

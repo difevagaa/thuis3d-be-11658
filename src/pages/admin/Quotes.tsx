@@ -113,10 +113,10 @@ export default function Quotes() {
       const colorChanged = originalQuote?.color_id !== editingQuote.color_id;
       const priceWasUnset = !originalQuote?.estimated_price || Number(originalQuote?.estimated_price) === 0;
       const priceNowSet = Number(editingQuote.estimated_price || 0) > 0;
-      const priceTriggerHandled = priceWasUnset && priceNowSet;
+      const isInitialPriceSetting = priceWasUnset && priceNowSet;
       const shouldNotifyCustomer = Boolean(
         originalQuote &&
-        !priceTriggerHandled &&
+        !isInitialPriceSetting &&
         (statusChanged ||
           nameChanged ||
           emailChanged ||

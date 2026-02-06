@@ -148,7 +148,12 @@ export default function UserQuoteDetail() {
       return;
     }
 
-      const statusId = action === "approve" ? statusIds.approved : action === "reject" ? statusIds.rejected : undefined;
+    let statusId: string | undefined;
+    if (action === "approve") {
+      statusId = statusIds.approved;
+    } else if (action === "reject") {
+      statusId = statusIds.rejected;
+    }
     if ((action === "approve" || action === "reject") && !statusId) {
       i18nToast.directError("No se pudo determinar el estado de la cotización.");
       return;
@@ -166,7 +171,7 @@ export default function UserQuoteDetail() {
       const entry = `${timestamp} - ${actionLabel}${trimmedComment ? `: ${trimmedComment}` : ""}`;
       const updatedCustomText = quote.custom_text ? `${quote.custom_text}\n${entry}` : entry;
 
-      const updatePayload: Record<string, any> = { custom_text: updatedCustomText };
+      const updatePayload: { custom_text: string; status_id?: string } = { custom_text: updatedCustomText };
       if (statusId) {
         updatePayload.status_id = statusId;
       }
