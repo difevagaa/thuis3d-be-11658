@@ -61,6 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const showPrice = Number.isFinite(estimated_price) && estimated_price > 0;
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -69,10 +70,10 @@ const handler = async (req: Request): Promise<Response> => {
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
             .card { background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .header { text-align: center; margin-bottom: 30px; }
-            .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
-            .price-box { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 30px; margin: 20px 0; border-radius: 10px; text-align: center; }
-            .price { font-size: 48px; font-weight: bold; margin: 10px 0; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+              .price-box { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 30px; margin: 20px 0; border-radius: 10px; text-align: center; }
+              .price { font-size: 48px; font-weight: bold; margin: 10px 0; }
             .info-box { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
             .button { display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }
             .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
@@ -80,42 +81,44 @@ const handler = async (req: Request): Promise<Response> => {
         </head>
         <body>
           <div class="container">
-            <div class="card">
-              <div class="header">
-                <div class="logo">${companyName}</div>
-                <h2>¡Tu Cotización está Lista! 🎉</h2>
-              </div>
-              
-              <p>Hola ${safeCustomerName},</p>
-              <p>Hemos evaluado tu solicitud de cotización para <strong>${safeQuoteType}</strong> y tenemos una propuesta para ti:</p>
-              
-              <div class="price-box">
-                <div style="font-size: 18px; opacity: 0.9;">Precio Estimado</div>
-                <div class="price">€${estimated_price.toFixed(2)}</div>
-                <div style="font-size: 14px; opacity: 0.8;">IVA incluido</div>
-              </div>
-              
-              ${safeDescription ? `
-                <div class="info-box">
-                  <h3 style="margin-top: 0;">Detalles del proyecto:</h3>
-                  <p style="margin: 0; white-space: pre-wrap;">${safeDescription}</p>
+              <div class="card">
+                <div class="header">
+                  <div class="logo">${companyName}</div>
+                  <h2>¡Ey! Hay cambios en tu cotización 👀</h2>
                 </div>
-              ` : ''}
-              
-              <p style="margin-top: 30px;">
-                <strong>📋 Próximos pasos:</strong>
-              </p>
-              <ol style="padding-left: 20px;">
-                <li>Revisa los detalles de la cotización</li>
-                <li>Si estás de acuerdo, podemos proceder con el pedido</li>
-                <li>Contáctanos si tienes alguna pregunta o ajuste</li>
-              </ol>
-              
-              <div style="text-align: center;">
-                <a href="https://thuis3d.be/mi-cuenta" class="button">
-                  Ver Mi Cotización
-                </a>
-              </div>
+                
+                <p>Hola ${safeCustomerName},</p>
+                <p>Actualizamos tu cotización de <strong>${safeQuoteType}</strong>. Revisa los cambios y dinos si la apruebas o necesitas ajustes.</p>
+                
+                ${showPrice ? `
+                  <div class="price-box">
+                    <div style="font-size: 18px; opacity: 0.9;">Precio Estimado</div>
+                    <div class="price">€${estimated_price.toFixed(2)}</div>
+                    <div style="font-size: 14px; opacity: 0.8;">IVA incluido</div>
+                  </div>
+                ` : ''}
+                
+                ${safeDescription ? `
+                  <div class="info-box">
+                    <h3 style="margin-top: 0;">Detalles del proyecto:</h3>
+                    <p style="margin: 0; white-space: pre-wrap;">${safeDescription}</p>
+                  </div>
+                ` : ''}
+                
+                <p style="margin-top: 30px;">
+                  <strong>📋 Próximos pasos:</strong>
+                </p>
+                <ol style="padding-left: 20px;">
+                  <li>Revisa los detalles de la cotización</li>
+                  <li>Marca si apruebas los cambios o déjanos un comentario</li>
+                  <li>Nos pondremos en marcha en cuanto lo confirmes</li>
+                </ol>
+                
+                <div style="text-align: center;">
+                  <a href="https://thuis3d.be/mi-cuenta?tab=quotes" class="button">
+                    Revisar Cotización
+                  </a>
+                </div>
               
               <p style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
                 ⏰ <strong>Importante:</strong> Esta cotización tiene una validez de 30 días a partir de hoy.
@@ -140,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [to],
-        subject: `💰 Tu Cotización está Lista - ${companyName}`,
+      subject: `👀 Hay cambios en tu cotización - ${companyName}`,
         html: emailHtml,
       }),
     });

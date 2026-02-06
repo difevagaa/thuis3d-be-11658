@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt } from "lucide-react";
+import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt, MessageSquare } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { logger } from '@/lib/logger';
@@ -341,6 +341,21 @@ export default function QuoteDetail() {
                   <RichTextDisplay content={quote.description} />
                 </div>
               </div>
+            )}
+
+            {quote.custom_text && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Respuesta del Cliente
+                  </h3>
+                  <div className="p-4 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap">
+                    {quote.custom_text}
+                  </div>
+                </div>
+              </>
             )}
 
             <Separator />
