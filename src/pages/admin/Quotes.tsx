@@ -126,8 +126,8 @@ export default function Quotes() {
           priceChanged)
       );
       const pendingApprovalByClient = Boolean(
-        selectedStatus?.name?.toLowerCase()?.includes('aprobación') &&
-        selectedStatus?.name?.toLowerCase()?.includes('cliente')
+        normalizedStatusName?.includes('aprobación') &&
+        normalizedStatusName?.includes('cliente')
       );
 
       const { error } = await supabase

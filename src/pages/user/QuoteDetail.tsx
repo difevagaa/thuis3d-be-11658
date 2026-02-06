@@ -148,7 +148,7 @@ export default function UserQuoteDetail() {
       return;
     }
 
-    const statusId = action === "approve" ? statusIds.approved : action === "reject" ? statusIds.rejected : undefined;
+      const statusId = action === "approve" ? statusIds.approved : action === "reject" ? statusIds.rejected : undefined;
     if ((action === "approve" || action === "reject") && !statusId) {
       i18nToast.directError("No se pudo determinar el estado de la cotización.");
       return;
@@ -157,12 +157,12 @@ export default function UserQuoteDetail() {
     try {
       setActionLoading(true);
       const timestamp = new Date().toLocaleString("es-ES");
-      const actionLabel =
-        action === "approve"
-          ? "Aprobación del cliente"
-          : action === "reject"
-            ? "Rechazo del cliente"
-            : "Comentario del cliente";
+      const actionLabels: Record<typeof action, string> = {
+        approve: "Aprobación del cliente",
+        reject: "Rechazo del cliente",
+        comment: "Comentario del cliente"
+      };
+      const actionLabel = actionLabels[action];
       const entry = `${timestamp} - ${actionLabel}${trimmedComment ? `: ${trimmedComment}` : ""}`;
       const updatedCustomText = quote.custom_text ? `${quote.custom_text}\n${entry}` : entry;
 
@@ -178,12 +178,12 @@ export default function UserQuoteDetail() {
 
       if (error) throw error;
 
-      const adminMessage =
-        action === "approve"
-          ? `El cliente ${quote.customer_name} aprobó la cotización.`
-          : action === "reject"
-            ? `El cliente ${quote.customer_name} rechazó la cotización.`
-            : `El cliente ${quote.customer_name} envió un comentario en su cotización.`;
+      const adminMessages: Record<typeof action, string> = {
+        approve: `El cliente ${quote.customer_name} aprobó la cotización.`,
+        reject: `El cliente ${quote.customer_name} rechazó la cotización.`,
+        comment: `El cliente ${quote.customer_name} envió un comentario en su cotización.`
+      };
+      const adminMessage = adminMessages[action];
 
       await notifyAdminsWithBroadcast(
         "quote_update",
@@ -236,9 +236,9 @@ export default function UserQuoteDetail() {
 
   const statusName = quote.quote_statuses?.name?.toLowerCase() || "";
   const statusSlug = quote.quote_statuses?.slug?.toLowerCase() || "";
+  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval"];
   const isPendingClientApproval =
-    statusSlug === "pending_customer_approval" ||
-    statusSlug === "pending_client_approval" ||
+    pendingApprovalSlugs.includes(statusSlug) ||
     (statusName.includes("aprobación") && statusName.includes("cliente"));
 
   return (

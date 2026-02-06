@@ -226,12 +226,16 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('name', 'Recibido')
         .maybeSingle();
 
-      const { data: fallbackStatus } = orderStatus ? { data: null } : await supabase
-        .from('order_statuses')
-        .select('id')
-        .order('name', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      let fallbackStatus: { id: string } | null = null;
+      if (!orderStatus) {
+        const { data } = await supabase
+          .from('order_statuses')
+          .select('id')
+          .order('name', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        fallbackStatus = data;
+      }
 
       const statusId = orderStatus?.id || fallbackStatus?.id || null;
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
