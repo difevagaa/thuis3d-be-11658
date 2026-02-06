@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
+import { sendNotificationWithBroadcast } from "@/lib/notificationUtils";
 
 export default function Quotes() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export default function Quotes() {
           .from("quotes")
           .select(`
             *,
-            quote_statuses(name, color),
+            quote_statuses(name, color, slug),
             materials(name),
             colors(name, hex_code)
           `)
@@ -97,9 +98,37 @@ export default function Quotes() {
     try {
       if (!editingQuote) return;
 
+      const originalQuote = quotes.find(quote => quote.id === editingQuote.id);
       // Get status name to check if it's being approved
       const selectedStatus = statuses.find(s => s.id === editingQuote.status_id);
-      const isApproving = selectedStatus?.name === 'Aprobado';
+      const statusSlug = selectedStatus?.slug?.toLowerCase();
+      const normalizedStatusName = selectedStatus?.name?.toLowerCase();
+      const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada';
+      const statusChanged = originalQuote?.status_id !== editingQuote.status_id;
+      const priceChanged = Number(originalQuote?.estimated_price || 0) !== Number(editingQuote.estimated_price || 0);
+      const nameChanged = originalQuote?.customer_name !== editingQuote.customer_name;
+      const emailChanged = originalQuote?.customer_email !== editingQuote.customer_email;
+      const descriptionChanged = originalQuote?.description !== editingQuote.description;
+      const materialChanged = originalQuote?.material_id !== editingQuote.material_id;
+      const colorChanged = originalQuote?.color_id !== editingQuote.color_id;
+      const priceWasUnset = !originalQuote?.estimated_price || Number(originalQuote?.estimated_price) === 0;
+      const priceNowSet = Number(editingQuote.estimated_price || 0) > 0;
+      const isInitialPriceSetting = priceWasUnset && priceNowSet;
+      const shouldNotifyCustomer = Boolean(
+        originalQuote &&
+        !isInitialPriceSetting &&
+        (statusChanged ||
+          nameChanged ||
+          emailChanged ||
+          descriptionChanged ||
+          materialChanged ||
+          colorChanged ||
+          priceChanged)
+      );
+      const pendingApprovalByClient = Boolean(
+        normalizedStatusName?.includes('aprobación') &&
+        normalizedStatusName?.includes('cliente')
+      );
 
       const { error } = await supabase
         .from("quotes")
@@ -115,6 +144,38 @@ export default function Quotes() {
         .eq("id", editingQuote.id);
 
       if (error) throw error;
+
+      if (shouldNotifyCustomer) {
+        const notificationMessage = pendingApprovalByClient
+          ? "¡Ey! Hay cambios en tu cotización y necesitamos tu aprobación."
+          : "¡Ey! Hay cambios en tu cotización. Revisa los detalles.";
+
+        if (editingQuote.user_id) {
+          await sendNotificationWithBroadcast(
+            editingQuote.user_id,
+            "quote_update",
+            "Cambios en tu cotización",
+            notificationMessage,
+            `/cotizacion/${editingQuote.id}`
+          );
+        }
+
+        if (editingQuote.customer_email) {
+          try {
+            await supabase.functions.invoke("send-quote-update-email", {
+              body: {
+                to: editingQuote.customer_email,
+                customer_name: editingQuote.customer_name,
+                quote_type: editingQuote.quote_type,
+                estimated_price: Number(editingQuote.estimated_price || 0),
+                description: editingQuote.description || undefined
+              }
+            });
+          } catch {
+            // Email notification failures should not block quote updates
+          }
+        }
+      }
 
       // If quote is being approved, trigger automation
       if (isApproving) {
@@ -132,7 +193,8 @@ export default function Quotes() {
             {
               body: {
                 quote_id: editingQuote.id,
-                status_name: selectedStatus.name,
+                status_name: selectedStatus?.name || '',
+                status_slug: selectedStatus?.slug,
                 admin_name: profile?.full_name || 'Administrador'
               }
             }
@@ -146,6 +208,9 @@ export default function Quotes() {
             let message = `✅ Cotización aprobada exitosamente`;
             if (data.invoice) {
               message += `\n📄 Factura ${data.invoice.invoice_number} generada (€${data.invoice.total.toFixed(2)})`;
+            }
+            if (data.order) {
+              message += `\n📦 Pedido ${data.order.order_number} generado`;
             }
             if (automations.email_sent) {
               message += `\n📧 Cliente notificado por email`;

@@ -20,6 +20,7 @@ function escapeHtml(text: string): string {
 interface QuoteApprovalRequest {
   quote_id: string;
   status_name: string;
+  status_slug?: string;
   admin_name?: string;
 }
 
@@ -69,13 +70,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { quote_id, status_name, admin_name }: QuoteApprovalRequest = await req.json();
+    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
 
     console.log('[QUOTE APPROVAL] Processing quote:', quote_id, 'Status:', status_name);
 
-    // Only process if status is "Aprobado"
-    if (status_name !== 'Aprobado') {
-      console.log('[QUOTE APPROVAL] Status is not "Aprobado", skipping automation');
+    const normalizedStatus = status_name?.toLowerCase();
+    const isApprovedStatus =
+      status_slug?.toLowerCase() === 'approved' ||
+      normalizedStatus === 'aprobado' ||
+      normalizedStatus === 'aprobada' ||
+      normalizedStatus === 'approved';
+
+    // Only process if status is "Aprobado/Aprobada"
+    if (!isApprovedStatus) {
+      console.log('[QUOTE APPROVAL] Status is not approved, skipping automation');
       return new Response(
         JSON.stringify({ success: true, message: 'Status updated (no automation triggered)' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -104,33 +112,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Check if invoice already exists for this quote
     const { data: existingInvoice } = await supabase
       .from('invoices')
-      .select('id, invoice_number')
+      .select('id, invoice_number, subtotal, tax, total')
       .eq('quote_id', quote_id)
       .maybeSingle();
-
-    if (existingInvoice) {
-      console.log('[QUOTE APPROVAL] Invoice already exists:', existingInvoice.invoice_number);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Invoice already exists for this quote',
-          invoice_id: existingInvoice.id,
-          invoice_number: existingInvoice.invoice_number
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get next invoice number
-    const { data: invoiceNumber, error: invoiceNumError } = await supabase
-      .rpc('generate_next_invoice_number');
-
-    if (invoiceNumError) {
-      console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
-      throw new Error('Failed to generate invoice number');
-    }
-
-    console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
 
     // Get tax settings - solo si la cotización tiene tax_enabled = true
     const shouldApplyTax = quote.tax_enabled ?? true; // Default true si no existe el campo
@@ -164,48 +148,141 @@ const handler = async (req: Request): Promise<Response> => {
       total 
     });
 
-    // Create invoice
-    const { data: newInvoice, error: invoiceError } = await supabase
-      .from('invoices')
-      .insert({
-        invoice_number: invoiceNumber,
-        quote_id: quote_id,
-        user_id: quote.user_id,
-        issue_date: new Date().toISOString(),
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-        payment_status: 'pending',
-        subtotal: subtotal,
-        tax: tax,
-        total: total,
-        notes: `Factura generada automáticamente para cotización ${quote.quote_type}`,
-        shipping: shippingCost,
-        discount: 0
-      })
-      .select()
-      .single();
+    let invoiceNumber = existingInvoice?.invoice_number;
+    let invoiceId = existingInvoice?.id;
 
-    if (invoiceError || !newInvoice) {
-      console.error('[QUOTE APPROVAL] Error creating invoice:', invoiceError);
-      throw new Error('Failed to create invoice');
+    if (!existingInvoice) {
+      // Get next invoice number
+      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+        .rpc('generate_next_invoice_number');
+
+      if (invoiceNumError) {
+        console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
+        throw new Error('Failed to generate invoice number');
+      }
+
+      invoiceNumber = nextInvoiceNumber;
+      console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
+
+      // Create invoice
+      const { data: newInvoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          invoice_number: invoiceNumber,
+          quote_id: quote_id,
+          user_id: quote.user_id,
+          issue_date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          payment_status: 'pending',
+          subtotal: subtotal,
+          tax: tax,
+          total: total,
+          notes: `Factura generada automáticamente para cotización ${quote.quote_type}`,
+          shipping: shippingCost,
+          discount: 0
+        })
+        .select()
+        .single();
+
+      if (invoiceError || !newInvoice) {
+        console.error('[QUOTE APPROVAL] Error creating invoice:', invoiceError);
+        throw new Error('Failed to create invoice');
+      }
+
+      invoiceId = newInvoice.id;
+      console.log('[QUOTE APPROVAL] Invoice created:', newInvoice.invoice_number);
+
+      // Create invoice items
+      const { error: invoiceItemError } = await supabase
+        .from('invoice_items')
+        .insert({
+          invoice_id: newInvoice.id,
+          product_name: `Cotización ${quote.quote_type}`,
+          description: quote.description || 'Servicio de impresión 3D',
+          quantity: 1,
+          unit_price: subtotal,
+          total_price: subtotal,
+          tax_enabled: shouldApplyTax
+        });
+
+      if (invoiceItemError) {
+        console.error('[QUOTE APPROVAL] Error creating invoice item:', invoiceItemError);
+      }
     }
 
-    console.log('[QUOTE APPROVAL] Invoice created:', newInvoice.invoice_number);
+    const quoteMarker = `quote_id:${quote_id}`;
+    const { data: existingOrder } = await supabase
+      .from('orders')
+      .select('id, order_number')
+      .ilike('admin_notes', `%${quoteMarker}%`)
+      .maybeSingle();
 
-    // Create invoice items
-    const { error: invoiceItemError } = await supabase
-      .from('invoice_items')
-      .insert({
-        invoice_id: newInvoice.id,
-        product_name: `Cotización ${quote.quote_type}`,
-        description: quote.description || 'Servicio de impresión 3D',
-        quantity: 1,
-        unit_price: subtotal,
-        total_price: subtotal,
-        tax_enabled: shouldApplyTax
-      });
+    let orderData: { id: string; order_number: string } | null = existingOrder ?? null;
 
-    if (invoiceItemError) {
-      console.error('[QUOTE APPROVAL] Error creating invoice item:', invoiceItemError);
+    if (!existingOrder) {
+      const { data: orderStatus } = await supabase
+        .from('order_statuses')
+        .select('id')
+        .eq('name', 'Recibido')
+        .maybeSingle();
+
+      let fallbackStatus: { id: string } | null = null;
+      if (!orderStatus) {
+        const { data } = await supabase
+          .from('order_statuses')
+          .select('id')
+          .order('name', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        fallbackStatus = data;
+      }
+
+      const statusId = orderStatus?.id || fallbackStatus?.id || null;
+      const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
+      const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
+      const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: quote.user_id,
+          status_id: statusId,
+          subtotal: subtotal,
+          tax: tax,
+          discount: 0,
+          shipping: shippingCost,
+          total: total,
+          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
+          admin_notes: quoteMarker,
+          shipping_address: addressParts || null,
+          billing_address: addressParts || null,
+          payment_status: 'pending'
+        })
+        .select('id, order_number')
+        .single();
+
+      if (orderError || !newOrder) {
+        console.error('[QUOTE APPROVAL] Error creating order:', orderError);
+      } else {
+        orderData = newOrder;
+
+        const { error: orderItemsError } = await supabase
+          .from('order_items')
+          .insert({
+            order_id: newOrder.id,
+            product_name: `Cotización ${quote.quote_type}`,
+            quantity: quantity,
+            unit_price: unitPrice,
+            total_price: subtotal,
+            selected_material: quote.material_id,
+            selected_color: quote.color_id,
+            custom_text: quote.description || null
+          });
+
+        if (orderItemsError) {
+          console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+        }
+      }
     }
 
     // Get company info for email
@@ -219,11 +296,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email to customer
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (RESEND_API_KEY && quote.customer_email) {
+    if (RESEND_API_KEY && quote.customer_email && !existingInvoice) {
       console.log('[QUOTE APPROVAL] Sending email to customer:', quote.customer_email);
 
       const safeCustomerName = escapeHtml(quote.customer_name);
-      const safeInvoiceNumber = escapeHtml(newInvoice.invoice_number);
+      const safeInvoiceNumber = escapeHtml(invoiceNumber ?? '');
       const safeCompanyName = escapeHtml(companyName);
 
       const emailHtml = `
@@ -290,7 +367,7 @@ const handler = async (req: Request): Promise<Response> => {
           body: JSON.stringify({
             from: `${companyName} <noreply@thuis3d.be>`,
             to: [quote.customer_email],
-            subject: `✅ Cotización Aprobada - Factura ${newInvoice.invoice_number}`,
+            subject: `✅ Cotización Aprobada - Factura ${invoiceNumber}`,
             html: emailHtml,
           }),
         });
@@ -307,7 +384,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Create notification for customer
-    if (quote.user_id) {
+    if (quote.user_id && !existingInvoice) {
       console.log('[QUOTE APPROVAL] Creating notification for user:', quote.user_id);
       
       const { error: notifError } = await supabase
@@ -316,8 +393,8 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: quote.user_id,
           type: 'quote_approved',
           title: '✅ Cotización Aprobada',
-          message: `Tu cotización ha sido aprobada. Se ha generado la factura ${newInvoice.invoice_number} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
-          link: `/mis-facturas/${newInvoice.id}`,
+          message: `Tu cotización ha sido aprobada. Se ha generado la factura ${invoiceNumber} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
+          link: `/mis-facturas/${invoiceId}`,
           is_read: false
         });
 
@@ -334,12 +411,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (adminUsers && adminUsers.length > 0) {
       console.log('[QUOTE APPROVAL] Notifying admins about automation');
-      
+       
+      const orderMessage = orderData ? ` Se generó también el pedido ${orderData.order_number}.` : '';
+      const adminTitle = existingInvoice ? '🤖 Automatización: Pedido Generado' : '🤖 Automatización: Factura Generada';
+      const invoiceMessage = existingInvoice
+        ? `La factura ${invoiceNumber} ya existía`
+        : `Se generó automáticamente la factura ${invoiceNumber} (€${total.toFixed(2)})`;
+      const emailNotice = (!existingInvoice && RESEND_API_KEY && quote.customer_email)
+        ? ' El cliente ha sido notificado por email.'
+        : '';
       const adminNotifications = adminUsers.map(admin => ({
         user_id: admin.user_id,
         type: 'system',
-        title: '🤖 Automatización: Factura Generada',
-        message: `Se generó automáticamente la factura ${newInvoice.invoice_number} (€${total.toFixed(2)}) para la cotización de ${quote.customer_name}. El cliente ha sido notificado por email.`,
+        title: adminTitle,
+        message: `${invoiceMessage} para la cotización de ${quote.customer_name}.${orderMessage}${emailNotice}`,
         link: `/admin/facturas`,
         is_read: false
       }));
@@ -354,14 +439,19 @@ const handler = async (req: Request): Promise<Response> => {
         success: true,
         message: 'Quote approved successfully',
         invoice: {
-          id: newInvoice.id,
-          invoice_number: newInvoice.invoice_number,
+          id: invoiceId,
+          invoice_number: invoiceNumber,
           total: total
         },
+        order: orderData ? {
+          id: orderData.id,
+          order_number: orderData.order_number
+        } : null,
         automations: {
-          invoice_created: true,
-          email_sent: !!RESEND_API_KEY && !!quote.customer_email,
-          customer_notified: !!quote.user_id,
+          invoice_created: !existingInvoice,
+          order_created: !!orderData,
+          email_sent: !!RESEND_API_KEY && !!quote.customer_email && !existingInvoice,
+          customer_notified: !!quote.user_id && !existingInvoice,
           admin_notified: true
         }
       }),

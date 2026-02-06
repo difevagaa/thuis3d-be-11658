@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, User, Mail, FileText, Package, Palette, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File } from "lucide-react";
+import { ArrowLeft, Download, User, Mail, FileText, Package, Palette, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, MessageSquare } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { i18nToast } from "@/lib/i18nToast";
+import { Textarea } from "@/components/ui/textarea";
+import { notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
 
 export default function UserQuoteDetail() {
   const { t } = useTranslation(['common', 'account']);
@@ -17,6 +19,34 @@ export default function UserQuoteDetail() {
   const navigate = useNavigate();
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [comment, setComment] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [statusIds, setStatusIds] = useState<{ approved?: string; rejected?: string }>({});
+
+  const loadStatusIds = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("quote_statuses")
+        .select("id, name, slug")
+        .is("deleted_at", null);
+
+      if (error || !data) return;
+
+      const approved = data.find(status =>
+        status.slug === "approved" || status.name?.toLowerCase() === "aprobada" || status.name?.toLowerCase() === "aprobado"
+      );
+      const rejected = data.find(status =>
+        status.slug === "rejected" || status.name?.toLowerCase() === "rechazada" || status.name?.toLowerCase() === "rechazado"
+      );
+
+      setStatusIds({
+        approved: approved?.id,
+        rejected: rejected?.id
+      });
+    } catch {
+      // Ignore status lookup errors
+    }
+  }, []);
 
   const loadQuoteDetail = useCallback(async () => {
     try {
@@ -33,7 +63,7 @@ export default function UserQuoteDetail() {
         .from("quotes")
         .select(`
           *,
-          quote_statuses(name, color),
+          quote_statuses(name, color, slug),
           materials(name),
           colors(name, hex_code)
         `)
@@ -60,10 +90,11 @@ export default function UserQuoteDetail() {
   }, [id, navigate]); // Depends on id and navigate
 
   useEffect(() => {
+    loadStatusIds();
     if (id) {
       loadQuoteDetail();
     }
-  }, [id, loadQuoteDetail]); // Now includes loadQuoteDetail
+  }, [id, loadQuoteDetail, loadStatusIds]); // Now includes loadQuoteDetail
 
   const handleDownloadFile = async (filePath?: string) => {
     const pathToDownload = filePath || quote?.file_storage_path;
@@ -108,6 +139,90 @@ export default function UserQuoteDetail() {
     return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
   };
 
+  const handleCustomerAction = async (action: "approve" | "reject" | "comment") => {
+    if (!quote || actionLoading) return;
+
+    const trimmedComment = comment.trim();
+    if (action === "comment" && !trimmedComment) {
+      i18nToast.directWarning("Por favor escribe un comentario antes de enviar.");
+      return;
+    }
+
+    let statusId: string | undefined;
+    if (action === "approve") {
+      statusId = statusIds.approved;
+    } else if (action === "reject") {
+      statusId = statusIds.rejected;
+    }
+    if ((action === "approve" || action === "reject") && !statusId) {
+      i18nToast.directError("No se pudo determinar el estado de la cotización.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const timestamp = new Date().toLocaleString("es-ES");
+      const actionLabels: Record<typeof action, string> = {
+        approve: "Aprobación del cliente",
+        reject: "Rechazo del cliente",
+        comment: "Comentario del cliente"
+      };
+      const actionLabel = actionLabels[action];
+      const entry = `${timestamp} - ${actionLabel}${trimmedComment ? `: ${trimmedComment}` : ""}`;
+      const updatedCustomText = quote.custom_text ? `${quote.custom_text}\n${entry}` : entry;
+
+      const updatePayload: { custom_text: string; status_id?: string } = { custom_text: updatedCustomText };
+      if (statusId) {
+        updatePayload.status_id = statusId;
+      }
+
+      const { error } = await supabase
+        .from("quotes")
+        .update(updatePayload)
+        .eq("id", quote.id);
+
+      if (error) throw error;
+
+      const adminMessages: Record<typeof action, string> = {
+        approve: `El cliente ${quote.customer_name} aprobó la cotización.`,
+        reject: `El cliente ${quote.customer_name} rechazó la cotización.`,
+        comment: `El cliente ${quote.customer_name} envió un comentario en su cotización.`
+      };
+      const adminMessage = adminMessages[action];
+
+      await notifyAdminsWithBroadcast(
+        "quote_update",
+        "Respuesta del cliente en cotización",
+        `${adminMessage}${trimmedComment ? ` Comentario: "${trimmedComment}"` : ""}`,
+        `/admin/cotizaciones/${quote.id}`
+      );
+
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "quote",
+            subject: "Respuesta del cliente en cotización",
+            message: `${adminMessage}${trimmedComment ? ` Comentario: "${trimmedComment}"` : ""}`,
+            customer_name: quote.customer_name,
+            customer_email: quote.customer_email,
+            link: `/admin/cotizaciones/${quote.id}`
+          }
+        });
+      } catch {
+        // Non-blocking email errors
+      }
+
+      i18nToast.directSuccess("Tu respuesta se ha enviado correctamente.");
+      setComment("");
+      await loadQuoteDetail();
+    } catch (error) {
+      console.error("Error updating quote:", error);
+      i18nToast.directError("No se pudo enviar tu respuesta. Inténtalo de nuevo.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center">
@@ -123,6 +238,13 @@ export default function UserQuoteDetail() {
       </div>
     );
   }
+
+  const statusName = quote.quote_statuses?.name?.toLowerCase() || "";
+  const statusSlug = quote.quote_statuses?.slug?.toLowerCase() || "";
+  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval"];
+  const isPendingClientApproval =
+    pendingApprovalSlugs.includes(statusSlug) ||
+    (statusName.includes("aprobación") && statusName.includes("cliente"));
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -431,6 +553,49 @@ export default function UserQuoteDetail() {
                   €{parseFloat(quote.estimated_price).toFixed(2)}
                 </p>
               </div>
+            )}
+
+            {isPendingClientApproval && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Tu respuesta a la cotización
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Revisa los cambios y confirma si apruebas la cotización o envía un comentario.
+                  </p>
+                  <Textarea
+                    value={comment}
+                    onChange={(event) => setComment(event.target.value)}
+                    rows={3}
+                    placeholder="Escribe un comentario para el administrador (opcional)"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => handleCustomerAction("approve")}
+                      disabled={actionLoading}
+                    >
+                      Aprobar cambios
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleCustomerAction("reject")}
+                      disabled={actionLoading}
+                    >
+                      Rechazar cambios
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleCustomerAction("comment")}
+                      disabled={actionLoading || !comment.trim()}
+                    >
+                      Enviar comentario
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Notas Adicionales */}
