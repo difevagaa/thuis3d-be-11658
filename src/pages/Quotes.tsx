@@ -198,7 +198,7 @@ const Quotes = () => {
   };
 
   const normalizeQuantity = (value: number) => {
-    if (!Number.isFinite(value) || Number.isNaN(value)) {
+    if (!Number.isFinite(value)) {
       return 1;
     }
     return Math.max(1, Math.floor(value));
@@ -242,25 +242,28 @@ const Quotes = () => {
     setQuantityInput(String(normalized));
   };
 
+  const areAnalysisParamsEqual = (left?: QuoteAnalysisParams | null, right?: QuoteAnalysisParams | null) => {
+    if (!left || !right) return false;
+    return left.quantity === right.quantity
+      && left.materialId === right.materialId
+      && left.colorId === right.colorId
+      && left.supportsRequired === right.supportsRequired
+      && left.layerHeight === right.layerHeight;
+  };
+
   useEffect(() => {
     if (!analysisResult?.file) return;
 
     const nextParams = baseAnalysisParams;
 
     const lastParams = analysisParamsRef.current;
-    if (lastParams
-      && lastParams.quantity === nextParams.quantity
-      && lastParams.materialId === nextParams.materialId
-      && lastParams.colorId === nextParams.colorId
-      && lastParams.supportsRequired === nextParams.supportsRequired
-      && lastParams.layerHeight === nextParams.layerHeight
-    ) {
+    if (areAnalysisParamsEqual(lastParams, nextParams)) {
       return;
     }
 
     analysisRequestIdRef.current += 1;
     const requestId = analysisRequestIdRef.current;
-    const debounceId = window.setTimeout(() => {
+    const debounceId = setTimeout(() => {
       const recalculate = async () => {
         const fileURL = URL.createObjectURL(analysisResult.file);
         try {
@@ -291,7 +294,7 @@ const Quotes = () => {
     }, 300);
 
     return () => {
-      window.clearTimeout(debounceId);
+      clearTimeout(debounceId);
     };
   }, [analysisResult?.file, baseAnalysisParams]);
 
