@@ -7,14 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Globe } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const [loading, setLoading] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [isSettingNewPassword, setIsSettingNewPassword] = useState(false);
@@ -22,6 +24,7 @@ const Auth = () => {
   const [newPassword, setNewPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState(i18n.language || 'en');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -71,12 +74,20 @@ const Auth = () => {
           data: {
             full_name: formData.fullName,
             subscribed_newsletter: subscribeNewsletter,
+            preferred_language: preferredLanguage,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (error) throw error;
+
+      // Update the profile with preferred language
+      if (signUpData.user) {
+        await supabase.from('profiles').update({ 
+          preferred_language: preferredLanguage 
+        }).eq('id', signUpData.user.id);
+      }
       
       // Si el usuario quiere suscribirse al newsletter, añadirlo a la tabla
       if (subscribeNewsletter && signUpData.user) {
@@ -323,8 +334,27 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  
-                  {/* Checkbox para suscripción al newsletter */}
+                   
+                   {/* Language preference selector */}
+                   <div className="space-y-2">
+                     <Label htmlFor="preferred-language" className="flex items-center gap-2">
+                       <Globe className="h-4 w-4" />
+                       {t('preferredLanguage')}
+                     </Label>
+                     <Select value={preferredLanguage} onValueChange={setPreferredLanguage}>
+                       <SelectTrigger id="preferred-language">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="en">🇬🇧 English</SelectItem>
+                         <SelectItem value="es">🇪🇸 Español</SelectItem>
+                         <SelectItem value="nl">🇳🇱 Nederlands</SelectItem>
+                       </SelectContent>
+                     </Select>
+                     <p className="text-xs text-muted-foreground">{t('languageHint')}</p>
+                   </div>
+
+                   {/* Checkbox para suscripción al newsletter */}
                   <div className="flex items-start gap-3">
                     <Checkbox
                       id="subscribe-newsletter"
