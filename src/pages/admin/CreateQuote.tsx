@@ -42,6 +42,7 @@ export default function CreateQuote() {
     tax_enabled: true,
     additional_notes: ""
   });
+  const [quantityInput, setQuantityInput] = useState("1");
 
   useEffect(() => {
     loadData();
@@ -120,6 +121,21 @@ export default function CreateQuote() {
 
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleQuantityChange = (value: string) => {
+    setQuantityInput(value);
+  };
+
+  const handleQuantityBlur = () => {
+    const parsed = parseInt(quantityInput, 10);
+    if (Number.isNaN(parsed) || parsed < 1) {
+      setQuoteData(prev => ({ ...prev, quantity: 1 }));
+      setQuantityInput("1");
+      return;
+    }
+    setQuoteData(prev => ({ ...prev, quantity: parsed }));
+    setQuantityInput(String(parsed));
   };
 
   const uploadFilesToStorage = async (quoteId: string): Promise<string[]> => {
@@ -545,8 +561,9 @@ export default function CreateQuote() {
                   id="quantity"
                   type="number"
                   min="1"
-                  value={quoteData.quantity}
-                  onChange={(e) => setQuoteData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                  value={quantityInput}
+                  onChange={(e) => handleQuantityChange(e.target.value)}
+                  onBlur={handleQuantityBlur}
                 />
               </div>
             </div>

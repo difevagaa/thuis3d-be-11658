@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, startTransition, useRef } from "react";
+import { useState, useEffect, lazy, Suspense, startTransition, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { STLUploader } from "@/components/STLUploader";
-import { AnalysisResult } from "@/lib/stlAnalyzer";
+import { analyzeSTLFile, AnalysisResult } from "@/lib/stlAnalyzer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
-import { useQuantityDiscounts } from "@/hooks/useQuantityDiscounts";
 import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -37,6 +36,19 @@ interface Color {
   hex_code: string;
 }
 
+type QuoteAnalysisParams = {
+  quantity: number;
+  materialId: string;
+  colorId: string;
+  supportsRequired: boolean;
+  layerHeight: number;
+};
+
+type QuoteAnalysisResult = AnalysisResult & {
+  file: File;
+  analysisParams?: QuoteAnalysisParams;
+};
+
 // Steps for 3D quote wizard
 const STEPS = ['upload', 'customize', 'shipping', 'review'] as const;
 type Step = typeof STEPS[number];
@@ -46,17 +58,19 @@ const Quotes = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const isSubmittingRef = useRef(false);
+  const analysisParamsRef = useRef<QuoteAnalysisParams | null>(null);
+  const analysisRequestIdRef = useRef(0);
   const { materials, availableColors, filterColorsByMaterial } = useMaterialColors();
   const { calculateShippingByPostalCode, getAvailableCountries } = useShippingCalculator();
-  const { calculateDiscount } = useQuantityDiscounts();
   
   // Wizard step state
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<(AnalysisResult & { file: File }) | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<QuoteAnalysisResult | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [supportsRequired, setSupportsRequired] = useState<boolean | null>(null);
   const [serviceFiles, setServiceFiles] = useState<File[]>([]);
   const [fileDescription, setFileDescription] = useState('');
@@ -183,6 +197,107 @@ const Quotes = () => {
     }
   };
 
+  const normalizeQuantity = (value: number) => {
+    if (!Number.isFinite(value)) {
+      return 1;
+    }
+    return Math.max(1, Math.floor(value));
+  };
+
+  const baseAnalysisParams = useMemo(() => ({
+    quantity: normalizeQuantity(quantity),
+    materialId: selectedMaterial || 'default',
+    colorId: selectedColor || '',
+    supportsRequired: supportsRequired ?? false,
+    layerHeight
+  }), [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+
+  const handleAnalysisComplete = useCallback((result: QuoteAnalysisResult) => {
+    const resolvedParams = result.analysisParams ?? baseAnalysisParams;
+    analysisParamsRef.current = resolvedParams;
+    setAnalysisResult({
+      ...result,
+      analysisParams: resolvedParams
+    });
+  }, [baseAnalysisParams]);
+
+  const updateQuantity = (nextQuantity: number) => {
+    const normalizedQuantity = normalizeQuantity(nextQuantity);
+    setQuantity(normalizedQuantity);
+    setQuantityInput(String(normalizedQuantity));
+  };
+
+  const handleQuantityInputChange = (value: string) => {
+    setQuantityInput(value);
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      setQuantity(parsed);
+    }
+  };
+
+  const handleQuantityInputBlur = () => {
+    const parsed = parseInt(quantityInput, 10);
+    const normalized = Number.isNaN(parsed) ? 1 : normalizeQuantity(parsed);
+    setQuantity(normalized);
+    setQuantityInput(String(normalized));
+  };
+
+  const areAnalysisParamsEqual = (left?: QuoteAnalysisParams | null, right?: QuoteAnalysisParams | null) => {
+    if (!left || !right) return false;
+    return left.quantity === right.quantity
+      && left.materialId === right.materialId
+      && left.colorId === right.colorId
+      && left.supportsRequired === right.supportsRequired
+      && left.layerHeight === right.layerHeight;
+  };
+
+  useEffect(() => {
+    if (!analysisResult?.file) return;
+
+    const nextParams = baseAnalysisParams;
+
+    const lastParams = analysisParamsRef.current;
+    if (areAnalysisParamsEqual(lastParams, nextParams)) {
+      return;
+    }
+
+    analysisRequestIdRef.current += 1;
+    const requestId = analysisRequestIdRef.current;
+    const debounceId = setTimeout(() => {
+      const recalculate = async () => {
+        const fileURL = URL.createObjectURL(analysisResult.file);
+        try {
+          const updatedAnalysis = await analyzeSTLFile(
+            fileURL,
+            nextParams.materialId,
+            analysisResult.file.name,
+            nextParams.supportsRequired,
+            nextParams.layerHeight,
+            nextParams.quantity,
+            nextParams.colorId || undefined
+          );
+          if (analysisRequestIdRef.current !== requestId) return;
+          analysisParamsRef.current = nextParams;
+          setAnalysisResult({
+            ...updatedAnalysis,
+            file: analysisResult.file,
+            analysisParams: nextParams
+          });
+        } catch (error) {
+          logger.error('Error recalculating quote analysis:', error);
+        } finally {
+          URL.revokeObjectURL(fileURL);
+        }
+      };
+
+      recalculate();
+    }, 300);
+
+    return () => {
+      clearTimeout(debounceId);
+    };
+  }, [analysisResult?.file, baseAnalysisParams]);
+
   const handleFileQuote = async () => {
     if (isSubmittingRef.current || loading) return;
     isSubmittingRef.current = true;
@@ -257,8 +372,7 @@ const Quotes = () => {
           }, { onConflict: 'id' });
       }
 
-      const discount = calculateDiscount(quantity, analysisResult?.estimatedTotal || 0);
-      const finalPrice = discount ? discount.finalPrice : (analysisResult?.estimatedTotal || 0);
+      const finalPrice = analysisResult?.estimatedTotal || 0;
 
       let pendingStatusId: string;
       const { data, error: statusError } = await (supabase as any)
@@ -290,15 +404,7 @@ const Quotes = () => {
         estimated_price: finalPrice,
         calculation_details: analysisResult ? {
           dimensions: analysisResult.dimensions,
-          preview: analysisResult.preview,
-          ...(discount && {
-            quantity_discount: {
-              original_price: discount.originalPrice,
-              discount_amount: discount.discountAmount,
-              discount_tier: discount.tierName,
-              discount_description: discount.tierDescription
-            }
-          })
+          preview: analysisResult.preview
         } : null,
         supports_required: supportsRequired,
         layer_height: layerHeight,
@@ -537,15 +643,15 @@ const Quotes = () => {
                   <CardDescription>{t('fileQuoteDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <STLUploader
-                    materialId={selectedMaterial}
-                    colorId={selectedColor}
-                    supportsRequired={supportsRequired || false}
-                    layerHeight={layerHeight}
-                    quantity={quantity}
-                    onAnalysisComplete={setAnalysisResult}
-                    onSupportsDetected={(needsSupports) => setSupportsRequired(needsSupports)}
-                  />
+                    <STLUploader
+                      materialId={selectedMaterial}
+                      colorId={selectedColor}
+                      supportsRequired={supportsRequired || false}
+                      layerHeight={layerHeight}
+                      quantity={quantity}
+                      onAnalysisComplete={handleAnalysisComplete}
+                      onSupportsDetected={(needsSupports) => setSupportsRequired(needsSupports)}
+                    />
                   
                   {analysisResult && (
                     <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200">
@@ -631,7 +737,7 @@ const Quotes = () => {
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          onClick={() => updateQuantity(quantity - 1)}
                           disabled={quantity <= 1}
                         >
                           -
@@ -640,15 +746,16 @@ const Quotes = () => {
                           type="number"
                           min="1"
                           max="999"
-                          value={quantity}
-                          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          value={quantityInput}
+                          onChange={(e) => handleQuantityInputChange(e.target.value)}
+                          onBlur={handleQuantityInputBlur}
                           className="w-20 text-center"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setQuantity(quantity + 1)}
+                          onClick={() => updateQuantity(quantity + 1)}
                         >
                           +
                         </Button>

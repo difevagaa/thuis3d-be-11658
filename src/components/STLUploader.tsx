@@ -138,7 +138,17 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
       setProgress(100);
       setProgressMessage(translations.progressComplete);
 
-      onAnalysisComplete({ ...analysis, file: selectedFile });
+       onAnalysisComplete({
+         ...analysis,
+         file: selectedFile,
+         analysisParams: {
+           quantity,
+           materialId: analyseMaterialId,
+           colorId: colorId || '',
+           supportsRequired,
+           layerHeight
+         }
+       });
 
       URL.revokeObjectURL(fileURL);
 
