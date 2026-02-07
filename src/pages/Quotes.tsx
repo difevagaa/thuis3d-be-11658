@@ -203,8 +203,10 @@ const Quotes = () => {
     setAnalysisResult(result);
   }, [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
 
+  const normalizeQuantity = (value: number) => Math.max(1, value);
+
   const updateQuantity = (nextQuantity: number) => {
-    const normalizedQuantity = Math.max(1, nextQuantity);
+    const normalizedQuantity = normalizeQuantity(nextQuantity);
     setQuantity(normalizedQuantity);
     setQuantityInput(String(normalizedQuantity));
   };
@@ -219,13 +221,9 @@ const Quotes = () => {
 
   const handleQuantityInputBlur = () => {
     const parsed = parseInt(quantityInput, 10);
-    if (Number.isNaN(parsed) || parsed < 1) {
-      setQuantity(1);
-      setQuantityInput("1");
-      return;
-    }
-    setQuantity(parsed);
-    setQuantityInput(String(parsed));
+    const normalized = Number.isNaN(parsed) ? 1 : normalizeQuantity(parsed);
+    setQuantity(normalized);
+    setQuantityInput(String(normalized));
   };
 
   useEffect(() => {
@@ -260,7 +258,7 @@ const Quotes = () => {
         const updatedAnalysis = await analyzeSTLFile(
           fileURL,
           normalizedMaterialId,
-          '',
+          analysisResult.file.name,
           nextParams.supportsRequired,
           nextParams.layerHeight,
           nextParams.quantity,
