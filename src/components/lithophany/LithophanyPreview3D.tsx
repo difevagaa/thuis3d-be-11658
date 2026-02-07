@@ -10,28 +10,31 @@ import {
   RotateCw, 
   ZoomIn, 
   ZoomOut, 
-  Maximize2,
   Lightbulb,
   Move3D,
   Box,
   Layers,
   RotateCcw,
   Hand,
-  MousePointer2
+  MousePointer2,
+  Download
 } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 import * as THREE from "three";
+import { generateLithophaneSTL, downloadSTL } from "@/lib/lithophaneSTLGenerator";
 
 interface LithophanyPreview3DProps {
   processedImage: string;
   lampTemplate: LampTemplate;
   dimensions: { width: number; height: number };
+  customText?: string;
 }
 
 export const LithophanyPreview3D = ({
   processedImage,
   lampTemplate,
-  dimensions
+  dimensions,
+  customText
 }: LithophanyPreview3DProps) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
@@ -197,241 +200,337 @@ export const LithophanyPreview3D = ({
     }
   }, [lightIntensity, showLight, lightColor]);
 
-  // Create lamp geometry based on shape type - Enhanced with more shapes
-  const createLampGeometry = useMemo(() => {
-    return (shapeType: string, width: number, height: number, depth: number = 3) => {
+  // Lithophane thickness parameters (in mm)
+  const minThickness = 0.6;
+  const maxThickness = 3.2;
+
+  /**
+   * Build actual lithophane geometry: a depth-displaced mesh where
+   * bright pixels → thin (more light passes) and dark pixels → thick.
+   * This matches how a real 3D-printed lithophane works.
+   */
+  const buildLithophaneGeometry = useCallback(
+    (
+      imageData: ImageData,
+      shapeType: string,
+      width: number,
+      height: number
+    ): THREE.BufferGeometry => {
       const w = width * scale;
       const h = height * scale;
-      const d = depth;
+      const minT = minThickness * scale;
+      const maxT = maxThickness * scale;
 
-      switch (shapeType) {
-        case 'moon':
-        case 'sphere':
-          // Partial sphere for moon shape - improved
-          const moonGeo = new THREE.SphereGeometry(
-            Math.min(w, h) / 2,
-            48, 48,
-            0, Math.PI * 2,
-            0, Math.PI * 0.55
-          );
-          return moonGeo;
+      // Grid resolution: balance quality vs performance
+      const gridX = Math.min(imageData.width, 120);
+      const gridY = Math.min(imageData.height, 120);
 
-        case 'heart':
-          // Heart shape using custom path - improved curves
-          const heartShape = new THREE.Shape();
-          const x = 0, y = 0;
-          const s = w / 22;
-          heartShape.moveTo(x, y + s * 5);
-          heartShape.bezierCurveTo(x, y + s * 5, x - s * 5, y, x - s * 10, y);
-          heartShape.bezierCurveTo(x - s * 17, y, x - s * 17, y + s * 9, x - s * 17, y + s * 9);
-          heartShape.bezierCurveTo(x - s * 17, y + s * 13, x - s * 12, y + s * 17, x, y + s * 22);
-          heartShape.bezierCurveTo(x + s * 12, y + s * 17, x + s * 17, y + s * 13, x + s * 17, y + s * 9);
-          heartShape.bezierCurveTo(x + s * 17, y + s * 9, x + s * 17, y, x + s * 10, y);
-          heartShape.bezierCurveTo(x + s * 5, y, x, y + s * 5, x, y + s * 5);
-          
-          return new THREE.ExtrudeGeometry(heartShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.5,
-            bevelSize: 0.3,
-            bevelSegments: 3
-          });
+      const stepX = w / gridX;
+      const stepY = h / gridY;
 
-        case 'star':
-          // Star shape - smoother
-          const starShape = new THREE.Shape();
-          const points = 5;
-          const outerR = w / 2;
-          const innerR = outerR * 0.38;
-          
-          for (let i = 0; i < points * 2; i++) {
-            const r = i % 2 === 0 ? outerR : innerR;
-            const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
-            const px = Math.cos(angle) * r;
-            const py = Math.sin(angle) * r;
-            if (i === 0) starShape.moveTo(px, py);
-            else starShape.lineTo(px, py);
-          }
-          starShape.closePath();
-          return new THREE.ExtrudeGeometry(starShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.3,
-            bevelSize: 0.2,
-            bevelSegments: 2
-          });
-
-        case 'hexagon':
-        case 'hexagonal':
-          return new THREE.CylinderGeometry(w / 2, w / 2, h, 6, 1, true);
-
-        case 'octagon':
-        case 'octagonal':
-          return new THREE.CylinderGeometry(w / 2, w / 2, h, 8, 1, true);
-
-        case 'cylinder':
-        case 'cylindrical':
-        case 'cylinder_small':
-        case 'cylinder_medium':
-        case 'cylinder_large':
-          return new THREE.CylinderGeometry(w / 2, w / 2, h, 48, 1, true);
-
-        case 'half_cylinder':
-          return new THREE.CylinderGeometry(w / 2, w / 2, h, 48, 1, true, 0, Math.PI);
-
-        case 'curved':
-        case 'curved_soft':
-        case 'curved_deep':
-        case 'arc':
-        case 'arch':
-          const curveRadius = (shapeType === 'curved_deep' || shapeType === 'arch') ? 50 : 80;
-          return new THREE.CylinderGeometry(
-            curveRadius * scale,
-            curveRadius * scale,
-            h,
-            48, 1, true,
-            0, Math.PI * 0.6
-          );
-
-        case 'cloud':
-          // Cloud shape with bezier curves
-          const cloudShape = new THREE.Shape();
-          cloudShape.moveTo(-w * 0.4, 0);
-          cloudShape.bezierCurveTo(-w * 0.5, h * 0.3, -w * 0.3, h * 0.5, 0, h * 0.4);
-          cloudShape.bezierCurveTo(w * 0.2, h * 0.6, w * 0.4, h * 0.4, w * 0.4, h * 0.2);
-          cloudShape.bezierCurveTo(w * 0.5, 0, w * 0.3, -h * 0.2, 0, -h * 0.1);
-          cloudShape.bezierCurveTo(-w * 0.2, -h * 0.3, -w * 0.5, -h * 0.1, -w * 0.4, 0);
-          return new THREE.ExtrudeGeometry(cloudShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.5,
-            bevelSize: 0.3,
-            bevelSegments: 3
-          });
-
-        case 'wave':
-          // Wavy panel - smoother wave
-          const waveShape = new THREE.Shape();
-          const waveAmplitude = h * 0.12;
-          const waveFreq = 2.5;
-          waveShape.moveTo(-w / 2, 0);
-          for (let i = 0; i <= 60; i++) {
-            const wx = -w / 2 + (w * i / 60);
-            const wy = Math.sin((i / 60) * Math.PI * 2 * waveFreq) * waveAmplitude;
-            waveShape.lineTo(wx, wy + h / 2);
-          }
-          for (let i = 60; i >= 0; i--) {
-            const wx = -w / 2 + (w * i / 60);
-            const wy = Math.sin((i / 60) * Math.PI * 2 * waveFreq) * waveAmplitude;
-            waveShape.lineTo(wx, wy - h / 2);
-          }
-          waveShape.closePath();
-          return new THREE.ExtrudeGeometry(waveShape, { depth: d, bevelEnabled: false });
-
-        case 'diamond':
-          const diamondShape = new THREE.Shape();
-          diamondShape.moveTo(0, h / 2);
-          diamondShape.lineTo(w / 2, 0);
-          diamondShape.lineTo(0, -h / 2);
-          diamondShape.lineTo(-w / 2, 0);
-          diamondShape.closePath();
-          return new THREE.ExtrudeGeometry(diamondShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.3,
-            bevelSize: 0.2,
-            bevelSegments: 2
-          });
-
-        case 'oval':
-        case 'flat_oval':
-          const ovalShape = new THREE.Shape();
-          ovalShape.absellipse(0, 0, w / 2, h / 2, 0, Math.PI * 2, false, 0);
-          return new THREE.ExtrudeGeometry(ovalShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.3,
-            bevelSize: 0.2,
-            bevelSegments: 2
-          });
-
-        case 'gothic':
-          // Gothic arch shape - improved
-          const gothicShape = new THREE.Shape();
-          gothicShape.moveTo(-w / 2, -h / 2);
-          gothicShape.lineTo(-w / 2, h * 0.15);
-          gothicShape.bezierCurveTo(-w / 2, h * 0.4, -w * 0.3, h / 2, 0, h / 2);
-          gothicShape.bezierCurveTo(w * 0.3, h / 2, w / 2, h * 0.4, w / 2, h * 0.15);
-          gothicShape.lineTo(w / 2, -h / 2);
-          gothicShape.closePath();
-          return new THREE.ExtrudeGeometry(gothicShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.3,
-            bevelSize: 0.2,
-            bevelSegments: 2
-          });
-
-        case 'ornamental':
-        case 'framed_square':
-          // Ornamental frame with decorative corners
-          const ornShape = new THREE.Shape();
-          const radius = Math.min(w, h) * 0.12;
-          ornShape.moveTo(-w / 2 + radius, -h / 2);
-          ornShape.lineTo(w / 2 - radius, -h / 2);
-          ornShape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + radius);
-          ornShape.lineTo(w / 2, h / 2 - radius);
-          ornShape.quadraticCurveTo(w / 2, h / 2, w / 2 - radius, h / 2);
-          ornShape.lineTo(-w / 2 + radius, h / 2);
-          ornShape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - radius);
-          ornShape.lineTo(-w / 2, -h / 2 + radius);
-          ornShape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + radius, -h / 2);
-          return new THREE.ExtrudeGeometry(ornShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.4,
-            bevelSize: 0.3,
-            bevelSegments: 3
-          });
-
-        case 'circular':
-          const circleShape = new THREE.Shape();
-          circleShape.absarc(0, 0, w / 2, 0, Math.PI * 2, false);
-          return new THREE.ExtrudeGeometry(circleShape, { 
-            depth: d, 
-            bevelEnabled: true,
-            bevelThickness: 0.3,
-            bevelSize: 0.2,
-            bevelSegments: 2
-          });
-
-        case 'panoramic':
-        case 'portrait':
-        case 'flat_rectangle':
-        case 'flat_square':
-        case 'minimalist':
-        default:
-          // Flat panel with slight bevel for realism
-          const rectShape = new THREE.Shape();
-          const bevel = 1;
-          rectShape.moveTo(-w / 2 + bevel, -h / 2);
-          rectShape.lineTo(w / 2 - bevel, -h / 2);
-          rectShape.lineTo(w / 2, -h / 2 + bevel);
-          rectShape.lineTo(w / 2, h / 2 - bevel);
-          rectShape.lineTo(w / 2 - bevel, h / 2);
-          rectShape.lineTo(-w / 2 + bevel, h / 2);
-          rectShape.lineTo(-w / 2, h / 2 - bevel);
-          rectShape.lineTo(-w / 2, -h / 2 + bevel);
-          rectShape.closePath();
-          return new THREE.ExtrudeGeometry(rectShape, { 
-            depth: d, 
-            bevelEnabled: false
-          });
+      // Sample image to produce a depth map (luminance → thickness)
+      const depths: number[][] = [];
+      for (let gy = 0; gy <= gridY; gy++) {
+        const row: number[] = [];
+        for (let gx = 0; gx <= gridX; gx++) {
+          const imgX = Math.min(Math.floor((gx / gridX) * imageData.width), imageData.width - 1);
+          const imgY = Math.min(Math.floor((gy / gridY) * imageData.height), imageData.height - 1);
+          const idx = (imgY * imageData.width + imgX) * 4;
+          const r = imageData.data[idx];
+          const g = imageData.data[idx + 1];
+          const b = imageData.data[idx + 2];
+          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          // Bright → thin, dark → thick
+          const depth = minT + (1 - luminance) * (maxT - minT);
+          row.push(depth);
+        }
+        depths.push(row);
       }
-    };
-  }, [scale]);
 
-  // Create/update lamp mesh
+      // Apply shape transformation function (consistent with STL generator)
+      const applyShape = (px: number, py: number, pz: number): [number, number, number] => {
+        switch (shapeType) {
+          case 'cylinder_small':
+          case 'cylinder_medium':
+          case 'cylinder_large': {
+            const angle = (px / w) * Math.PI * 2;
+            const radius = w / (Math.PI * 2);
+            return [
+              Math.cos(angle) * (radius + pz),
+              py,
+              Math.sin(angle) * (radius + pz)
+            ];
+          }
+          case 'half_cylinder': {
+            const angle = (px / w) * Math.PI;
+            const radius = w / Math.PI;
+            return [
+              Math.cos(angle) * (radius + pz),
+              py,
+              Math.sin(angle) * (radius + pz)
+            ];
+          }
+          case 'hexagonal': {
+            const segments = 6;
+            const angle = (px / w) * Math.PI * 2;
+            const segAngle = Math.PI * 2 / segments;
+            const seg = Math.floor(angle / segAngle);
+            const radius = w / (Math.PI * 2);
+            const localAngle = seg * segAngle + (angle % segAngle);
+            return [
+              Math.cos(localAngle) * (radius + pz),
+              py,
+              Math.sin(localAngle) * (radius + pz)
+            ];
+          }
+          case 'octagonal': {
+            const segments = 8;
+            const angle = (px / w) * Math.PI * 2;
+            const segAngle = Math.PI * 2 / segments;
+            const seg = Math.floor(angle / segAngle);
+            const radius = w / (Math.PI * 2);
+            const localAngle = seg * segAngle + (angle % segAngle);
+            return [
+              Math.cos(localAngle) * (radius + pz),
+              py,
+              Math.sin(localAngle) * (radius + pz)
+            ];
+          }
+          case 'curved_soft': {
+            const curveZ = Math.sin((px / w) * Math.PI) * w * 0.15;
+            return [px - w / 2, py - h / 2, pz + curveZ];
+          }
+          case 'curved_deep':
+          case 'arch': {
+            const curveZ = Math.sin((px / w) * Math.PI) * w * 0.3;
+            return [px - w / 2, py - h / 2, pz + curveZ];
+          }
+          case 'moon': {
+            const cx = w / 2, cy = h / 2;
+            const dx = px - cx, dy = py - cy;
+            const rad = Math.min(w, h) / 2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const sphereZ = dist < rad ? Math.sqrt(Math.max(0, rad * rad - dist * dist)) * 0.35 : 0;
+            return [px - w / 2, py - h / 2, pz + sphereZ];
+          }
+          case 'wave': {
+            const waveZ = Math.sin((px / w) * Math.PI * 3) * w * 0.08;
+            return [px - w / 2, py - h / 2, pz + waveZ];
+          }
+          case 'heart': {
+            const nx = (px - w / 2) / (w / 2);
+            const ny = (py - h / 2) / (h / 2);
+            const bulge = 0.1 * w * Math.max(0, 1 - nx * nx - ny * ny);
+            return [px - w / 2, py - h / 2, pz + bulge];
+          }
+          case 'star': {
+            const dx = px - w / 2, dy = py - h / 2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = Math.sqrt((w / 2) * (w / 2) + (h / 2) * (h / 2));
+            const bulge = 0.05 * w * Math.max(0, 1 - dist / maxDist);
+            return [px - w / 2, py - h / 2, pz + bulge];
+          }
+          case 'diamond': {
+            const dx = Math.abs(px - w / 2) / (w / 2);
+            const dy = Math.abs(py - h / 2) / (h / 2);
+            const peak = 0.1 * w * Math.max(0, 1 - Math.max(dx, dy));
+            return [px - w / 2, py - h / 2, pz + peak];
+          }
+          case 'cloud': {
+            const bump1 = Math.sin((px / w) * Math.PI * 2) * Math.sin((py / h) * Math.PI);
+            const bump2 = Math.sin((px / w) * Math.PI * 3) * Math.cos((py / h) * Math.PI * 1.5);
+            const cloudZ = (bump1 + bump2 * 0.5) * w * 0.06;
+            return [px - w / 2, py - h / 2, pz + cloudZ];
+          }
+          case 'gothic': {
+            const ny = py / h;
+            if (ny > 0.5) {
+              const prog = (ny - 0.5) * 2;
+              const nx = Math.abs(px - w / 2) / (w / 2);
+              const archZ = prog * (1 - nx) * w * 0.15;
+              return [px - w / 2, py - h / 2, pz + archZ];
+            }
+            return [px - w / 2, py - h / 2, pz];
+          }
+          case 'ornamental':
+          case 'framed_square': {
+            const edgeDist = Math.min(px, w - px, py, h - py);
+            const maxEdge = Math.min(w, h) * 0.1;
+            const frameZ = edgeDist < maxEdge ? (maxEdge - edgeDist) * 0.05 : 0;
+            return [px - w / 2, py - h / 2, pz + frameZ];
+          }
+          case 'circular': {
+            const dx = px - w / 2, dy = py - h / 2;
+            const rad = Math.min(w, h) / 2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const domeZ = dist < rad ? Math.sqrt(Math.max(0, rad * rad - dist * dist)) * 0.1 : 0;
+            return [px - w / 2, py - h / 2, pz + domeZ];
+          }
+          default:
+            return [px - w / 2, py - h / 2, pz];
+        }
+      };
+
+      // Build vertex arrays for front face (depth-displaced) and back face (flat)
+      const positions: number[] = [];
+      const normals: number[] = [];
+      const uvs: number[] = [];
+
+      const addQuad = (
+        p1: [number, number, number],
+        p2: [number, number, number],
+        p3: [number, number, number],
+        p4: [number, number, number],
+        u1: [number, number],
+        u2: [number, number],
+        u3: [number, number],
+        u4: [number, number]
+      ) => {
+        // Triangle 1: p1, p2, p3
+        const e1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+        const e2 = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]];
+        const n1 = [
+          e1[1] * e2[2] - e1[2] * e2[1],
+          e1[2] * e2[0] - e1[0] * e2[2],
+          e1[0] * e2[1] - e1[1] * e2[0]
+        ];
+        const len1 = Math.sqrt(n1[0] * n1[0] + n1[1] * n1[1] + n1[2] * n1[2]) || 1;
+        n1[0] /= len1; n1[1] /= len1; n1[2] /= len1;
+
+        positions.push(...p1, ...p2, ...p3);
+        normals.push(...n1, ...n1, ...n1);
+        uvs.push(...u1, ...u2, ...u3);
+
+        // Triangle 2: p1, p3, p4
+        const e3 = [p4[0] - p1[0], p4[1] - p1[1], p4[2] - p1[2]];
+        const n2 = [
+          e2[1] * e3[2] - e2[2] * e3[1],
+          e2[2] * e3[0] - e2[0] * e3[2],
+          e2[0] * e3[1] - e2[1] * e3[0]
+        ];
+        const len2 = Math.sqrt(n2[0] * n2[0] + n2[1] * n2[1] + n2[2] * n2[2]) || 1;
+        n2[0] /= len2; n2[1] /= len2; n2[2] /= len2;
+
+        positions.push(...p1, ...p3, ...p4);
+        normals.push(...n2, ...n2, ...n2);
+        uvs.push(...u1, ...u3, ...u4);
+      };
+
+      // Front face (depth-displaced)
+      for (let gy = 0; gy < gridY; gy++) {
+        for (let gx = 0; gx < gridX; gx++) {
+          const x0 = gx * stepX, x1 = (gx + 1) * stepX;
+          const y0 = gy * stepY, y1 = (gy + 1) * stepY;
+
+          const z00 = depths[gy][gx];
+          const z10 = depths[gy][gx + 1];
+          const z01 = depths[gy + 1][gx];
+          const z11 = depths[gy + 1][gx + 1];
+
+          const p1 = applyShape(x0, y0, z00);
+          const p2 = applyShape(x1, y0, z10);
+          const p3 = applyShape(x1, y1, z11);
+          const p4 = applyShape(x0, y1, z01);
+
+          const u0x = gx / gridX, u1x = (gx + 1) / gridX;
+          const u0y = 1 - gy / gridY, u1y = 1 - (gy + 1) / gridY;
+
+          addQuad(p1, p2, p3, p4, [u0x, u0y], [u1x, u0y], [u1x, u1y], [u0x, u1y]);
+        }
+      }
+
+      // Back face (flat at z=0)
+      for (let gy = 0; gy < gridY; gy++) {
+        for (let gx = 0; gx < gridX; gx++) {
+          const x0 = gx * stepX, x1 = (gx + 1) * stepX;
+          const y0 = gy * stepY, y1 = (gy + 1) * stepY;
+
+          const p1 = applyShape(x0, y0, 0);
+          const p2 = applyShape(x0, y1, 0);
+          const p3 = applyShape(x1, y1, 0);
+          const p4 = applyShape(x1, y0, 0);
+
+          const u0x = gx / gridX, u1x = (gx + 1) / gridX;
+          const u0y = 1 - gy / gridY, u1y = 1 - (gy + 1) / gridY;
+
+          addQuad(p1, p2, p3, p4, [u0x, u0y], [u0x, u1y], [u1x, u1y], [u1x, u0y]);
+        }
+      }
+
+      // Side walls — left, right, top, bottom
+      for (let gy = 0; gy < gridY; gy++) {
+        const y0 = gy * stepY, y1 = (gy + 1) * stepY;
+        // Left wall (x=0)
+        const lf0 = applyShape(0, y0, depths[gy][0]);
+        const lf1 = applyShape(0, y1, depths[gy + 1][0]);
+        const lb0 = applyShape(0, y0, 0);
+        const lb1 = applyShape(0, y1, 0);
+        addQuad(lb0, lb1, lf1, lf0, [0, 0], [0, 1], [1, 1], [1, 0]);
+        // Right wall (x=max)
+        const rf0 = applyShape(w, y0, depths[gy][gridX]);
+        const rf1 = applyShape(w, y1, depths[gy + 1][gridX]);
+        const rb0 = applyShape(w, y0, 0);
+        const rb1 = applyShape(w, y1, 0);
+        addQuad(rf0, rf1, rb1, rb0, [0, 0], [0, 1], [1, 1], [1, 0]);
+      }
+      for (let gx = 0; gx < gridX; gx++) {
+        const x0 = gx * stepX, x1 = (gx + 1) * stepX;
+        // Bottom wall (y=0)
+        const bf0 = applyShape(x0, 0, depths[0][gx]);
+        const bf1 = applyShape(x1, 0, depths[0][gx + 1]);
+        const bb0 = applyShape(x0, 0, 0);
+        const bb1 = applyShape(x1, 0, 0);
+        addQuad(bf0, bf1, bb1, bb0, [0, 0], [1, 0], [1, 1], [0, 1]);
+        // Top wall (y=max)
+        const tf0 = applyShape(x0, h, depths[gridY][gx]);
+        const tf1 = applyShape(x1, h, depths[gridY][gx + 1]);
+        const tb0 = applyShape(x0, h, 0);
+        const tb1 = applyShape(x1, h, 0);
+        addQuad(tb0, tb1, tf1, tf0, [0, 0], [1, 0], [1, 1], [0, 1]);
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.computeVertexNormals();
+
+      return geometry;
+    },
+    [scale, minThickness, maxThickness]
+  );
+
+  // State for STL generation
+  const [isGeneratingSTL, setIsGeneratingSTL] = useState(false);
+
+  // Client-side STL download
+  const handleDownloadSTL = useCallback(async () => {
+    setIsGeneratingSTL(true);
+    try {
+      const stlBuffer = await generateLithophaneSTL({
+        processedImage,
+        lampTemplate,
+        dimensions,
+        settings: {
+          minThickness: 0.6,
+          maxThickness: 3.2,
+          resolution: 'high',
+          border: 2,
+          curve: lampTemplate.curve_radius ? Math.min(100, lampTemplate.curve_radius) : 0,
+          negative: false,
+          smoothing: 20
+        }
+      });
+      const shapeName = lampTemplate.shape_type.replace(/[^a-zA-Z0-9]/g, '_');
+      downloadSTL(stlBuffer, `lithophane_${shapeName}_${dimensions.width}x${dimensions.height}mm.stl`);
+    } catch (err) {
+      console.error('STL generation error:', err);
+    } finally {
+      setIsGeneratingSTL(false);
+    }
+  }, [processedImage, lampTemplate, dimensions]);
+
+  // Create/update lamp mesh — uses real depth displacement from image
   useEffect(() => {
     if (!sceneRef.current) return;
 
@@ -456,152 +555,175 @@ export const LithophanyPreview3D = ({
     const lampGroup = new THREE.Group();
     lampGroupRef.current = lampGroup;
 
-    // Create texture from processed image
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(processedImage);
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
+    // Load image data to extract pixel luminance for depth map
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    // Create lamp geometry
-    const geometry = createLampGeometry(lampTemplate.shape_type, dimensions.width, dimensions.height, 3);
-
-    // Material with realistic lithophane-like properties
-    const material = new THREE.MeshPhysicalMaterial({
-      map: texture,
-      transparent: true,
-      opacity: 0.92,
-      side: THREE.DoubleSide,
-      roughness: 0.35,
-      metalness: 0,
-      transmission: showLight ? 0.4 : 0.1,
-      thickness: 2.5,
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.3,
-      ior: 1.45,
-      emissive: new THREE.Color(lightColor),
-      emissiveIntensity: showLight ? lightIntensity * 0.15 : 0,
-      emissiveMap: texture,
-      envMapIntensity: 0.5
-    });
-
-    const lamp = new THREE.Mesh(geometry, material);
-    lamp.castShadow = true;
-    lamp.receiveShadow = true;
-
-    // Adjust position based on geometry type
-    if (['moon', 'sphere'].includes(lampTemplate.shape_type)) {
-      lamp.rotation.x = Math.PI / 2;
-    } else if (['heart', 'star', 'diamond', 'cloud', 'wave', 'gothic', 'ornamental', 'oval', 'flat_oval', 'framed_square'].includes(lampTemplate.shape_type)) {
-      lamp.rotation.x = 0;
-    }
-
-    lampGroup.add(lamp);
-
-    // Create base if enabled
-    if (showBase) {
-      const baseWidth = dimensions.width * scale * 1.25;
-      const baseDepth = 28;
-      const baseHeight = 18;
-      const ledHoleDiameter = 16;
-
-      // Main base with rounded edges
-      const baseShape = new THREE.Shape();
-      const br = 3; // corner radius
-      baseShape.moveTo(-baseWidth / 2 + br, -baseDepth / 2);
-      baseShape.lineTo(baseWidth / 2 - br, -baseDepth / 2);
-      baseShape.quadraticCurveTo(baseWidth / 2, -baseDepth / 2, baseWidth / 2, -baseDepth / 2 + br);
-      baseShape.lineTo(baseWidth / 2, baseDepth / 2 - br);
-      baseShape.quadraticCurveTo(baseWidth / 2, baseDepth / 2, baseWidth / 2 - br, baseDepth / 2);
-      baseShape.lineTo(-baseWidth / 2 + br, baseDepth / 2);
-      baseShape.quadraticCurveTo(-baseWidth / 2, baseDepth / 2, -baseWidth / 2, baseDepth / 2 - br);
-      baseShape.lineTo(-baseWidth / 2, -baseDepth / 2 + br);
-      baseShape.quadraticCurveTo(-baseWidth / 2, -baseDepth / 2, -baseWidth / 2 + br, -baseDepth / 2);
-
-      const baseGeometry = new THREE.ExtrudeGeometry(baseShape, {
-        depth: baseHeight,
-        bevelEnabled: true,
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelSegments: 3
-      });
-      
-      const baseMaterial = new THREE.MeshStandardMaterial({
-        color: 0x2a2a3a,
-        roughness: 0.7,
-        metalness: 0.3
-      });
-
-      const base = new THREE.Mesh(baseGeometry, baseMaterial);
-      base.rotation.x = -Math.PI / 2;
-      base.position.y = -dimensions.height * scale / 2 - baseHeight / 2 - 5;
-      base.castShadow = true;
-      base.receiveShadow = true;
-      lampGroup.add(base);
-
-      // Slot for lithophane panel
-      const slotGeometry = new THREE.BoxGeometry(baseWidth * 0.85, 5, 6);
-      const slotMaterial = new THREE.MeshStandardMaterial({
-        color: 0x1a1a2a,
-        roughness: 0.9
-      });
-      const slot = new THREE.Mesh(slotGeometry, slotMaterial);
-      slot.position.y = base.position.y + baseHeight / 2 + 2;
-      slot.position.z = -baseDepth / 4;
-      lampGroup.add(slot);
-
-      // LED glow indicator
-      if (showLight) {
-        // LED mesh
-        const ledGeometry = new THREE.CylinderGeometry(
-          ledHoleDiameter * scale / 2 * 0.8,
-          ledHoleDiameter * scale / 2,
-          8,
-          24
-        );
-        const ledMaterial = new THREE.MeshStandardMaterial({
-          color: lightColor,
-          emissive: lightColor,
-          emissiveIntensity: lightIntensity * 1.5,
-          transparent: true,
-          opacity: 0.9
-        });
-        const led = new THREE.Mesh(ledGeometry, ledMaterial);
-        led.position.y = base.position.y + 2;
-        led.position.z = 0;
-        lampGroup.add(led);
-
-        // LED glow sprite
-        const glowCanvas = document.createElement('canvas');
-        glowCanvas.width = 64;
-        glowCanvas.height = 64;
-        const glowCtx = glowCanvas.getContext('2d');
-        if (glowCtx) {
-          const gradient = glowCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
-          gradient.addColorStop(0, 'rgba(255, 255, 238, 0.8)');
-          gradient.addColorStop(0.3, 'rgba(255, 255, 200, 0.4)');
-          gradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
-          glowCtx.fillStyle = gradient;
-          glowCtx.fillRect(0, 0, 64, 64);
-        }
-        const glowTexture = new THREE.CanvasTexture(glowCanvas);
-        const glowMaterial = new THREE.SpriteMaterial({
-          map: glowTexture,
-          transparent: true,
-          opacity: lightIntensity * 0.6
-        });
-        const glow = new THREE.Sprite(glowMaterial);
-        glow.position.copy(led.position);
-        glow.position.z -= 5;
-        glow.scale.set(40, 40, 1);
-        lampGroup.add(glow);
+      // If customText is provided, draw it on the image
+      ctx.drawImage(img, 0, 0);
+      if (customText) {
+        const fontSize = Math.max(14, Math.floor(img.height * 0.06));
+        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(customText, img.width / 2, img.height - fontSize * 0.3, img.width * 0.9);
       }
-    }
 
-    scene.add(lampGroup);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-  }, [processedImage, lampTemplate, dimensions, showBase, showLight, lightIntensity, lightColor, createLampGeometry]);
+      // Build lithophane geometry with actual depth displacement
+      const geometry = buildLithophaneGeometry(
+        imageData,
+        lampTemplate.shape_type,
+        dimensions.width,
+        dimensions.height
+      );
+
+      // Create texture from the (possibly text-annotated) canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+
+      // Material: semi-translucent white plastic (like PLA for 3D printing)
+      // The depth variation + back-light creates the lithophane effect
+      const material = new THREE.MeshPhysicalMaterial({
+        color: 0xf5f5f0,
+        map: texture,
+        transparent: true,
+        opacity: 0.92,
+        side: THREE.DoubleSide,
+        roughness: 0.4,
+        metalness: 0,
+        transmission: showLight ? 0.35 : 0.05,
+        thickness: 2.5,
+        clearcoat: 0.1,
+        clearcoatRoughness: 0.4,
+        ior: 1.45,
+        emissive: new THREE.Color(lightColor),
+        emissiveIntensity: showLight ? lightIntensity * 0.12 : 0,
+        emissiveMap: texture,
+        envMapIntensity: 0.3
+      });
+
+      const lamp = new THREE.Mesh(geometry, material);
+      lamp.castShadow = true;
+      lamp.receiveShadow = true;
+      lampGroup.add(lamp);
+
+      // Create base if enabled
+      if (showBase) {
+        const baseWidth = dimensions.width * scale * 1.25;
+        const baseDepth = 28;
+        const baseHeight = 18;
+        const ledHoleDiameter = 16;
+
+        // Main base with rounded edges
+        const baseShape = new THREE.Shape();
+        const br = 3; // corner radius
+        baseShape.moveTo(-baseWidth / 2 + br, -baseDepth / 2);
+        baseShape.lineTo(baseWidth / 2 - br, -baseDepth / 2);
+        baseShape.quadraticCurveTo(baseWidth / 2, -baseDepth / 2, baseWidth / 2, -baseDepth / 2 + br);
+        baseShape.lineTo(baseWidth / 2, baseDepth / 2 - br);
+        baseShape.quadraticCurveTo(baseWidth / 2, baseDepth / 2, baseWidth / 2 - br, baseDepth / 2);
+        baseShape.lineTo(-baseWidth / 2 + br, baseDepth / 2);
+        baseShape.quadraticCurveTo(-baseWidth / 2, baseDepth / 2, -baseWidth / 2, baseDepth / 2 - br);
+        baseShape.lineTo(-baseWidth / 2, -baseDepth / 2 + br);
+        baseShape.quadraticCurveTo(-baseWidth / 2, -baseDepth / 2, -baseWidth / 2 + br, -baseDepth / 2);
+
+        const baseGeometry = new THREE.ExtrudeGeometry(baseShape, {
+          depth: baseHeight,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelSegments: 3
+        });
+        
+        const baseMaterial = new THREE.MeshStandardMaterial({
+          color: 0x2a2a3a,
+          roughness: 0.7,
+          metalness: 0.3
+        });
+
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.rotation.x = -Math.PI / 2;
+        base.position.y = -dimensions.height * scale / 2 - baseHeight / 2 - 5;
+        base.castShadow = true;
+        base.receiveShadow = true;
+        lampGroup.add(base);
+
+        // Slot for lithophane panel
+        const slotGeometry = new THREE.BoxGeometry(baseWidth * 0.85, 5, 6);
+        const slotMaterial = new THREE.MeshStandardMaterial({
+          color: 0x1a1a2a,
+          roughness: 0.9
+        });
+        const slot = new THREE.Mesh(slotGeometry, slotMaterial);
+        slot.position.y = base.position.y + baseHeight / 2 + 2;
+        slot.position.z = -baseDepth / 4;
+        lampGroup.add(slot);
+
+        // LED glow indicator
+        if (showLight) {
+          // LED mesh
+          const ledGeometry = new THREE.CylinderGeometry(
+            ledHoleDiameter * scale / 2 * 0.8,
+            ledHoleDiameter * scale / 2,
+            8,
+            24
+          );
+          const ledMaterial = new THREE.MeshStandardMaterial({
+            color: lightColor,
+            emissive: lightColor,
+            emissiveIntensity: lightIntensity * 1.5,
+            transparent: true,
+            opacity: 0.9
+          });
+          const led = new THREE.Mesh(ledGeometry, ledMaterial);
+          led.position.y = base.position.y + 2;
+          led.position.z = 0;
+          lampGroup.add(led);
+
+          // LED glow sprite
+          const glowCanvas = document.createElement('canvas');
+          glowCanvas.width = 64;
+          glowCanvas.height = 64;
+          const glowCtx = glowCanvas.getContext('2d');
+          if (glowCtx) {
+            const gradient = glowCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255, 255, 238, 0.8)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 200, 0.4)');
+            gradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
+            glowCtx.fillStyle = gradient;
+            glowCtx.fillRect(0, 0, 64, 64);
+          }
+          const glowTexture = new THREE.CanvasTexture(glowCanvas);
+          const glowMaterial = new THREE.SpriteMaterial({
+            map: glowTexture,
+            transparent: true,
+            opacity: lightIntensity * 0.6
+          });
+          const glow = new THREE.Sprite(glowMaterial);
+          glow.position.copy(led.position);
+          glow.position.z -= 5;
+          glow.scale.set(40, 40, 1);
+          lampGroup.add(glow);
+        }
+      }
+
+      scene.add(lampGroup);
+    };
+    img.src = processedImage;
+
+  }, [processedImage, lampTemplate, dimensions, showBase, showLight, lightIntensity, lightColor, buildLithophaneGeometry, customText, scale]);
 
   // Animation loop
   useEffect(() => {
@@ -800,6 +922,21 @@ export const LithophanyPreview3D = ({
             ? '🖱️ Arrastra para rotar • Rueda para zoom • Usa los botones para cambiar modo'
             : '🖱️ Drag to rotate • Scroll to zoom • Use buttons to change mode'}
         </p>
+
+        {/* Download STL Button */}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={handleDownloadSTL}
+            disabled={isGeneratingSTL}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isGeneratingSTL
+              ? (language === 'es' ? 'Generando STL...' : 'Generating STL...')
+              : (language === 'es' ? 'Descargar STL' : 'Download STL')}
+          </Button>
+        </div>
 
         {/* Info badges */}
         <div className="flex flex-wrap gap-2">

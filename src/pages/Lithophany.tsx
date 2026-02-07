@@ -51,6 +51,8 @@ const Lithophany = () => {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [selectedLamp, setSelectedLamp] = useState<LampTemplate | null>(null);
   const [lampDimensions, setLampDimensions] = useState({ width: 100, height: 100 });
+  const [customText, setCustomText] = useState('');
+  const [quantity, setQuantity] = useState(1);
   
   const {
     editorSettings,
@@ -185,12 +187,16 @@ const Lithophany = () => {
                   dimensions={lampDimensions}
                   onDimensionsChange={handleDimensionsChange}
                   isLoading={isLoadingTemplates}
+                  customText={customText}
+                  onCustomTextChange={setCustomText}
                 />
               </div>
               <div>
                 <LithophanyPricing
                   selectedLamp={selectedLamp}
                   dimensions={lampDimensions}
+                  quantity={quantity}
+                  onQuantityChange={setQuantity}
                 />
               </div>
             </div>
@@ -213,12 +219,15 @@ const Lithophany = () => {
                     processedImage={processedImage}
                     lampTemplate={selectedLamp}
                     dimensions={lampDimensions}
+                    customText={customText}
                   />
                 </div>
                 <div className="space-y-6">
                   <LithophanyPricing
                     selectedLamp={selectedLamp}
                     dimensions={lampDimensions}
+                    quantity={quantity}
+                    onQuantityChange={setQuantity}
                   />
                   <Button 
                     onClick={handleProceedToCheckout} 
@@ -240,6 +249,8 @@ const Lithophany = () => {
                 lampTemplate={selectedLamp}
                 dimensions={lampDimensions}
                 editorSettings={editorSettings}
+                customText={customText}
+                quantity={quantity}
               />
             )}
           </TabsContent>
