@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, startTransition, useRef, useCallback } from "react";
+import { useState, useEffect, lazy, Suspense, startTransition, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -197,15 +197,6 @@ const Quotes = () => {
     }
   };
 
-  const handleAnalysisComplete = useCallback((result: QuoteAnalysisResult) => {
-    const resolvedParams = result.analysisParams ?? buildAnalysisParams();
-    analysisParamsRef.current = resolvedParams;
-    setAnalysisResult({
-      ...result,
-      analysisParams: resolvedParams
-    });
-  }, [buildAnalysisParams]);
-
   const normalizeQuantity = (value: number) => {
     if (!Number.isFinite(value) || Number.isNaN(value)) {
       return 1;
@@ -213,13 +204,22 @@ const Quotes = () => {
     return Math.max(1, Math.floor(value));
   };
 
-  const buildAnalysisParams = useCallback((overrides: Partial<QuoteAnalysisParams> = {}) => ({
-    quantity: normalizeQuantity(overrides.quantity ?? quantity),
-    materialId: overrides.materialId ?? (selectedMaterial || 'default'),
-    colorId: overrides.colorId ?? (selectedColor || ''),
-    supportsRequired: overrides.supportsRequired ?? (supportsRequired ?? false),
-    layerHeight: overrides.layerHeight ?? layerHeight
+  const baseAnalysisParams = useMemo(() => ({
+    quantity: normalizeQuantity(quantity),
+    materialId: selectedMaterial || 'default',
+    colorId: selectedColor || '',
+    supportsRequired: supportsRequired ?? false,
+    layerHeight
   }), [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+
+  const handleAnalysisComplete = useCallback((result: QuoteAnalysisResult) => {
+    const resolvedParams = result.analysisParams ?? baseAnalysisParams;
+    analysisParamsRef.current = resolvedParams;
+    setAnalysisResult({
+      ...result,
+      analysisParams: resolvedParams
+    });
+  }, [baseAnalysisParams]);
 
   const updateQuantity = (nextQuantity: number) => {
     const normalizedQuantity = normalizeQuantity(nextQuantity);
@@ -245,7 +245,7 @@ const Quotes = () => {
   useEffect(() => {
     if (!analysisResult?.file) return;
 
-    const nextParams = buildAnalysisParams();
+    const nextParams = baseAnalysisParams;
 
     const lastParams = analysisParamsRef.current;
     if (lastParams
@@ -293,7 +293,7 @@ const Quotes = () => {
     return () => {
       window.clearTimeout(debounceId);
     };
-  }, [analysisResult?.file, buildAnalysisParams]);
+  }, [analysisResult?.file, baseAnalysisParams]);
 
   const handleFileQuote = async () => {
     if (isSubmittingRef.current || loading) return;
