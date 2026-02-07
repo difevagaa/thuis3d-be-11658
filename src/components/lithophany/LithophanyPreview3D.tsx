@@ -568,7 +568,9 @@ export const LithophanyPreview3D = ({
       // If customText is provided, draw it on the image
       ctx.drawImage(img, 0, 0);
       if (customText) {
-        const fontSize = Math.max(14, Math.floor(img.height * 0.06));
+        const MIN_FONT_SIZE = 14;
+        const FONT_SCALE_FACTOR = 0.06;
+        const fontSize = Math.max(MIN_FONT_SIZE, Math.floor(img.height * FONT_SCALE_FACTOR));
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         ctx.fillStyle = 'rgba(0,0,0,0.85)';
         ctx.textAlign = 'center';

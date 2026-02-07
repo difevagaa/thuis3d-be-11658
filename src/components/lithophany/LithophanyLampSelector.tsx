@@ -122,7 +122,7 @@ export const LithophanyLampSelector = ({
     return template.description;
   };
 
-  // Bambu Lab A1 max build volume: 256 x 256 x 256 mm
+  // Bambu Lab A1 max build plate: 256 x 256 mm (X and Y axes)
   const BAMBU_A1_MAX = 256;
   // Enforce minimum 10mm dimensions
   const ABSOLUTE_MIN = 10;
