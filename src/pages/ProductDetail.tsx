@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, MessageSquare, Check, Plus, Minus, Leaf, Gift, Star, Sparkles, TrendingUp, Clock, Shield, Truck, Package, Info, AlertTriangle } from "lucide-react";
+import { ShoppingCart, MessageSquare, Check, Plus, Minus, Leaf, Gift, Star, Sparkles, TrendingUp, Clock, Shield, Truck, Package, Info, AlertTriangle, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -83,7 +83,7 @@ interface CustomizationSection {
   section_name: string;
   display_order: number;
   is_required: boolean;
-  section_type: 'color' | 'image';
+  section_type: 'color' | 'image' | 'file_upload';
   availableColors: Color[];
   availableImages: SectionImage[];
 }
@@ -100,6 +100,8 @@ const ProductDetail = () => {
   const [customizationSections, setCustomizationSections] = useState<CustomizationSection[]>([]);
   const [sectionColorSelections, setSectionColorSelections] = useState<Record<string, string>>({});
   const [sectionImageSelections, setSectionImageSelections] = useState<Record<string, string>>({});
+  const [sectionFileUploads, setSectionFileUploads] = useState<Record<string, { file: File; previewUrl: string }>>({});
+  const [uploadingFile, setUploadingFile] = useState(false);
   // Ref to prevent multiple submissions (updates synchronously, unlike state)
   const isSubmittingRef = useRef(false);
   
@@ -269,13 +271,15 @@ const ProductDetail = () => {
           if (!section.is_required) return false;
           if (section.section_type === 'color') {
             return !sectionColorSelections[section.id];
+          } else if (section.section_type === 'file_upload') {
+            return !sectionFileUploads[section.id];
           } else {
             return !sectionImageSelections[section.id];
           }
         });
       
       if (missingSections.length > 0) {
-        toast.error(`Debe seleccionar: ${missingSections.map(s => s.section_name).join(', ')}`);
+        toast.error(`Debe completar: ${missingSections.map(s => s.section_name).join(', ')}`);
         return;
       }
     } else {
@@ -321,6 +325,34 @@ const ProductDetail = () => {
             image_name: image?.image_name || '',
             image_url: image?.image_url || ''
           });
+        } else if (section.section_type === 'file_upload' && sectionFileUploads[section.id]) {
+          const fileUpload = sectionFileUploads[section.id];
+          try {
+            setUploadingFile(true);
+            const file = fileUpload.file;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `customer-uploads/${product.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage
+              .from('product-customization-images')
+              .upload(fileName, file);
+            if (uploadError) throw uploadError;
+            const { data: { publicUrl } } = supabase.storage
+              .from('product-customization-images')
+              .getPublicUrl(fileName);
+            selections.push({
+              section_id: section.id,
+              section_name: section.section_name,
+              selection_type: 'image',
+              image_name: file.name,
+              image_url: publicUrl
+            });
+          } catch (uploadErr) {
+            toast.error('Error al subir el archivo. Intenta de nuevo.');
+            setUploadingFile(false);
+            return;
+          } finally {
+            setUploadingFile(false);
+          }
         }
       }
       
@@ -876,6 +908,72 @@ const ProductDetail = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      ) : section.section_type === 'file_upload' ? (
+                        <div className="space-y-2">
+                          <div className="border-2 border-dashed rounded-lg p-4 text-center hover:bg-muted/50 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (!file.type.startsWith('image/')) {
+                                  toast.error('Por favor selecciona un archivo de imagen');
+                                  return;
+                                }
+                                if (file.size > 10 * 1024 * 1024) {
+                                  toast.error('La imagen no debe superar 10MB');
+                                  return;
+                                }
+                                const previewUrl = URL.createObjectURL(file);
+                                setSectionFileUploads(prev => ({
+                                  ...prev,
+                                  [section.id]: { file, previewUrl }
+                                }));
+                              }}
+                              className="hidden"
+                              id={`file-upload-${section.id}`}
+                            />
+                            <label
+                              htmlFor={`file-upload-${section.id}`}
+                              className="cursor-pointer flex flex-col items-center gap-2"
+                            >
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Clic para subir tu imagen
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Formatos: JPG, PNG, WEBP (máx. 10MB)
+                              </span>
+                            </label>
+                          </div>
+                          {sectionFileUploads[section.id] && (
+                            <div className="relative inline-block">
+                              <img
+                                src={sectionFileUploads[section.id].previewUrl}
+                                alt="Vista previa"
+                                className="w-32 h-32 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  URL.revokeObjectURL(sectionFileUploads[section.id].previewUrl);
+                                  setSectionFileUploads(prev => {
+                                    const next = { ...prev };
+                                    delete next[section.id];
+                                    return next;
+                                  });
+                                }}
+                                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              </button>
+                              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Imagen cargada
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {section.availableImages.map((image) => (
@@ -1046,10 +1144,11 @@ const ProductDetail = () => {
                     className="flex-1 text-xs md:text-sm"
                     size="sm"
                     onClick={addToCart}
+                    disabled={uploadingFile}
                   >
                     <ShoppingCart className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5" />
-                    <span className="hidden sm:inline">{t('buyNow')}</span>
-                    <span className="sm:hidden">{t('buy')}</span>
+                    <span className="hidden sm:inline">{uploadingFile ? 'Subiendo...' : t('buyNow')}</span>
+                    <span className="sm:hidden">{uploadingFile ? '...' : t('buy')}</span>
                   </Button>
                 )}
                 
