@@ -36,6 +36,17 @@ interface Color {
   hex_code: string;
 }
 
+type QuoteAnalysisResult = AnalysisResult & {
+  file: File;
+  analysisParams?: {
+    quantity: number;
+    materialId: string;
+    colorId: string;
+    supportsRequired: boolean;
+    layerHeight: number;
+  };
+};
+
 // Steps for 3D quote wizard
 const STEPS = ['upload', 'customize', 'shipping', 'review'] as const;
 type Step = typeof STEPS[number];
@@ -61,7 +72,7 @@ const Quotes = () => {
   
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<(AnalysisResult & { file: File }) | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<QuoteAnalysisResult | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [quantityInput, setQuantityInput] = useState("1");
   const [supportsRequired, setSupportsRequired] = useState<boolean | null>(null);
@@ -190,16 +201,17 @@ const Quotes = () => {
     }
   };
 
-  const handleAnalysisComplete = useCallback((result: AnalysisResult & { file: File }) => {
+  const handleAnalysisComplete = useCallback((result: QuoteAnalysisResult) => {
     const normalizedMaterialId = selectedMaterial || 'default';
     const normalizedColorId = selectedColor || '';
-    analysisParamsRef.current = {
+    const resolvedParams = result.analysisParams ?? {
       quantity,
       materialId: normalizedMaterialId,
       colorId: normalizedColorId,
       supportsRequired: supportsRequired ?? false,
       layerHeight
     };
+    analysisParamsRef.current = resolvedParams;
     setAnalysisResult(result);
   }, [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
 
@@ -251,29 +263,39 @@ const Quotes = () => {
     }
 
     const requestId = ++analysisRequestIdRef.current;
-
-    const recalculate = async () => {
-      try {
+    const debounceId = window.setTimeout(() => {
+      const recalculate = async () => {
         const fileURL = URL.createObjectURL(analysisResult.file);
-        const updatedAnalysis = await analyzeSTLFile(
-          fileURL,
-          normalizedMaterialId,
-          analysisResult.file.name,
-          nextParams.supportsRequired,
-          nextParams.layerHeight,
-          nextParams.quantity,
-          normalizedColorId || undefined
-        );
-        URL.revokeObjectURL(fileURL);
-        if (analysisRequestIdRef.current !== requestId) return;
-        analysisParamsRef.current = nextParams;
-        setAnalysisResult({ ...updatedAnalysis, file: analysisResult.file });
-      } catch (error) {
-        logger.error('Error recalculating quote analysis:', error);
-      }
-    };
+        try {
+          const updatedAnalysis = await analyzeSTLFile(
+            fileURL,
+            normalizedMaterialId,
+            analysisResult.file.name,
+            nextParams.supportsRequired,
+            nextParams.layerHeight,
+            nextParams.quantity,
+            normalizedColorId || undefined
+          );
+          if (analysisRequestIdRef.current !== requestId) return;
+          analysisParamsRef.current = nextParams;
+          setAnalysisResult({
+            ...updatedAnalysis,
+            file: analysisResult.file,
+            analysisParams: nextParams
+          });
+        } catch (error) {
+          logger.error('Error recalculating quote analysis:', error);
+        } finally {
+          URL.revokeObjectURL(fileURL);
+        }
+      };
 
-    recalculate();
+      recalculate();
+    }, 300);
+
+    return () => {
+      window.clearTimeout(debounceId);
+    };
   }, [analysisResult?.file, quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
 
   const handleFileQuote = async () => {
