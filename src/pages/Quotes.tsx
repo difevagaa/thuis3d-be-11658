@@ -36,15 +36,17 @@ interface Color {
   hex_code: string;
 }
 
+type QuoteAnalysisParams = {
+  quantity: number;
+  materialId: string;
+  colorId: string;
+  supportsRequired: boolean;
+  layerHeight: number;
+};
+
 type QuoteAnalysisResult = AnalysisResult & {
   file: File;
-  analysisParams?: {
-    quantity: number;
-    materialId: string;
-    colorId: string;
-    supportsRequired: boolean;
-    layerHeight: number;
-  };
+  analysisParams?: QuoteAnalysisParams;
 };
 
 // Steps for 3D quote wizard
@@ -56,13 +58,7 @@ const Quotes = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const isSubmittingRef = useRef(false);
-  const analysisParamsRef = useRef<{
-    quantity: number;
-    materialId: string;
-    colorId: string;
-    supportsRequired: boolean;
-    layerHeight: number;
-  } | null>(null);
+  const analysisParamsRef = useRef<QuoteAnalysisParams | null>(null);
   const analysisRequestIdRef = useRef(0);
   const { materials, availableColors, filterColorsByMaterial } = useMaterialColors();
   const { calculateShippingByPostalCode, getAvailableCountries } = useShippingCalculator();
@@ -202,20 +198,28 @@ const Quotes = () => {
   };
 
   const handleAnalysisComplete = useCallback((result: QuoteAnalysisResult) => {
-    const normalizedMaterialId = selectedMaterial || 'default';
-    const normalizedColorId = selectedColor || '';
-    const resolvedParams = result.analysisParams ?? {
-      quantity,
-      materialId: normalizedMaterialId,
-      colorId: normalizedColorId,
-      supportsRequired: supportsRequired ?? false,
-      layerHeight
-    };
+    const resolvedParams = result.analysisParams ?? buildAnalysisParams();
     analysisParamsRef.current = resolvedParams;
-    setAnalysisResult(result);
-  }, [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+    setAnalysisResult({
+      ...result,
+      analysisParams: resolvedParams
+    });
+  }, [buildAnalysisParams]);
 
-  const normalizeQuantity = (value: number) => Math.max(1, value);
+  const normalizeQuantity = (value: number) => {
+    if (!Number.isFinite(value) || Number.isNaN(value)) {
+      return 1;
+    }
+    return Math.max(1, Math.floor(value));
+  };
+
+  const buildAnalysisParams = useCallback((overrides: Partial<QuoteAnalysisParams> = {}) => ({
+    quantity: normalizeQuantity(overrides.quantity ?? quantity),
+    materialId: overrides.materialId ?? (selectedMaterial || 'default'),
+    colorId: overrides.colorId ?? (selectedColor || ''),
+    supportsRequired: overrides.supportsRequired ?? (supportsRequired ?? false),
+    layerHeight: overrides.layerHeight ?? layerHeight
+  }), [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
 
   const updateQuantity = (nextQuantity: number) => {
     const normalizedQuantity = normalizeQuantity(nextQuantity);
@@ -241,15 +245,7 @@ const Quotes = () => {
   useEffect(() => {
     if (!analysisResult?.file) return;
 
-    const normalizedMaterialId = selectedMaterial || 'default';
-    const normalizedColorId = selectedColor || '';
-    const nextParams = {
-      quantity,
-      materialId: normalizedMaterialId,
-      colorId: normalizedColorId,
-      supportsRequired: supportsRequired ?? false,
-      layerHeight
-    };
+    const nextParams = buildAnalysisParams();
 
     const lastParams = analysisParamsRef.current;
     if (lastParams
@@ -262,19 +258,20 @@ const Quotes = () => {
       return;
     }
 
-    const requestId = ++analysisRequestIdRef.current;
+    analysisRequestIdRef.current += 1;
+    const requestId = analysisRequestIdRef.current;
     const debounceId = window.setTimeout(() => {
       const recalculate = async () => {
         const fileURL = URL.createObjectURL(analysisResult.file);
         try {
           const updatedAnalysis = await analyzeSTLFile(
             fileURL,
-            normalizedMaterialId,
+            nextParams.materialId,
             analysisResult.file.name,
             nextParams.supportsRequired,
             nextParams.layerHeight,
             nextParams.quantity,
-            normalizedColorId || undefined
+            nextParams.colorId || undefined
           );
           if (analysisRequestIdRef.current !== requestId) return;
           analysisParamsRef.current = nextParams;
@@ -296,7 +293,7 @@ const Quotes = () => {
     return () => {
       window.clearTimeout(debounceId);
     };
-  }, [analysisResult?.file, quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+  }, [analysisResult?.file, buildAnalysisParams]);
 
   const handleFileQuote = async () => {
     if (isSubmittingRef.current || loading) return;

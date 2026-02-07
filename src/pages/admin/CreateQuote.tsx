@@ -125,10 +125,6 @@ export default function CreateQuote() {
 
   const handleQuantityChange = (value: string) => {
     setQuantityInput(value);
-    const parsed = parseInt(value, 10);
-    if (!Number.isNaN(parsed) && parsed > 0) {
-      setQuoteData(prev => ({ ...prev, quantity: parsed }));
-    }
   };
 
   const handleQuantityBlur = () => {
