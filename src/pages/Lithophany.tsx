@@ -51,6 +51,8 @@ const Lithophany = () => {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [selectedLamp, setSelectedLamp] = useState<LampTemplate | null>(null);
   const [lampDimensions, setLampDimensions] = useState({ width: 100, height: 100 });
+  const [customText, setCustomText] = useState('');
+  const [quantity, setQuantity] = useState(1);
   
   const {
     editorSettings,
@@ -119,8 +121,8 @@ const Lithophany = () => {
       <SEOHead
         title={language === 'es' ? 'Crear Litofanía 3D Personalizada' : 'Create Custom 3D Lithophane'}
         description={language === 'es' 
-          ? 'Crea tu propia lámpara de litofanía 3D personalizada. Sube tu imagen, edítala con más de 300 opciones y genera tu archivo STL listo para imprimir.'
-          : 'Create your own custom 3D lithophane lamp. Upload your image, edit it with 300+ options and generate your print-ready STL file.'}
+          ? 'Crea tu propia lámpara de litofanía 3D personalizada. Sube tu imagen, personalízala y genera tu archivo STL listo para imprimir en Bambu Lab.'
+          : 'Create your own custom 3D lithophane lamp. Upload your image, customize it and generate your print-ready STL file for Bambu Lab.'}
       />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -130,8 +132,8 @@ const Lithophany = () => {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {language === 'es' 
-              ? 'Transforma tus fotos en impresionantes lámparas de litofanía 3D. Edita, personaliza y obtén tu archivo listo para imprimir.'
-              : 'Transform your photos into stunning 3D lithophane lamps. Edit, customize and get your print-ready file.'}
+              ? 'Transforma tus fotos en impresionantes lámparas de litofanía 3D. Personaliza, elige tu lámpara y obtén tu archivo listo para imprimir en Bambu Lab.'
+              : 'Transform your photos into stunning 3D lithophane lamps. Customize, choose your lamp and get your print-ready file for Bambu Lab.'}
           </p>
         </div>
 
@@ -185,12 +187,16 @@ const Lithophany = () => {
                   dimensions={lampDimensions}
                   onDimensionsChange={handleDimensionsChange}
                   isLoading={isLoadingTemplates}
+                  customText={customText}
+                  onCustomTextChange={setCustomText}
                 />
               </div>
               <div>
                 <LithophanyPricing
                   selectedLamp={selectedLamp}
                   dimensions={lampDimensions}
+                  quantity={quantity}
+                  onQuantityChange={setQuantity}
                 />
               </div>
             </div>
@@ -213,12 +219,15 @@ const Lithophany = () => {
                     processedImage={processedImage}
                     lampTemplate={selectedLamp}
                     dimensions={lampDimensions}
+                    customText={customText}
                   />
                 </div>
                 <div className="space-y-6">
                   <LithophanyPricing
                     selectedLamp={selectedLamp}
                     dimensions={lampDimensions}
+                    quantity={quantity}
+                    onQuantityChange={setQuantity}
                   />
                   <Button 
                     onClick={handleProceedToCheckout} 
@@ -240,6 +249,8 @@ const Lithophany = () => {
                 lampTemplate={selectedLamp}
                 dimensions={lampDimensions}
                 editorSettings={editorSettings}
+                customText={customText}
+                quantity={quantity}
               />
             )}
           </TabsContent>

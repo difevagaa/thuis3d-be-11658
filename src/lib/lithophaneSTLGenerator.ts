@@ -151,7 +151,7 @@ function createDepthMap(
       // Convert luminance to depth
       // Bright areas = thin (more light passes through)
       // Dark areas = thick (less light passes through)
-      let depth = negative
+      const depth = negative
         ? minThickness + (luminance * thicknessRange)
         : minThickness + ((1 - luminance) * thicknessRange);
       
@@ -260,6 +260,9 @@ function generateGeometry(
     addBorder(triangles, gridWidth, gridHeight, dimensions, border, depthMap, applyShape);
   }
   
+  // Add side walls to create a watertight solid mesh
+  addSideWalls(triangles, gridWidth, gridHeight, dimensions, depthMap, applyShape);
+  
   // Add back plate (flat backing)
   addBackPlate(triangles, gridWidth, gridHeight, dimensions, settings.maxThickness, applyShape);
   
@@ -276,46 +279,156 @@ function getShapeFunction(
   curveAmount: number
 ): (v: Vector3) => Vector3 {
   switch (shapeType) {
-    case 'curved_soft':
+    case 'curved_soft': {
+      return (v: Vector3) => ({
+        x: v.x,
+        y: v.y,
+        z: v.z + Math.sin(((v.x + width / 2) / width) * Math.PI) * width * 0.15
+      });
+    }
     case 'curved_deep':
-    case 'half_cylinder':
-      // Cylindrical curve along one axis
-      const radius = curveAmount > 0 ? width / (curveAmount * Math.PI) : width * 100;
+    case 'arch': {
+      return (v: Vector3) => ({
+        x: v.x,
+        y: v.y,
+        z: v.z + Math.sin(((v.x + width / 2) / width) * Math.PI) * width * 0.3
+      });
+    }
+    case 'half_cylinder': {
+      const radius = width / Math.PI;
       return (v: Vector3) => {
-        const angle = v.x / radius;
+        const angle = ((v.x + width / 2) / width) * Math.PI;
         return {
-          x: radius * Math.sin(angle),
+          x: Math.cos(angle) * (radius + v.z),
           y: v.y,
-          z: v.z + radius * (1 - Math.cos(angle))
+          z: Math.sin(angle) * (radius + v.z)
         };
       };
-    
+    }
     case 'cylinder_small':
     case 'cylinder_medium':
-    case 'cylinder_large':
-      // Full cylinder
+    case 'cylinder_large': {
       const cylRadius = width / (2 * Math.PI);
       return (v: Vector3) => {
-        const angle = v.x / cylRadius;
+        const angle = ((v.x + width / 2) / width) * Math.PI * 2;
         return {
-          x: cylRadius * Math.sin(angle),
-          y: cylRadius * Math.cos(angle),
-          z: v.z + v.y
+          x: Math.cos(angle) * (cylRadius + v.z),
+          y: v.y,
+          z: Math.sin(angle) * (cylRadius + v.z)
         };
       };
-    
-    case 'wave':
-      // Wavy surface
+    }
+    case 'hexagonal': {
+      const segments = 6;
+      const radius = width / (2 * Math.PI);
       return (v: Vector3) => {
-        const waveFreq = 2;
-        const waveAmp = height * 0.1 * curveAmount;
+        const angle = ((v.x + width / 2) / width) * Math.PI * 2;
+        const segAngle = Math.PI * 2 / segments;
+        const seg = Math.floor(angle / segAngle);
+        const localAngle = seg * segAngle + (angle % segAngle);
         return {
-          x: v.x,
-          y: v.y + Math.sin(v.x / width * Math.PI * 2 * waveFreq) * waveAmp,
-          z: v.z
+          x: Math.cos(localAngle) * (radius + v.z),
+          y: v.y,
+          z: Math.sin(localAngle) * (radius + v.z)
         };
       };
-    
+    }
+    case 'octagonal': {
+      const segments = 8;
+      const radius = width / (2 * Math.PI);
+      return (v: Vector3) => {
+        const angle = ((v.x + width / 2) / width) * Math.PI * 2;
+        const segAngle = Math.PI * 2 / segments;
+        const seg = Math.floor(angle / segAngle);
+        const localAngle = seg * segAngle + (angle % segAngle);
+        return {
+          x: Math.cos(localAngle) * (radius + v.z),
+          y: v.y,
+          z: Math.sin(localAngle) * (radius + v.z)
+        };
+      };
+    }
+    case 'moon': {
+      const cx = 0, cy = 0;
+      const rad = Math.min(width, height) / 2;
+      return (v: Vector3) => {
+        const dx = v.x - cx, dy = v.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const sphereZ = dist < rad ? Math.sqrt(Math.max(0, rad * rad - dist * dist)) * 0.35 : 0;
+        return { x: v.x, y: v.y, z: v.z + sphereZ };
+      };
+    }
+    case 'wave': {
+      return (v: Vector3) => ({
+        x: v.x,
+        y: v.y,
+        z: v.z + Math.sin(((v.x + width / 2) / width) * Math.PI * 3) * width * 0.08
+      });
+    }
+    case 'heart': {
+      const hw = width / 2, hh = height / 2;
+      return (v: Vector3) => {
+        const nx = v.x / hw, ny = v.y / hh;
+        const bulge = 0.1 * width * Math.max(0, 1 - nx * nx - ny * ny);
+        return { x: v.x, y: v.y, z: v.z + bulge };
+      };
+    }
+    case 'star': {
+      const maxDist = Math.sqrt((width / 2) * (width / 2) + (height / 2) * (height / 2));
+      return (v: Vector3) => {
+        const dist = Math.sqrt(v.x * v.x + v.y * v.y);
+        const bulge = 0.05 * width * Math.max(0, 1 - dist / maxDist);
+        return { x: v.x, y: v.y, z: v.z + bulge };
+      };
+    }
+    case 'diamond': {
+      return (v: Vector3) => {
+        const dx = Math.abs(v.x) / (width / 2);
+        const dy = Math.abs(v.y) / (height / 2);
+        const peak = 0.1 * width * Math.max(0, 1 - Math.max(dx, dy));
+        return { x: v.x, y: v.y, z: v.z + peak };
+      };
+    }
+    case 'cloud': {
+      return (v: Vector3) => {
+        const bump1 = Math.sin(((v.x + width / 2) / width) * Math.PI * 2) * Math.sin(((v.y + height / 2) / height) * Math.PI);
+        const bump2 = Math.sin(((v.x + width / 2) / width) * Math.PI * 3) * Math.cos(((v.y + height / 2) / height) * Math.PI * 1.5);
+        const cloudZ = (bump1 + bump2 * 0.5) * width * 0.06;
+        return { x: v.x, y: v.y, z: v.z + cloudZ };
+      };
+    }
+    case 'gothic': {
+      return (v: Vector3) => {
+        const ny = (v.y + height / 2) / height;
+        if (ny > 0.5) {
+          const prog = (ny - 0.5) * 2;
+          const nx = Math.abs(v.x) / (width / 2);
+          const archZ = prog * (1 - nx) * width * 0.15;
+          return { x: v.x, y: v.y, z: v.z + archZ };
+        }
+        return v;
+      };
+    }
+    case 'ornamental':
+    case 'framed_square': {
+      return (v: Vector3) => {
+        const edgeDist = Math.min(
+          v.x + width / 2, width / 2 - v.x,
+          v.y + height / 2, height / 2 - v.y
+        );
+        const maxEdge = Math.min(width, height) * 0.1;
+        const frameZ = edgeDist < maxEdge ? (maxEdge - edgeDist) * 0.05 : 0;
+        return { x: v.x, y: v.y, z: v.z + frameZ };
+      };
+    }
+    case 'circular': {
+      const rad = Math.min(width, height) / 2;
+      return (v: Vector3) => {
+        const dist = Math.sqrt(v.x * v.x + v.y * v.y);
+        const domeZ = dist < rad ? Math.sqrt(Math.max(0, rad * rad - dist * dist)) * 0.1 : 0;
+        return { x: v.x, y: v.y, z: v.z + domeZ };
+      };
+    }
     // For flat shapes and others, no transformation
     default:
       return (v: Vector3) => v;
@@ -348,6 +461,82 @@ function createTriangle(v1: Vector3, v2: Vector3, v3: Vector3): Triangle {
 }
 
 /**
+ * Add side walls connecting front (depth) surface to back plate
+ * This makes the STL a watertight solid suitable for 3D printing
+ */
+function addSideWalls(
+  triangles: Triangle[],
+  gridWidth: number,
+  gridHeight: number,
+  dimensions: { width: number; height: number },
+  depthMap: number[][],
+  applyShape: (v: Vector3) => Vector3
+): void {
+  const { width, height } = dimensions;
+  const stepX = width / (gridWidth - 1);
+  const stepY = height / (gridHeight - 1);
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const maxZ = Math.max(...depthMap.flat());
+
+  // Left side wall (x = 0)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const z0 = depthMap[y][0];
+    const z1 = depthMap[y + 1][0];
+    const front0 = applyShape({ x: -halfW, y: y0, z: z0 });
+    const front1 = applyShape({ x: -halfW, y: y1, z: z1 });
+    const back0 = applyShape({ x: -halfW, y: y0, z: maxZ });
+    const back1 = applyShape({ x: -halfW, y: y1, z: maxZ });
+    triangles.push(createTriangle(back0, front0, front1));
+    triangles.push(createTriangle(back0, front1, back1));
+  }
+
+  // Right side wall (x = max)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const z0 = depthMap[y][gridWidth - 1];
+    const z1 = depthMap[y + 1][gridWidth - 1];
+    const front0 = applyShape({ x: halfW, y: y0, z: z0 });
+    const front1 = applyShape({ x: halfW, y: y1, z: z1 });
+    const back0 = applyShape({ x: halfW, y: y0, z: maxZ });
+    const back1 = applyShape({ x: halfW, y: y1, z: maxZ });
+    triangles.push(createTriangle(front0, back0, back1));
+    triangles.push(createTriangle(front0, back1, front1));
+  }
+
+  // Bottom side wall (y = 0)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const z0 = depthMap[0][x];
+    const z1 = depthMap[0][x + 1];
+    const front0 = applyShape({ x: x0, y: -halfH, z: z0 });
+    const front1 = applyShape({ x: x1, y: -halfH, z: z1 });
+    const back0 = applyShape({ x: x0, y: -halfH, z: maxZ });
+    const back1 = applyShape({ x: x1, y: -halfH, z: maxZ });
+    triangles.push(createTriangle(front0, front1, back1));
+    triangles.push(createTriangle(front0, back1, back0));
+  }
+
+  // Top side wall (y = max)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const z0 = depthMap[gridHeight - 1][x];
+    const z1 = depthMap[gridHeight - 1][x + 1];
+    const front0 = applyShape({ x: x0, y: halfH, z: z0 });
+    const front1 = applyShape({ x: x1, y: halfH, z: z1 });
+    const back0 = applyShape({ x: x0, y: halfH, z: maxZ });
+    const back1 = applyShape({ x: x1, y: halfH, z: maxZ });
+    triangles.push(createTriangle(back0, front1, front0));
+    triangles.push(createTriangle(back0, back1, front1));
+  }
+}
+
+/**
  * Add border around the lithophane
  */
 function addBorder(
@@ -359,8 +548,96 @@ function addBorder(
   depthMap: number[][],
   applyShape: (v: Vector3) => Vector3
 ): void {
-  // TODO: Implement border generation
-  // This would create extruded edges around the perimeter
+  const { width, height } = dimensions;
+  const stepX = width / (gridWidth - 1);
+  const stepY = height / (gridHeight - 1);
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const maxZ = Math.max(...depthMap.flat());
+
+  // Build border walls on each edge connecting front face to back face at full thickness
+
+  // Bottom edge (y = 0)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const y0 = -halfH;
+    const z0 = depthMap[0][x];
+    const z1 = depthMap[0][x + 1];
+    // Front-to-border-top quad
+    const p1 = applyShape({ x: x0, y: y0 - borderWidth, z: maxZ });
+    const p2 = applyShape({ x: x1, y: y0 - borderWidth, z: maxZ });
+    const p3 = applyShape({ x: x1, y: y0, z: z1 });
+    const p4 = applyShape({ x: x0, y: y0, z: z0 });
+    triangles.push(createTriangle(p1, p2, p3));
+    triangles.push(createTriangle(p1, p3, p4));
+    // Border outer face
+    const p5 = applyShape({ x: x0, y: y0 - borderWidth, z: 0 });
+    const p6 = applyShape({ x: x1, y: y0 - borderWidth, z: 0 });
+    triangles.push(createTriangle(p5, p1, p4));
+    triangles.push(createTriangle(p5, p4, applyShape({ x: x0, y: y0, z: 0 })));
+    triangles.push(createTriangle(p6, p5, applyShape({ x: x1, y: y0, z: 0 })));
+    // Top of border
+    triangles.push(createTriangle(p1, p5, p6));
+    triangles.push(createTriangle(p1, p6, p2));
+  }
+
+  // Top edge (y = max)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const y0 = halfH;
+    const z0 = depthMap[gridHeight - 1][x];
+    const z1 = depthMap[gridHeight - 1][x + 1];
+    const p1 = applyShape({ x: x0, y: y0, z: z0 });
+    const p2 = applyShape({ x: x1, y: y0, z: z1 });
+    const p3 = applyShape({ x: x1, y: y0 + borderWidth, z: maxZ });
+    const p4 = applyShape({ x: x0, y: y0 + borderWidth, z: maxZ });
+    triangles.push(createTriangle(p1, p2, p3));
+    triangles.push(createTriangle(p1, p3, p4));
+    const p5 = applyShape({ x: x0, y: y0 + borderWidth, z: 0 });
+    const p6 = applyShape({ x: x1, y: y0 + borderWidth, z: 0 });
+    triangles.push(createTriangle(p4, p3, p6));
+    triangles.push(createTriangle(p4, p6, p5));
+  }
+
+  // Left edge (x = 0)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const x0 = -halfW;
+    const z0 = depthMap[y][0];
+    const z1 = depthMap[y + 1][0];
+    const p1 = applyShape({ x: x0 - borderWidth, y: y0, z: maxZ });
+    const p2 = applyShape({ x: x0 - borderWidth, y: y1, z: maxZ });
+    const p3 = applyShape({ x: x0, y: y1, z: z1 });
+    const p4 = applyShape({ x: x0, y: y0, z: z0 });
+    triangles.push(createTriangle(p1, p2, p3));
+    triangles.push(createTriangle(p1, p3, p4));
+    const p5 = applyShape({ x: x0 - borderWidth, y: y0, z: 0 });
+    const p6 = applyShape({ x: x0 - borderWidth, y: y1, z: 0 });
+    triangles.push(createTriangle(p1, p5, p6));
+    triangles.push(createTriangle(p1, p6, p2));
+  }
+
+  // Right edge (x = max)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const x0 = halfW;
+    const z0 = depthMap[y][gridWidth - 1];
+    const z1 = depthMap[y + 1][gridWidth - 1];
+    const p1 = applyShape({ x: x0, y: y0, z: z0 });
+    const p2 = applyShape({ x: x0, y: y1, z: z1 });
+    const p3 = applyShape({ x: x0 + borderWidth, y: y1, z: maxZ });
+    const p4 = applyShape({ x: x0 + borderWidth, y: y0, z: maxZ });
+    triangles.push(createTriangle(p1, p2, p3));
+    triangles.push(createTriangle(p1, p3, p4));
+    const p5 = applyShape({ x: x0 + borderWidth, y: y0, z: 0 });
+    const p6 = applyShape({ x: x0 + borderWidth, y: y1, z: 0 });
+    triangles.push(createTriangle(p4, p3, p6));
+    triangles.push(createTriangle(p4, p6, p5));
+  }
 }
 
 /**
@@ -375,18 +652,30 @@ function addBackPlate(
   applyShape: (v: Vector3) => Vector3
 ): void {
   const { width, height } = dimensions;
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const stepX = width / (gridWidth - 1);
+  const stepY = height / (gridHeight - 1);
   
-  // Create flat back at max thickness
-  const v1 = applyShape({ x: -halfWidth, y: -halfHeight, z: thickness });
-  const v2 = applyShape({ x: halfWidth, y: -halfHeight, z: thickness });
-  const v3 = applyShape({ x: halfWidth, y: halfHeight, z: thickness });
-  const v4 = applyShape({ x: -halfWidth, y: halfHeight, z: thickness });
-  
-  // Two triangles for the back face
-  triangles.push(createTriangle(v1, v3, v2));
-  triangles.push(createTriangle(v1, v4, v3));
+  // Create back plate as a grid matching the front surface shape
+  // All at max thickness (z = thickness) so the back is flat relative to shape
+  for (let y = 0; y < gridHeight - 1; y++) {
+    for (let x = 0; x < gridWidth - 1; x++) {
+      const x0 = x * stepX - halfW;
+      const x1 = (x + 1) * stepX - halfW;
+      const y0 = y * stepY - halfH;
+      const y1 = (y + 1) * stepY - halfH;
+
+      const v00 = applyShape({ x: x0, y: y0, z: thickness });
+      const v10 = applyShape({ x: x1, y: y0, z: thickness });
+      const v01 = applyShape({ x: x0, y: y1, z: thickness });
+      const v11 = applyShape({ x: x1, y: y1, z: thickness });
+
+      // Back face winding is reversed (normals point inward)
+      triangles.push(createTriangle(v00, v11, v10));
+      triangles.push(createTriangle(v00, v01, v11));
+    }
+  }
 }
 
 /**
