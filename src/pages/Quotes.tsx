@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, startTransition, useRef } from "react";
+import { useState, useEffect, lazy, Suspense, startTransition, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { STLUploader } from "@/components/STLUploader";
-import { AnalysisResult } from "@/lib/stlAnalyzer";
+import { analyzeSTLFile, AnalysisResult } from "@/lib/stlAnalyzer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
-import { useQuantityDiscounts } from "@/hooks/useQuantityDiscounts";
 import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -46,9 +45,16 @@ const Quotes = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const isSubmittingRef = useRef(false);
+  const analysisParamsRef = useRef<{
+    quantity: number;
+    materialId: string;
+    colorId: string;
+    supportsRequired: boolean;
+    layerHeight: number;
+  } | null>(null);
+  const analysisRequestIdRef = useRef(0);
   const { materials, availableColors, filterColorsByMaterial } = useMaterialColors();
   const { calculateShippingByPostalCode, getAvailableCountries } = useShippingCalculator();
-  const { calculateDiscount } = useQuantityDiscounts();
   
   // Wizard step state
   const [currentStep, setCurrentStep] = useState<Step>('upload');
@@ -57,6 +63,7 @@ const Quotes = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [analysisResult, setAnalysisResult] = useState<(AnalysisResult & { file: File }) | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [supportsRequired, setSupportsRequired] = useState<boolean | null>(null);
   const [serviceFiles, setServiceFiles] = useState<File[]>([]);
   const [fileDescription, setFileDescription] = useState('');
@@ -183,6 +190,94 @@ const Quotes = () => {
     }
   };
 
+  const handleAnalysisComplete = useCallback((result: AnalysisResult & { file: File }) => {
+    const normalizedMaterialId = selectedMaterial || 'default';
+    const normalizedColorId = selectedColor || '';
+    analysisParamsRef.current = {
+      quantity,
+      materialId: normalizedMaterialId,
+      colorId: normalizedColorId,
+      supportsRequired: supportsRequired ?? false,
+      layerHeight
+    };
+    setAnalysisResult(result);
+  }, [quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+
+  const updateQuantity = (nextQuantity: number) => {
+    const normalizedQuantity = Math.max(1, nextQuantity);
+    setQuantity(normalizedQuantity);
+    setQuantityInput(String(normalizedQuantity));
+  };
+
+  const handleQuantityInputChange = (value: string) => {
+    setQuantityInput(value);
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      setQuantity(parsed);
+    }
+  };
+
+  const handleQuantityInputBlur = () => {
+    const parsed = parseInt(quantityInput, 10);
+    if (Number.isNaN(parsed) || parsed < 1) {
+      setQuantity(1);
+      setQuantityInput("1");
+      return;
+    }
+    setQuantity(parsed);
+    setQuantityInput(String(parsed));
+  };
+
+  useEffect(() => {
+    if (!analysisResult?.file) return;
+
+    const normalizedMaterialId = selectedMaterial || 'default';
+    const normalizedColorId = selectedColor || '';
+    const nextParams = {
+      quantity,
+      materialId: normalizedMaterialId,
+      colorId: normalizedColorId,
+      supportsRequired: supportsRequired ?? false,
+      layerHeight
+    };
+
+    const lastParams = analysisParamsRef.current;
+    if (lastParams
+      && lastParams.quantity === nextParams.quantity
+      && lastParams.materialId === nextParams.materialId
+      && lastParams.colorId === nextParams.colorId
+      && lastParams.supportsRequired === nextParams.supportsRequired
+      && lastParams.layerHeight === nextParams.layerHeight
+    ) {
+      return;
+    }
+
+    const requestId = ++analysisRequestIdRef.current;
+
+    const recalculate = async () => {
+      try {
+        const fileURL = URL.createObjectURL(analysisResult.file);
+        const updatedAnalysis = await analyzeSTLFile(
+          fileURL,
+          normalizedMaterialId,
+          '',
+          nextParams.supportsRequired,
+          nextParams.layerHeight,
+          nextParams.quantity,
+          normalizedColorId || undefined
+        );
+        URL.revokeObjectURL(fileURL);
+        if (analysisRequestIdRef.current !== requestId) return;
+        analysisParamsRef.current = nextParams;
+        setAnalysisResult({ ...updatedAnalysis, file: analysisResult.file });
+      } catch (error) {
+        logger.error('Error recalculating quote analysis:', error);
+      }
+    };
+
+    recalculate();
+  }, [analysisResult?.file, quantity, selectedMaterial, selectedColor, supportsRequired, layerHeight]);
+
   const handleFileQuote = async () => {
     if (isSubmittingRef.current || loading) return;
     isSubmittingRef.current = true;
@@ -257,8 +352,7 @@ const Quotes = () => {
           }, { onConflict: 'id' });
       }
 
-      const discount = calculateDiscount(quantity, analysisResult?.estimatedTotal || 0);
-      const finalPrice = discount ? discount.finalPrice : (analysisResult?.estimatedTotal || 0);
+      const finalPrice = analysisResult?.estimatedTotal || 0;
 
       let pendingStatusId: string;
       const { data, error: statusError } = await (supabase as any)
@@ -290,15 +384,7 @@ const Quotes = () => {
         estimated_price: finalPrice,
         calculation_details: analysisResult ? {
           dimensions: analysisResult.dimensions,
-          preview: analysisResult.preview,
-          ...(discount && {
-            quantity_discount: {
-              original_price: discount.originalPrice,
-              discount_amount: discount.discountAmount,
-              discount_tier: discount.tierName,
-              discount_description: discount.tierDescription
-            }
-          })
+          preview: analysisResult.preview
         } : null,
         supports_required: supportsRequired,
         layer_height: layerHeight,
@@ -537,15 +623,15 @@ const Quotes = () => {
                   <CardDescription>{t('fileQuoteDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <STLUploader
-                    materialId={selectedMaterial}
-                    colorId={selectedColor}
-                    supportsRequired={supportsRequired || false}
-                    layerHeight={layerHeight}
-                    quantity={quantity}
-                    onAnalysisComplete={setAnalysisResult}
-                    onSupportsDetected={(needsSupports) => setSupportsRequired(needsSupports)}
-                  />
+                    <STLUploader
+                      materialId={selectedMaterial}
+                      colorId={selectedColor}
+                      supportsRequired={supportsRequired || false}
+                      layerHeight={layerHeight}
+                      quantity={quantity}
+                      onAnalysisComplete={handleAnalysisComplete}
+                      onSupportsDetected={(needsSupports) => setSupportsRequired(needsSupports)}
+                    />
                   
                   {analysisResult && (
                     <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200">
@@ -631,7 +717,7 @@ const Quotes = () => {
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          onClick={() => updateQuantity(quantity - 1)}
                           disabled={quantity <= 1}
                         >
                           -
@@ -640,15 +726,16 @@ const Quotes = () => {
                           type="number"
                           min="1"
                           max="999"
-                          value={quantity}
-                          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          value={quantityInput}
+                          onChange={(e) => handleQuantityInputChange(e.target.value)}
+                          onBlur={handleQuantityInputBlur}
                           className="w-20 text-center"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setQuantity(quantity + 1)}
+                          onClick={() => updateQuantity(quantity + 1)}
                         >
                           +
                         </Button>
