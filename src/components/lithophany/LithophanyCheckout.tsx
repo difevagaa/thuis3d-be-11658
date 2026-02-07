@@ -140,7 +140,7 @@ export const LithophanyCheckout = ({
           light_hole_depth_mm: 10,
           calculated_price: calculatePrice(),
           notes: notes,
-          status: 'pending'
+          status: 'processing'
         })
         .select()
         .single();
@@ -196,8 +196,8 @@ export const LithophanyCheckout = ({
             </h2>
             <p className="text-muted-foreground">
               {language === 'es' 
-                ? 'Tu litofanía ha sido guardada. Procede al pago para completar tu pedido.'
-                : 'Your lithophane has been saved. Proceed to payment to complete your order.'}
+                ? 'Tu litofanía está en proceso de generación. Procede al pago para completar tu pedido.'
+                : 'Your lithophane is being generated. Proceed to payment to complete your order.'}
             </p>
           </div>
 

@@ -900,7 +900,7 @@ serve(async (req) => {
         lithophany_stl_url: lithophanyUrl.publicUrl,
         base_stl_url: baseUrl,
         processed_at: new Date().toISOString(),
-        status: 'processed'
+        status: 'ready'
       })
       .eq('id', orderId);
     

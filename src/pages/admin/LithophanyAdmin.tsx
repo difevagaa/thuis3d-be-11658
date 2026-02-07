@@ -21,6 +21,8 @@ import {
   RefreshCw,
   FileDown,
   Layers,
+  Printer,
+  Truck,
   User,
   Calendar,
   DollarSign,
@@ -50,19 +52,23 @@ interface LithophanyOrder {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
+  draft: "bg-yellow-100 text-yellow-800",
   processing: "bg-blue-100 text-blue-800",
-  processed: "bg-green-100 text-green-800",
+  ready: "bg-green-100 text-green-800",
   paid: "bg-emerald-100 text-emerald-800",
+  printing: "bg-purple-100 text-purple-800",
+  shipped: "bg-indigo-100 text-indigo-800",
   completed: "bg-primary/10 text-primary",
   cancelled: "bg-red-100 text-red-800",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
-  pending: <Clock className="h-3 w-3" />,
+  draft: <Clock className="h-3 w-3" />,
   processing: <Loader2 className="h-3 w-3 animate-spin" />,
-  processed: <CheckCircle2 className="h-3 w-3" />,
+  ready: <CheckCircle2 className="h-3 w-3" />,
   paid: <DollarSign className="h-3 w-3" />,
+  printing: <Printer className="h-3 w-3" />,
+  shipped: <Truck className="h-3 w-3" />,
   completed: <CheckCircle2 className="h-3 w-3" />,
   cancelled: <XCircle className="h-3 w-3" />,
 };
@@ -138,14 +144,16 @@ const LithophanyAdmin = () => {
 
   const getStatusLabel = (status: string | null) => {
     const labels: Record<string, { en: string; es: string }> = {
-      pending: { en: 'Pending', es: 'Pendiente' },
+      draft: { en: 'Draft', es: 'Borrador' },
       processing: { en: 'Processing', es: 'Procesando' },
-      processed: { en: 'Processed', es: 'Procesado' },
+      ready: { en: 'Ready', es: 'Listo' },
       paid: { en: 'Paid', es: 'Pagado' },
+      printing: { en: 'Printing', es: 'Imprimiendo' },
+      shipped: { en: 'Shipped', es: 'Enviado' },
       completed: { en: 'Completed', es: 'Completado' },
       cancelled: { en: 'Cancelled', es: 'Cancelado' },
     };
-    return labels[status || 'pending']?.[language === 'es' ? 'es' : 'en'] || status;
+    return labels[status || 'draft']?.[language === 'es' ? 'es' : 'en'] || status;
   };
 
   return (
@@ -186,10 +194,12 @@ const LithophanyAdmin = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                <SelectItem value="pending">{language === 'es' ? 'Pendientes' : 'Pending'}</SelectItem>
+                <SelectItem value="draft">{language === 'es' ? 'Borradores' : 'Drafts'}</SelectItem>
                 <SelectItem value="processing">{language === 'es' ? 'Procesando' : 'Processing'}</SelectItem>
-                <SelectItem value="processed">{language === 'es' ? 'Procesados' : 'Processed'}</SelectItem>
+                <SelectItem value="ready">{language === 'es' ? 'Listos' : 'Ready'}</SelectItem>
                 <SelectItem value="paid">{language === 'es' ? 'Pagados' : 'Paid'}</SelectItem>
+                <SelectItem value="printing">{language === 'es' ? 'Imprimiendo' : 'Printing'}</SelectItem>
+                <SelectItem value="shipped">{language === 'es' ? 'Enviados' : 'Shipped'}</SelectItem>
                 <SelectItem value="completed">{language === 'es' ? 'Completados' : 'Completed'}</SelectItem>
               </SelectContent>
             </Select>
@@ -247,9 +257,9 @@ const LithophanyAdmin = () => {
                         €{(order.final_price || order.calculated_price || 0).toFixed(2)}
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusColors[order.status || 'pending']}>
+                        <Badge className={statusColors[order.status || 'draft']}>
                           <span className="flex items-center gap-1">
-                            {statusIcons[order.status || 'pending']}
+                            {statusIcons[order.status || 'draft']}
                             {getStatusLabel(order.status)}
                           </span>
                         </Badge>
@@ -354,7 +364,7 @@ const LithophanyAdmin = () => {
                                       {language === 'es' ? 'Cambiar Estado' : 'Change Status'}
                                     </p>
                                     <div className="flex flex-wrap gap-2">
-                                      {['pending', 'processing', 'processed', 'paid', 'completed', 'cancelled'].map(status => (
+                                      {['draft', 'processing', 'ready', 'paid', 'printing', 'shipped', 'completed', 'cancelled'].map(status => (
                                         <Button
                                           key={status}
                                           variant={selectedOrder.status === status ? "default" : "outline"}
