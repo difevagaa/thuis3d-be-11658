@@ -151,7 +151,7 @@ function createDepthMap(
       // Convert luminance to depth
       // Bright areas = thin (more light passes through)
       // Dark areas = thick (less light passes through)
-      let depth = negative
+      const depth = negative
         ? minThickness + (luminance * thicknessRange)
         : minThickness + ((1 - luminance) * thicknessRange);
       
@@ -259,6 +259,9 @@ function generateGeometry(
   if (border > 0) {
     addBorder(triangles, gridWidth, gridHeight, dimensions, border, depthMap, applyShape);
   }
+  
+  // Add side walls to create a watertight solid mesh
+  addSideWalls(triangles, gridWidth, gridHeight, dimensions, depthMap, applyShape);
   
   // Add back plate (flat backing)
   addBackPlate(triangles, gridWidth, gridHeight, dimensions, settings.maxThickness, applyShape);
@@ -458,6 +461,82 @@ function createTriangle(v1: Vector3, v2: Vector3, v3: Vector3): Triangle {
 }
 
 /**
+ * Add side walls connecting front (depth) surface to back plate
+ * This makes the STL a watertight solid suitable for 3D printing
+ */
+function addSideWalls(
+  triangles: Triangle[],
+  gridWidth: number,
+  gridHeight: number,
+  dimensions: { width: number; height: number },
+  depthMap: number[][],
+  applyShape: (v: Vector3) => Vector3
+): void {
+  const { width, height } = dimensions;
+  const stepX = width / (gridWidth - 1);
+  const stepY = height / (gridHeight - 1);
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const maxZ = Math.max(...depthMap.flat());
+
+  // Left side wall (x = 0)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const z0 = depthMap[y][0];
+    const z1 = depthMap[y + 1][0];
+    const front0 = applyShape({ x: -halfW, y: y0, z: z0 });
+    const front1 = applyShape({ x: -halfW, y: y1, z: z1 });
+    const back0 = applyShape({ x: -halfW, y: y0, z: maxZ });
+    const back1 = applyShape({ x: -halfW, y: y1, z: maxZ });
+    triangles.push(createTriangle(back0, front0, front1));
+    triangles.push(createTriangle(back0, front1, back1));
+  }
+
+  // Right side wall (x = max)
+  for (let y = 0; y < gridHeight - 1; y++) {
+    const y0 = y * stepY - halfH;
+    const y1 = (y + 1) * stepY - halfH;
+    const z0 = depthMap[y][gridWidth - 1];
+    const z1 = depthMap[y + 1][gridWidth - 1];
+    const front0 = applyShape({ x: halfW, y: y0, z: z0 });
+    const front1 = applyShape({ x: halfW, y: y1, z: z1 });
+    const back0 = applyShape({ x: halfW, y: y0, z: maxZ });
+    const back1 = applyShape({ x: halfW, y: y1, z: maxZ });
+    triangles.push(createTriangle(front0, back0, back1));
+    triangles.push(createTriangle(front0, back1, front1));
+  }
+
+  // Bottom side wall (y = 0)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const z0 = depthMap[0][x];
+    const z1 = depthMap[0][x + 1];
+    const front0 = applyShape({ x: x0, y: -halfH, z: z0 });
+    const front1 = applyShape({ x: x1, y: -halfH, z: z1 });
+    const back0 = applyShape({ x: x0, y: -halfH, z: maxZ });
+    const back1 = applyShape({ x: x1, y: -halfH, z: maxZ });
+    triangles.push(createTriangle(front0, front1, back1));
+    triangles.push(createTriangle(front0, back1, back0));
+  }
+
+  // Top side wall (y = max)
+  for (let x = 0; x < gridWidth - 1; x++) {
+    const x0 = x * stepX - halfW;
+    const x1 = (x + 1) * stepX - halfW;
+    const z0 = depthMap[gridHeight - 1][x];
+    const z1 = depthMap[gridHeight - 1][x + 1];
+    const front0 = applyShape({ x: x0, y: halfH, z: z0 });
+    const front1 = applyShape({ x: x1, y: halfH, z: z1 });
+    const back0 = applyShape({ x: x0, y: halfH, z: maxZ });
+    const back1 = applyShape({ x: x1, y: halfH, z: maxZ });
+    triangles.push(createTriangle(back0, front1, front0));
+    triangles.push(createTriangle(back0, back1, front1));
+  }
+}
+
+/**
  * Add border around the lithophane
  */
 function addBorder(
@@ -573,18 +652,30 @@ function addBackPlate(
   applyShape: (v: Vector3) => Vector3
 ): void {
   const { width, height } = dimensions;
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const stepX = width / (gridWidth - 1);
+  const stepY = height / (gridHeight - 1);
   
-  // Create flat back at max thickness
-  const v1 = applyShape({ x: -halfWidth, y: -halfHeight, z: thickness });
-  const v2 = applyShape({ x: halfWidth, y: -halfHeight, z: thickness });
-  const v3 = applyShape({ x: halfWidth, y: halfHeight, z: thickness });
-  const v4 = applyShape({ x: -halfWidth, y: halfHeight, z: thickness });
-  
-  // Two triangles for the back face
-  triangles.push(createTriangle(v1, v3, v2));
-  triangles.push(createTriangle(v1, v4, v3));
+  // Create back plate as a grid matching the front surface shape
+  // All at max thickness (z = thickness) so the back is flat relative to shape
+  for (let y = 0; y < gridHeight - 1; y++) {
+    for (let x = 0; x < gridWidth - 1; x++) {
+      const x0 = x * stepX - halfW;
+      const x1 = (x + 1) * stepX - halfW;
+      const y0 = y * stepY - halfH;
+      const y1 = (y + 1) * stepY - halfH;
+
+      const v00 = applyShape({ x: x0, y: y0, z: thickness });
+      const v10 = applyShape({ x: x1, y: y0, z: thickness });
+      const v01 = applyShape({ x: x0, y: y1, z: thickness });
+      const v11 = applyShape({ x: x1, y: y1, z: thickness });
+
+      // Back face winding is reversed (normals point inward)
+      triangles.push(createTriangle(v00, v11, v10));
+      triangles.push(createTriangle(v00, v01, v11));
+    }
+  }
 }
 
 /**
