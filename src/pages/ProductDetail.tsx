@@ -330,8 +330,10 @@ const ProductDetail = () => {
           try {
             setUploadingFile(true);
             const file = fileUpload.file;
-            const fileExt = file.name.split('.').pop();
-            const fileName = `customer-uploads/${product.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            const fileExt = (file.name.split('.').pop() || '').toLowerCase();
+            const safeExt = allowedExtensions.includes(fileExt) ? fileExt : 'png';
+            const fileName = `customer-uploads/${product.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${safeExt}`;
             const { error: uploadError } = await supabase.storage
               .from('product-customization-images')
               .upload(fileName, file);
@@ -925,11 +927,16 @@ const ProductDetail = () => {
                                   toast.error('La imagen no debe superar 10MB');
                                   return;
                                 }
-                                const previewUrl = URL.createObjectURL(file);
-                                setSectionFileUploads(prev => ({
-                                  ...prev,
-                                  [section.id]: { file, previewUrl }
-                                }));
+                                // Revoke previous preview URL to prevent memory leaks
+                                setSectionFileUploads(prev => {
+                                  if (prev[section.id]?.previewUrl) {
+                                    URL.revokeObjectURL(prev[section.id].previewUrl);
+                                  }
+                                  return {
+                                    ...prev,
+                                    [section.id]: { file, previewUrl: URL.createObjectURL(file) }
+                                  };
+                                });
                               }}
                               className="hidden"
                               id={`file-upload-${section.id}`}
@@ -950,14 +957,17 @@ const ProductDetail = () => {
                           {sectionFileUploads[section.id] && (
                             <div className="relative inline-block">
                               <img
-                                src={sectionFileUploads[section.id].previewUrl}
+                                src={sectionFileUploads[section.id]?.previewUrl}
                                 alt="Vista previa"
                                 className="w-32 h-32 object-cover rounded border"
                               />
                               <button
                                 type="button"
                                 onClick={() => {
-                                  URL.revokeObjectURL(sectionFileUploads[section.id].previewUrl);
+                                  const entry = sectionFileUploads[section.id];
+                                  if (entry?.previewUrl) {
+                                    URL.revokeObjectURL(entry.previewUrl);
+                                  }
                                   setSectionFileUploads(prev => {
                                     const next = { ...prev };
                                     delete next[section.id];
