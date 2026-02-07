@@ -74,8 +74,8 @@ const templates = {
 
 type Lang = 'es' | 'en' | 'nl';
 function getLang(lang?: string | null): Lang {
-  const l = (lang?.split('-')[0]?.toLowerCase() || 'nl') as Lang;
-  return ['es', 'en', 'nl'].includes(l) ? l : 'nl';
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'en') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'en';
 }
 
 interface WelcomeEmailRequest {

@@ -39,7 +39,12 @@ export const LithophaneOrderCard = ({ order }: LithophaneOrderCardProps) => {
       const lampTemplate: LampTemplate = {
         id: order.lamp_custom_settings?.template_id || '',
         name: order.lamp_custom_settings?.template_name || order.lamp_type,
+        name_es: null,
+        name_en: null,
         shape_type: order.lamp_type,
+        description: null,
+        description_es: null,
+        description_en: null,
         category: 'standard',
         default_width_mm: order.lamp_width_mm,
         default_height_mm: order.lamp_height_mm,
@@ -49,8 +54,12 @@ export const LithophaneOrderCard = ({ order }: LithophaneOrderCardProps) => {
         max_height_mm: 300,
         base_price: 0,
         price_per_cm2: 0,
-        is_active: true,
-        display_order: 0
+        preview_image_url: null,
+        segments: null,
+        curve_radius: null,
+        corner_radius: null,
+        base_type: null,
+        requires_custom_base: null
       };
       
       // Extract lithophany settings from image_settings or use defaults

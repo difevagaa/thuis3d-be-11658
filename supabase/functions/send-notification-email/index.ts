@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// HTML escaping function to prevent XSS attacks in email templates
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
     '&': '&amp;',
@@ -18,12 +17,26 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+const uiLabels = {
+  es: { viewDetails: 'Ver Detalles', footer: 'Este es un correo automático de Thuis3D.be' },
+  en: { viewDetails: 'View Details', footer: 'This is an automated email from Thuis3D.be' },
+  nl: { viewDetails: 'Details Bekijken', footer: 'Dit is een automatische e-mail van Thuis3D.be' }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'en') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'en';
+}
+
 interface NotificationEmailRequest {
   to: string;
   type: string;
   subject: string;
   message: string;
   link?: string;
+  language?: string;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -32,7 +45,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Require authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -55,11 +67,37 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { to, type, subject, message, link }: NotificationEmailRequest = await req.json();
+    const { to, type, subject, message, link, language, user_id }: NotificationEmailRequest = await req.json();
 
-    console.log('Sending notification email:', { to, type, subject });
+    console.log('Sending notification email:', { to, type, subject, language });
 
-    // Sanitize user inputs
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Get user's preferred language
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', to)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+
+    const lang = getLang(userLang);
+    const labels = uiLabels[lang];
+
     const safeSubject = escapeHtml(subject);
     const safeMessage = escapeHtml(message);
 
@@ -109,15 +147,15 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 ${link ? `
                   <div style="text-align: center;">
-                    <a href="https://your-domain.com${link}" class="button">
-                      Ver Detalles
+                    <a href="https://thuis3d.be${link}" class="button">
+                      ${labels.viewDetails}
                     </a>
                   </div>
                 ` : ''}
               </div>
               
               <div class="footer">
-                <p>Este es un correo automático de Thuis3D.be</p>
+                <p>${labels.footer}</p>
               </div>
             </div>
           </div>
@@ -146,7 +184,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || 'Failed to send email');
     }
 
-    console.log('Notification email sent successfully:', data);
+    console.log(`✅ Notification email sent successfully in ${lang}:`, data);
 
     return new Response(
       JSON.stringify({ success: true, data }),

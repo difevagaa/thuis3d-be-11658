@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +17,70 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// Multilingual templates
+const templates = {
+  es: {
+    subject: '🎉 ¡Has ganado {{points}} puntos!',
+    title: '🎉 ¡Has ganado puntos!',
+    greeting: '¡Hola {{name}}!',
+    earned: 'Has ganado',
+    points: 'puntos',
+    totalAccumulated: 'Total acumulado: {{total}} puntos',
+    availableCoupons: '🎁 Cupones Disponibles para Canjear',
+    keepEarning: 'Sigue acumulando puntos para desbloquear más recompensas',
+    viewRewards: 'Ver Mis Recompensas',
+    tip: '💡 Tip: Sigue comprando para acumular más puntos y desbloquear mejores recompensas',
+    footer: '{{company_name}}',
+    contact: '¿Preguntas? Contáctanos en {{email}}',
+    autoMessage: 'Este es un correo automático, por favor no respondas a este mensaje.',
+    percentDiscount: '{{value}}% de descuento',
+    fixedDiscount: '€{{value}} de descuento',
+    freeShipping: 'Envío gratis'
+  },
+  en: {
+    subject: '🎉 You earned {{points}} points!',
+    title: '🎉 You earned points!',
+    greeting: 'Hello {{name}}!',
+    earned: 'You earned',
+    points: 'points',
+    totalAccumulated: 'Total accumulated: {{total}} points',
+    availableCoupons: '🎁 Available Coupons to Redeem',
+    keepEarning: 'Keep earning points to unlock more rewards',
+    viewRewards: 'View My Rewards',
+    tip: '💡 Tip: Keep shopping to accumulate more points and unlock better rewards',
+    footer: '{{company_name}}',
+    contact: 'Questions? Contact us at {{email}}',
+    autoMessage: 'This is an automated email, please do not reply to this message.',
+    percentDiscount: '{{value}}% discount',
+    fixedDiscount: '€{{value}} discount',
+    freeShipping: 'Free shipping'
+  },
+  nl: {
+    subject: '🎉 Je hebt {{points}} punten verdiend!',
+    title: '🎉 Je hebt punten verdiend!',
+    greeting: 'Hallo {{name}}!',
+    earned: 'Je hebt verdiend',
+    points: 'punten',
+    totalAccumulated: 'Totaal verzameld: {{total}} punten',
+    availableCoupons: '🎁 Beschikbare Coupons om in te Wisselen',
+    keepEarning: 'Blijf punten verzamelen om meer beloningen te ontgrendelen',
+    viewRewards: 'Bekijk Mijn Beloningen',
+    tip: '💡 Tip: Blijf winkelen om meer punten te verzamelen en betere beloningen te ontgrendelen',
+    footer: '{{company_name}}',
+    contact: 'Vragen? Neem contact met ons op via {{email}}',
+    autoMessage: 'Dit is een automatische e-mail, reageer a.u.b. niet op dit bericht.',
+    percentDiscount: '{{value}}% korting',
+    fixedDiscount: '€{{value}} korting',
+    freeShipping: 'Gratis verzending'
+  }
+};
+
+type Lang = 'es' | 'en' | 'nl';
+function getLang(lang?: string | null): Lang {
+  const l = (lang?.split('-')[0]?.toLowerCase() || 'en') as Lang;
+  return ['es', 'en', 'nl'].includes(l) ? l : 'en';
+}
+
 interface LoyaltyPointsEmailRequest {
   user_id: string;
   email: string;
@@ -28,6 +93,7 @@ interface LoyaltyPointsEmailRequest {
     discount_type: string;
     discount_value: number;
   }>;
+  language?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -36,9 +102,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, points_earned, total_points, available_coupons }: LoyaltyPointsEmailRequest = await req.json();
+    const { user_id, email, name, points_earned, total_points, available_coupons, language }: LoyaltyPointsEmailRequest = await req.json();
 
-    console.log('📧 Sending loyalty points email to:', email);
+    console.log('📧 Sending loyalty points email to:', email, 'language:', language);
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
@@ -50,18 +116,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const displayName = escapeHtml(name || 'Cliente');
-    const companyName = '3DThuis.be';
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
 
-    // Generar lista de cupones HTML
+    // Get user's preferred language
+    let userLang = language;
+    if (!userLang && user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user_id)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+    if (!userLang) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('email', email)
+        .single();
+      userLang = profile?.preferred_language;
+    }
+
+    const lang = getLang(userLang);
+    const t = templates[lang];
+
+    const displayName = escapeHtml(name || (lang === 'es' ? 'Cliente' : lang === 'en' ? 'Customer' : 'Klant'));
+    const companyName = 'Thuis3D.be';
+
+    // Generate coupons HTML
     let couponsHtml = '';
     if (available_coupons && available_coupons.length > 0) {
       couponsHtml = available_coupons.map(coupon => {
-        const discountText = coupon.discount_type === 'percentage' 
-          ? `${coupon.discount_value}% de descuento`
-          : coupon.discount_type === 'fixed'
-          ? `€${coupon.discount_value} de descuento`
-          : 'Envío gratis';
+        let discountText: string;
+        if (coupon.discount_type === 'percentage') {
+          discountText = t.percentDiscount.replace('{{value}}', String(coupon.discount_value));
+        } else if (coupon.discount_type === 'fixed') {
+          discountText = t.fixedDiscount.replace('{{value}}', String(coupon.discount_value));
+        } else {
+          discountText = t.freeShipping;
+        }
         
         return `
           <div class="coupon-card">
@@ -74,7 +170,7 @@ const handler = async (req: Request): Promise<Response> => {
         `;
       }).join('');
     } else {
-      couponsHtml = '<p style="text-align: center; color: #666;">Sigue acumulando puntos para desbloquear más recompensas</p>';
+      couponsHtml = `<p style="text-align: center; color: #666;">${t.keepEarning}</p>`;
     }
 
     const emailHtml = `
@@ -101,59 +197,14 @@ const handler = async (req: Request): Promise<Response> => {
               border-radius: 10px;
               margin: 20px 0;
             }
-            .points-number {
-              font-size: 48px;
-              font-weight: bold;
-              margin: 10px 0;
-            }
-            .coupons-section {
-              background: white;
-              padding: 20px;
-              margin: 20px 0;
-              border-radius: 10px;
-            }
-            .coupon-card {
-              background: #f8f9fa;
-              border: 2px solid #e9ecef;
-              border-radius: 8px;
-              padding: 15px;
-              margin: 10px 0;
-            }
-            .coupon-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 8px;
-            }
-            .coupon-code {
-              font-family: monospace;
-              font-size: 18px;
-              font-weight: bold;
-              color: #3b82f6;
-            }
-            .coupon-points {
-              background: #3b82f6;
-              color: white;
-              padding: 4px 12px;
-              border-radius: 20px;
-              font-size: 14px;
-              font-weight: bold;
-            }
-            .coupon-desc {
-              margin: 0;
-              color: #666;
-              font-size: 14px;
-            }
-            .btn { 
-              display: inline-block;
-              background: #3b82f6; 
-              color: white !important; 
-              padding: 12px 30px; 
-              text-decoration: none; 
-              border-radius: 5px; 
-              margin: 20px 0;
-              font-weight: bold;
-            }
+            .points-number { font-size: 48px; font-weight: bold; margin: 10px 0; }
+            .coupons-section { background: white; padding: 20px; margin: 20px 0; border-radius: 10px; }
+            .coupon-card { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; padding: 15px; margin: 10px 0; }
+            .coupon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+            .coupon-code { font-family: monospace; font-size: 18px; font-weight: bold; color: #3b82f6; }
+            .coupon-points { background: #3b82f6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+            .coupon-desc { margin: 0; color: #666; font-size: 14px; }
+            .btn { display: inline-block; background: #3b82f6; color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
           </style>
         </head>
@@ -161,43 +212,39 @@ const handler = async (req: Request): Promise<Response> => {
           <div class="container">
             <div class="header">
               <div class="logo">${companyName}</div>
-              <h1 style="margin: 0; font-size: 24px;">🎉 ¡Has ganado puntos!</h1>
+              <h1 style="margin: 0; font-size: 24px;">${t.title}</h1>
             </div>
             <div class="content">
-              <p style="font-size: 18px;">¡Hola ${displayName}!</p>
+              <p style="font-size: 18px;">${t.greeting.replace('{{name}}', displayName)}</p>
               
               <div class="points-box">
-                <p style="margin: 0; font-size: 16px; opacity: 0.9;">Has ganado</p>
+                <p style="margin: 0; font-size: 16px; opacity: 0.9;">${t.earned}</p>
                 <div class="points-number">+${points_earned}</div>
-                <p style="margin: 0; font-size: 16px; opacity: 0.9;">puntos</p>
+                <p style="margin: 0; font-size: 16px; opacity: 0.9;">${t.points}</p>
                 <p style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
-                  Total acumulado: ${total_points} puntos
+                  ${t.totalAccumulated.replace('{{total}}', String(total_points))}
                 </p>
               </div>
 
               <div class="coupons-section">
-                <h3 style="color: #333; margin-top: 0; text-align: center;">
-                  🎁 Cupones Disponibles para Canjear
-                </h3>
+                <h3 style="color: #333; margin-top: 0; text-align: center;">${t.availableCoupons}</h3>
                 ${couponsHtml}
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${Deno.env.get('VITE_SUPABASE_URL')?.replace('/supabase', '') || 'https://5126ad6c-b5b9-40b9-bca8-e1425890868a.lovableproject.com'}/cuenta?tab=points" class="btn">
-                  Ver Mis Recompensas
+                <a href="https://thuis3d.be/mi-cuenta?tab=points" class="btn">
+                  ${t.viewRewards}
                 </a>
               </div>
 
               <p style="margin-top: 30px; padding: 15px; background: white; border-radius: 5px; text-align: center;">
-                <strong>💡 Tip:</strong> Sigue comprando para acumular más puntos y desbloquear mejores recompensas
+                <strong>${t.tip}</strong>
               </p>
               
               <div class="footer">
-                <p><strong>${companyName}</strong></p>
-                <p>¿Preguntas? Contáctanos en info@thuis3d.be</p>
-                <p style="color: #999; font-size: 12px; margin-top: 15px;">
-                  Este es un correo automático, por favor no respondas a este mensaje.
-                </p>
+                <p><strong>${t.footer.replace('{{company_name}}', companyName)}</strong></p>
+                <p>${t.contact.replace('{{email}}', 'info@thuis3d.be')}</p>
+                <p style="color: #999; font-size: 12px; margin-top: 15px;">${t.autoMessage}</p>
               </div>
             </div>
           </div>
@@ -216,7 +263,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: `${companyName} <noreply@thuis3d.be>`,
         to: [email],
-        subject: `🎉 ¡Has ganado ${points_earned} puntos!`,
+        subject: t.subject.replace('{{points}}', String(points_earned)),
         html: emailHtml,
       }),
     });
@@ -228,7 +275,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || 'Failed to send email');
     }
 
-    console.log('✅ Loyalty points email sent successfully:', data);
+    console.log(`✅ Loyalty points email sent successfully in ${lang}:`, data);
 
     return new Response(
       JSON.stringify({ success: true, data }),
