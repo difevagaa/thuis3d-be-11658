@@ -190,6 +190,25 @@ export default function CardPaymentPage() {
         giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
+      // Get saved coupon if applied
+      const savedCoupon = sessionStorage.getItem("applied_coupon");
+      let couponData = null;
+      let couponDiscount = 0;
+      
+      if (savedCoupon) {
+        try {
+          couponData = JSON.parse(savedCoupon);
+          if (couponData.discount_type === "percentage") {
+            couponDiscount = subtotal * (couponData.discount_value / 100);
+          } else if (couponData.discount_type === "fixed") {
+            couponDiscount = couponData.discount_value;
+          }
+          // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
+        } catch (e) {
+          logger.error("Error parsing coupon:", e);
+        }
+      }
+
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
 
       // Generate order notes
@@ -202,7 +221,7 @@ export default function CardPaymentPage() {
         subtotal,
         tax,
         shipping,
-        discount: giftCardDiscount,
+        discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: "card",
         paymentStatus: "pending",
@@ -241,6 +260,9 @@ export default function CardPaymentPage() {
           subtotal: subtotal,
           tax: tax,
           shipping: shipping,
+          discount: couponDiscount + giftCardDiscount,
+          coupon_discount: couponData?.discount_type === "free_shipping" ? 0 : couponDiscount,
+          coupon_code: couponData?.code || null,
           total: finalTotal,
           payment_method: "card",
           payment_status: "pending",
@@ -250,6 +272,18 @@ export default function CardPaymentPage() {
         });
       } catch (invoiceError) {
         logger.error('Error creating invoice:', invoiceError);
+      }
+
+      // Update coupon usage
+      if (couponData) {
+        try {
+          await supabase
+            .from("coupons")
+            .update({ times_used: (couponData.times_used || 0) + 1 })
+            .eq("id", couponData.id);
+        } catch (couponError) {
+          logger.error('Error updating coupon usage:', couponError);
+        }
       }
 
       // Send notifications
@@ -269,7 +303,7 @@ export default function CardPaymentPage() {
               subtotal: subtotal,
               tax: tax,
               shipping: shipping,
-              discount: giftCardDiscount,
+              discount: couponDiscount + giftCardDiscount,
               total: finalTotal,
               items: cartItems.map(item => ({
                 product_name: item.name,
@@ -286,6 +320,7 @@ export default function CardPaymentPage() {
       // Clear cart and session
       localStorage.removeItem("cart");
       sessionStorage.removeItem("pending_card_order");
+      sessionStorage.removeItem("applied_coupon");
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (sessionId) {
         await supabase.from('checkout_sessions').delete().eq('id', sessionId);
