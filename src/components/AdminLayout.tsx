@@ -37,6 +37,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
 
   // Auto-hide sidebar after 30 seconds of inactivity
   useEffect(() => {
+    let lastMouseMoveTime = 0;
+
     const resetAutoHideTimer = () => {
       if (autoHideTimerRef.current) {
         clearTimeout(autoHideTimerRef.current);
@@ -55,6 +57,15 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       }
     };
 
+    // Throttled mousemove handler to avoid excessive timer resets
+    const handleMouseMove = () => {
+      const now = Date.now();
+      if (now - lastMouseMoveTime > 500) {
+        lastMouseMoveTime = now;
+        handleUserActivity();
+      }
+    };
+
     // Start the timer
     resetAutoHideTimer();
 
@@ -62,7 +73,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     window.addEventListener('click', handleUserActivity);
     window.addEventListener('keydown', handleUserActivity);
     window.addEventListener('scroll', handleUserActivity);
-    window.addEventListener('mousemove', handleUserActivity);
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       if (autoHideTimerRef.current) {
@@ -71,7 +82,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       window.removeEventListener('click', handleUserActivity);
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('scroll', handleUserActivity);
-      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, [open, setOpen]);
 
