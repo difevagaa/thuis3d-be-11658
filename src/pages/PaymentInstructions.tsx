@@ -60,6 +60,25 @@ export default function PaymentInstructions() {
         giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
+      // Handle coupon if applied
+      const savedCoupon = sessionStorage.getItem("applied_coupon");
+      let couponData = null;
+      let couponDiscount = 0;
+      
+      if (savedCoupon) {
+        try {
+          couponData = JSON.parse(savedCoupon);
+          if (couponData.discount_type === "percentage") {
+            couponDiscount = orderSubtotal * (couponData.discount_value / 100);
+          } else if (couponData.discount_type === "fixed") {
+            couponDiscount = couponData.discount_value;
+          }
+          // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
+        } catch (e) {
+          logger.error("Error parsing coupon:", e);
+        }
+      }
+
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
       const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
       
@@ -71,7 +90,7 @@ export default function PaymentInstructions() {
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
-        discount: giftCardDiscount,
+        discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: method,
         paymentStatus: "pending",
@@ -112,7 +131,9 @@ export default function PaymentInstructions() {
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Incluir shipping correcto
-        discount: giftCardDiscount,
+        discount: couponDiscount + giftCardDiscount,
+        coupon_discount: couponData?.discount_type === "free_shipping" ? 0 : couponDiscount,
+        coupon_code: couponData?.code || null,
         total: finalTotal,
         payment_method: method,
         payment_status: "pending",
@@ -123,6 +144,18 @@ export default function PaymentInstructions() {
 
       if (invoiceError) {
         logger.error("Invoice creation failed:", invoiceError);
+      }
+
+      // Update coupon usage
+      if (couponData) {
+        try {
+          await supabase
+            .from("coupons")
+            .update({ times_used: (couponData.times_used || 0) + 1 })
+            .eq("id", couponData.id);
+        } catch (couponError) {
+          logger.error('Error updating coupon usage:', couponError);
+        }
       }
 
       // Send notification to admins
@@ -188,6 +221,7 @@ export default function PaymentInstructions() {
       // Clear cart and session
       localStorage.removeItem("cart");
       sessionStorage.removeItem("pending_order");
+      sessionStorage.removeItem("applied_coupon");
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (sessionId) {
         await supabase.from('checkout_sessions').delete().eq('id', sessionId);
