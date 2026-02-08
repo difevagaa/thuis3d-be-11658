@@ -170,8 +170,8 @@ const Admin = () => {
       ]
     },
     {
-      title: "👥 CLIENTES Y USUARIOS",
-      description: "Gestiona clientes, usuarios y control de acceso",
+      title: "👥 USUARIOS Y PERMISOS",
+      description: "Gestiona usuarios y control de acceso",
       color: "purple",
       items: [
         { 

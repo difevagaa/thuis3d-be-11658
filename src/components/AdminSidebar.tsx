@@ -69,6 +69,7 @@ interface MenuSection {
   icon: React.ElementType;
   color: string;
   collapsible?: boolean;
+  group?: "operations" | "config";
   items: MenuItem[];
 }
 
@@ -122,10 +123,10 @@ const getIconForUrl = (url: string): React.ElementType => {
 const getSectionIcon = (title: string): React.ElementType => {
   // Match on the text after the emoji
   const sectionIconMap: Record<string, React.ElementType> = {
-    "Inicio": Home,
+    "Panel Principal": Home,
     "Ventas y Pedidos": DollarSign,
     "Catálogo": Package,
-    "Clientes y Acceso": Users,
+    "Usuarios y Permisos": Users,
     "Marketing y Promociones": Megaphone,
     "Comunicación": MessageSquare,
     "Contenido Web": PenTool,
@@ -133,8 +134,8 @@ const getSectionIcon = (title: string): React.ElementType => {
     "Ajustes de Tienda": Store,
     "Sistema y Datos": Wrench,
   };
-  // Strip emoji prefix for matching
-  const cleanTitle = title.replace(/^[^\w\s]*\s*/, "").trim();
+  // Strip leading non-letter characters (emoji prefix) for matching
+  const cleanTitle = title.replace(/^[^a-zA-ZÀ-ÿ]+/, "").trim();
   return sectionIconMap[cleanTitle] || Settings;
 };
 
@@ -260,9 +261,9 @@ export function AdminSidebar() {
     }
   };
 
-  // Split sections: first 7 are operations, last 3 are config/system
-  const operationSections = menuItems.slice(0, 7);
-  const configSections = menuItems.slice(7);
+  // Split sections by group property
+  const operationSections = menuItems.filter(s => s.group !== "config");
+  const configSections = menuItems.filter(s => s.group === "config");
   
   return (
     <Sidebar className="w-56 bg-sidebar border-r border-sidebar-border">

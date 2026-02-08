@@ -11,6 +11,7 @@ export interface AdminMenuSection {
   icon: any;
   color: string;
   collapsible?: boolean;
+  group?: "operations" | "config";
   items: AdminMenuItem[];
 }
 
@@ -301,9 +302,10 @@ export function getGroupedPermissions(): Record<string, PermissionOption[]> {
 export const adminMenuItems: AdminMenuSection[] = [
   // ─── OVERVIEW ───
   {
-    title: "🏠 Inicio",
+    title: "🏠 Panel Principal",
     icon: null,
     color: "from-blue-500 to-blue-600",
+    group: "operations",
     items: [
       {
         icon: null,
@@ -319,6 +321,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "💰 Ventas y Pedidos",
     icon: null,
     color: "from-orange-500 to-orange-600",
+    group: "operations",
     items: [
       { icon: null, label: "Pedidos", url: "/admin/pedidos", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
       { icon: null, label: "Cotizaciones", url: "/admin/cotizaciones", color: "text-amber-700", bgColor: "bg-amber-100 hover:bg-amber-200 border-amber-300" },
@@ -331,6 +334,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "📦 Catálogo",
     icon: null,
     color: "from-emerald-500 to-emerald-600",
+    group: "operations",
     items: [
       { icon: null, label: "Productos", url: "/admin/productos", color: "text-emerald-700", bgColor: "bg-emerald-100 hover:bg-emerald-200 border-emerald-300" },
       { icon: null, label: "Categorías", url: "/admin/categorias", color: "text-teal-700", bgColor: "bg-teal-100 hover:bg-teal-200 border-teal-300" },
@@ -340,9 +344,10 @@ export const adminMenuItems: AdminMenuSection[] = [
   },
   // ─── CUSTOMERS & ACCESS ───
   {
-    title: "👥 Clientes y Acceso",
+    title: "👥 Usuarios y Permisos",
     icon: null,
     color: "from-rose-500 to-rose-600",
+    group: "operations",
     items: [
       { icon: null, label: "Usuarios", url: "/admin/usuarios", color: "text-rose-700", bgColor: "bg-rose-100 hover:bg-rose-200 border-rose-300" },
       { icon: null, label: "Roles y Permisos", url: "/admin/roles", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" },
@@ -353,6 +358,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "🎯 Marketing y Promociones",
     icon: null,
     color: "from-amber-500 to-amber-600",
+    group: "operations",
     items: [
       { icon: null, label: "Programa de Lealtad", url: "/admin/loyalty", color: "text-amber-700", bgColor: "bg-amber-100 hover:bg-amber-200 border-amber-300" },
       { icon: null, label: "Cupones de Descuento", url: "/admin/coupons", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
@@ -365,6 +371,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "💬 Comunicación",
     icon: null,
     color: "from-sky-500 to-sky-600",
+    group: "operations",
     items: [
       { icon: null, label: "Mensajes", url: "/admin/messages", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
       { icon: null, label: "Campañas de Email", url: "/admin/emails", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
@@ -377,6 +384,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "📝 Contenido Web",
     icon: null,
     color: "from-indigo-500 to-indigo-600",
+    group: "operations",
     items: [
       { icon: null, label: "Editor de Páginas", url: "/admin/page-builder", color: "text-indigo-700", bgColor: "bg-indigo-100 hover:bg-indigo-200 border-indigo-300" },
       { icon: null, label: "Personalizar Sitio", url: "/admin/personalizador", color: "text-violet-700", bgColor: "bg-violet-100 hover:bg-violet-200 border-violet-300" },
@@ -392,6 +400,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     icon: null,
     color: "from-violet-500 to-violet-600",
     collapsible: true,
+    group: "config",
     items: [
       { icon: null, label: "Calculadora 3D", url: "/admin/calculadora-3d", color: "text-violet-700", bgColor: "bg-violet-100 hover:bg-violet-200 border-violet-300" },
       { icon: null, label: "Descuentos por Cantidad", url: "/admin/descuentos-cantidad", color: "text-purple-700", bgColor: "bg-purple-100 hover:bg-purple-200 border-purple-300" },
@@ -407,6 +416,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     title: "🏪 Ajustes de Tienda",
     icon: null,
     color: "from-emerald-600 to-emerald-700",
+    group: "config",
     items: [
       { icon: null, label: "Métodos de Pago", url: "/admin/configuracion-pagos", color: "text-emerald-700", bgColor: "bg-emerald-100 hover:bg-emerald-200 border-emerald-300" },
       { icon: null, label: "Impuestos e IVA", url: "/admin/configuracion-iva", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
@@ -420,6 +430,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     icon: null,
     color: "from-slate-500 to-slate-600",
     collapsible: true,
+    group: "config",
     items: [
       { icon: null, label: "Base de Datos", url: "/admin/database", color: "text-red-700", bgColor: "bg-red-100 hover:bg-red-200 border-red-300" },
       { icon: null, label: "Traducciones e Idiomas", url: "/admin/traducciones", color: "text-sky-700", bgColor: "bg-sky-100 hover:bg-sky-200 border-sky-300" },
