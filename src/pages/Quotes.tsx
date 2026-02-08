@@ -91,17 +91,24 @@ const Quotes = () => {
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
   const [activeTab, setActiveTab] = useState<'3d' | 'service'>('3d');
 
-  // Load countries
+  // Load countries only once
   useEffect(() => {
+    let cancelled = false;
     const loadCountries = async () => {
       const countries = await getAvailableCountries();
-      setAvailableCountries(countries);
-      if (countries.length > 0 && !country) {
-        setCountry(countries[0].country_name);
+      if (!cancelled) {
+        setAvailableCountries(countries);
+        // Auto-set country if only one available
+        if (countries.length === 1) {
+          setCountry(countries[0].country_name);
+        } else if (countries.length > 0 && !country) {
+          setCountry(countries[0].country_name);
+        }
       }
     };
     loadCountries();
-  }, []);
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch lazy components
   useEffect(() => {
@@ -828,16 +835,22 @@ const Quotes = () => {
                     </div>
                     <div className="space-y-2 md:col-span-2">
                       <Label>{t('country')}</Label>
-                      <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectCountry')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableCountries.map((c) => (
-                            <SelectItem key={c.id} value={c.country_name}>{c.country_name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {availableCountries.length <= 1 ? (
+                        <div className="flex items-center h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                          {availableCountries[0]?.country_name || country || 'Bélgica'}
+                        </div>
+                      ) : (
+                        <Select value={country} onValueChange={setCountry}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectCountry')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableCountries.map((c) => (
+                              <SelectItem key={c.id} value={c.country_name}>{c.country_name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
 
