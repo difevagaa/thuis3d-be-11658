@@ -275,13 +275,14 @@ export default function Coupons() {
                 <div>
                   <Label>Producto Específico (opcional)</Label>
                   <Select
-                    value={newCoupon.product_id || undefined}
-                    onValueChange={(value) => setNewCoupon({ ...newCoupon, product_id: value })}
+                    value={newCoupon.product_id || "all"}
+                    onValueChange={(value) => setNewCoupon({ ...newCoupon, product_id: value === "all" ? null : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Aplicar a todos los productos" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="all">Todos los productos</SelectItem>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name}
@@ -480,14 +481,14 @@ export default function Coupons() {
               <div>
                 <Label>Producto Específico (opcional)</Label>
                 <Select
-                  value={editingCoupon.product_id || undefined}
-                  onValueChange={(value) => setEditingCoupon({ ...editingCoupon, product_id: value })}
+                  value={editingCoupon.product_id || "all"}
+                  onValueChange={(value) => setEditingCoupon({ ...editingCoupon, product_id: value === "all" ? null : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Aplicar a todos los productos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los productos</SelectItem>
+                    <SelectItem value="all">Todos los productos</SelectItem>
                     {products.map((product) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
