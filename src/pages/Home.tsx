@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { SectionRenderer } from "@/components/page-builder/SectionRenderer";
 import { usePageSections } from "@/hooks/usePageSections";
+import { ScrollRevealSection } from "@/components/ScrollRevealSection";
 
 const Home = () => {
   const { t } = useTranslation(["home", "common"]);
@@ -18,17 +19,25 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Render all content from Page Builder Sections */}
-      <SectionRenderer sections={pageBuilderSections} />
-
-      {/* Show message if no sections configured */}
-      {pageBuilderSections.length === 0 && (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">{t("home:fallback.title")}</h2>
-          <p className="text-muted-foreground mb-8">
-            {t("home:fallback.description")}
-          </p>
-        </div>
+      {/* Render all content from Page Builder Sections with scroll reveal */}
+      {pageBuilderSections.length > 0 ? (
+        pageBuilderSections.map((section, index) => (
+          <ScrollRevealSection
+            key={section.id}
+            delay={index === 0 ? 0 : 80}
+          >
+            <SectionRenderer sections={[section]} />
+          </ScrollRevealSection>
+        ))
+      ) : (
+        <ScrollRevealSection>
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-center">
+            <h2 className="text-display-lg mb-6">{t("home:fallback.title")}</h2>
+            <p className="text-subtitle max-w-2xl mx-auto">
+              {t("home:fallback.description")}
+            </p>
+          </div>
+        </ScrollRevealSection>
       )}
     </div>
   );

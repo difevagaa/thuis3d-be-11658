@@ -88,38 +88,38 @@ export const Footer = () => {
   };
 
   return (
-    <footer className="bg-muted border-t mt-8 md:mt-16">
-      <div className="container mx-auto px-4 py-8 md:py-12 pb-24 md:pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+    <footer className="bg-foreground/[0.03] border-t border-border/30 mt-12 md:mt-20">
+      <div className="container mx-auto px-4 py-10 md:py-16 pb-24 md:pb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
           {/* Brand & Social */}
           <div>
-            <h3 className="font-bold text-lg md:text-xl mb-3 md:mb-4">{customization?.site_name || "Thuis3D.be"}</h3>
-            <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
+            <h3 className="font-bold text-xl md:text-2xl mb-4 tracking-tight">{customization?.site_name || "Thuis3D.be"}</h3>
+            <p className="text-sm md:text-base text-muted-foreground mb-5 leading-relaxed">
               {t('brand.tagline')}
             </p>
-            <div className="flex gap-2.5 md:gap-3">
+            <div className="flex gap-3">
               {customization?.social_facebook && customization.social_facebook.trim() !== '' && (
-                <a href={customization.social_facebook} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href={customization.social_facebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   <Facebook className="h-5 w-5" />
                 </a>
               )}
               {customization?.social_instagram && customization.social_instagram.trim() !== '' && (
-                <a href={customization.social_instagram} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href={customization.social_instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   <Instagram className="h-5 w-5" />
                 </a>
               )}
               {customization?.social_twitter && customization.social_twitter.trim() !== '' && (
-                <a href={customization.social_twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href={customization.social_twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   <Twitter className="h-5 w-5" />
                 </a>
               )}
               {customization?.social_linkedin && customization.social_linkedin.trim() !== '' && (
-                <a href={customization.social_linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href={customization.social_linkedin} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   <Linkedin className="h-5 w-5" />
                 </a>
               )}
               {customization?.social_tiktok && customization.social_tiktok.trim() !== '' && (
-                <a href={customization.social_tiktok} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href={customization.social_tiktok} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
                   </svg>
@@ -130,36 +130,36 @@ export const Footer = () => {
 
           {/* Service Links */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('help.title')}</h4>
-            <ul className="space-y-1.5 md:space-y-2 text-sm md:text-base">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-4">{t('help.title')}</h4>
+            <ul className="space-y-2.5 text-sm md:text-base">
               <li>
-                <Link to="/page/faq" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/page/faq" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('help.faq')}
                 </Link>
               </li>
               <li>
-                <Link to="/legal/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/legal/terms" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('help.terms')}
                 </Link>
               </li>
               <li>
-                <Link to="/legal/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/legal/privacy" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('help.privacy')}
                 </Link>
               </li>
               <li>
-                <Link to="/legal/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/legal/cookies" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('help.cookies')}
                 </Link>
               </li>
               <li>
-                <Link to="/legal/legal_notice" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/legal/legal_notice" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('help.legal')}
                 </Link>
               </li>
               {footerLinks.filter(link => link.section === 'help').map((link) => (
                 <li key={link.id}>
-                  <Link to={link.url} className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link to={link.url} className="text-foreground/70 hover:text-primary transition-colors duration-200">
                     {link.title}
                   </Link>
                 </li>
@@ -169,25 +169,25 @@ export const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('quickLinks.title')}</h4>
-            <ul className="space-y-1.5 md:space-y-2 text-sm md:text-base">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-4">{t('quickLinks.title')}</h4>
+            <ul className="space-y-2.5 text-sm md:text-base">
               <li>
-                <Link to="/productos" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/productos" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('quickLinks.catalog')}
                 </Link>
               </li>
               <li>
-                <Link to="/cotizaciones" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/cotizaciones" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('quickLinks.requestQuote')}
                 </Link>
               </li>
               <li>
-                <Link to="/tarjetas-regalo" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/tarjetas-regalo" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('quickLinks.giftCards')}
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog" className="text-foreground/70 hover:text-primary transition-colors duration-200">
                   {t('quickLinks.blog')}
                 </Link>
               </li>
@@ -196,28 +196,28 @@ export const Footer = () => {
 
           {/* Newsletter */}
           <div>
-            <h4 className="font-semibold text-base md:text-base mb-3 md:mb-4">{t('newsletter.title')}</h4>
-            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-4">{t('newsletter.title')}</h4>
+            <p className="text-foreground/60 text-xs md:text-sm mb-3 leading-relaxed">
               {t('newsletter.description')}
             </p>
-            <form onSubmit={handleNewsletterSubmit} className="flex gap-1.5 md:gap-2">
+            <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
               <Input
                 type="email"
                 placeholder={t('newsletter.placeholder')}
-                className="text-sm h-9"
+                className="text-sm h-10 rounded-xl bg-background/60 border-border/40"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Button type="submit" size="icon" className="h-9 w-9">
+              <Button type="submit" size="icon" className="h-10 w-10 rounded-xl shadow-sm">
                 <Mail className="h-4 w-4" />
               </Button>
             </form>
             
             {/* Payment Methods Icons */}
-            <div className="mt-4 md:mt-6">
-              <p className="text-xs text-muted-foreground mb-2 md:mb-3">{t('payment.title')}</p>
-              <div className="flex gap-2 md:gap-3 items-center flex-wrap">
+            <div className="mt-6">
+              <p className="text-xs text-muted-foreground mb-3">{t('payment.title')}</p>
+              <div className="flex gap-2.5 items-center flex-wrap">
                 {/* Visa */}
                 <div className="bg-background border rounded px-2 md:px-3 py-1.5 md:py-2 h-8 md:h-10 flex items-center">
                   <svg className="h-4 md:h-6 w-auto" viewBox="0 0 48 32" fill="none">
@@ -251,7 +251,7 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t mt-6 md:mt-8 pt-4 md:pt-6 text-center text-xs md:text-sm text-muted-foreground">
+        <div className="border-t border-border/30 mt-8 md:mt-12 pt-6 md:pt-8 text-center text-xs md:text-sm text-muted-foreground">
           <p>{customization?.copyright_text || `© ${new Date().getFullYear()} Thuis3D.be - ${t('copyright')}`}</p>
         </div>
       </div>
