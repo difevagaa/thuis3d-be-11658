@@ -316,7 +316,7 @@ function SectionPreview({ section }: { section: SectionData }) {
         </div>
       );
 
-    case 'features':
+    case 'features': {
       const features = section.content?.features || [];
       return (
         <div style={styles} className="min-h-[60px] py-4">
@@ -354,6 +354,7 @@ function SectionPreview({ section }: { section: SectionData }) {
           </div>
         </div>
       );
+    }
 
     case 'features-old':
       return (
