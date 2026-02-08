@@ -367,7 +367,7 @@ export const LithophanyImageEditor = ({
             g = g * 0.85 + 30;
             b = b * 0.85 + 25;
             break;
-          case 'vintage':
+          case 'vintage': {
             // Vintage sepia - stronger effect
             const vintageSepia = 0.5;
             const vr = r, vg = g, vb = b;
@@ -375,7 +375,8 @@ export const LithophanyImageEditor = ({
             g = Math.min(255, vg * (1 - vintageSepia) + (vr * 0.349 + vg * 0.686 + vb * 0.168) * vintageSepia + 10);
             b = Math.min(255, vb * (1 - vintageSepia) + (vr * 0.272 + vg * 0.534 + vb * 0.131) * vintageSepia);
             break;
-          case 'noir':
+          }
+          case 'noir': {
             // Film noir - high contrast B&W
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
             r = gray;
@@ -387,7 +388,8 @@ export const LithophanyImageEditor = ({
             g = Math.min(255, Math.max(0, (g - 128) * contrastFactor + 128));
             b = Math.min(255, Math.max(0, (b - 128) * contrastFactor + 128));
             break;
-          case 'cinematic':
+          }
+          case 'cinematic': {
             // Cinematic teal & orange
             const lum2 = 0.299 * r + 0.587 * g + 0.114 * b;
             if (lum2 < 128) {
@@ -402,6 +404,7 @@ export const LithophanyImageEditor = ({
               b = b * 0.85;
             }
             break;
+          }
           case 'faded':
             // Faded film look
             r = r * 0.9 + 25;

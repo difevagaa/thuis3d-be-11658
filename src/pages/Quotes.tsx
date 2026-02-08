@@ -381,7 +381,6 @@ const Quotes = () => {
 
       const finalPrice = analysisResult?.estimatedTotal || 0;
 
-      let pendingStatusId: string;
       const { data, error: statusError } = await (supabase as any)
         .from('quote_statuses')
         .select('id')
@@ -392,7 +391,7 @@ const Quotes = () => {
       if (statusError || !data || data.length === 0) {
         throw new Error('Estado pending no encontrado');
       }
-      pendingStatusId = data[0].id;
+      const pendingStatusId: string = data[0].id;
 
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id,
@@ -433,13 +432,13 @@ const Quotes = () => {
         await supabase.functions.invoke('send-quote-email', {
           body: { to: customerEmail, customer_name: customerName, quote_type: 'archivo 3D', description }
         });
-      } catch {}
+      } catch { /* email notification is non-critical */ }
 
       try {
         await supabase.functions.invoke('send-admin-notification', {
           body: { type: 'quote', subject: 'Nueva Cotización de Archivo 3D', message: `Nueva cotización de ${customerName}`, customer_name: customerName, customer_email: customerEmail, link: '/admin/cotizaciones' }
         });
-      } catch {}
+      } catch { /* admin notification is non-critical */ }
       
       toast.success(t('quoteSent'));
       navigate("/");
@@ -504,11 +503,10 @@ const Quotes = () => {
             
             const { error: uploadError } = await supabase.storage.from('quote-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
             if (!uploadError) uploadedFiles.push(filePath);
-          } catch {}
+          } catch { /* file upload failed, continue with others */ }
         }
       }
 
-      let pendingStatusId: string;
       const { data, error: statusError } = await (supabase as any)
         .from('quote_statuses')
         .select('id')
@@ -519,7 +517,7 @@ const Quotes = () => {
       if (statusError || !data || data.length === 0) {
         throw new Error('Estado pending no encontrado');
       }
-      pendingStatusId = data[0].id;
+      const pendingStatusId: string = data[0].id;
 
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id || null,
@@ -538,13 +536,13 @@ const Quotes = () => {
         await supabase.functions.invoke('send-quote-email', {
           body: { to: customerEmail, customer_name: customerName, quote_type: 'servicio', description }
         });
-      } catch {}
+      } catch { /* email notification is non-critical */ }
 
       try {
         await supabase.functions.invoke('send-admin-notification', {
           body: { type: 'quote', subject: 'Nueva Solicitud de Servicio', message: `Nueva solicitud de ${customerName}`, customer_name: customerName, customer_email: customerEmail, link: '/admin/cotizaciones' }
         });
-      } catch {}
+      } catch { /* admin notification is non-critical */ }
       
       toast.success(t('quoteSent'));
       navigate("/");
