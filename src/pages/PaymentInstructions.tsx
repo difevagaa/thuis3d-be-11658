@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes } from "@/lib/paymentUtils";
+import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, updateGiftCardBalance } from "@/lib/paymentUtils";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -50,7 +50,18 @@ export default function PaymentInstructions() {
       }
 
       // Generate order notes using utility function
-      const orderNotes = generateOrderNotes(cartItems, null, 0);
+      // Handle gift card if applied
+      const savedGiftCard = sessionStorage.getItem("applied_gift_card");
+      let giftCardDiscount = 0;
+      let giftCardData = null;
+      
+      if (savedGiftCard) {
+        giftCardData = JSON.parse(savedGiftCard);
+        giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
+      }
+
+      const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
       
       // Create order using utility function with persistent order number
       // CRÍTICO: Usar el costo de envío del pendingOrder
@@ -60,8 +71,8 @@ export default function PaymentInstructions() {
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
-        discount: 0,
-        total: total,
+        discount: giftCardDiscount,
+        total: finalTotal,
         paymentMethod: method,
         paymentStatus: "pending",
         shippingAddress: shippingInfo,
@@ -83,6 +94,15 @@ export default function PaymentInstructions() {
 
       logger.info('Order items created:', insertedItems.length);
 
+      // Update gift card balance if used
+      if (giftCardData && giftCardDiscount > 0) {
+        await updateGiftCardBalance(
+          giftCardData.id,
+          giftCardData.current_balance - giftCardDiscount
+        );
+        sessionStorage.removeItem("applied_gift_card");
+      }
+
       // Create invoice - CRÍTICO: Número de factura = número de pedido
       // CRÍTICO: Incluir el costo de envío correcto
       const { error: invoiceError } = await supabase.from("invoices").insert({
@@ -92,7 +112,8 @@ export default function PaymentInstructions() {
         subtotal: orderSubtotal,
         tax: orderTax,
         shipping: safeShipping, // CRÍTICO: Incluir shipping correcto
-        total: total,
+        discount: giftCardDiscount,
+        total: finalTotal,
         payment_method: method,
         payment_status: "pending",
         issue_date: new Date().toISOString(),
@@ -110,7 +131,7 @@ export default function PaymentInstructions() {
           body: {
             type: 'order',
             subject: 'Nuevo Pedido',
-            message: `Nuevo pedido por €${total.toFixed(2)}`,
+            message: `Nuevo pedido por €${finalTotal.toFixed(2)}`,
             order_number: order.order_number,
             customer_name: shippingInfo.fullName || shippingInfo.full_name,
             customer_email: shippingInfo.email,
@@ -149,8 +170,8 @@ export default function PaymentInstructions() {
               subtotal: orderSubtotal,
               tax: orderTax,
               shipping: safeShipping, // CRÍTICO: Usar shipping correcto
-              discount: 0,
-              total: total,
+              discount: giftCardDiscount,
+              total: finalTotal,
               customer_name: customerName,
               items: cartItems.map(item => ({
                 product_name: item.name,

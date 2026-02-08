@@ -549,7 +549,11 @@ export default function Payment() {
       const subtotal = calculateSubtotal(); // Precio sin IVA
       const tax = calculateTax(); // IVA calculado según configuración
       const shipping = shippingCost; // Costo de envío calculado dinámicamente
-      const total = calculateTotal(); // subtotal + IVA + envío
+      // CRITICAL: Use total BEFORE gift card deduction for pending order flows.
+      // The downstream pages (CardPaymentPage, RevolutPaymentPage, PaymentInstructions)
+      // will read the gift card from sessionStorage and apply the deduction themselves.
+      const totalBeforeGiftCard = Number(Math.max(0, subtotal + tax + shipping).toFixed(2));
+      const total = calculateTotal(); // subtotal + IVA + envío - gift card
 
       // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut tienen comportamientos especiales
       if (method === "bank_transfer") {
@@ -570,7 +574,7 @@ export default function Payment() {
         sessionStorage.setItem("pending_order", JSON.stringify({
           cartItems,
           shippingInfo,
-          total,
+          total: totalBeforeGiftCard,
           subtotal,
           tax,
           shipping,
@@ -611,7 +615,7 @@ export default function Payment() {
         sessionStorage.setItem("pending_card_order", JSON.stringify({
           cartItems,
           shippingInfo,
-          total,
+          total: totalBeforeGiftCard,
           subtotal,
           tax,
           shipping,
@@ -643,7 +647,7 @@ export default function Payment() {
         sessionStorage.setItem("pending_revolut_order", JSON.stringify({
           cartItems,
           shippingInfo,
-          total,
+          total: totalBeforeGiftCard,
           subtotal,
           tax,
           shipping,

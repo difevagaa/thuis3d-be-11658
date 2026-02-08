@@ -122,6 +122,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { recipient_email, sender_name, gift_card_code, amount, message, themeId, iconId, language }: GiftCardEmailRequest = await req.json();
 
+    const safeAmount = Number(amount) || 0;
+
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
     // Define theme colors
@@ -222,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
                     </div>
                     
                     <div style="text-align: center; margin: 20px 0;">
-                      <div class="gift-card-amount">€${amount.toFixed(2)}</div>
+                      <div class="gift-card-amount">€${safeAmount.toFixed(2)}</div>
                       <div class="gift-card-code-box">${safeGiftCardCode}</div>
                     </div>
                     
