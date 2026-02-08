@@ -9,7 +9,6 @@ import {
   LayoutDashboard, 
   FileText, 
   ShoppingCart, 
-  Archive, 
   Settings, 
   Receipt, 
   Package, 
@@ -87,12 +86,12 @@ const Admin = () => {
   const sections = [
     {
       title: "ACCESOS RÁPIDOS",
-      description: "Las herramientas más importantes para gestionar tu negocio",
+      description: "Operaciones más frecuentes del día a día",
       color: "orange",
       items: [
         { 
           icon: LayoutDashboard, 
-          label: "Dashboard", 
+          label: "Panel Principal", 
           description: "Visión general y métricas",
           path: "/admin/dashboard",
           color: "bg-gradient-to-br from-orange-500 to-orange-600",
@@ -128,7 +127,7 @@ const Admin = () => {
       ]
     },
     {
-      title: "VENTAS Y FACTURACIÓN",
+      title: "💰 VENTAS Y FACTURACIÓN",
       description: "Gestiona tus transacciones y documentos fiscales",
       color: "blue",
       items: [
@@ -141,123 +140,93 @@ const Admin = () => {
           iconColor: "text-green-600"
         },
         { 
-          icon: Receipt, 
-          label: "Notas de Cobro", 
-          description: "Documentos de cobro",
-          path: "/admin/notas-cobro", 
-          badge: "0",
-          iconColor: "text-blue-600"
-        },
-        { 
-          icon: Archive, 
-          label: "Archivados", 
-          description: "Pedidos archivados",
-          path: "/admin/archivados",
-          iconColor: "text-gray-600"
-        },
-        { 
           icon: Settings, 
-          label: "Estados", 
-          description: "Gestión de estados",
+          label: "Estados de Pedido", 
+          description: "Flujo de estados",
           path: "/admin/estados",
           iconColor: "text-orange-600"
-        },
-        { 
-          icon: Settings, 
-          label: "Métodos de Pago", 
-          description: "Configurar pagos",
-          path: "/admin/metodos-pago",
-          iconColor: "text-purple-600"
         }
       ]
     },
     {
-      title: "CATÁLOGO DE PRODUCTOS",
-      description: "Administra tu inventario y configuraciones",
+      title: "📦 CATÁLOGO DE PRODUCTOS",
+      description: "Administra tu inventario y configuraciones de productos",
       color: "teal",
       items: [
         { 
           icon: Package, 
           label: "Materiales", 
-          description: "Tipos de materiales",
+          description: "Tipos de materiales de impresión",
           path: "/admin/materiales",
           iconColor: "text-amber-600"
         },
         { 
           icon: Palette, 
           label: "Colores", 
-          description: "Paleta de colores",
+          description: "Paleta de colores disponibles",
           path: "/admin/colores",
           iconColor: "text-pink-600"
         }
       ]
     },
     {
-      title: "CLIENTES Y USUARIOS",
-      description: "Gestiona clientes, usuarios y permisos",
+      title: "👥 CLIENTES Y USUARIOS",
+      description: "Gestiona clientes, usuarios y control de acceso",
       color: "purple",
       items: [
         { 
           icon: Users, 
-          label: "Clientes", 
-          description: "Base de clientes",
-          path: "/admin/clientes", 
-          badge: "0",
-          iconColor: "text-blue-600"
-        },
-        { 
-          icon: Users, 
           label: "Usuarios", 
-          description: "Todos los usuarios",
+          description: "Todos los usuarios registrados",
           path: "/admin/usuarios",
           iconColor: "text-teal-600"
         },
         { 
           icon: UserCog, 
-          label: "Roles", 
-          description: "Permisos y roles",
+          label: "Roles y Permisos", 
+          description: "Control de acceso por rol",
           path: "/admin/roles",
           iconColor: "text-purple-600"
         }
       ]
     },
     {
-      title: "CONFIGURACIÓN 3D",
+      title: "🖨️ IMPRESIÓN 3D",
       description: "Ajusta la calculadora y calibración de impresión 3D",
       color: "green",
       items: [
         { 
           icon: Calculator, 
-          label: "Configuración", 
-          description: "Ajustes generales",
+          label: "Calculadora 3D", 
+          description: "Ajustes de cálculo de precios",
           path: "/admin/calculadora-3d",
           iconColor: "text-orange-600"
         },
         { 
           icon: TrendingUp, 
-          label: "Calibración", 
+          label: "Tests de Calibración", 
           description: "Calibrar impresoras",
           path: "/admin/calibracion",
           iconColor: "text-green-600"
         },
         { 
           icon: TrendingUp, 
-          label: "Perfiles", 
-          description: "Perfiles de calibración",
+          label: "Perfiles de Calibración", 
+          description: "Configuraciones guardadas",
           path: "/admin/perfiles-calibracion",
           iconColor: "text-blue-600"
         },
         { 
           icon: Settings, 
-          label: "Precisión", 
-          description: "Ajustes de precisión",
+          label: "Ajustes de Precisión", 
+          description: "Afinar resultados del cálculo",
           path: "/admin/precision-calculadora",
           iconColor: "text-purple-600"
         },
         { 
           icon: Shield, 
-          label: "Detección Soportes", 
-          description: "Configurar soportes",
+          label: "Detección de Soportes", 
+          description: "Configurar soportes automáticos",
           path: "/admin/deteccion-soportes",
           iconColor: "text-teal-600"
         }
