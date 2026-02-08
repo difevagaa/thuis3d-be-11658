@@ -21,18 +21,14 @@ import {
   Star,
   Trash2,
   Percent,
-  TrendingUp,
   TrendingDown,
   ChevronDown,
-  ChevronRight,
   Layers,
   Shield,
   Activity,
   CreditCard,
   Truck,
-  HardDrive,
   Gauge,
-  Box,
   Image,
   Globe,
   Calculator,
@@ -40,6 +36,20 @@ import {
   X,
   Database,
   Mail,
+  Home,
+  DollarSign,
+  Megaphone,
+  PenTool,
+  Printer,
+  Store,
+  Wrench,
+  KeyRound,
+  Target,
+  Eye,
+  Crosshair,
+  SlidersHorizontal,
+  Save,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -59,6 +69,7 @@ interface MenuSection {
   icon: React.ElementType;
   color: string;
   collapsible?: boolean;
+  group?: "operations" | "config";
   items: MenuItem[];
 }
 
@@ -76,52 +87,56 @@ const getIconForUrl = (url: string): React.ElementType => {
     "/admin/calculadora-3d": Calculator,
     "/admin/descuentos-cantidad": TrendingDown,
     "/admin/calibracion": Gauge,
-    "/admin/perfiles-calibracion": TrendingUp,
-    "/admin/precision-calculadora": Activity,
+    "/admin/perfiles-calibracion": SlidersHorizontal,
+    "/admin/precision-calculadora": Crosshair,
     "/admin/deteccion-soportes": Shield,
-    "/admin/modelos-vista-previa": Box,
+    "/admin/modelos-vista-previa": Eye,
     "/admin/usuarios": Users,
     "/admin/roles": UserCog,
     "/admin/loyalty": Award,
     "/admin/coupons": Percent,
     "/admin/gift-cards": Gift,
-    "/admin/seo": TrendingUp,
+    "/admin/seo": Target,
     "/admin/messages": MessageSquare,
     "/admin/emails": Mail,
     "/admin/reviews": Star,
     "/admin/visitantes": Activity,
     "/admin/page-builder": Layout,
-    "/admin/personalizador": Palette,
+    "/admin/personalizador": PenTool,
     "/admin/contenido": FileCode,
     "/admin/pages": BookOpen,
-    "/admin/paginas-legales": FileText,
+    "/admin/paginas-legales": Scale,
     "/admin/blog": BookOpen,
     "/admin/galeria": Image,
     "/admin/database": Database,
-    "/admin/pin": Shield,
+    "/admin/pin": KeyRound,
     "/admin/configuracion-pagos": CreditCard,
     "/admin/configuracion-iva": Percent,
     "/admin/gestion-envios": Truck,
     "/admin/traducciones": Globe,
-    "/admin/backup-config": HardDrive,
+    "/admin/backup-config": Save,
     "/admin/trash": Trash2,
   };
   return iconMap[url] || Settings;
 };
 
 const getSectionIcon = (title: string): React.ElementType => {
+  // Match on the text after the emoji
   const sectionIconMap: Record<string, React.ElementType> = {
-    "Principal": LayoutDashboard,
+    "Panel Principal": Home,
+    "Ventas y Pedidos": DollarSign,
     "Catálogo": Package,
-    "Ventas": ShoppingCart,
-    "Calculadora 3D": Calculator,
-    "Clientes": Users,
-    "Marketing": Award,
+    "Usuarios y Permisos": Users,
+    "Marketing y Promociones": Megaphone,
     "Comunicación": MessageSquare,
-    "Contenido": FileCode,
-    "Configuración": Settings,
+    "Contenido Web": PenTool,
+    "Impresión 3D": Printer,
+    "Ajustes de Tienda": Store,
+    "Sistema y Datos": Wrench,
   };
-  return sectionIconMap[title] || Settings;
+  // Strip leading non-letter characters (emoji prefix) for matching
+  const cleanTitle = title.replace(/^[^a-zA-ZÀ-ÿ]+/, "").trim();
+  return sectionIconMap[cleanTitle] || Settings;
 };
 
 const menuItems: MenuSection[] = adminMenuItems.map((section) => ({
@@ -245,6 +260,10 @@ export function AdminSidebar() {
       setOpen(false);
     }
   };
+
+  // Split sections by group property
+  const operationSections = menuItems.filter(s => s.group !== "config");
+  const configSections = menuItems.filter(s => s.group === "config");
   
   return (
     <Sidebar className="w-56 bg-sidebar border-r border-sidebar-border">
@@ -256,8 +275,8 @@ export function AdminSidebar() {
               <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-sidebar-foreground leading-tight">Admin</h3>
-              <p className="text-[10px] text-sidebar-foreground/60 leading-tight">Panel de Control</p>
+              <h3 className="text-sm font-bold text-sidebar-foreground leading-tight">Administración</h3>
+              <p className="text-[10px] text-sidebar-foreground/60 leading-tight">Gestión de Tienda</p>
             </div>
           </div>
           <Button
@@ -273,9 +292,28 @@ export function AdminSidebar() {
         {/* Menu Sections */}
         <ScrollArea className="flex-1 px-2 py-2">
           <div className="space-y-2">
-            {menuItems.map((section, idx) => (
+            {/* Operations sections */}
+            {operationSections.map((section, idx) => (
               <AdminMenuSection 
                 key={idx} 
+                section={section}
+                onNavigate={handleNavigate}
+              />
+            ))}
+            
+            {/* Separator between operations and config */}
+            {configSections.length > 0 && (
+              <div className="flex items-center gap-2 px-2 py-2">
+                <div className="flex-1 h-px bg-sidebar-border/60" />
+                <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold whitespace-nowrap">Configuración</span>
+                <div className="flex-1 h-px bg-sidebar-border/60" />
+              </div>
+            )}
+            
+            {/* Config/system sections */}
+            {configSections.map((section, idx) => (
+              <AdminMenuSection 
+                key={`config-${idx}`} 
                 section={section}
                 onNavigate={handleNavigate}
               />
