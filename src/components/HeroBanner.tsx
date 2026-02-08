@@ -173,8 +173,7 @@ export default function HeroBanner() {
                       backgroundSize: getBackgroundSize(item.banner.size_mode || 'cover'),
                       backgroundRepeat: 'no-repeat',
                       backgroundPosition: 'center',
-                      transform: `translate3d(0, 0, 0) scale(${scrollScale})`,
-                      transition: 'transform 0.1s linear',
+                      transform: `scale(${scrollScale})`,
                     }}
                   />
                   {/* Content with scroll-driven fade & translate */}
@@ -183,7 +182,6 @@ export default function HeroBanner() {
                     style={{
                       opacity: scrollOpacity,
                       transform: `translateY(${scrollTranslateY}px)`,
-                      transition: 'opacity 0.1s linear, transform 0.1s linear',
                     }}
                   >
                     <div 
@@ -201,6 +199,7 @@ export default function HeroBanner() {
                         className="font-bold animate-fade-in leading-none w-full"
                         style={{ 
                           color: item.banner.title_color || '#ffffff',
+                          // Ratio 10: bannerHeight/ratio yields a large cinematic display font
                           fontSize: getResponsiveFontSize(bannerHeight, 10, '1.5rem', '4rem'),
                           lineHeight: '1.08',
                           letterSpacing: '-0.04em',

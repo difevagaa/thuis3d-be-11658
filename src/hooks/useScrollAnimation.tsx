@@ -37,15 +37,16 @@ export const useScrollAnimation = ({
     if (disabled || !ref.current) return;
 
     const element = ref.current;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           if (delay > 0) {
-            const timerId = setTimeout(() => setIsVisible(true), delay);
-            return () => clearTimeout(timerId);
+            timerId = setTimeout(() => setIsVisible(true), delay);
+          } else {
+            setIsVisible(true);
           }
-          setIsVisible(true);
           if (once) observer.unobserve(element);
         } else if (!once) {
           setIsVisible(false);
@@ -58,6 +59,7 @@ export const useScrollAnimation = ({
 
     return () => {
       observer.disconnect();
+      if (timerId) clearTimeout(timerId);
     };
   }, [threshold, rootMargin, once, delay, disabled]);
 

@@ -285,7 +285,7 @@ export const Layout = ({ children }: LayoutProps) => {
               >
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-4.5 w-4.5 flex items-center justify-center font-bold shadow-sm">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-[18px] w-[18px] flex items-center justify-center font-bold shadow-sm">
                     {cartCount > 9 ? '9+' : cartCount}
                   </span>
                 )}
