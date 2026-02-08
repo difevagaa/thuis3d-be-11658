@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift } from "lucide-react";
@@ -106,16 +107,16 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen flex flex-col">
       {/* Header - Full width background, pinned to top with no gap */}
       <header 
-        className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
+        className="sticky top-0 z-50 w-full border-b border-border/30 backdrop-blur-xl backdrop-saturate-150"
         style={{ 
-          backgroundColor: 'var(--home-menu-bg, var(--header-bg, hsl(var(--background))))',
+          backgroundColor: 'var(--home-menu-bg, var(--header-bg, rgba(255,255,255,0.72)))',
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
         {/* Centered container for header content */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Compact header row - consistent height */}
-          <div className="flex flex-row flex-nowrap h-14 items-center justify-between gap-2 sm:gap-3">
+          <div className="flex flex-row flex-nowrap h-12 items-center justify-between gap-2 sm:gap-3">
             {/* Left side: Menu + Logo - Compact */}
             <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0 min-w-0">
               {/* Mobile Menu Button - Smaller on mobile */}
@@ -125,18 +126,18 @@ export const Layout = ({ children }: LayoutProps) => {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] p-0">
+                <SheetContent side="left" className="w-[300px] p-0 rounded-r-3xl">
                   <SheetHeader className="p-4 border-b">
                     <div className="flex items-center justify-between">
-                      <SheetTitle className="flex items-center gap-2 text-left">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                          <Package className="h-4 w-4 text-primary-foreground" />
+                      <SheetTitle className="flex items-center gap-3 text-left">
+                        <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center">
+                          <Package className="h-4.5 w-4.5 text-primary-foreground" />
                         </div>
-                        <span className="text-base font-bold text-primary">Thuis3D.be</span>
+                        <span className="text-base font-bold text-foreground">Thuis3D.be</span>
                       </SheetTitle>
                     </div>
                   </SheetHeader>
-                  <nav className="flex flex-col p-3 gap-1">
+                  <nav className="flex flex-col p-4 gap-0.5">
                     <Button
                       variant="ghost"
                       className="justify-start text-sm h-11 rounded-lg"
@@ -237,36 +238,39 @@ export const Layout = ({ children }: LayoutProps) => {
               </Sheet>
 
               {/* Logo - Consistent sizing */}
-              <Link to="/" className="flex items-center gap-1.5 notranslate flex-shrink-0 min-w-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Link to="/" className="flex items-center gap-2 notranslate flex-shrink-0 min-w-0">
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
                   <Package className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="text-sm sm:text-base font-bold text-primary truncate max-w-[100px] sm:max-w-none">
+                <span className="text-sm sm:text-base font-bold text-foreground truncate max-w-[100px] sm:max-w-none tracking-tight">
                   Thuis3D.be
                 </span>
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-3 lg:gap-6">
-              <Link to="/" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('home')}
-              </Link>
-              <Link to="/productos" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('products')}
-              </Link>
-              <Link to="/cotizaciones" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('quotes')}
-              </Link>
-              <Link to="/tarjetas-regalo" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('giftCards')}
-              </Link>
-              <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('blog')}
-              </Link>
-              <Link to="/galeria" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('gallery')}
-              </Link>
+            <nav className="hidden md:flex items-center gap-1">
+              {[
+                { to: "/", label: t('home') },
+                { to: "/productos", label: t('products') },
+                { to: "/cotizaciones", label: t('quotes') },
+                { to: "/tarjetas-regalo", label: t('giftCards') },
+                { to: "/blog", label: t('blog') },
+                { to: "/galeria", label: t('gallery') },
+              ].map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={cn(
+                    "text-sm font-medium px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap",
+                    isActive(to)
+                      ? "text-primary bg-primary/8"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
             </nav>
 
             {/* Right side: Actions - Standardized 24px icons with consistent button sizes */}
@@ -296,7 +300,7 @@ export const Layout = ({ children }: LayoutProps) => {
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52 rounded-xl p-1.5">
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-strong border-border/50">
                     <DropdownMenuLabel className="text-xs font-semibold px-2">{t('myAccount')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")} className="text-sm h-10 rounded-lg">
@@ -352,8 +356,8 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* Mobile Bottom Navigation - AliExpress style */}
       {(isMobile || isTablet) && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t safe-area-bottom shadow-lg">
-          <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl backdrop-saturate-150 border-t border-border/30 safe-area-bottom">
+          <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2">
             <button 
               onClick={() => navigate("/")}
               className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}

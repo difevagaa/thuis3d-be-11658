@@ -4,131 +4,131 @@
 
 @layer base {
   :root {
-    /* Professional Admin Theme - Amazon/Shopify Inspired */
-    --background: 0 0% 98%;
-    --foreground: 210 24% 16%;
-    --home-hero-bg: 210 40% 96%;
+    /* Apple-Inspired Clean Design System */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11%;
+    --home-hero-bg: 0 0% 98%;
 
     /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 210 24% 16%;
+    --card-foreground: 0 0% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 24% 16%;
+    --popover-foreground: 0 0% 11%;
 
-    /* Primary - Professional Orange (Amazon-inspired) */
-    --primary: 36 100% 50%;
+    /* Primary - Apple Blue */
+    --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 36 100% 60%;
+    --primary-glow: 211 100% 60%;
 
-    /* Secondary - Professional Gray */
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 210 24% 16%;
+    /* Secondary - Soft Gray */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 11%;
 
-    /* Accent - Teal (Shopify-inspired) */
-    --accent: 174 62% 47%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Subtle Hover */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 11%;
 
     /* Muted */
-    --muted: 210 16% 93%;
-    --muted-foreground: 210 12% 46%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
     /* Destructive */
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Professional Green */
+    /* Success - Apple Green */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     
-    /* Warning - Professional Yellow */
+    /* Warning */
     --warning: 45 93% 47%;
     --warning-foreground: 0 0% 100%;
 
-    /* Info - Professional Blue */
-    --info: 217 91% 60%;
+    /* Info */
+    --info: 211 100% 50%;
     --info-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 210 14% 89%;
-    --input: 210 14% 89%;
-    --ring: 36 100% 50%;
-    --radius: 0.5rem;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 211 100% 50%;
+    --radius: 0.875rem;
     
-    /* Fonts */
-    --font-heading: "Playfair Display", serif;
-    --font-body: "Inter", sans-serif;
+    /* Fonts - Clean Sans-Serif */
+    --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --font-body: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 
-    /* Gradients - Professional */
-    --gradient-primary: linear-gradient(135deg, hsl(36 100% 50%) 0%, hsl(36 100% 42%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(210 16% 93%) 0%, hsl(210 16% 88%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(174 62% 40%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(36 100% 50% / 0.05) 0%, hsl(174 62% 47% / 0.05) 100%);
-    --gradient-admin-header: linear-gradient(135deg, hsl(210 24% 16%) 0%, hsl(210 24% 12%) 100%);
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 50%) 0%, hsl(211 100% 42%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 96%) 0%, hsl(0 0% 92%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(211 100% 50%) 0%, hsl(260 80% 55%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(211 100% 50% / 0.04) 0%, hsl(260 80% 55% / 0.04) 100%);
+    --gradient-admin-header: linear-gradient(135deg, hsl(0 0% 11%) 0%, hsl(0 0% 8%) 100%);
 
-    /* Shadows - Enhanced */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.06);
-    --shadow-strong: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -2px hsl(0 0% 0% / 0.05);
-    --shadow-glow: 0 0 25px hsl(36 100% 50% / 0.25);
-    --shadow-glow-accent: 0 0 25px hsl(174 62% 47% / 0.25);
+    /* Shadows - Soft & Diffuse (Apple style) */
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
+    --shadow-medium: 0 4px 16px -2px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.04);
+    --shadow-strong: 0 12px 40px -8px hsl(0 0% 0% / 0.12), 0 4px 12px -4px hsl(0 0% 0% / 0.06);
+    --shadow-glow: 0 0 30px hsl(211 100% 50% / 0.15);
+    --shadow-glow-accent: 0 0 30px hsl(260 80% 55% / 0.15);
 
-    /* Admin Sidebar - Professional Dark */
-    --sidebar-background: 210 24% 16%;
-    --sidebar-foreground: 210 16% 93%;
-    --sidebar-primary: 36 100% 50%;
+    /* Admin Sidebar */
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 93%;
+    --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 24% 22%;
+    --sidebar-accent: 0 0% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 24% 20%;
-    --sidebar-ring: 36 100% 50%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 211 100% 50%;
     --sidebar-label-size: 11px;
 
-    /* Header - Default values for customization */
-    --header-bg: #FFFFFF;
-    --header-text: #1A1A1A;
+    /* Header */
+    --header-bg: rgba(255, 255, 255, 0.72);
+    --header-text: #1C1C1E;
 
-    /* Home Menu - Default values for customization */
-    --home-menu-bg: #FFFFFF;
-    --home-menu-text: #1A1A1A;
-    --home-menu-hover-bg: #F3F4F6;
+    /* Home Menu */
+    --home-menu-bg: rgba(255, 255, 255, 0.72);
+    --home-menu-text: #1C1C1E;
+    --home-menu-hover-bg: #F5F5F7;
 
-    /* Chart Colors - Professional Palette */
-    --chart-1: 36 100% 50%;
-    --chart-2: 174 62% 47%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 142 71% 45%;
-    --chart-5: 0 72% 51%;
+    /* Chart Colors */
+    --chart-1: 211 100% 50%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 260 80% 55%;
+    --chart-4: 45 93% 47%;
+    --chart-5: 0 84% 60%;
     
-    /* Admin-specific Colors */
-    --admin-header-bg: 210 24% 16%;
+    /* Admin Colors */
+    --admin-header-bg: 0 0% 8%;
     --admin-header-text: 0 0% 100%;
     --admin-card-hover: 0 0% 97%;
   }
 
   .dark {
-    /* Professional Dark Mode */
-    --background: 210 24% 12%;
-    --foreground: 210 16% 93%;
+    /* Apple Dark Mode */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 92%;
 
-    --card: 210 24% 16%;
-    --card-foreground: 210 16% 93%;
-    --popover: 210 24% 16%;
-    --popover-foreground: 210 16% 93%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 92%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 92%;
 
-    --primary: 36 100% 55%;
+    --primary: 211 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 36 100% 65%;
+    --primary-glow: 211 100% 65%;
 
-    --secondary: 210 16% 20%;
+    --secondary: 0 0% 17%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 174 62% 52%;
+    --accent: 0 0% 17%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 210 24% 16%;
-    --muted-foreground: 210 12% 60%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
 
-    --destructive: 0 72% 56%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 142 71% 45%;
@@ -137,40 +137,40 @@
     --warning: 45 93% 52%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 217 91% 65%;
+    --info: 211 100% 60%;
     --info-foreground: 0 0% 100%;
 
-    --border: 210 24% 20%;
-    --input: 210 24% 20%;
-    --ring: 36 100% 55%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 211 100% 55%;
 
-    --sidebar-background: 210 24% 10%;
-    --sidebar-foreground: 210 16% 93%;
-    --sidebar-primary: 36 100% 55%;
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 211 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 24% 18%;
+    --sidebar-accent: 0 0% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 24% 14%;
-    --sidebar-ring: 36 100% 55%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 211 100% 55%;
 
-    /* Header - Dark mode defaults */
-    --header-bg: #1A1F2E;
-    --header-text: #F1F5F9;
+    /* Header - Dark mode */
+    --header-bg: rgba(28, 28, 30, 0.72);
+    --header-text: #F5F5F7;
 
-    /* Home Menu - Dark mode defaults */
-    --home-menu-bg: #1A1F2E;
-    --home-menu-text: #F1F5F9;
-    --home-menu-hover-bg: #252B3B;
+    /* Home Menu - Dark mode */
+    --home-menu-bg: rgba(28, 28, 30, 0.72);
+    --home-menu-text: #F5F5F7;
+    --home-menu-hover-bg: #2C2C2E;
 
-    --chart-1: 36 100% 55%;
-    --chart-2: 174 62% 52%;
-    --chart-3: 217 91% 65%;
-    --chart-4: 142 71% 45%;
-    --chart-5: 0 72% 56%;
+    --chart-1: 211 100% 55%;
+    --chart-2: 142 71% 50%;
+    --chart-3: 260 80% 60%;
+    --chart-4: 45 93% 52%;
+    --chart-5: 0 84% 60%;
     
-    --admin-header-bg: 210 24% 10%;
+    --admin-header-bg: 0 0% 6%;
     --admin-header-text: 0 0% 100%;
-    --admin-card-hover: 210 24% 18%;
+    --admin-card-hover: 0 0% 14%;
   }
 }
 
@@ -212,6 +212,8 @@
     text-rendering: optimizeLegibility;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    letter-spacing: -0.025em;
+    font-weight: 600;
   }
   
   /* Root + main should be responsive without clipping content */
@@ -336,13 +338,13 @@
    MOBILE APP STYLES - Native Mobile Experience
    ========================================================== */
 
-/* App-like mobile cards - Amazon style */
+/* App-like mobile cards - Apple style */
 @media (max-width: 640px) {
-  /* Compact cards with subtle shadow */
+  /* Clean cards with soft shadow */
   .card, [class*="Card"] {
-    border-radius: 0.5rem !important;
-    margin-bottom: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+    border-radius: 1rem !important;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
   }
   
   /* Compact card padding for product cards */
@@ -350,25 +352,27 @@
     padding: 0 !important; /* Let components control their own padding */
   }
   
-  /* Reasonable button sizes - not too big */
+  /* Clean button sizes */
   button, [role="button"], .btn, a[class*="Button"] {
     min-height: 36px;
     min-width: 36px;
     font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.875rem;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
   
   /* NOTE: no forzamos botones full-width globalmente; usar w-full solo donde aplique */
   
-  /* Form inputs - compact but avoid iOS zoom (keep 16px font-size) */
+  /* Form inputs - clean with generous rounding */
   input, select, textarea {
-    min-height: 40px !important;
+    min-height: 44px !important;
     font-size: 16px !important;
-    padding: 0.875rem 1rem !important;
-    border-radius: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.875rem !important;
+    background: hsl(var(--muted) / 0.5) !important;
+    border: 1px solid hsl(var(--border) / 0.5) !important;
   }
   
   /* Labels more visible */
