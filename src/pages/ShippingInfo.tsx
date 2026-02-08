@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ export default function ShippingInfo() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [countriesLoaded, setCountriesLoaded] = useState(false);
   const { getAvailableCountries } = useShippingCalculator();
   const [formData, setFormData] = useState({
     full_name: "",
@@ -31,22 +32,43 @@ export default function ShippingInfo() {
     country_name: "Bélgica"
   });
 
-  const loadAvailableCountries = useCallback(async () => {
-    const countries = await getAvailableCountries();
-    setAvailableCountries(countries);
-  }, [getAvailableCountries]);
+  // Load countries only once
+  useEffect(() => {
+    let cancelled = false;
+    const loadCountries = async () => {
+      const countries = await getAvailableCountries();
+      if (!cancelled) {
+        setAvailableCountries(countries);
+        setCountriesLoaded(true);
+        // Auto-set country if only one available
+        if (countries.length === 1) {
+          setFormData(prev => ({
+            ...prev,
+            country: countries[0].country_code,
+            country_name: countries[0].country_name
+          }));
+        } else if (countries.length > 1) {
+          // Resolve country_name from the loaded countries based on current code
+          setFormData(prev => {
+            const match = countries.find(c => c.country_code === prev.country);
+            return match ? { ...prev, country_name: match.country_name } : prev;
+          });
+        }
+      }
+    };
+    loadCountries();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadUserShippingData();
-    loadAvailableCountries();
-  }, [loadAvailableCountries]);
+  }, []);
 
   const loadUserShippingData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Load profile data to prefill form
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name, email, phone, address, city, postal_code, country')
@@ -56,16 +78,17 @@ export default function ShippingInfo() {
         if (error) throw error;
 
         if (profile) {
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             full_name: profile.full_name || "",
             email: profile.email || user.email || "",
             phone: profile.phone || "",
             address: profile.address || "",
             city: profile.city || "",
             postal_code: profile.postal_code || "",
-            country: profile.country || "BE",
-            country_name: "Bélgica"
-          });
+            country: profile.country || prev.country,
+            country_name: prev.country_name
+          }));
         }
       }
     } catch (error) {
@@ -262,31 +285,38 @@ export default function ShippingInfo() {
 
             <div>
               <Label htmlFor="country">{t('shipping:form.country')} *</Label>
-              <Select 
-                value={formData.country} 
-                onValueChange={(value) => {
-                  const country = availableCountries.find(c => c.country_code === value);
-                  setFormData({ 
-                    ...formData, 
-                    country: value,
-                    country_name: country?.country_name || value
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('shipping:form.countryPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCountries.map((country) => (
-                    <SelectItem key={country.country_code} value={country.country_code}>
-                      {country.country_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('shipping:form.selectCountry')}
-              </p>
+              {availableCountries.length <= 1 ? (
+                // Only one country available - show as read-only
+                <div className="flex items-center h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                  {availableCountries[0]?.country_name || formData.country_name || 'Bélgica'}
+                </div>
+              ) : (
+                // Multiple countries - show dropdown
+                <Select 
+                  value={formData.country} 
+                  onValueChange={(value) => {
+                    const country = availableCountries.find(c => c.country_code === value);
+                    if (country) {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        country: value,
+                        country_name: country.country_name
+                      }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('shipping:form.countryPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCountries.map((country) => (
+                      <SelectItem key={country.country_code} value={country.country_code}>
+                        {country.country_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4">
