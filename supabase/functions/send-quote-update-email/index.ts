@@ -96,6 +96,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { to, customer_name, quote_type, estimated_price, description, language, user_id }: QuoteUpdateEmailRequest = await req.json();
     
+    const safeEstimatedPrice = Number(estimated_price) || 0;
+    
     console.log('📧 Processing quote update email:', { to, quote_type, language });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -146,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const showPrice = Number.isFinite(estimated_price) && estimated_price > 0;
+    const showPrice = Number.isFinite(safeEstimatedPrice) && safeEstimatedPrice > 0;
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -178,7 +180,7 @@ const handler = async (req: Request): Promise<Response> => {
               ${showPrice ? `
                 <div class="price-box">
                   <div style="font-size: 18px; opacity: 0.9;">${t.estimatedPrice}</div>
-                  <div class="price">€${estimated_price.toFixed(2)}</div>
+                  <div class="price">€${safeEstimatedPrice.toFixed(2)}</div>
                   <div style="font-size: 14px; opacity: 0.8;">${t.vatIncluded}</div>
                 </div>
               ` : ''}
