@@ -327,7 +327,7 @@ const Cart = () => {
                 </div>
                 
                 {appliedCoupon && (
-                  <div className={`flex justify-between text-sm md:text-base ${isFreeShippingCoupon ? 'text-green-600' : 'text-green-600'}`}>
+                  <div className="flex justify-between text-green-600 text-sm md:text-base">
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3 md:h-4 md:w-4" />
                       <span className="truncate">

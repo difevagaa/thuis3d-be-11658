@@ -98,10 +98,10 @@ export default function Coupons() {
 
     try {
       const couponData = {
-          ...newCoupon,
-          discount_value: newCoupon.discount_type === "free_shipping" ? 0 : newCoupon.discount_value,
-          expires_at: newCoupon.expires_at || null
-        };
+        ...newCoupon,
+        discount_value: newCoupon.discount_type === "free_shipping" ? 0 : newCoupon.discount_value,
+        expires_at: newCoupon.expires_at || null
+      };
 
       const { error } = await supabase
         .from("coupons")
