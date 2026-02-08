@@ -249,8 +249,8 @@ export const useShippingCalculator = () => {
       if (matchedZone) {
         const baseCost = Number(matchedZone.base_cost) || 0;
         const costPerKg = Number(matchedZone.cost_per_kg) || 0;
-        const weightCost = totalWeight > 0 ? (totalWeight / 1000) * costPerKg : 0;
-        const calculatedCost = baseCost + weightCost;
+        const weightCost = totalWeight > 0 ? Number(((totalWeight / 1000) * costPerKg).toFixed(2)) : 0;
+        const calculatedCost = Number((baseCost + weightCost).toFixed(2));
         
         // Aplicar precio mínimo de la zona
         const zoneMinimum = Number(matchedZone.minimum_cost) || Number(currentSettings.default_shipping_cost) || 0;
@@ -471,8 +471,8 @@ export const useShippingCalculator = () => {
         ? Number(matchedZone.quotes_cost_per_kg)
         : Number(matchedZone.cost_per_kg) || 0;
       
-      const weightCost = weight > 0 ? (weight / 1000) * costPerKg : 0;
-      const calculatedCost = baseCost + weightCost;
+      const weightCost = weight > 0 ? Number(((weight / 1000) * costPerKg).toFixed(2)) : 0;
+      const calculatedCost = Number((baseCost + weightCost).toFixed(2));
 
       // Aplicar precio mínimo según contexto
       const zoneMinimum = isQuote && matchedZone.quotes_minimum_cost != null
