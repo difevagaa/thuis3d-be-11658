@@ -305,10 +305,15 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
             </div>
           )}
           
-          {invoice.shipping > 0 && (
+          {invoice.shipping > 0 ? (
             <div className="flex justify-between leading-tight">
               <span className="text-muted-foreground">{t('summary.shipping')}:</span>
               <span className="font-medium">€{Number(invoice.shipping).toFixed(2)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between leading-tight text-green-600">
+              <span>{t('summary.shipping')}:</span>
+              <span className="font-medium">{t('summary.freeShipping', 'Envío Gratis')}</span>
             </div>
           )}
           

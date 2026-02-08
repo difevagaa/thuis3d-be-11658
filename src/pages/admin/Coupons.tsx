@@ -91,18 +91,21 @@ export default function Coupons() {
       return;
     }
 
-    if (newCoupon.discount_value <= 0) {
+    if (newCoupon.discount_type !== "free_shipping" && newCoupon.discount_value <= 0) {
       toast.error("El valor del descuento debe ser mayor a 0");
       return;
     }
 
     try {
+      const couponData = {
+          ...newCoupon,
+          discount_value: newCoupon.discount_type === "free_shipping" ? 0 : newCoupon.discount_value,
+          expires_at: newCoupon.expires_at || null
+        };
+
       const { error } = await supabase
         .from("coupons")
-        .insert([{
-          ...newCoupon,
-          expires_at: newCoupon.expires_at || null
-        }]);
+        .insert([couponData]);
 
       if (error) {
         if (error.code === '23505') {
@@ -158,7 +161,7 @@ export default function Coupons() {
       return;
     }
 
-    if (editingCoupon.discount_value <= 0) {
+    if (editingCoupon.discount_type !== "free_shipping" && editingCoupon.discount_value <= 0) {
       toast.error("El valor del descuento debe ser mayor a 0");
       return;
     }
@@ -169,7 +172,7 @@ export default function Coupons() {
         .update({
           code: editingCoupon.code,
           discount_type: editingCoupon.discount_type,
-          discount_value: editingCoupon.discount_value,
+          discount_value: editingCoupon.discount_type === "free_shipping" ? 0 : editingCoupon.discount_value,
           min_purchase: editingCoupon.min_purchase,
           max_uses: editingCoupon.max_uses,
           expires_at: editingCoupon.expires_at || null,
@@ -307,6 +310,7 @@ export default function Coupons() {
                     </SelectContent>
                   </Select>
                 </div>
+                {newCoupon.discount_type !== "free_shipping" && (
                 <div>
                   <Label>Valor del Descuento</Label>
                   <Input
@@ -316,6 +320,7 @@ export default function Coupons() {
                     placeholder="Ej: 10"
                   />
                 </div>
+                )}
                 <div>
                   <Label>Compra Mínima</Label>
                   <Input
@@ -382,7 +387,9 @@ export default function Coupons() {
                   </TableCell>
                   <TableCell>{coupon.discount_type}</TableCell>
                   <TableCell>
-                    {coupon.discount_type === "percentage" ? `${coupon.discount_value}%` : `€${coupon.discount_value}`}
+                    {coupon.discount_type === "percentage" ? `${coupon.discount_value}%` : 
+                     coupon.discount_type === "free_shipping" ? "Envío Gratis" : 
+                     `€${coupon.discount_value}`}
                   </TableCell>
                   <TableCell>
                     {coupon.product ? coupon.product.name : "Todos"}
@@ -507,6 +514,7 @@ export default function Coupons() {
                 </Select>
               </div>
               
+              {editingCoupon.discount_type !== "free_shipping" && (
               <div>
                 <Label>Valor del Descuento</Label>
                 <Input
@@ -516,6 +524,7 @@ export default function Coupons() {
                   placeholder="Ej: 10"
                 />
               </div>
+              )}
               
               <div>
                 <Label>Compra Mínima</Label>

@@ -35,6 +35,7 @@ export default function Payment() {
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
   const [giftCardCode, setGiftCardCode] = useState("");
   const [appliedGiftCard, setAppliedGiftCard] = useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [giftCardLoading, setGiftCardLoading] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState({
     bank_transfer_enabled: true,
@@ -136,7 +137,7 @@ export default function Payment() {
     }
   }, [navigate]);
 
-  // Load applied gift card from sessionStorage
+  // Load applied gift card and coupon from sessionStorage
   useEffect(() => {
     const savedGiftCard = sessionStorage.getItem("applied_gift_card");
     if (savedGiftCard) {
@@ -144,6 +145,15 @@ export default function Payment() {
         setAppliedGiftCard(JSON.parse(savedGiftCard));
       } catch (e) {
         logger.error("Error loading gift card:", e);
+      }
+    }
+
+    const savedCoupon = sessionStorage.getItem("applied_coupon");
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+      } catch (e) {
+        logger.error("Error loading coupon:", e);
       }
     }
   }, []);
@@ -239,21 +249,40 @@ export default function Payment() {
     return Number((taxableAmount * taxRate).toFixed(2));
   };
 
+  // Calcular descuento por cupón
+  const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";
+
+  const calculateCouponDiscount = () => {
+    if (!appliedCoupon) return 0;
+    const subtotal = calculateSubtotal();
+    if (appliedCoupon.discount_type === "percentage") {
+      return subtotal * (appliedCoupon.discount_value / 100);
+    } else if (appliedCoupon.discount_type === "fixed") {
+      return appliedCoupon.discount_value;
+    }
+    // free_shipping: no monetary discount on products
+    return 0;
+  };
+
   const calculateGiftCardAmount = () => {
     if (!appliedGiftCard) return 0;
     const subtotal = calculateSubtotal();
     const tax = calculateTax();
-    // Gift card covers: subtotal + IVA + envío
-    const totalBeforeGiftCard = subtotal + tax + shippingCost;
+    const couponDiscount = calculateCouponDiscount();
+    const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
+    // Gift card covers: subtotal - couponDiscount + IVA + envío
+    const totalBeforeGiftCard = subtotal - couponDiscount + tax + effectiveShipping;
     return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
   };
 
-  // Total = subtotal + IVA + envío - gift card
+  // Total = subtotal - couponDiscount + IVA + envío - gift card
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const tax = calculateTax();
+    const couponDiscount = calculateCouponDiscount();
     const giftCardAmount = calculateGiftCardAmount();
-    return Number(Math.max(0, subtotal + tax + shippingCost - giftCardAmount).toFixed(2));
+    const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
+    return Number(Math.max(0, subtotal - couponDiscount + tax + effectiveShipping - giftCardAmount).toFixed(2));
   };
 
   const applyGiftCard = async () => {
@@ -348,6 +377,8 @@ export default function Payment() {
       const subtotal = calculateSubtotal();
       const giftCardAmount = calculateGiftCardAmount();
       const tax = calculateTax();
+      const couponDisc = calculateCouponDiscount();
+      const effShipping = isFreeShippingCoupon ? 0 : shippingCost;
       const total = 0;
 
       const orderNumber = generateOrderNumber();
@@ -361,12 +392,12 @@ export default function Payment() {
           payment_status: "paid",
           payment_method: "gift_card",
           subtotal: subtotal,
-          shipping: shippingCost,
+          shipping: effShipping,
           tax: tax,
-          discount: giftCardAmount,
+          discount: couponDisc + giftCardAmount,
           total: total,
           shipping_info: shippingInfo,
-          notes: `Pedido pagado completamente con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          notes: `Pedido pagado completamente con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})${appliedCoupon ? `\nCupón aplicado: ${appliedCoupon.code}` : ''}`
         }])
         .select()
         .single();
@@ -385,8 +416,21 @@ export default function Payment() {
         appliedGiftCard.current_balance - giftCardAmount
       );
 
+      // Actualizar uso del cupón si se aplicó
+      if (appliedCoupon) {
+        try {
+          await supabase
+            .from("coupons")
+            .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+            .eq("id", appliedCoupon.id);
+        } catch (couponError) {
+          logger.error('Error updating coupon usage:', couponError);
+        }
+      }
+
       localStorage.removeItem("cart");
       sessionStorage.removeItem("applied_gift_card");
+      sessionStorage.removeItem("applied_coupon");
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (sessionId) {
         await supabase.from('checkout_sessions').delete().eq('id', sessionId);
@@ -548,12 +592,14 @@ export default function Payment() {
       
       const subtotal = calculateSubtotal(); // Precio sin IVA
       const tax = calculateTax(); // IVA calculado según configuración
-      const shipping = shippingCost; // Costo de envío calculado dinámicamente
+      const couponDiscount = calculateCouponDiscount(); // Descuento por cupón
+      const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost; // Envío (0 si cupón envío gratis)
+      const shipping = effectiveShipping; // Costo de envío efectivo
       // CRITICAL: Use total BEFORE gift card deduction for pending order flows.
       // The downstream pages (CardPaymentPage, RevolutPaymentPage, PaymentInstructions)
       // will read the gift card from sessionStorage and apply the deduction themselves.
-      const totalBeforeGiftCard = Number(Math.max(0, subtotal + tax + shipping).toFixed(2));
-      const total = calculateTotal(); // subtotal + IVA + envío - gift card
+      const totalBeforeGiftCard = Number(Math.max(0, subtotal - couponDiscount + tax + shipping).toFixed(2));
+      const total = calculateTotal(); // subtotal - couponDiscount + IVA + envío - gift card
 
       // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut tienen comportamientos especiales
       if (method === "bank_transfer") {
@@ -686,7 +732,7 @@ export default function Payment() {
             subtotal,
             tax,
             shipping,
-            discount: giftCardDiscount,
+            discount: couponDiscount + giftCardDiscount,
             total: finalTotal,
             payment_method: "paypal",
             payment_status: "pending", // CRÍTICO: SIEMPRE pending
@@ -732,6 +778,9 @@ export default function Payment() {
             subtotal: subtotal,
             tax: tax,
             shipping: shipping,
+            discount: couponDiscount + giftCardDiscount,
+            coupon_discount: isFreeShippingCoupon ? 0 : couponDiscount,
+            coupon_code: appliedCoupon?.code || null,
             total: finalTotal,
             payment_method: "paypal",
             payment_status: "pending", // CRÍTICO: SIEMPRE pending
@@ -741,6 +790,18 @@ export default function Payment() {
           });
         } catch (invoiceError) {
           logger.error('Error creating invoice:', invoiceError);
+        }
+
+        // Actualizar uso del cupón
+        if (appliedCoupon) {
+          try {
+            await supabase
+              .from("coupons")
+              .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+              .eq("id", appliedCoupon.id);
+          } catch (couponError) {
+            logger.error('Error updating coupon usage:', couponError);
+          }
         }
 
         // Enviar correo de confirmación al cliente
@@ -761,7 +822,7 @@ export default function Payment() {
                   subtotal: subtotal,
                   tax: tax,
                   shipping: shipping,
-                  discount: giftCardDiscount,
+                  discount: couponDiscount + giftCardDiscount,
                   total: finalTotal,
                   items: cartItems.map(item => ({
                     product_name: item.name,
@@ -796,6 +857,7 @@ export default function Payment() {
 
         // Clear cart and session
         localStorage.removeItem("cart");
+        sessionStorage.removeItem("applied_coupon");
         const sessionId = sessionStorage.getItem("checkout_session_id");
         if (sessionId) {
           await supabase.from('checkout_sessions').delete().eq('id', sessionId);

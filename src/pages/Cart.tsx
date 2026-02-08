@@ -163,12 +163,14 @@ const Cart = () => {
   
   // Calculate discount from coupon
   let discount = 0;
+  const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";
   if (appliedCoupon) {
     if (appliedCoupon.discount_type === "percentage") {
       discount = subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
       discount = appliedCoupon.discount_value;
     }
+    // free_shipping type: discount stays 0, shipping handled in PaymentSummary
   }
   
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
@@ -325,12 +327,19 @@ const Cart = () => {
                 </div>
                 
                 {appliedCoupon && (
-                  <div className="flex justify-between text-green-600 text-sm md:text-base">
+                  <div className={`flex justify-between text-sm md:text-base ${isFreeShippingCoupon ? 'text-green-600' : 'text-green-600'}`}>
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3 md:h-4 md:w-4" />
-                      <span className="truncate">{t('cart:summary.discount')} ({appliedCoupon.code})</span>
+                      <span className="truncate">
+                        {isFreeShippingCoupon 
+                          ? `${t('cart:freeShipping', 'Envío Gratis')} (${appliedCoupon.code})`
+                          : `${t('cart:summary.discount')} (${appliedCoupon.code})`
+                        }
+                      </span>
                     </span>
-                    <span className="font-semibold whitespace-nowrap">-€{discount.toFixed(2)}</span>
+                    <span className="font-semibold whitespace-nowrap">
+                      {isFreeShippingCoupon ? t('cart:freeShipping', 'Envío Gratis') : `-€${discount.toFixed(2)}`}
+                    </span>
                   </div>
                 )}
                 
