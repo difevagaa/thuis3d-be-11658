@@ -256,7 +256,7 @@ export default function NotificationBell() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" id="nav-notifications-btn">
+        <Button variant="ghost" size="icon" className="relative overflow-visible" id="nav-notifications-btn">
           <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
           {unreadCount > 0 && (
             <Badge 
