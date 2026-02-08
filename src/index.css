@@ -4,173 +4,173 @@
 
 @layer base {
   :root {
-    /* Apple-Inspired Clean Design System */
+    /* ===== Apple Video-on-Scroll Design System ===== */
     --background: 0 0% 100%;
-    --foreground: 0 0% 11%;
-    --home-hero-bg: 0 0% 98%;
+    --foreground: 220 15% 13%;
+    --home-hero-bg: 220 20% 97%;
 
     /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 11%;
+    --card-foreground: 220 15% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 11%;
+    --popover-foreground: 220 15% 13%;
 
-    /* Primary - Apple Blue */
-    --primary: 211 100% 50%;
+    /* Primary - Deep Indigo-Blue (Apple-inspired) */
+    --primary: 225 73% 57%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 211 100% 60%;
+    --primary-glow: 225 80% 65%;
 
-    /* Secondary - Soft Gray */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 11%;
+    /* Secondary - Warm Neutral */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 13%;
 
-    /* Accent - Subtle Hover */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 11%;
+    /* Accent - Soft Lavender */
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 15% 13%;
 
     /* Muted */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
     /* Destructive */
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Apple Green */
-    --success: 142 71% 45%;
+    /* Success - Emerald */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
-    
-    /* Warning */
-    --warning: 45 93% 47%;
+
+    /* Warning - Amber */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
     /* Info */
-    --info: 211 100% 50%;
+    --info: 225 73% 57%;
     --info-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 211 100% 50%;
-    --radius: 0.875rem;
-    
-    /* Fonts - Clean Sans-Serif */
-    --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 225 73% 57%;
+    --radius: 1rem;
+
+    /* Fonts - Apple-like typographic hierarchy */
+    --font-heading: "DM Sans", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
     --font-body: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(211 100% 50%) 0%, hsl(211 100% 42%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 96%) 0%, hsl(0 0% 92%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(211 100% 50%) 0%, hsl(260 80% 55%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(211 100% 50% / 0.04) 0%, hsl(260 80% 55% / 0.04) 100%);
-    --gradient-admin-header: linear-gradient(135deg, hsl(0 0% 11%) 0%, hsl(0 0% 8%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(225 73% 57%) 0%, hsl(250 70% 52%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 14% 96%) 0%, hsl(220 14% 92%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(225 73% 57%) 0%, hsl(280 68% 55%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(220 20% 97%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-admin-header: linear-gradient(135deg, hsl(220 15% 10%) 0%, hsl(220 15% 6%) 100%);
 
-    /* Shadows - Soft & Diffuse (Apple style) */
-    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
-    --shadow-medium: 0 4px 16px -2px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.04);
-    --shadow-strong: 0 12px 40px -8px hsl(0 0% 0% / 0.12), 0 4px 12px -4px hsl(0 0% 0% / 0.06);
-    --shadow-glow: 0 0 30px hsl(211 100% 50% / 0.15);
-    --shadow-glow-accent: 0 0 30px hsl(260 80% 55% / 0.15);
+    /* Shadows - Soft & Layered */
+    --shadow-sm: 0 1px 2px 0 hsl(220 15% 13% / 0.04);
+    --shadow-medium: 0 4px 20px -4px hsl(220 15% 13% / 0.08), 0 2px 6px -2px hsl(220 15% 13% / 0.03);
+    --shadow-strong: 0 16px 48px -12px hsl(220 15% 13% / 0.14), 0 6px 16px -6px hsl(220 15% 13% / 0.05);
+    --shadow-glow: 0 0 40px hsl(225 73% 57% / 0.12);
+    --shadow-glow-accent: 0 0 40px hsl(280 68% 55% / 0.12);
 
     /* Admin Sidebar */
-    --sidebar-background: 0 0% 8%;
+    --sidebar-background: 220 15% 8%;
     --sidebar-foreground: 0 0% 93%;
-    --sidebar-primary: 211 100% 50%;
+    --sidebar-primary: 225 73% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 220 15% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 211 100% 50%;
+    --sidebar-border: 220 15% 16%;
+    --sidebar-ring: 225 73% 57%;
     --sidebar-label-size: 11px;
 
-    /* Header */
-    --header-bg: rgba(255, 255, 255, 0.72);
-    --header-text: #1C1C1E;
+    /* Header - Frosted glass */
+    --header-bg: rgba(255, 255, 255, 0.78);
+    --header-text: #1a1d2e;
 
     /* Home Menu */
-    --home-menu-bg: rgba(255, 255, 255, 0.72);
-    --home-menu-text: #1C1C1E;
-    --home-menu-hover-bg: #F5F5F7;
+    --home-menu-bg: rgba(255, 255, 255, 0.78);
+    --home-menu-text: #1a1d2e;
+    --home-menu-hover-bg: #f1f2f6;
 
     /* Chart Colors */
-    --chart-1: 211 100% 50%;
-    --chart-2: 142 71% 45%;
-    --chart-3: 260 80% 55%;
-    --chart-4: 45 93% 47%;
-    --chart-5: 0 84% 60%;
-    
+    --chart-1: 225 73% 57%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 280 68% 55%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 51%;
+
     /* Admin Colors */
-    --admin-header-bg: 0 0% 8%;
+    --admin-header-bg: 220 15% 8%;
     --admin-header-text: 0 0% 100%;
-    --admin-card-hover: 0 0% 97%;
+    --admin-card-hover: 220 14% 97%;
   }
 
   .dark {
-    /* Apple Dark Mode */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 92%;
+    /* ===== Dark Mode - Cinematic ===== */
+    --background: 220 15% 4%;
+    --foreground: 220 10% 92%;
 
-    --card: 0 0% 11%;
-    --card-foreground: 0 0% 92%;
-    --popover: 0 0% 11%;
-    --popover-foreground: 0 0% 92%;
+    --card: 220 15% 10%;
+    --card-foreground: 220 10% 92%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 220 10% 92%;
 
-    --primary: 211 100% 55%;
+    --primary: 225 80% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 211 100% 65%;
+    --primary-glow: 225 80% 72%;
 
-    --secondary: 0 0% 17%;
+    --secondary: 220 15% 16%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 0 0% 17%;
+    --accent: 220 15% 16%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 9% 55%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 160 84% 42%;
     --success-foreground: 0 0% 100%;
-    
-    --warning: 45 93% 52%;
+
+    --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 211 100% 60%;
+    --info: 225 80% 65%;
     --info-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 211 100% 55%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 225 80% 65%;
 
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 211 100% 55%;
+    --sidebar-background: 220 15% 5%;
+    --sidebar-foreground: 220 10% 92%;
+    --sidebar-primary: 225 80% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 220 15% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 211 100% 55%;
+    --sidebar-border: 220 15% 12%;
+    --sidebar-ring: 225 80% 65%;
 
-    /* Header - Dark mode */
-    --header-bg: rgba(28, 28, 30, 0.72);
-    --header-text: #F5F5F7;
+    /* Header - Dark frosted glass */
+    --header-bg: rgba(18, 20, 30, 0.78);
+    --header-text: #e8eaf0;
 
     /* Home Menu - Dark mode */
-    --home-menu-bg: rgba(28, 28, 30, 0.72);
-    --home-menu-text: #F5F5F7;
-    --home-menu-hover-bg: #2C2C2E;
+    --home-menu-bg: rgba(18, 20, 30, 0.78);
+    --home-menu-text: #e8eaf0;
+    --home-menu-hover-bg: #252838;
 
-    --chart-1: 211 100% 55%;
-    --chart-2: 142 71% 50%;
-    --chart-3: 260 80% 60%;
-    --chart-4: 45 93% 52%;
-    --chart-5: 0 84% 60%;
-    
-    --admin-header-bg: 0 0% 6%;
+    --chart-1: 225 80% 65%;
+    --chart-2: 160 84% 48%;
+    --chart-3: 280 68% 62%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 0 72% 58%;
+
+    --admin-header-bg: 220 15% 5%;
     --admin-header-text: 0 0% 100%;
-    --admin-card-hover: 0 0% 14%;
+    --admin-card-hover: 220 15% 14%;
   }
 }
 
@@ -212,8 +212,9 @@
     text-rendering: optimizeLegibility;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    letter-spacing: -0.025em;
-    font-weight: 600;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    line-height: 1.1;
   }
   
   /* Root + main should be responsive without clipping content */
@@ -590,8 +591,8 @@
   .bg-sparkle-gradient {
     background: 
       radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 60% 30%, rgba(224, 44, 44, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 60% 30%, hsl(225 73% 57% / 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(280 68% 55% / 0.06) 0%, transparent 50%),
       hsl(var(--background));
     animation: sparkle-move 15s ease-in-out infinite;
   }
@@ -604,6 +605,70 @@
     background-image: radial-gradient(circle, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     background-size: 20px 20px;
     background-color: hsl(var(--background));
+  }
+
+  /* ============================================
+     APPLE VIDEO-ON-SCROLL UTILITIES
+     ============================================ */
+
+  /* Full-viewport cinematic section */
+  .scroll-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Sticky scroll container for video-on-scroll effect */
+  .scroll-sticky-container {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Apple large display text */
+  .text-display-xl {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
+
+  .text-display-lg {
+    font-size: clamp(2rem, 4.5vw, 3.75rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .text-display-md {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* Apple subtitle style */
+  .text-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.375rem);
+    font-weight: 400;
+    line-height: 1.5;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Frosted glass panel */
+  .glass-panel {
+    background: hsl(var(--background) / 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.4);
   }
 }
 
