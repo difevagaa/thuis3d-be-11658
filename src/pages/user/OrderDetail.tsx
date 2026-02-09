@@ -400,17 +400,17 @@ export default function OrderDetail() {
         {/* Order Items */}
         <Card>
           <CardHeader>
-            <CardTitle>Artículos del Pedido</CardTitle>
+            <CardTitle>{t('common:orderDetail.orderItems')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Producto</TableHead>
-                    <TableHead className="text-center">Cantidad</TableHead>
-                    <TableHead className="text-right">Precio Unit.</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>{t('common:orderDetail.product')}</TableHead>
+                    <TableHead className="text-center">{t('common:orderDetail.qty')}</TableHead>
+                    <TableHead className="text-right">{t('common:orderDetail.unitPrice')}</TableHead>
+                    <TableHead className="text-right">{t('common:orderDetail.itemTotal')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -427,7 +427,7 @@ export default function OrderDetail() {
                           <div>
                             <p className="font-medium leading-tight">{item.product_name}</p>
                             {item.material?.name && (
-                              <p className="text-xs text-muted-foreground">Material: {item.material.name}</p>
+                              <p className="text-xs text-muted-foreground">{t('common:orderDetail.material')}: {item.material.name}</p>
                             )}
                             {item.color?.name && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
@@ -435,15 +435,15 @@ export default function OrderDetail() {
                                   className="w-3 h-3 rounded-full border"
                                   style={{ backgroundColor: item.color.hex_code }}
                                 />
-                                <span>Color: {item.color.name}</span>
+                                <span>{t('common:orderDetail.color')}: {item.color.name}</span>
                               </div>
                             )}
                             {item.custom_text && !isCustomTextJson(item) && (
-                              <p className="text-xs text-muted-foreground">Texto: {item.custom_text}</p>
+                              <p className="text-xs text-muted-foreground">{t('common:orderDetail.text')}: {item.custom_text}</p>
                             )}
                             {getSelections(item).length > 0 && (
                               <div className="mt-2 space-y-1">
-                                <p className="text-xs font-semibold text-muted-foreground">Personalización:</p>
+                                <p className="text-xs font-semibold text-muted-foreground">{t('common:orderDetail.customization')}:</p>
                                 {getSelections(item).map((sel: any, idx: number) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs">
                                     <span className="font-medium">{sel.section_name}:</span>
@@ -491,7 +491,7 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Notas del Pedido
+                {t('common:orderDetail.orderNotes')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -506,29 +506,29 @@ export default function OrderDetail() {
         {invoice && order.payment_status === "paid" && (
           <Card>
             <CardHeader>
-              <CardTitle>Información de Factura</CardTitle>
-              <CardDescription>Factura #{invoice.invoice_number}</CardDescription>
+              <CardTitle>{t('common:orderDetail.invoiceInfo')}</CardTitle>
+              <CardDescription>{t('common:orderDetail.invoiceNumber', { number: invoice.invoice_number })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Fecha de emisión:</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.issueDate')}:</p>
                   <p className="font-medium">
-                    {new Date(invoice.issue_date).toLocaleDateString('es-ES')}
+                    {new Date(invoice.issue_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}
                   </p>
                 </div>
                 {invoice.due_date && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Fecha de vencimiento:</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.dueDate')}:</p>
                     <p className="font-medium">
-                      {new Date(invoice.due_date).toLocaleDateString('es-ES')}
+                      {new Date(invoice.due_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Estado de pago:</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.paymentStatus')}:</p>
                   <Badge variant={invoice.payment_status === "paid" ? "default" : "secondary"}>
-                    {invoice.payment_status === "paid" ? "Pagada" : "Pendiente"}
+                    {invoice.payment_status === "paid" ? t('common:orderDetail.invoicePaid') : t('common:orderDetail.invoicePending')}
                   </Badge>
                 </div>
               </div>
