@@ -5,7 +5,7 @@ import Backend from 'i18next-http-backend';
 
 // Map browser language codes to our supported languages
 const mapToSupportedLanguage = (lng: string | undefined | null): string => {
-  if (!lng) return 'nl'; // Default to Dutch for Belgian site
+  if (!lng) return 'en'; // Default to English when language cannot be detected
   
   const baseLang = lng.split('-')[0].toLowerCase();
   
@@ -13,8 +13,8 @@ const mapToSupportedLanguage = (lng: string | undefined | null): string => {
   if (baseLang === 'es') return 'es';
   if (baseLang === 'en') return 'en';
   
-  // Default to Dutch for unsupported languages
-  return 'nl';
+  // Default to English for unsupported languages
+  return 'en';
 };
 
 // Detection order: localStorage → navigator → htmlTag
@@ -32,7 +32,7 @@ i18n
   .use(initReactI18next)
   .init({
     // DO NOT set 'lng' here - let LanguageDetector handle it
-    fallbackLng: 'nl',
+    fallbackLng: 'en',
     supportedLngs: ['es', 'en', 'nl'],
     debug: false,
     detection: detectionOptions,
