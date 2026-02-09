@@ -21,7 +21,7 @@ export default function UserQuoteDetail() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const [statusIds, setStatusIds] = useState<{ rejected?: string }>({});
+  const [statusIds, setStatusIds] = useState<{ approved?: string; rejected?: string }>({});
 
   const loadStatusIds = useCallback(async () => {
     try {
@@ -32,11 +32,15 @@ export default function UserQuoteDetail() {
 
       if (error || !data) return;
 
+      const approved = data.find(status =>
+        status.slug === "approved" || status.name?.toLowerCase() === "aprobada" || status.name?.toLowerCase() === "aprobado"
+      );
       const rejected = data.find(status =>
         status.slug === "rejected" || status.name?.toLowerCase() === "rechazada" || status.name?.toLowerCase() === "rechazado"
       );
 
       setStatusIds({
+        approved: approved?.id,
         rejected: rejected?.id
       });
     } catch {
@@ -145,10 +149,12 @@ export default function UserQuoteDetail() {
     }
 
     let statusId: string | undefined;
-    if (action === "reject") {
+    if (action === "approve") {
+      statusId = statusIds.approved;
+    } else if (action === "reject") {
       statusId = statusIds.rejected;
     }
-    if (action === "reject" && !statusId) {
+    if ((action === "approve" || action === "reject") && !statusId) {
       i18nToast.directError("No se pudo determinar el estado de la cotización.");
       return;
     }

@@ -12,7 +12,6 @@ import { Mail, MailOpen, PenSquare, Paperclip, X, Download, Image as ImageIcon, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
-import { sendNotificationWithBroadcast, notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
 
 export default function Messages() {
   const [messages, setMessages] = useState<any[]>([]);
@@ -159,36 +158,6 @@ export default function Messages() {
 
       if (error) throw error;
       toast.success("Respuesta enviada exitosamente");
-
-      // Send notification to the client
-      if (selectedMessage.user_id) {
-        await sendNotificationWithBroadcast(
-          selectedMessage.user_id,
-          "new_message",
-          "Nuevo mensaje del administrador",
-          `Has recibido una respuesta a tu mensaje: "${selectedMessage.subject || 'Sin asunto'}"`,
-          "/mi-cuenta?tab=messages"
-        );
-      }
-
-      // Send email notification to the client
-      if (selectedMessage.sender_email) {
-        try {
-          await supabase.functions.invoke("send-chat-notification-email", {
-            body: {
-              to_email: selectedMessage.sender_email,
-              sender_name: "Equipo de soporte",
-              message_preview: reply.substring(0, 200),
-              is_admin: true,
-              has_attachments: replyAttachments.length > 0,
-              user_id: selectedMessage.user_id
-            }
-          });
-        } catch {
-          // Non-blocking email errors
-        }
-      }
-
       setReply("");
       setReplyAttachments([]);
       setUploadProgress({});
@@ -232,42 +201,6 @@ export default function Messages() {
 
       if (error) throw error;
       toast.success("Mensaje enviado exitosamente");
-
-      // Send notification to the recipient
-      if (newMessage.recipient_id) {
-        await sendNotificationWithBroadcast(
-          newMessage.recipient_id,
-          "new_message",
-          "Nuevo mensaje del administrador",
-          `Has recibido un nuevo mensaje: "${newMessage.subject || 'Mensaje del Administrador'}"`,
-          "/mi-cuenta?tab=messages"
-        );
-
-        // Send email notification to the recipient
-        try {
-          const { data: recipientProfile } = await supabase
-            .from("profiles")
-            .select("email, full_name")
-            .eq("id", newMessage.recipient_id)
-            .single();
-
-          if (recipientProfile?.email) {
-            await supabase.functions.invoke("send-chat-notification-email", {
-              body: {
-                to_email: recipientProfile.email,
-                sender_name: "Equipo de soporte",
-                message_preview: newMessage.message.substring(0, 200),
-                is_admin: true,
-                has_attachments: attachments.length > 0,
-                user_id: newMessage.recipient_id
-              }
-            });
-          }
-        } catch {
-          // Non-blocking email errors
-        }
-      }
-
       setNewMessage({ recipient_id: "", subject: "", message: "" });
       setAttachments([]);
       setUploadProgress({});

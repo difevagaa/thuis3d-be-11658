@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar, SidebarContent, useSidebar } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -244,7 +244,6 @@ function AdminMenuSection({
 
 export function AdminSidebar() {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
-  const isResizing = useRef(false);
   
   const handleNavigate = () => {
     if (isMobile) {
@@ -262,51 +261,12 @@ export function AdminSidebar() {
     }
   };
 
-  const startResizing = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newWidth = Math.max(220, Math.min(400, e.clientX));
-      // Update the CSS variable on the sidebar wrapper (SidebarProvider root div)
-      const sidebarEl = document.querySelector('[data-sidebar="sidebar"]');
-      // Walk up the DOM to find the element with the --sidebar-width CSS variable
-      let wrapper = sidebarEl?.parentElement;
-      while (wrapper && !wrapper.style.getPropertyValue('--sidebar-width')) {
-        wrapper = wrapper.parentElement;
-      }
-      if (wrapper) {
-        wrapper.style.setProperty('--sidebar-width', `${newWidth}px`);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isResizing.current) {
-        isResizing.current = false;
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      }
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
   // Split sections by group property
   const operationSections = menuItems.filter(s => s.group !== "config");
   const configSections = menuItems.filter(s => s.group === "config");
   
   return (
-    <Sidebar className="bg-sidebar border-r border-sidebar-border relative" style={{ top: 'var(--header-height, 3.5rem)', height: 'calc(100svh - var(--header-height, 3.5rem))' }}>
+    <Sidebar className="w-56 bg-sidebar border-r border-sidebar-border">
       <SidebarContent className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/50">
@@ -361,14 +321,6 @@ export function AdminSidebar() {
           </div>
         </ScrollArea>
       </SidebarContent>
-      
-      {/* Resize handle */}
-      {!isMobile && (
-        <div
-          onMouseDown={startResizing}
-          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/30 transition-colors z-50"
-        />
-      )}
     </Sidebar>
   );
 }

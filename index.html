@@ -147,9 +147,7 @@
             if (data.primary_hsl) root.style.setProperty('--primary', data.primary_hsl);
             if (data.secondary_hsl) {
               root.style.setProperty('--secondary', data.secondary_hsl);
-              // NOTE: Do NOT override --sidebar-background with secondary color.
-              // The sidebar has its own dark background defined in CSS.
-              // Overriding it with the secondary (light) color makes sidebar text invisible.
+              root.style.setProperty('--sidebar-background', data.secondary_hsl);
             }
             if (data.background_hsl) root.style.setProperty('--background', data.background_hsl);
             if (data.home_hero_bg_hsl) root.style.setProperty('--home-hero-bg', data.home_hero_bg_hsl);

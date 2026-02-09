@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Mail, Paperclip, X, Image as ImageIcon, FileText } from "lucide-react";
-import { notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
 
 export function SendAdminMessage() {
   const [open, setOpen] = useState(false);
@@ -102,14 +101,6 @@ export function SendAdminMessage() {
         });
       }
 
-      // Send in-app notification to admins
-      await notifyAdminsWithBroadcast(
-        "new_message",
-        "Nuevo mensaje de cliente",
-        `${profile?.full_name || 'Un cliente'} ha enviado un mensaje: "${subject || 'Sin asunto'}"`,
-        "/admin/messages"
-      );
-
       // Send email notification to admins
       try {
         await supabase.functions.invoke('send-admin-notification', {
@@ -119,7 +110,7 @@ export function SendAdminMessage() {
             message: `${profile?.full_name || 'Un cliente'} ha enviado un mensaje: ${message}`,
             customer_name: profile?.full_name || 'Cliente',
             customer_email: profile?.email || user.email || '',
-            link: '/admin/messages'
+            link: '/admin/mensajes'
           }
         });
       } catch (emailError) {

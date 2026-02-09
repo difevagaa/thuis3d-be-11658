@@ -647,33 +647,28 @@ export default function QuoteDetail() {
             </Card>
 
             {/* Precios */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {quote.calculated_material_cost && (
-                <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Costo Calculado Automáticamente</p>
-                  <p className="text-2xl font-bold text-green-600 tabular-nums">
+                  <p className="text-2xl font-bold text-green-600">
                     €{parseFloat(quote.calculated_material_cost).toFixed(2)}
                   </p>
                 </div>
               )}
 
               {quote.estimated_price && (
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Precio Estimado Final{quote.quantity > 1 ? ` (${quote.quantity} uds.)` : ''}
+                    Precio Estimado Final{quote.quantity > 1 ? ` (${quote.quantity} unidades)` : ''}
                   </p>
-                  <p className="text-2xl font-bold text-primary tabular-nums">
+                  <p className="text-2xl font-bold text-primary">
                     €{parseFloat(quote.estimated_price).toFixed(2)}
                   </p>
                   {taxEnabled && (
-                    <div className="pt-1 border-t border-primary/10 mt-1">
-                      <p className="text-xs text-muted-foreground">
-                        + IVA 21%: <span className="font-semibold tabular-nums">€{(parseFloat(quote.estimated_price) * 0.21).toFixed(2)}</span>
-                      </p>
-                      <p className="text-sm font-bold text-primary tabular-nums mt-0.5">
-                        Total con IVA: €{(parseFloat(quote.estimated_price) * 1.21).toFixed(2)}
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      + IVA (se aplicará al aprobar)
+                    </p>
                   )}
                 </div>
               )}
