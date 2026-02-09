@@ -184,7 +184,7 @@ export const Layout = ({
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-0.5 mx-[5px]">
+            <nav className="hidden md:flex items-center gap-0 mx-0 rounded-sm">
               {[{
               to: "/",
               label: t('home')
