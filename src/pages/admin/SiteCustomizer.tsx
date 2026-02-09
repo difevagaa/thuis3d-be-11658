@@ -541,12 +541,11 @@ export default function SiteCustomizer() {
     root.style.setProperty('--ring', theme.ring);
 
     // Check if sidebar colors are explicitly customized
-    // If they are, we should NOT override them with the palette
+    // If they are, those custom colors are already applied via the advanced colors system
     const sidebarIsCustomized = isSectionCustomized('sidebar');
 
-    // Only apply palette sidebar colors if sidebar IS explicitly customized
-    // When NOT customized, let the CSS defaults (dark sidebar) remain so text stays visible
     if (sidebarIsCustomized) {
+      // Custom sidebar colors are already applied via applyAdvancedColors - no action needed
       logger.log('🎨 [SiteCustomizer.applyPalette] Sidebar colors customized - preserving custom colors');
     } else {
       // Clear any previously set sidebar overrides so the CSS defaults apply
