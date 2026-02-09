@@ -323,22 +323,23 @@ const applyProfessionalPalette = (paletteData: PaletteData) => {
   root.style.setProperty('--ring', theme.ring);
 
   // Check if sidebar colors are explicitly customized
-  // If they are, we should NOT override them with the palette
+  // If they are, those custom colors are already applied via the advanced colors system
   const sidebarIsCustomized = isSectionCustomized('sidebar');
 
-  // Only apply palette sidebar colors if sidebar is NOT explicitly customized
-  if (!sidebarIsCustomized) {
-    root.style.setProperty('--sidebar-background', theme.secondary);
-    root.style.setProperty('--sidebar-foreground', theme.secondaryForeground);
-    root.style.setProperty('--sidebar-primary', theme.primary);
-    root.style.setProperty('--sidebar-primary-foreground', theme.primaryForeground);
-    root.style.setProperty('--sidebar-accent', theme.accent);
-    root.style.setProperty('--sidebar-accent-foreground', theme.accentForeground);
-    root.style.setProperty('--sidebar-border', theme.border);
-    root.style.setProperty('--sidebar-ring', theme.ring);
-    logger.log('🎨 [applyProfessionalPalette] Sidebar colors from palette applied');
-  } else {
+  if (sidebarIsCustomized) {
+    // Custom sidebar colors are already applied via applyAdvancedColors - no action needed
     logger.log('🎨 [applyProfessionalPalette] Sidebar colors customized - preserving custom colors');
+  } else {
+    // Clear any previously set sidebar overrides so the CSS defaults apply
+    root.style.removeProperty('--sidebar-background');
+    root.style.removeProperty('--sidebar-foreground');
+    root.style.removeProperty('--sidebar-primary');
+    root.style.removeProperty('--sidebar-primary-foreground');
+    root.style.removeProperty('--sidebar-accent');
+    root.style.removeProperty('--sidebar-accent-foreground');
+    root.style.removeProperty('--sidebar-border');
+    root.style.removeProperty('--sidebar-ring');
+    logger.log('🎨 [applyProfessionalPalette] Sidebar using CSS defaults (dark background)');
   }
   
   logger.log('✅ [useGlobalColors] Paleta profesional aplicada:', paletteData.palette_name);
