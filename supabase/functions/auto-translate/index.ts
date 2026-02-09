@@ -168,7 +168,7 @@ async function processTranslationQueue(supabaseAdmin: any) {
               const planIndex = parseInt(planFeatureMatch[1]);
               const featureIndex = parseInt(planFeatureMatch[2]);
               const plans = content.plans;
-              if (Array.isArray(plans) && plans[planIndex] && Array.isArray(plans[planIndex].features) && plans[planIndex].features[featureIndex]) {
+              if (Array.isArray(plans) && plans[planIndex] && Array.isArray(plans[planIndex]?.features) && plans[planIndex]?.features?.[featureIndex]) {
                 originalText = plans[planIndex].features[featureIndex];
               } else {
                 console.warn(`Plan feature not found: plans[${planIndex}].features[${featureIndex}]`);
@@ -179,7 +179,7 @@ async function processTranslationQueue(supabaseAdmin: any) {
                 const planIndex = parseInt(planFieldMatch[1]);
                 const fieldName = planFieldMatch[2];
                 const plans = content.plans;
-                if (Array.isArray(plans) && plans[planIndex] && plans[planIndex][fieldName]) {
+                if (Array.isArray(plans) && plans?.[planIndex]?.[fieldName]) {
                   originalText = plans[planIndex][fieldName];
                 } else {
                   console.warn(`Plan field not found: plans[${planIndex}].${fieldName}`);

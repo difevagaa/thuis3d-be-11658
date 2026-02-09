@@ -21,6 +21,14 @@ export default function OrderDetail() {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper: get locale string for date formatting based on current language
+  const getDateLocale = () => {
+    const lang = i18n.language?.split('-')[0];
+    if (lang === 'nl') return 'nl-BE';
+    if (lang === 'es') return 'es-ES';
+    return 'en-GB';
+  };
+
   // Helper: normalize customization selections (array or JSON string, or mistakenly stored in custom_text)
   const getSelections = (item: any) => {
     try {
@@ -237,7 +245,7 @@ export default function OrderDetail() {
               <div>
                 <CardTitle className="text-2xl">{t('common:orderDetail.orderNumber', { number: order.order_number })}</CardTitle>
                 <CardDescription>
-                  {t('common:orderDetail.placedOn', { date: new Date(order.created_at).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB', {
+                  {t('common:orderDetail.placedOn', { date: new Date(order.created_at).toLocaleDateString(getDateLocale(), {
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric'
@@ -351,7 +359,7 @@ export default function OrderDetail() {
                   {order.estimated_delivery_date && (
                     <div className="text-sm">
                       <span className="text-muted-foreground">{t('common:orderDetail.estimatedDelivery')}:</span>
-                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}</span>
+                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString(getDateLocale())}</span>
                     </div>
                   )}
                   {order.tracking_url && (
@@ -514,14 +522,14 @@ export default function OrderDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.issueDate')}:</p>
                   <p className="font-medium">
-                    {new Date(invoice.issue_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}
+                    {new Date(invoice.issue_date).toLocaleDateString(getDateLocale())}
                   </p>
                 </div>
                 {invoice.due_date && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.dueDate')}:</p>
                     <p className="font-medium">
-                      {new Date(invoice.due_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}
+                      {new Date(invoice.due_date).toLocaleDateString(getDateLocale())}
                     </p>
                   </div>
                 )}
