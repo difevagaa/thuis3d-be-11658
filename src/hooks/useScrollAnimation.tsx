@@ -11,6 +11,8 @@ interface ScrollAnimationOptions {
   delay?: number;
   /** Whether the hook is disabled */
   disabled?: boolean;
+  /** Animation variant */
+  variant?: 'fade-up' | 'fade-in' | 'scale' | 'slide-left' | 'slide-right' | 'blur-in' | 'parallax';
 }
 
 interface ScrollAnimationResult {
@@ -18,6 +20,63 @@ interface ScrollAnimationResult {
   style: CSSProperties;
   isVisible: boolean;
 }
+
+const getVariantStyles = (variant: string, isVisible: boolean, delay: number): CSSProperties => {
+  const transition = `opacity 1s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 1s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, filter 0.8s ease ${delay}ms`;
+  
+  switch (variant) {
+    case 'fade-in':
+      return {
+        opacity: isVisible ? 1 : 0,
+        transition,
+        willChange: 'opacity',
+      };
+    case 'scale':
+      return {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'scale(1)' : 'scale(0.92)',
+        transition,
+        willChange: 'opacity, transform',
+      };
+    case 'slide-left':
+      return {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateX(0)' : 'translateX(-60px)',
+        transition,
+        willChange: 'opacity, transform',
+      };
+    case 'slide-right':
+      return {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateX(0)' : 'translateX(60px)',
+        transition,
+        willChange: 'opacity, transform',
+      };
+    case 'blur-in':
+      return {
+        opacity: isVisible ? 1 : 0,
+        filter: isVisible ? 'blur(0px)' : 'blur(8px)',
+        transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.98)',
+        transition,
+        willChange: 'opacity, transform, filter',
+      };
+    case 'parallax':
+      return {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(80px)',
+        transition: `opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 1.4s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+        willChange: 'opacity, transform',
+      };
+    case 'fade-up':
+    default:
+      return {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
+        transition,
+        willChange: 'opacity, transform',
+      };
+  }
+};
 
 /**
  * Apple-style scroll-driven reveal animation hook.
@@ -29,6 +88,7 @@ export const useScrollAnimation = ({
   once = true,
   delay = 0,
   disabled = false,
+  variant = 'fade-up',
 }: ScrollAnimationOptions = {}): ScrollAnimationResult => {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -63,12 +123,7 @@ export const useScrollAnimation = ({
     };
   }, [threshold, rootMargin, once, delay, disabled]);
 
-  const style: CSSProperties = {
-    opacity: isVisible ? 1 : 0,
-    transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
-    transition: `opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}ms, transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}ms`,
-    willChange: 'opacity, transform',
-  };
+  const style = getVariantStyles(variant, isVisible, delay);
 
   return { ref: ref as React.RefObject<HTMLDivElement>, style, isVisible };
 };
