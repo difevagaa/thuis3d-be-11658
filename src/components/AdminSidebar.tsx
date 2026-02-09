@@ -273,8 +273,13 @@ export function AdminSidebar() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
       const newWidth = Math.max(220, Math.min(400, e.clientX));
-      // Update the CSS variable on the sidebar wrapper
-      const wrapper = document.querySelector('[data-sidebar="sidebar"]')?.closest('.group\\/sidebar-wrapper') as HTMLElement;
+      // Update the CSS variable on the sidebar wrapper (SidebarProvider root div)
+      const sidebarEl = document.querySelector('[data-sidebar="sidebar"]');
+      // Walk up the DOM to find the element with the --sidebar-width CSS variable
+      let wrapper = sidebarEl?.parentElement;
+      while (wrapper && !wrapper.style.getPropertyValue('--sidebar-width')) {
+        wrapper = wrapper.parentElement;
+      }
       if (wrapper) {
         wrapper.style.setProperty('--sidebar-width', `${newWidth}px`);
       }

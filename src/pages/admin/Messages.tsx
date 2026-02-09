@@ -174,13 +174,14 @@ export default function Messages() {
       // Send email notification to the client
       if (selectedMessage.sender_email) {
         try {
-          await supabase.functions.invoke("send-quote-update-email", {
+          await supabase.functions.invoke("send-chat-notification-email", {
             body: {
-              to: selectedMessage.sender_email,
-              customer_name: selectedMessage.sender_name || "Cliente",
-              quote_type: "message",
-              estimated_price: 0,
-              description: `Has recibido una respuesta a tu mensaje. Revisa tu bandeja de mensajes en tu panel de usuario.`
+              to_email: selectedMessage.sender_email,
+              sender_name: "Equipo de soporte",
+              message_preview: reply.substring(0, 200),
+              is_admin: true,
+              has_attachments: replyAttachments.length > 0,
+              user_id: selectedMessage.user_id
             }
           });
         } catch {
@@ -251,13 +252,14 @@ export default function Messages() {
             .single();
 
           if (recipientProfile?.email) {
-            await supabase.functions.invoke("send-quote-update-email", {
+            await supabase.functions.invoke("send-chat-notification-email", {
               body: {
-                to: recipientProfile.email,
-                customer_name: recipientProfile.full_name || "Cliente",
-                quote_type: "message",
-                estimated_price: 0,
-                description: `Has recibido un nuevo mensaje del administrador. Revisa tu bandeja de mensajes en tu panel de usuario.`
+                to_email: recipientProfile.email,
+                sender_name: "Equipo de soporte",
+                message_preview: newMessage.message.substring(0, 200),
+                is_admin: true,
+                has_attachments: attachments.length > 0,
+                user_id: newMessage.recipient_id
               }
             });
           }
