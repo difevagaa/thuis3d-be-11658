@@ -27,6 +27,7 @@
     "city": "Ciudad",
     "postalCode": "Código Postal",
     "country": "País",
+    "preferredLanguage": "Idioma Preferido",
     "saveChanges": "Guardar Cambios",
     "updated": "Perfil actualizado correctamente",
     "error": "Error al actualizar perfil"

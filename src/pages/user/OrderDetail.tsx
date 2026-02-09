@@ -13,7 +13,7 @@ import { logger } from '@/lib/logger';
 import { i18nToast } from "@/lib/i18nToast";
 
 export default function OrderDetail() {
-  const { t } = useTranslation(['common']);
+  const { t, i18n } = useTranslation(['common']);
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
@@ -199,7 +199,7 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">Cargando detalles del pedido...</div>
+        <div className="text-center">{t('common:orderDetail.loadingOrder')}</div>
       </div>
     );
   }
@@ -207,7 +207,7 @@ export default function OrderDetail() {
   if (!order) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">No se encontró el pedido</div>
+        <div className="text-center">{t('common:orderDetail.orderNotFound')}</div>
       </div>
     );
   }
@@ -217,13 +217,13 @@ export default function OrderDetail() {
       <div className="mb-6 flex items-center justify-between print:hidden">
         <Button variant="ghost" onClick={() => navigate("/mi-cuenta")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver a Mi Cuenta
+          {t('common:orderDetail.backToAccount')}
         </Button>
         <div className="flex gap-2">
           {invoice && order.payment_status === "paid" && (
             <Button variant="outline" onClick={printInvoice}>
               <Printer className="h-4 w-4 mr-2" />
-              Imprimir
+              {t('common:orderDetail.print')}
             </Button>
           )}
         </div>
@@ -235,13 +235,13 @@ export default function OrderDetail() {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle className="text-2xl">Pedido #{order.order_number}</CardTitle>
+                <CardTitle className="text-2xl">{t('common:orderDetail.orderNumber', { number: order.order_number })}</CardTitle>
                 <CardDescription>
-                  Realizado el {new Date(order.created_at).toLocaleDateString('es-ES', {
+                  {t('common:orderDetail.placedOn', { date: new Date(order.created_at).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB', {
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric'
-                  })}
+                  }) })}
                 </CardDescription>
               </div>
               <div className="flex flex-col gap-2">
@@ -249,7 +249,7 @@ export default function OrderDetail() {
                   variant={order.payment_status === "paid" ? "default" : "secondary"}
                   className="w-fit"
                 >
-                  {order.payment_status === "paid" ? "Pagado" : "Pendiente de pago"}
+                  {order.payment_status === "paid" ? t('common:orderDetail.paid') : t('common:orderDetail.pendingPayment')}
                 </Badge>
                 {order.status && (
                   <Badge 
@@ -270,33 +270,33 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Package className="h-5 w-5" />
-                Detalles del Pedido
+                {t('common:orderDetail.orderDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between items-center text-sm gap-2">
-                <span className="text-muted-foreground flex-shrink-0">Subtotal:</span>
+                <span className="text-muted-foreground flex-shrink-0">{t('common:subtotal')}:</span>
                 <span className="font-medium text-right whitespace-nowrap">€{Number(order.subtotal).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-sm gap-2">
-                <span className="text-muted-foreground flex-shrink-0">Envío:</span>
+                <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.shippingLabel')}:</span>
                 <span className="font-medium text-right whitespace-nowrap">€{Number(order.shipping || 0).toFixed(2)}</span>
               </div>
               {Number(order.tax || 0) > 0 && (
                 <div className="flex justify-between items-center text-sm gap-2">
-                  <span className="text-muted-foreground flex-shrink-0">IVA (21%):</span>
+                  <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.vat')}:</span>
                   <span className="font-medium text-right whitespace-nowrap">€{Number(order.tax || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.discount > 0 && (
                 <div className="flex justify-between items-center text-sm gap-2">
-                  <span className="text-muted-foreground flex-shrink-0">Descuento:</span>
+                  <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.discountLabel')}:</span>
                   <span className="font-medium text-success text-right whitespace-nowrap">-€{Number(order.discount).toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between items-center font-bold gap-2">
-                  <span className="flex-shrink-0">Total:</span>
+                  <span className="flex-shrink-0">{t('common:total')}:</span>
                   <span className="text-right whitespace-nowrap">€{Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
@@ -307,18 +307,18 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CreditCard className="h-5 w-5" />
-                Información de Pago
+                {t('common:orderDetail.paymentInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-sm">
-                <span className="text-muted-foreground block mb-1">Método de pago:</span>
-                <span className="font-medium capitalize">{order.payment_method || "No especificado"}</span>
+                <span className="text-muted-foreground block mb-1">{t('common:orderDetail.paymentMethod')}:</span>
+                <span className="font-medium capitalize">{order.payment_method || t('common:orderDetail.notSpecified')}</span>
               </div>
               <div className="text-sm">
-                <span className="text-muted-foreground block mb-1">Estado:</span>
+                <span className="text-muted-foreground block mb-1">{t('common:orderDetail.status')}:</span>
                 <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
-                  {order.payment_status === "paid" ? "Pagado" : "Pendiente"}
+                  {order.payment_status === "paid" ? t('common:orderDetail.paid') : t('common:orderDetail.pending')}
                 </Badge>
               </div>
             </CardContent>
@@ -328,7 +328,7 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Truck className="h-5 w-5" />
-                Envío y Seguimiento
+                {t('common:orderDetail.shippingTracking')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -336,22 +336,22 @@ export default function OrderDetail() {
               {order.tracking_number && (
                 <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg space-y-3">
                   <h4 className="font-semibold text-green-800 dark:text-green-200 flex items-center gap-2">
-                    📦 Información de Seguimiento
+                    📦 {t('common:orderDetail.trackingInfo')}
                   </h4>
                   {order.carrier_name && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Transportista:</span>
+                      <span className="text-muted-foreground">{t('common:orderDetail.carrier')}:</span>
                       <span className="font-medium ml-2">{order.carrier_name}</span>
                     </div>
                   )}
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Número de seguimiento:</span>
+                    <span className="text-muted-foreground">{t('common:orderDetail.trackingNumber')}:</span>
                     <code className="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded ml-2">{order.tracking_number}</code>
                   </div>
                   {order.estimated_delivery_date && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Entrega estimada:</span>
-                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString('es-ES')}</span>
+                      <span className="text-muted-foreground">{t('common:orderDetail.estimatedDelivery')}:</span>
+                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString(i18n.language === 'nl' ? 'nl-BE' : i18n.language === 'es' ? 'es-ES' : 'en-GB')}</span>
                     </div>
                   )}
                   {order.tracking_url && (
@@ -361,7 +361,7 @@ export default function OrderDetail() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                     >
-                      🔗 Rastrear Pedido
+                      🔗 {t('common:orderDetail.trackOrder')}
                     </a>
                   )}
                 </div>
@@ -369,11 +369,11 @@ export default function OrderDetail() {
               
               {/* Shipping Address */}
               <div>
-                <span className="text-muted-foreground text-sm block mb-1">Dirección de envío:</span>
+                <span className="text-muted-foreground text-sm block mb-1">{t('common:orderDetail.shippingAddress')}:</span>
                 <p className="text-sm whitespace-pre-line">
                   {(() => {
                     try {
-                      if (!order.shipping_address) return "No especificada";
+                      if (!order.shipping_address) return t('common:orderDetail.addressNotSpecified');
                       const addr = typeof order.shipping_address === 'string' && order.shipping_address.startsWith('{')
                         ? JSON.parse(order.shipping_address)
                         : order.shipping_address;
@@ -388,7 +388,7 @@ export default function OrderDetail() {
                       return addr;
                     } catch (error) {
                       logger.error('Error parsing address:', error);
-                      return order.shipping_address || "No especificada";
+                      return order.shipping_address || t('common:orderDetail.addressNotSpecified');
                     }
                   })()}
                 </p>

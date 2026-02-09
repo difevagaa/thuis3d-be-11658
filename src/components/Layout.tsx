@@ -20,7 +20,8 @@ export const Layout = ({
   children
 }: LayoutProps) => {
   const {
-    t
+    t,
+    i18n
   } = useTranslation(['navigation']);
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +61,21 @@ export const Layout = ({
         data
       } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "superadmin"]);
       setIsAdmin((data || []).length > 0);
+
+      // Load and apply user's preferred language
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("preferred_language")
+        .eq("id", user.id)
+        .single();
+      
+      if (profileData?.preferred_language && ['es', 'en', 'nl'].includes(profileData.preferred_language)) {
+        const currentLang = i18n.language?.split('-')[0];
+        if (currentLang !== profileData.preferred_language) {
+          await i18n.changeLanguage(profileData.preferred_language);
+          localStorage.setItem('i18nextLng', profileData.preferred_language);
+        }
+      }
     }
   };
   const handleLogout = async () => {

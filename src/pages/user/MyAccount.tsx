@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Package, MessageSquare, Gift, Award, FileText, Download, Paperclip, X, Image as ImageIcon } from "lucide-react";
@@ -197,11 +198,20 @@ export default function MyAccount() {
           address: profile.address,
           city: profile.city,
           postal_code: profile.postal_code,
-          country: profile.country
+          country: profile.country,
+          preferred_language: profile.preferred_language || 'en'
         })
         .eq("id", profile.id);
 
       if (error) throw error;
+
+      // Apply language change immediately
+      const lang = profile.preferred_language || 'en';
+      if (['es', 'en', 'nl'].includes(lang)) {
+        await i18n.changeLanguage(lang);
+        localStorage.setItem('i18nextLng', lang);
+      }
+
       i18nToast.success("success.profileUpdated");
     } catch (error) {
       i18nToast.error("error.profileUpdateFailed");
@@ -477,6 +487,22 @@ export default function MyAccount() {
                   onChange={(e) => setProfile({ ...profile, country: e.target.value })}
                   placeholder="Bélgica"
                 />
+              </div>
+              <div>
+                <Label>{t('account:profile.preferredLanguage')}</Label>
+                <Select
+                  value={profile?.preferred_language || 'en'}
+                  onValueChange={(value) => setProfile({ ...profile, preferred_language: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="nl">🇳🇱 Nederlands</SelectItem>
+                    <SelectItem value="es">🇪🇸 Español</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button onClick={updateProfile}>{t('account:profile.saveChanges')}</Button>
             </CardContent>
