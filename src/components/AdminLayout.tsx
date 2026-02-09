@@ -161,7 +161,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   }, []);
   
   return (
-    <div className="min-h-screen flex flex-col w-full bg-background">
+    <div className="h-screen flex flex-col w-full bg-background overflow-hidden [--header-height:3.5rem] md:[--header-height:4rem]">
       {/* Header - Fixed at top with centered content */}
       <header className="h-14 md:h-16 flex items-center border-b bg-card shadow-sm sticky top-0 z-50 shrink-0">
         <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between">
@@ -371,7 +371,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="min-h-0 h-screen">
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </SidebarProvider>
   );
