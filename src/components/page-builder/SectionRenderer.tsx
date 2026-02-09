@@ -2124,6 +2124,7 @@ function NewsletterSection({ section }: { section: SectionData }) {
 // Steps / Process Section
 function StepsSection({ section }: { section: SectionData }) {
   const { content, styles, settings } = section;
+  const accentColor = settings?.accentColor || '#3b82f6';
 
   return (
     <section
@@ -2165,12 +2166,12 @@ function StepsSection({ section }: { section: SectionData }) {
               <div className="flex flex-col items-center">
                 <div
                   className="flex items-center justify-center w-12 h-12 rounded-full text-white font-bold text-lg shrink-0"
-                  style={{ backgroundColor: styles?.textColor ? styles.textColor : '#3b82f6' }}
+                  style={{ backgroundColor: accentColor }}
                 >
                   {step.number || index + 1}
                 </div>
                 {index < (content?.steps || []).length - 1 && (
-                  <div className="w-0.5 flex-1 mt-2" style={{ backgroundColor: styles?.textColor ? `${styles.textColor}30` : '#3b82f620' }} />
+                  <div className="w-0.5 flex-1 mt-2" style={{ backgroundColor: `${accentColor}30` }} />
                 )}
               </div>
               <div className="pb-8">
