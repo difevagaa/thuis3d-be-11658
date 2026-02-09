@@ -12,6 +12,7 @@ import { Mail, MailOpen, PenSquare, Paperclip, X, Download, Image as ImageIcon, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
+import { sendNotificationWithBroadcast, notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
 
 export default function Messages() {
   const [messages, setMessages] = useState<any[]>([]);
@@ -158,6 +159,35 @@ export default function Messages() {
 
       if (error) throw error;
       toast.success("Respuesta enviada exitosamente");
+
+      // Send notification to the client
+      if (selectedMessage.user_id) {
+        await sendNotificationWithBroadcast(
+          selectedMessage.user_id,
+          "new_message",
+          "Nuevo mensaje del administrador",
+          `Has recibido una respuesta a tu mensaje: "${selectedMessage.subject || 'Sin asunto'}"`,
+          "/mi-cuenta?tab=messages"
+        );
+      }
+
+      // Send email notification to the client
+      if (selectedMessage.sender_email) {
+        try {
+          await supabase.functions.invoke("send-quote-update-email", {
+            body: {
+              to: selectedMessage.sender_email,
+              customer_name: selectedMessage.sender_name || "Cliente",
+              quote_type: "message",
+              estimated_price: 0,
+              description: `Has recibido una respuesta a tu mensaje. Revisa tu bandeja de mensajes en tu panel de usuario.`
+            }
+          });
+        } catch {
+          // Non-blocking email errors
+        }
+      }
+
       setReply("");
       setReplyAttachments([]);
       setUploadProgress({});
@@ -201,6 +231,41 @@ export default function Messages() {
 
       if (error) throw error;
       toast.success("Mensaje enviado exitosamente");
+
+      // Send notification to the recipient
+      if (newMessage.recipient_id) {
+        await sendNotificationWithBroadcast(
+          newMessage.recipient_id,
+          "new_message",
+          "Nuevo mensaje del administrador",
+          `Has recibido un nuevo mensaje: "${newMessage.subject || 'Mensaje del Administrador'}"`,
+          "/mi-cuenta?tab=messages"
+        );
+
+        // Send email notification to the recipient
+        try {
+          const { data: recipientProfile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", newMessage.recipient_id)
+            .single();
+
+          if (recipientProfile?.email) {
+            await supabase.functions.invoke("send-quote-update-email", {
+              body: {
+                to: recipientProfile.email,
+                customer_name: recipientProfile.full_name || "Cliente",
+                quote_type: "message",
+                estimated_price: 0,
+                description: `Has recibido un nuevo mensaje del administrador. Revisa tu bandeja de mensajes en tu panel de usuario.`
+              }
+            });
+          }
+        } catch {
+          // Non-blocking email errors
+        }
+      }
+
       setNewMessage({ recipient_id: "", subject: "", message: "" });
       setAttachments([]);
       setUploadProgress({});
