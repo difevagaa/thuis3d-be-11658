@@ -423,6 +423,35 @@ function generateInvoiceHTML(invoice: any, items: any[], companyInfo: any): stri
               <span>Subtotal:</span>
               <span>€${Number(invoice.subtotal).toFixed(2)}</span>
             </div>
+            ${Number(invoice.discount) > 0 ? `
+              <div class="totals-row subtotal" style="color: #dc2626;">
+                <span>Descuento:</span>
+                <span>-€${Number(invoice.discount).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${Number(invoice.coupon_discount) > 0 ? `
+              <div class="totals-row subtotal" style="color: #dc2626;">
+                <span>Cupón${invoice.coupon_code ? ` (${invoice.coupon_code})` : ''}:</span>
+                <span>-€${Number(invoice.coupon_discount).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${Number(invoice.gift_card_amount) > 0 ? `
+              <div class="totals-row subtotal" style="color: #dc2626;">
+                <span>Tarjeta Regalo:</span>
+                <span>-€${Number(invoice.gift_card_amount).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${Number(invoice.shipping) > 0 ? `
+              <div class="totals-row subtotal">
+                <span>Envío:</span>
+                <span>€${Number(invoice.shipping).toFixed(2)}</span>
+              </div>
+            ` : `
+              <div class="totals-row subtotal" style="color: #16a34a;">
+                <span>Envío:</span>
+                <span>Gratis</span>
+              </div>
+            `}
             ${Number(invoice.tax) > 0 ? `
               <div class="totals-row subtotal">
                 <span>IVA (21%):</span>

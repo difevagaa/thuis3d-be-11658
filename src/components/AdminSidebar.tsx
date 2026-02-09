@@ -306,7 +306,7 @@ export function AdminSidebar() {
   const configSections = menuItems.filter(s => s.group === "config");
   
   return (
-    <Sidebar className="bg-sidebar border-r border-sidebar-border relative">
+    <Sidebar className="bg-sidebar border-r border-sidebar-border relative" style={{ top: 'var(--header-height, 3.5rem)', height: 'calc(100svh - var(--header-height, 3.5rem))' }}>
       <SidebarContent className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/50">

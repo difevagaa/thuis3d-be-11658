@@ -139,7 +139,7 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
         <div className="flex flex-col md:flex-row justify-between items-start gap-3">
           <CompanyInfo />
           <div className="text-right w-full md:w-auto">
-            <h1 className="text-xl md:text-2xl font-bold print:text-xl">{t('title').toUpperCase()}</h1>
+            <h1 className="text-xl md:text-2xl font-bold print:text-xl text-primary">{t('title').toUpperCase()}</h1>
             <p className="text-base md:text-lg font-mono mt-1 print:text-base">{invoice.invoice_number}</p>
             <div className="mt-2 text-xs md:text-sm print:text-xs">
               <p className="text-muted-foreground leading-tight">{t('dates.issueDate')}</p>
@@ -206,7 +206,7 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="text-xs print:text-[10px]">
+                <TableRow className="text-xs print:text-[10px] bg-muted/50">
                   <TableHead className="min-w-[150px] py-2 print:py-1">{t('items.description')}</TableHead>
                   <TableHead className="text-center min-w-[60px] py-2 print:py-1">{t('items.quantity')}</TableHead>
                   <TableHead className="text-right min-w-[80px] py-2 print:py-1">{t('items.unitPrice')}</TableHead>
@@ -278,7 +278,7 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
 
       {/* Totals */}
       <div className="flex justify-end">
-        <div className="w-full md:w-1/2 lg:w-1/3 space-y-1 text-xs md:text-sm print:text-[10px]">
+        <div className="w-full md:w-72 lg:w-80 space-y-1.5 text-xs md:text-sm print:text-[10px]">
           <div className="flex justify-between leading-tight">
             <span className="text-muted-foreground">{t('summary.subtotal')}:</span>
             <span className="font-medium">€{Number(invoice.subtotal).toFixed(2)}</span>
@@ -324,7 +324,7 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
             </div>
           )}
           
-          <div className="border-t pt-1 flex justify-between font-bold text-sm md:text-base print:text-xs">
+          <div className="border-t-2 border-foreground/20 pt-2 mt-1 flex justify-between font-bold text-sm md:text-base print:text-xs">
             <span>{t('summary.total')}:</span>
             <span>€{Number(invoice.total).toFixed(2)}</span>
           </div>
