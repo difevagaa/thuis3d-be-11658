@@ -534,22 +534,51 @@ export default function OrderDetail() {
             </TableBody>
           </Table>
 
-          <div className="mt-6 space-y-2 border-t pt-4">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>€{Number(order.subtotal).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Impuestos</span>
-              <span>€{Number(order.tax).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Envío</span>
-              <span>€{Number(order.shipping).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total</span>
-              <span>€{Number(order.total).toFixed(2)}</span>
+          <div className="flex justify-end mt-6">
+            <div className="w-full md:w-72 lg:w-80 space-y-1.5 text-sm border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium tabular-nums">€{Number(order.subtotal).toFixed(2)}</span>
+              </div>
+              {Number(order.discount) > 0 && (
+                <div className="flex justify-between items-center text-red-600">
+                  <span>Descuento</span>
+                  <span className="font-medium tabular-nums">-€{Number(order.discount).toFixed(2)}</span>
+                </div>
+              )}
+              {Number(order.coupon_discount) > 0 && (
+                <div className="flex justify-between items-center text-red-600">
+                  <span>Cupón {order.coupon_code ? `(${order.coupon_code})` : ''}</span>
+                  <span className="font-medium tabular-nums">-€{Number(order.coupon_discount).toFixed(2)}</span>
+                </div>
+              )}
+              {Number(order.gift_card_amount) > 0 && (
+                <div className="flex justify-between items-center text-red-600">
+                  <span>Tarjeta Regalo</span>
+                  <span className="font-medium tabular-nums">-€{Number(order.gift_card_amount).toFixed(2)}</span>
+                </div>
+              )}
+              {Number(order.shipping) > 0 ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Envío</span>
+                  <span className="font-medium tabular-nums">€{Number(order.shipping).toFixed(2)}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center text-green-600">
+                  <span>Envío</span>
+                  <span className="font-medium">Gratis</span>
+                </div>
+              )}
+              {Number(order.tax) > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Impuestos (IVA)</span>
+                  <span className="font-medium tabular-nums">€{Number(order.tax).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="border-t-2 border-foreground/20 pt-2 mt-1 flex justify-between items-center text-lg font-bold">
+                <span>Total</span>
+                <span className="tabular-nums">€{Number(order.total).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </CardContent>
