@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
+// Constants
+const DEFAULT_TAX_RATE = 0.21; // 21% - Used when tax settings are not configured
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -54,7 +57,7 @@ export default function Invoices() {
   
   // Get tax settings
   const { taxSettings } = useTaxSettings();
-  const taxRate = taxSettings?.is_enabled ? (taxSettings.tax_rate / 100) : 0.21;
+  const taxRate = taxSettings?.is_enabled ? (taxSettings.tax_rate / 100) : DEFAULT_TAX_RATE;
   
   const {
     selectedIds,

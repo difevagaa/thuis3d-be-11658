@@ -14,6 +14,9 @@ import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+// Constants
+const MAX_CUSTOM_TEXT_DISPLAY_LENGTH = 200; // Maximum characters to display for custom text
+
 interface CartItem {
   id: string;
   productId: string;
@@ -249,7 +252,7 @@ const Cart = () => {
                     )}
                     {item.customText && (
                       <p className="text-xs md:text-sm text-muted-foreground">
-                        {t('cart:item.text')}: {item.customText.substring(0, 200)}{item.customText.length > 200 ? '...' : ''}
+                        {t('cart:item.text')}: {item.customText.substring(0, MAX_CUSTOM_TEXT_DISPLAY_LENGTH)}{item.customText.length > MAX_CUSTOM_TEXT_DISPLAY_LENGTH ? '...' : ''}
                       </p>
                     )}
                     {item.colorSelections && item.colorSelections.length > 0 && (

@@ -84,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Check if user owns the quote (by user_id or email)
       const { data: { user: authUser } } = await supabaseClient.auth.getUser();
-      const isQuoteOwner = quote.user_id === user.id || quote.customer_email === authUser?.email;
+      const isQuoteOwner = quote.user_id === authUser?.id || quote.customer_email === authUser?.email;
       
       if (!isQuoteOwner) {
         return new Response(

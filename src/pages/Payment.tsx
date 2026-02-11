@@ -25,6 +25,10 @@ import { validateGiftCardCode } from "@/lib/validation";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+// Constants
+const POSTGREST_NO_ROWS_UPDATED = 'PGRST116'; // PostgREST error code for optimistic locking failure
+const SESSION_CLEANUP_DELAY_MS = 100; // Delay to ensure sessionStorage cleanup before navigation
+
 export default function Payment() {
   const navigate = useNavigate();
   const { t } = useTranslation(['payment', 'common', 'cart']);
@@ -582,8 +586,8 @@ export default function Payment() {
       if (giftCardError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
         
-        // Check if it's because balance changed (race condition)
-        if (giftCardError.code === 'PGRST116') {
+        // Check if it's because balance changed (race condition with optimistic locking)
+        if (giftCardError.code === POSTGREST_NO_ROWS_UPDATED) {
           toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
           removeGiftCard();
           return;
@@ -678,10 +682,10 @@ export default function Payment() {
         toast.success(`Se aplicó €${giftCardAmount.toFixed(2)} de tu tarjeta de regalo. Saldo pendiente: €${remainingTotal.toFixed(2)}`);
       }
       
-      // Navigate after a short delay to ensure session cleanup
+      // Navigate after a short delay to ensure session cleanup completes
       setTimeout(() => {
         navigate("/mi-cuenta?tab=invoices");
-      }, 100);
+      }, SESSION_CLEANUP_DELAY_MS);
       
     } catch (error) {
       logger.error("[INVOICE GIFT CARD PAYMENT] Error processing payment:", error);
