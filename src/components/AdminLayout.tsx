@@ -262,9 +262,9 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       {/* Main area with sidebar */}
       <div className="flex flex-1 w-full overflow-hidden">
         <AdminSidebar />
-        <main className="flex-1 bg-muted/30 overflow-auto pb-16 sm:pb-20 md:pb-6">
+        <main className="flex-1 bg-muted/30 overflow-auto pb-6 sm:pb-8 md:pb-6">
           {/* Centered content container for admin */}
-          <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-5 md:p-6 lg:p-8">
+          <div className="w-full max-w-[1600px] mx-auto p-3 sm:p-4 md:p-6 lg:p-8">
             {children}
           </div>
         </main>
