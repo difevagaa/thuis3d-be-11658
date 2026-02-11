@@ -456,6 +456,62 @@ export default function Payment() {
     }
   };
 
+  const processInvoiceGiftCardPayment = async () => {
+    setProcessing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t('payment:messages.loginRequired'));
+        navigate("/auth");
+        return;
+      }
+
+      const invoiceData = JSON.parse(sessionStorage.getItem("invoice_payment") || "{}");
+      const invoiceTotal = Number(shippingInfo.total || 0);
+      const giftCardAmount = Math.min(appliedGiftCard.current_balance, invoiceTotal);
+      const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
+
+      // Update invoice payment status and gift card balance
+      const { error: updateError } = await supabase
+        .from("invoices")
+        .update({
+          payment_status: remainingTotal <= 0 ? "paid" : "pending",
+          payment_method: "gift_card",
+          notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+        })
+        .eq("id", invoiceData.invoiceId)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Update gift card balance
+      const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
+      const { error: giftCardError } = await supabase
+        .from("gift_cards")
+        .update({ current_balance: newBalance })
+        .eq("id", appliedGiftCard.id);
+
+      if (giftCardError) throw giftCardError;
+
+      // Clear session data
+      sessionStorage.removeItem("invoice_payment");
+      sessionStorage.removeItem("applied_gift_card");
+
+      if (remainingTotal <= 0) {
+        toast.success(`¡Factura ${invoiceData.invoiceNumber} pagada con tarjeta de regalo!`);
+      } else {
+        toast.success(`Se aplicó €${giftCardAmount.toFixed(2)} de tu tarjeta de regalo. Saldo pendiente: €${remainingTotal.toFixed(2)}`);
+      }
+      
+      navigate("/mi-cuenta?tab=invoices");
+    } catch (error) {
+      logger.error("Error processing invoice gift card payment:", error);
+      toast.error("Error al procesar el pago con tarjeta de regalo");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handlePayment = async (method: string) => {
     // Check if gift card covers the total amount
     const total = calculateTotal();
@@ -1060,76 +1116,77 @@ export default function Payment() {
 
         {/* Payment Methods */}
         <div className="space-y-4">
-          {/* Gift Card Section */}
-          {!isInvoicePayment && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  Tarjeta de Regalo
-                </CardTitle>
-                <CardDescription>
-                  ¿Tienes una tarjeta de regalo? Aplícala aquí para usar su saldo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {appliedGiftCard ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{appliedGiftCard.code}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Saldo: €{appliedGiftCard.current_balance.toFixed(2)}
-                        </p>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="ml-2">
-                        Quitar
+          {/* Gift Card Section - Allow for both regular checkout and invoice payments */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="h-5 w-5" />
+                Tarjeta de Regalo
+              </CardTitle>
+              <CardDescription>
+                {isInvoicePayment 
+                  ? "¿Tienes una tarjeta de regalo? Úsala para pagar tu factura"
+                  : "¿Tienes una tarjeta de regalo? Aplícala aquí para usar su saldo"
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {appliedGiftCard ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{appliedGiftCard.code}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Saldo: €{appliedGiftCard.current_balance.toFixed(2)}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={removeGiftCard} className="ml-2">
+                      Quitar
+                    </Button>
+                  </div>
+                  {(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()) <= 0 && (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        ✓ Tu tarjeta de regalo cubre el total {isInvoicePayment ? "de la factura" : "de la compra"}
+                      </p>
+                      <Button
+                        onClick={() => isInvoicePayment ? processInvoiceGiftCardPayment() : processGiftCardOnlyPayment()}
+                        disabled={processing}
+                        className="w-full mt-3"
+                      >
+                        {processing ? "Procesando..." : (isInvoicePayment ? "Pagar Factura" : "Completar Pedido")}
                       </Button>
                     </div>
-                    {calculateTotal() <= 0 && (
-                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                          ✓ Tu tarjeta de regalo cubre el total de la compra
-                        </p>
-                        <Button
-                          onClick={() => processGiftCardOnlyPayment()}
-                          disabled={processing}
-                          className="w-full mt-3"
-                        >
-                          {processing ? "Procesando..." : "Completar Pedido"}
-                        </Button>
-                      </div>
-                    )}
-                    {calculateTotal() > 0 && (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <p className="text-sm text-muted-foreground">
-                          Saldo restante a pagar: €{calculateTotal().toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Selecciona un método de pago para el saldo restante
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label>Código de Tarjeta de Regalo</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Ej: GIFT-XXXX-XXXX"
-                        value={giftCardCode}
-                        onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
-                        disabled={giftCardLoading}
-                      />
-                      <Button onClick={applyGiftCard} disabled={giftCardLoading} variant="outline">
-                        {giftCardLoading ? "Validando..." : "Aplicar"}
-                      </Button>
+                  )}
+                  {(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()) > 0 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Saldo restante a pagar: €{(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Selecciona un método de pago para el saldo restante
+                      </p>
                     </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Código de Tarjeta de Regalo</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ej: GIFT-XXXX-XXXX"
+                      value={giftCardCode}
+                      onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
+                      disabled={giftCardLoading}
+                    />
+                    <Button onClick={applyGiftCard} disabled={giftCardLoading} variant="outline">
+                      {giftCardLoading ? "Validando..." : "Aplicar"}
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {paymentConfig.company_info && (
             <Card>
@@ -1142,13 +1199,15 @@ export default function Payment() {
             </Card>
           )}
           
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
-              <CardDescription>{t('payment:paymentMethod')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {paymentConfig.bank_transfer_enabled && (
+          {/* Only show payment methods if there's an amount to pay */}
+          {(isInvoicePayment ? shippingInfo.total : calculateTotal()) > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
+                <CardDescription>{t('payment:paymentMethod')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {paymentConfig.bank_transfer_enabled && (
                 <Button
                   onClick={() => handlePayment("bank_transfer")}
                   disabled={processing}
@@ -1224,6 +1283,7 @@ export default function Payment() {
               </p>
             </CardContent>
           </Card>
+          )}
 
           {/* QR Codes Display */}
           {paymentImages.length > 0 && (
