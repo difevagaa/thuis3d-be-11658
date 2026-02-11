@@ -235,10 +235,18 @@
     max-width: 100%;
   }
   
-  /* Ensure all images are responsive by default */
+  /* Ensure all images are responsive and sharp by default */
   img, video, iframe, embed, object {
     max-width: 100% !important;
     height: auto;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* High-quality image rendering for photos */
+  img:not([class*="icon"]):not([class*="logo"]) {
+    image-rendering: auto;
+    -ms-interpolation-mode: bicubic;
   }
   
   /* Prevent text from causing overflow */
@@ -304,10 +312,10 @@
     }
   }
   
-  /* Tablet sizing - balanced */
+  /* Tablet sizing - use standard 16px to avoid blurriness */
   @media (min-width: 641px) and (max-width: 1023px) {
     html {
-      font-size: 15px;
+      font-size: 16px;
     }
   }
   
@@ -341,16 +349,11 @@
 
 /* App-like mobile cards - Apple style */
 @media (max-width: 640px) {
-  /* Clean cards with soft shadow */
+  /* Clean cards with soft shadow - let components keep their padding */
   .card, [class*="Card"] {
     border-radius: 1rem !important;
     margin-bottom: 0.75rem;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-  }
-  
-  /* Compact card padding for product cards */
-  .card > *, [class*="CardContent"], [class*="CardHeader"] {
-    padding: 0 !important; /* Let components control their own padding */
   }
   
   /* Clean button sizes */
@@ -416,12 +419,11 @@
     flex-shrink: 0;
   }
   
-  /* Dialogs/Modals - full screen on mobile */
-  [role="dialog"], [class*="Dialog"], [class*="Sheet"] {
-    max-width: 100vw !important;
-    width: 100% !important;
-    margin: 0 !important;
-    border-radius: 1.5rem 1.5rem 0 0 !important;
+  /* Dialogs/Modals - responsive on mobile */
+  [role="dialog"]:not([class*="Sheet"]) {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem !important;
+    border-radius: 1.25rem !important;
   }
   
   /* Dropdowns larger */
