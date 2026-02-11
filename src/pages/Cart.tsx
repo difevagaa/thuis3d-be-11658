@@ -14,6 +14,9 @@ import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+// Constants
+const MAX_CUSTOM_TEXT_DISPLAY_LENGTH = 200; // Maximum characters to display for custom text
+
 interface CartItem {
   id: string;
   productId: string;
@@ -159,16 +162,20 @@ const Cart = () => {
     toast.info(t('cart:coupon.removed'));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Calculate subtotal with proper number coercion to prevent string concatenation
+  const subtotal = Number(cartItems.reduce(
+    (sum, item) => sum + (Number(item.price) * Number(item.quantity)), 
+    0
+  ).toFixed(2));
   
   // Calculate discount from coupon
   let discount = 0;
   const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";
   if (appliedCoupon) {
     if (appliedCoupon.discount_type === "percentage") {
-      discount = subtotal * (appliedCoupon.discount_value / 100);
+      discount = subtotal * (Number(appliedCoupon.discount_value) / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      discount = Math.min(appliedCoupon.discount_value, subtotal);
+      discount = Math.min(Number(appliedCoupon.discount_value), subtotal);
     }
     // free_shipping type: discount stays 0, shipping handled in PaymentSummary
   }
@@ -176,9 +183,10 @@ const Cart = () => {
   
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
   // Calcular IVA SIN considerar gift card para evitar dependencia circular
-  const taxableAmount = cartItems
+  const taxableAmount = Number(cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
-    .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0)
+    .toFixed(2));
   const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
   const taxableAfterDiscount = Math.max(0, taxableAmount - (discount * discountRatio));
   const tax = calculateTax(taxableAfterDiscount, true);
@@ -187,7 +195,10 @@ const Cart = () => {
   let giftCardApplied = 0;
   if (appliedGiftCard) {
     const totalBeforeGiftCard = subtotal - discount + tax;
-    giftCardApplied = Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
+    giftCardApplied = Math.min(
+      Number(appliedGiftCard.current_balance) || 0, 
+      Math.max(0, totalBeforeGiftCard)
+    );
   }
   
   const total = Math.max(0, subtotal - discount + tax - giftCardApplied);
@@ -240,7 +251,9 @@ const Cart = () => {
                       <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.color')}: {item.colorName}</p>
                     )}
                     {item.customText && (
-                      <p className="text-xs md:text-sm text-muted-foreground">{t('cart:item.text')}: {item.customText}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        {t('cart:item.text')}: {item.customText.substring(0, MAX_CUSTOM_TEXT_DISPLAY_LENGTH)}{item.customText.length > MAX_CUSTOM_TEXT_DISPLAY_LENGTH ? '...' : ''}
+                      </p>
                     )}
                     {item.colorSelections && item.colorSelections.length > 0 && (
                       <div className="mt-2 space-y-1">

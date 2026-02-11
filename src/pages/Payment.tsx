@@ -25,6 +25,10 @@ import { validateGiftCardCode } from "@/lib/validation";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
+// Constants
+const POSTGREST_NO_ROWS_UPDATED = 'PGRST116'; // PostgREST error code for optimistic locking failure
+const SESSION_CLEANUP_DELAY_MS = 100; // Delay to ensure sessionStorage cleanup before navigation
+
 export default function Payment() {
   const navigate = useNavigate();
   const { t } = useTranslation(['payment', 'common', 'cart']);
@@ -274,14 +278,14 @@ export default function Payment() {
   };
 
   const calculateGiftCardAmount = () => {
-    if (!appliedGiftCard) return 0;
+    if (!appliedGiftCard || !appliedGiftCard.current_balance) return 0;
     const subtotal = calculateSubtotal();
     const tax = calculateTax();
     const couponDiscount = calculateCouponDiscount();
     const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
     // Gift card covers: subtotal - couponDiscount + IVA + envío
     const totalBeforeGiftCard = subtotal - couponDiscount + tax + effectiveShipping;
-    return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
+    return Math.min(Number(appliedGiftCard.current_balance) || 0, Math.max(0, totalBeforeGiftCard));
   };
 
   // Total = subtotal - couponDiscount + IVA + envío - gift card
@@ -478,49 +482,214 @@ export default function Payment() {
         return;
       }
 
-      const invoiceData = JSON.parse(sessionStorage.getItem("invoice_payment") || "{}");
-      const invoiceTotal = Number(shippingInfo.total || 0);
-      const giftCardAmount = Math.min(appliedGiftCard.current_balance, invoiceTotal);
-      const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
+      // Validate we have a gift card applied
+      if (!appliedGiftCard) {
+        toast.error("No hay tarjeta de regalo aplicada");
+        return;
+      }
 
-      // Update invoice payment status and gift card balance
+      const invoiceData = JSON.parse(sessionStorage.getItem("invoice_payment") || "{}");
+      
+      if (!invoiceData.invoiceId) {
+        toast.error("No se encontró información de la factura");
+        return;
+      }
+
+      const invoiceTotal = Number(shippingInfo.total || 0);
+
+      logger.log('[INVOICE GIFT CARD PAYMENT] Processing payment:', {
+        invoiceId: invoiceData.invoiceId,
+        invoiceTotal,
+        giftCardCode: appliedGiftCard.code,
+        staleGiftCardBalance: appliedGiftCard.current_balance
+      });
+
+      // CRITICAL: Re-validate gift card from database before processing
+      const { data: freshGiftCard, error: giftCardFetchError } = await supabase
+        .from("gift_cards")
+        .select("*")
+        .eq("id", appliedGiftCard.id)
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (giftCardFetchError || !freshGiftCard) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Gift card no longer valid:', giftCardFetchError);
+        toast.error("La tarjeta de regalo ya no es válida");
+        removeGiftCard();
+        return;
+      }
+
+      // Check if gift card expired
+      if (freshGiftCard.expires_at && new Date(freshGiftCard.expires_at) < new Date()) {
+        toast.error("La tarjeta de regalo ha expirado");
+        removeGiftCard();
+        return;
+      }
+
+      // Check if gift card has sufficient balance
+      if (freshGiftCard.current_balance <= 0) {
+        toast.error("La tarjeta de regalo no tiene saldo disponible");
+        removeGiftCard();
+        return;
+      }
+
+      const giftCardAmount = Math.min(freshGiftCard.current_balance, invoiceTotal);
+      const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
+      const newGiftCardBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
+
+      logger.log('[INVOICE GIFT CARD PAYMENT] Validated amounts:', {
+        freshGiftCardBalance: freshGiftCard.current_balance,
+        giftCardAmount,
+        remainingTotal,
+        newGiftCardBalance,
+        willMarkPaid: remainingTotal <= 0
+      });
+
+      // Get the invoice to check if it has an order linked
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .select("id, order_id, payment_status")
+        .eq("id", invoiceData.invoiceId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (invoiceError) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Error fetching invoice:', invoiceError);
+        throw new Error('Error al obtener la factura: ' + invoiceError.message);
+      }
+
+      if (!invoice) {
+        throw new Error('Factura no encontrada o no tienes permiso para pagarla');
+      }
+
+      // Check if invoice is already paid
+      if (invoice.payment_status === 'paid') {
+        toast.info('Esta factura ya ha sido pagada');
+        sessionStorage.removeItem("invoice_payment");
+        sessionStorage.removeItem("applied_gift_card");
+        navigate("/mi-cuenta?tab=invoices");
+        return;
+      }
+
+      // Start a transaction-like sequence
+      // 1. Update gift card balance FIRST (so if this fails, nothing else happens)
+      const { error: giftCardError } = await supabase
+        .from("gift_cards")
+        .update({ 
+          current_balance: newGiftCardBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", freshGiftCard.id)
+        .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
+
+      if (giftCardError) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
+        
+        // Check if it's because balance changed (race condition with optimistic locking)
+        if (giftCardError.code === POSTGREST_NO_ROWS_UPDATED) {
+          toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
+          removeGiftCard();
+          return;
+        }
+        
+        throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
+      }
+
+      logger.log('[INVOICE GIFT CARD PAYMENT] Gift card balance updated successfully');
+
+      // 2. Update invoice payment status and gift card info
       const { error: updateError } = await supabase
         .from("invoices")
         .update({
           payment_status: remainingTotal <= 0 ? "paid" : "pending",
           payment_method: "gift_card",
-          gift_card_code: appliedGiftCard.code,
+          gift_card_code: freshGiftCard.code,
           gift_card_amount: giftCardAmount,
-          notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          notes: `Pagado con tarjeta de regalo: ${freshGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
         })
         .eq("id", invoiceData.invoiceId)
         .eq("user_id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
+        
+        // CRITICAL: Rollback gift card balance if invoice update fails
+        await supabase
+          .from("gift_cards")
+          .update({ 
+            current_balance: freshGiftCard.current_balance,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", freshGiftCard.id);
+        
+        throw new Error('Error al actualizar la factura: ' + updateError.message);
+      }
 
-      // Update gift card balance
-      const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
-      const { error: giftCardError } = await supabase
-        .from("gift_cards")
-        .update({ current_balance: newBalance })
-        .eq("id", appliedGiftCard.id);
+      logger.log('[INVOICE GIFT CARD PAYMENT] Invoice updated successfully');
 
-      if (giftCardError) throw giftCardError;
+      // 3. If invoice is fully paid and has a linked order, update the order payment status
+      if (remainingTotal <= 0 && invoice.order_id) {
+        logger.log('[INVOICE GIFT CARD PAYMENT] Updating linked order payment status:', invoice.order_id);
+        
+        const { error: orderUpdateError } = await supabase
+          .from("orders")
+          .update({
+            payment_status: "paid",
+            payment_method: "gift_card"
+          })
+          .eq("id", invoice.order_id);
+
+        if (orderUpdateError) {
+          logger.error('[INVOICE GIFT CARD PAYMENT] Error updating order:', orderUpdateError);
+          // Log but don't fail - invoice is already paid
+          toast.warning('Factura pagada, pero hubo un error al actualizar el pedido. Contacta soporte si es necesario.');
+        } else {
+          logger.log('[INVOICE GIFT CARD PAYMENT] Order payment status updated successfully');
+        }
+      }
+
+      // 4. Create notification for user
+      if (remainingTotal <= 0) {
+        try {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: user.id,
+              type: 'payment_success',
+              title: '✅ Factura Pagada',
+              message: `Tu factura ${invoiceData.invoiceNumber} ha sido pagada con tarjeta de regalo.`,
+              link: `/mi-cuenta?tab=invoices`,
+              is_read: false
+            });
+
+          // Trigger notification refresh
+          await triggerNotificationRefresh();
+        } catch (notifError) {
+          logger.error('[INVOICE GIFT CARD PAYMENT] Error creating notification:', notifError);
+          // Don't fail payment for notification errors
+        }
+      }
 
       // Clear session data
       sessionStorage.removeItem("invoice_payment");
       sessionStorage.removeItem("applied_gift_card");
 
+      // Show success message
       if (remainingTotal <= 0) {
         toast.success(`¡Factura ${invoiceData.invoiceNumber} pagada con tarjeta de regalo!`);
       } else {
         toast.success(`Se aplicó €${giftCardAmount.toFixed(2)} de tu tarjeta de regalo. Saldo pendiente: €${remainingTotal.toFixed(2)}`);
       }
       
-      navigate("/mi-cuenta?tab=invoices");
+      // Navigate after a short delay to ensure session cleanup completes
+      setTimeout(() => {
+        navigate("/mi-cuenta?tab=invoices");
+      }, SESSION_CLEANUP_DELAY_MS);
+      
     } catch (error) {
-      logger.error("Error processing invoice gift card payment:", error);
-      toast.error("Error al procesar el pago con tarjeta de regalo");
+      logger.error("[INVOICE GIFT CARD PAYMENT] Error processing payment:", error);
+      toast.error("Error al procesar el pago: " + (error as Error).message);
     } finally {
       setProcessing(false);
     }
