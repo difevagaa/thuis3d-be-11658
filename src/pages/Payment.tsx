@@ -884,7 +884,7 @@ export default function Payment() {
             subtotal: subtotal,
             shipping: shipping,
             tax: tax,
-            discount: couponDiscount + (appliedGiftCard ? calculateGiftCardAmount() : 0),
+            discount: couponDiscount, // Only coupon discount, gift card is NOT processed yet for bank transfer
             total: totalBeforeGiftCard,
             shipping_info: shippingInfo,
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
@@ -932,7 +932,7 @@ export default function Payment() {
 
         if (!invoice) {
           logger.error('[BANK TRANSFER] Warning: Invoice creation failed');
-          // Continue - invoice can be created manually
+          toast.warning("Pedido creado. La factura se generará manualmente.");
         }
 
         // Update coupon usage if applied
@@ -962,7 +962,7 @@ export default function Payment() {
             orderNumber: orderNumber,
             method: "bank_transfer",
             total: totalBeforeGiftCard,
-            isPending: false,
+            isPending: true, // FIXED: Actually pending until payment confirmed
             orderId: order.id
           } 
         });
@@ -998,7 +998,7 @@ export default function Payment() {
             subtotal: subtotal,
             shipping: shipping,
             tax: tax,
-            discount: couponDiscount + (appliedGiftCard ? calculateGiftCardAmount() : 0),
+            discount: couponDiscount, // Only coupon discount, gift card handled separately
             total: totalBeforeGiftCard,
             shipping_info: shippingInfo,
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
@@ -1046,7 +1046,7 @@ export default function Payment() {
 
         if (!invoice) {
           logger.error('[CARD PAYMENT] Warning: Invoice creation failed');
-          // Continue - invoice can be created manually
+          toast.warning("Pedido creado. La factura se generará manualmente.");
         }
 
         // Update coupon usage if applied
@@ -1113,7 +1113,7 @@ export default function Payment() {
             subtotal: subtotal,
             shipping: shipping,
             tax: tax,
-            discount: couponDiscount + (appliedGiftCard ? calculateGiftCardAmount() : 0),
+            discount: couponDiscount, // Only coupon discount, gift card handled separately
             total: totalBeforeGiftCard,
             shipping_info: shippingInfo,
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
@@ -1161,7 +1161,7 @@ export default function Payment() {
 
         if (!invoice) {
           logger.error('[REVOLUT PAYMENT] Warning: Invoice creation failed');
-          // Continue - invoice can be created manually
+          toast.warning("Pedido creado. La factura se generará manualmente.");
         }
 
         // Update coupon usage if applied
