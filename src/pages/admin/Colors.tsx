@@ -9,9 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Pencil, Trash2 } from "lucide-react";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import { FieldHelp } from "@/components/admin/FieldHelp";
 
 export default function Colors() {
   const [colors, setColors] = useState<any[]>([]);
@@ -118,8 +121,6 @@ export default function Colors() {
   };
 
   const deleteColor = async (id: string) => {
-    if (!confirm("¿Mover este color a la papelera?")) return;
-    
     try {
       const { error } = await supabase
         .from("colors")
@@ -165,7 +166,10 @@ export default function Colors() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="name">Nombre</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="name">Nombre</Label>
+              <FieldHelp content="Nombre descriptivo del color (ej: Rojo, Azul Océano)" />
+            </div>
             <Input
               id="name"
               value={newColor.name}
@@ -173,7 +177,10 @@ export default function Colors() {
             />
           </div>
           <div>
-            <Label htmlFor="hex_code">Código Hex</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="hex_code">Código Hex</Label>
+              <FieldHelp content="Código hexadecimal del color (formato: #RRGGBB). Usa el selector de color o escribe el código manualmente." />
+            </div>
             <div className="flex gap-2">
               <Input
                 id="hex_code"
@@ -239,66 +246,96 @@ export default function Colors() {
                   <TableCell>{color.hex_code}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingColor(color)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Editar Color</DialogTitle>
-                          </DialogHeader>
-                          {editingColor && (
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="edit-name">Nombre</Label>
-                                <Input
-                                  id="edit-name"
-                                  value={editingColor.name}
-                                  onChange={(e) =>
-                                    setEditingColor({ ...editingColor, name: e.target.value })
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="edit-hex">Código Hex</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    id="edit-hex"
-                                    value={editingColor.hex_code}
-                                    onChange={(e) =>
-                                      setEditingColor({ ...editingColor, hex_code: e.target.value })
-                                    }
-                                  />
-                                  <Input
-                                    type="color"
-                                    value={editingColor.hex_code}
-                                    onChange={(e) =>
-                                      setEditingColor({ ...editingColor, hex_code: e.target.value })
-                                    }
-                                    className="w-20"
-                                  />
+                      <TooltipProvider>
+                        <Tooltip delayDuration={200}>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingColor(color)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Editar Color</DialogTitle>
+                              </DialogHeader>
+                              {editingColor && (
+                                <div className="space-y-4">
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Label htmlFor="edit-name">Nombre</Label>
+                                      <FieldHelp content="Nombre descriptivo del color" />
+                                    </div>
+                                    <Input
+                                      id="edit-name"
+                                      value={editingColor.name}
+                                      onChange={(e) =>
+                                        setEditingColor({ ...editingColor, name: e.target.value })
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Label htmlFor="edit-hex">Código Hex</Label>
+                                      <FieldHelp content="Código hexadecimal del color (formato: #RRGGBB)" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        id="edit-hex"
+                                        value={editingColor.hex_code}
+                                        onChange={(e) =>
+                                          setEditingColor({ ...editingColor, hex_code: e.target.value })
+                                        }
+                                      />
+                                      <Input
+                                        type="color"
+                                        value={editingColor.hex_code}
+                                        onChange={(e) =>
+                                          setEditingColor({ ...editingColor, hex_code: e.target.value })
+                                        }
+                                        className="w-20"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          )}
-                          <DialogFooter>
-                            <Button onClick={updateColor}>Actualizar Color</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteColor(color.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                              )}
+                              <DialogFooter>
+                                <Button onClick={updateColor}>Actualizar Color</Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <TooltipContent side="top">
+                            <p className="text-sm">Editar color</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <DeleteConfirmDialog
+                        title="¿Mover color a la papelera?"
+                        itemName={color.name}
+                        onConfirm={() => deleteColor(color.id)}
+                        trigger={
+                          <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-sm">Mover a papelera</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        }
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
