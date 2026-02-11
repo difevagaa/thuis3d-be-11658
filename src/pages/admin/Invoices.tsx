@@ -1233,18 +1233,9 @@ export default function Invoices() {
                             onConfirm={() => handleDeleteInvoice(invoice.id)}
                             actionText="Mover a papelera"
                             trigger={
-                              <TooltipProvider>
-                                <Tooltip delayDuration={200}>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="destructive" size="sm">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Mover a la papelera</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             }
                           />
                         </div>
