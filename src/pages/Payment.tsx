@@ -22,7 +22,7 @@ import {
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { handleSupabaseError, isSchemaGCacheError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 // Constants
@@ -516,7 +516,7 @@ export default function Payment() {
       if (giftCardFetchError || !freshGiftCard) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Gift card no longer valid:', giftCardFetchError);
         // Check for schema cache errors
-        if (giftCardFetchError && giftCardFetchError.message && giftCardFetchError.message.includes('Could not find')) {
+        if (isSchemaGCacheError(giftCardFetchError)) {
           toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
         } else {
           toast.error("La tarjeta de regalo ya no es válida");
@@ -562,7 +562,7 @@ export default function Payment() {
       if (invoiceError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error fetching invoice:', invoiceError);
         // Check for schema cache errors
-        if (invoiceError.message && invoiceError.message.includes('Could not find')) {
+        if (isSchemaGCacheError(invoiceError)) {
           throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
         }
         throw new Error('Error al obtener la factura: ' + invoiceError.message);
@@ -596,7 +596,7 @@ export default function Payment() {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
         
         // Check for schema cache errors
-        if (giftCardError.message && giftCardError.message.includes('Could not find')) {
+        if (isSchemaGCacheError(giftCardError)) {
           throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
         }
         
@@ -629,7 +629,7 @@ export default function Payment() {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
         
         // Check for schema cache errors
-        if (updateError.message && updateError.message.includes('Could not find')) {
+        if (isSchemaGCacheError(updateError)) {
           // CRITICAL: Rollback gift card balance if invoice update fails
           await supabase
             .from("gift_cards")
@@ -671,7 +671,7 @@ export default function Payment() {
         if (orderUpdateError) {
           logger.error('[INVOICE GIFT CARD PAYMENT] Error updating order:', orderUpdateError);
           // Check for schema cache errors
-          if (orderUpdateError.message && orderUpdateError.message.includes('Could not find')) {
+          if (isSchemaGCacheError(orderUpdateError)) {
             toast.warning('Factura pagada. Si el pedido no se actualiza automáticamente, contacta soporte.');
           } else {
             // Log but don't fail - invoice is already paid

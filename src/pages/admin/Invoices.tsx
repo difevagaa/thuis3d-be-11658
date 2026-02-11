@@ -24,6 +24,7 @@ import { logger } from "@/lib/logger";
 import { FieldHelp } from "@/components/admin/FieldHelp";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
+import { isSchemaGCacheError } from "@/lib/errorHandler";
 import {
   Tooltip,
   TooltipContent,
@@ -476,7 +477,7 @@ export default function Invoices() {
         if (giftCardFetchError || !giftCardData) {
           logger.error("Error fetching gift card:", giftCardFetchError);
           // Check for schema cache errors
-          if (giftCardFetchError && giftCardFetchError.message && giftCardFetchError.message.includes('Could not find')) {
+          if (isSchemaGCacheError(giftCardFetchError)) {
             toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
           } else {
             toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
@@ -511,7 +512,7 @@ export default function Invoices() {
         if (updateError || count === 0) {
           logger.error("Error updating gift card balance:", updateError);
           // Check for schema cache errors
-          if (updateError && updateError.message && updateError.message.includes('Could not find')) {
+          if (isSchemaGCacheError(updateError)) {
             toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
           } else {
             toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");

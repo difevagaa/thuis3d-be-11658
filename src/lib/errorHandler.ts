@@ -20,7 +20,7 @@ export const isSchemaGCacheError = (error: any): boolean => {
   if (!error) return false;
   const message = error.message || error.error || '';
   return message.includes('Could not find the table') || 
-         message.includes('relation') && message.includes('does not exist');
+         (message.includes('relation') && message.includes('does not exist'));
 };
 
 /**
