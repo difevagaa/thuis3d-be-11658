@@ -50,7 +50,6 @@ export default function Invoices() {
   const [products, setProducts] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [giftCards, setGiftCards] = useState<any[]>([]);
-  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   
   const {
     selectedIds,
@@ -517,7 +516,6 @@ export default function Invoices() {
 
       toast.success("Factura movida a la papelera");
       await loadData();
-      setDeleteInvoiceId(null);
     } catch (error: any) {
       logger.error("Error deleting invoice:", error);
       toast.error("Error al eliminar factura");
@@ -1134,26 +1132,14 @@ export default function Invoices() {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       Nº Factura
-                      <TooltipProvider>
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger>
-                            <FieldHelp content="Número único de identificación de la factura generado automáticamente" />
-                          </TooltipTrigger>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <FieldHelp content="Número único de identificación de la factura generado automáticamente" />
                     </div>
                   </TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>
                     <div className="flex items-center gap-1">
                       Nº Pedido
-                      <TooltipProvider>
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger>
-                            <FieldHelp content="Número del pedido asociado. Facturas manuales no tienen pedido asociado" />
-                          </TooltipTrigger>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <FieldHelp content="Número del pedido asociado. Facturas manuales no tienen pedido asociado" />
                     </div>
                   </TableHead>
                   <TableHead>Fecha</TableHead>
@@ -1161,13 +1147,7 @@ export default function Invoices() {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       Estado
-                      <TooltipProvider>
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger>
-                            <FieldHelp content="Estado del pago: Pagado, Pendiente o Fallido" />
-                          </TooltipTrigger>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <FieldHelp content="Estado del pago: Pagado, Pendiente o Fallido" />
                     </div>
                   </TableHead>
                   <TableHead>Acciones</TableHead>
