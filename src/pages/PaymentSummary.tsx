@@ -290,14 +290,52 @@ export default function PaymentSummary() {
 
         if (orderError) throw orderError;
 
-        // Actualizar balance de tarjeta de regalo
-        const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
-        const { error: giftCardError } = await supabase
+        // CRITICAL: Re-validate gift card from database before updating
+        const { data: freshGiftCard, error: freshGiftCardError } = await supabase
           .from("gift_cards")
-          .update({ current_balance: newBalance })
-          .eq("id", appliedGiftCard.id);
+          .select("*")
+          .eq("id", appliedGiftCard.id)
+          .eq("is_active", true)
+          .is("deleted_at", null)
+          .maybeSingle();
 
-        if (giftCardError) throw giftCardError;
+        if (freshGiftCardError || !freshGiftCard) {
+          logger.error('[PAYMENT SUMMARY] Gift card no longer valid:', freshGiftCardError);
+          throw new Error('La tarjeta de regalo ya no es válida');
+        }
+
+        // Check if gift card has sufficient balance
+        if (freshGiftCard.current_balance < giftCardAmount) {
+          throw new Error(`Saldo insuficiente en tarjeta de regalo. Disponible: €${freshGiftCard.current_balance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`);
+        }
+
+        // Actualizar balance de tarjeta de regalo con optimistic locking
+        const newBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
+        const { error: giftCardError, count: giftCardUpdateCount } = await supabase
+          .from("gift_cards")
+          .update({ 
+            current_balance: newBalance,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", freshGiftCard.id)
+          .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
+
+        if (giftCardError) {
+          logger.error('[PAYMENT SUMMARY] Error updating gift card:', giftCardError);
+          // Rollback: delete created order
+          await supabase.from("orders").delete().eq("id", order.id);
+          throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
+        }
+
+        // CRITICAL: Check if optimistic locking prevented the update
+        if (giftCardUpdateCount === 0) {
+          logger.error('[PAYMENT SUMMARY] Optimistic locking failed - balance changed');
+          // Rollback: delete created order
+          await supabase.from("orders").delete().eq("id", order.id);
+          throw new Error('El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.');
+        }
+
+        logger.log('[PAYMENT SUMMARY] Gift card balance updated successfully');
 
         // Crear items del pedido
         const orderItemsData = cartItems.map(item => ({
