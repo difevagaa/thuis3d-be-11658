@@ -12,6 +12,7 @@ import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Pale
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { logger } from '@/lib/logger';
+import { QuoteResponseTimeline } from "@/components/QuoteResponseTimeline";
 
 export default function QuoteDetail() {
   const { id } = useParams();
@@ -288,42 +289,11 @@ export default function QuoteDetail() {
               Respuesta del Cliente
             </CardTitle>
             <CardDescription>
-              Última actividad del cliente en esta cotización
+              Historial completo de interacciones del cliente con esta cotización
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-sm whitespace-pre-wrap space-y-1">
-              {quote.custom_text.split('\n').map((line: string, idx: number) => {
-                const isApproval = line.includes('Aprobación del cliente');
-                const isRejection = line.includes('Rechazo del cliente');
-                const isComment = line.includes('Comentario del cliente');
-                
-                if (isApproval) {
-                  return (
-                    <div key={idx} className="font-medium text-green-700 dark:text-green-400 py-1 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else if (isRejection) {
-                  return (
-                    <div key={idx} className="font-medium text-red-700 dark:text-red-400 py-1 flex items-center gap-2">
-                      <XCircle className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else if (isComment) {
-                  return (
-                    <div key={idx} className="font-medium text-blue-700 dark:text-blue-400 py-1 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else {
-                  return <div key={idx} className="text-gray-700 dark:text-gray-300 py-1">{line}</div>;
-                }
-              })}
-            </div>
+            <QuoteResponseTimeline customText={quote.custom_text} />
             {quote.user_id && (
               <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
                 <Button 
@@ -445,40 +415,7 @@ export default function QuoteDetail() {
                     <MessageSquare className="h-5 w-5 text-primary" />
                     Respuesta del Cliente
                   </h3>
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
-                    <div className="text-sm whitespace-pre-wrap">
-                      {quote.custom_text.split('\n').map((line: string, idx: number) => {
-                        const isApproval = line.includes('Aprobación del cliente');
-                        const isRejection = line.includes('Rechazo del cliente');
-                        const isComment = line.includes('Comentario del cliente');
-                        
-                        if (isApproval) {
-                          return (
-                            <div key={idx} className="font-medium text-green-700 dark:text-green-400 py-1 flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4" />
-                              {line}
-                            </div>
-                          );
-                        } else if (isRejection) {
-                          return (
-                            <div key={idx} className="font-medium text-red-700 dark:text-red-400 py-1 flex items-center gap-2">
-                              <XCircle className="h-4 w-4" />
-                              {line}
-                            </div>
-                          );
-                        } else if (isComment) {
-                          return (
-                            <div key={idx} className="font-medium text-blue-700 dark:text-blue-400 py-1 flex items-center gap-2">
-                              <MessageSquare className="h-4 w-4" />
-                              {line}
-                            </div>
-                          );
-                        } else {
-                          return <div key={idx} className="text-gray-700 dark:text-gray-300 py-1">{line}</div>;
-                        }
-                      })}
-                    </div>
-                  </div>
+                  <QuoteResponseTimeline customText={quote.custom_text} />
                 </div>
               </>
             )}
