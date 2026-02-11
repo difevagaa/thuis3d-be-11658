@@ -408,25 +408,23 @@ export default function Materials() {
                           </DialogFooter>
                         </DialogContent>
                         </Dialog>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <span>
-                              <DeleteConfirmDialog
-                                title="¿Eliminar material?"
-                                itemName={material.name}
-                                onConfirm={() => deleteMaterial(material.id)}
-                                trigger={
-                                  <Button variant="destructive" size="sm">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                }
-                              />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Mover a papelera</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <DeleteConfirmDialog
+                          title="¿Eliminar material?"
+                          itemName={material.name}
+                          onConfirm={() => deleteMaterial(material.id)}
+                          trigger={
+                            <Tooltip delayDuration={300}>
+                              <TooltipTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Mover a papelera</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          }
+                        />
                       </div>
                     </TooltipProvider>
                   </TableCell>
