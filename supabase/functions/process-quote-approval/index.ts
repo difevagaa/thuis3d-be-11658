@@ -260,6 +260,8 @@ const handler = async (req: Request): Promise<Response> => {
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+      const fileInfo = quote.file_storage_path ? ` | Archivo: ${quote.file_storage_path}` : '';
+      const quoteNum = quote.quote_number ? ` #${quote.quote_number}` : '';
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -271,7 +273,7 @@ const handler = async (req: Request): Promise<Response> => {
           discount: 0,
           shipping: shippingCost,
           total: total,
-          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
+          notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${quote.quote_type})${fileInfo}`,
           admin_notes: quoteMarker,
           shipping_address: addressParts || null,
           billing_address: addressParts || null,

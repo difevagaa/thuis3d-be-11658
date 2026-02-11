@@ -112,7 +112,6 @@ export default function Quotes() {
       const statusSlug = selectedStatus?.slug?.toLowerCase();
       const normalizedStatusName = selectedStatus?.name?.toLowerCase();
       const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada' || normalizedStatusName === 'approved';
-      console.log('[Quote Update] Status check:', { statusSlug, normalizedStatusName, isApproving, statusId: editingQuote.status_id });
       const statusChanged = originalQuote?.status_id !== editingQuote.status_id;
       const priceChanged = Number(originalQuote?.estimated_price || 0) !== Number(editingQuote.estimated_price || 0);
       const nameChanged = originalQuote?.customer_name !== editingQuote.customer_name;
@@ -278,8 +277,20 @@ export default function Quotes() {
 
               // Create invoice if not exists
               if (!existingInvoice) {
+                // Generate invoice number - use RPC function with unique format
+                let genInvoiceNumber: string | null = null;
                 const { data: genInvNum } = await supabase.rpc('generate_invoice_number');
-                invoiceNumber = genInvNum || `INV-${Date.now()}`;
+                genInvoiceNumber = genInvNum;
+                
+                // If RPC fails, generate a random number with same format (L1N1L2N2L3N3)
+                if (!genInvoiceNumber) {
+                  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                  genInvoiceNumber = 
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10);
+                }
+                invoiceNumber = genInvoiceNumber;
 
                 const { data: newInvoice, error: invError } = await supabase
                   .from('invoices')
@@ -348,6 +359,8 @@ export default function Quotes() {
                 const addressParts = [fullQuote.address, fullQuote.city, fullQuote.postal_code, fullQuote.country].filter(Boolean).join(', ');
                 const quantity = fullQuote.quantity && fullQuote.quantity > 0 ? fullQuote.quantity : 1;
                 const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+                const fileInfo = fullQuote.file_storage_path ? ` | Archivo: ${fullQuote.file_storage_path}` : '';
+                const quoteNum = fullQuote.quote_number ? ` #${fullQuote.quote_number}` : '';
 
                 const { data: newOrder, error: orderError } = await supabase
                   .from('orders')
@@ -356,7 +369,7 @@ export default function Quotes() {
                     status_id: statusId,
                     subtotal, tax, discount: 0,
                     shipping: shippingCost, total,
-                    notes: `Pedido generado automáticamente desde la cotización ${fullQuote.quote_type}`,
+                    notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${fullQuote.quote_type})${fileInfo}`,
                     admin_notes: quoteMarker,
                     shipping_address: addressParts || null,
                     billing_address: addressParts || null,
