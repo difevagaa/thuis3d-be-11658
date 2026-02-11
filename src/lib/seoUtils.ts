@@ -1053,3 +1053,280 @@ export function generateArticleStructuredData(article: {
     ...(article.image && { image: article.image })
   };
 }
+
+/**
+ * Generates content-aware alt text for images
+ * Automatically detects context and generates SEO-optimized alt text
+ */
+export function generateImageAltText(
+  context: {
+    imageName?: string;
+    productName?: string;
+    pageTitle?: string;
+    category?: string;
+    keywords?: string[];
+  },
+  language: SupportedSEOLanguage = 'nl'
+): string {
+  const { imageName, productName, pageTitle, category, keywords } = context;
+  
+  // Extract meaningful information from filename if available
+  let baseName = imageName || productName || pageTitle || 'image';
+  baseName = baseName
+    .replace(/\.(jpg|jpeg|png|webp|gif|svg)$/i, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\d+/g, '')
+    .trim();
+  
+  // Detect business type from context
+  const combinedText = `${baseName} ${category || ''} ${keywords?.join(' ') || ''}`;
+  const detectedTerms = detectIndustryTerms(combinedText, category);
+  const industryTerms = detectedTerms[language];
+  
+  // Templates for different languages
+  const templates: Record<SupportedSEOLanguage, string[]> = {
+    es: [
+      `Imagen de ${baseName}`,
+      `${baseName} - Vista detallada`,
+      `Foto de ${baseName}`,
+      `${baseName} en alta calidad`
+    ],
+    en: [
+      `Image of ${baseName}`,
+      `${baseName} - Detailed view`,
+      `Photo of ${baseName}`,
+      `${baseName} in high quality`
+    ],
+    nl: [
+      `Afbeelding van ${baseName}`,
+      `${baseName} - Gedetailleerd beeld`,
+      `Foto van ${baseName}`,
+      `${baseName} in hoge kwaliteit`
+    ]
+  };
+  
+  // Choose a template
+  const template = templates[language][0];
+  
+  // Add industry context if available
+  let altText = template;
+  if (industryTerms.length > 0 && category) {
+    const industryContext: Record<SupportedSEOLanguage, string> = {
+      es: `para ${category}`,
+      en: `for ${category}`,
+      nl: `voor ${category}`
+    };
+    altText += ` ${industryContext[language]}`;
+  }
+  
+  // Clean and optimize
+  altText = altText
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 125); // Keep under 125 chars for optimal SEO
+  
+  return altText;
+}
+
+/**
+ * Batch generate alt texts for multiple images
+ */
+export function generateBatchImageAltTexts(
+  images: Array<{ filename: string; index: number }>,
+  context: {
+    productName?: string;
+    pageTitle?: string;
+    category?: string;
+    keywords?: string[];
+  },
+  language: SupportedSEOLanguage = 'nl'
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  
+  images.forEach(({ filename, index }) => {
+    const viewSuffixes: Record<SupportedSEOLanguage, string[]> = {
+      es: ['vista principal', 'vista lateral', 'vista detallada', 'otra perspectiva'],
+      en: ['main view', 'side view', 'detailed view', 'another perspective'],
+      nl: ['hoofdaanzicht', 'zijaanzicht', 'gedetailleerd beeld', 'ander perspectief']
+    };
+    
+    const baseAlt = generateImageAltText(
+      { ...context, imageName: filename },
+      language
+    );
+    
+    const suffix = viewSuffixes[language][index % viewSuffixes[language].length];
+    result[filename] = `${baseAlt} - ${suffix}`;
+  });
+  
+  return result;
+}
+
+/**
+ * SEO Health Check - Validates and scores SEO configuration
+ */
+export interface SEOHealthCheck {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  issues: Array<{ severity: 'critical' | 'warning' | 'info'; message: string }>;
+  recommendations: string[];
+  passed: boolean;
+}
+
+export function performSEOHealthCheck(config: {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  ogImage?: string;
+  robotsTxt?: boolean;
+  sitemapXml?: boolean;
+  structuredData?: boolean;
+  hreflangTags?: boolean;
+  mobileOptimized?: boolean;
+  pageSpeed?: number; // 0-100
+  httpsEnabled?: boolean;
+}): SEOHealthCheck {
+  const issues: Array<{ severity: 'critical' | 'warning' | 'info'; message: string }> = [];
+  const recommendations: string[] = [];
+  let score = 0;
+  const maxScore = 100;
+  
+  // Title check (15 points)
+  if (!config.title || config.title.length === 0) {
+    issues.push({ severity: 'critical', message: 'Missing page title' });
+  } else if (config.title.length < 30) {
+    issues.push({ severity: 'warning', message: 'Title is too short (< 30 characters)' });
+    score += 7;
+  } else if (config.title.length > 60) {
+    issues.push({ severity: 'warning', message: 'Title is too long (> 60 characters)' });
+    score += 10;
+  } else {
+    score += 15;
+  }
+  
+  // Description check (15 points)
+  if (!config.description || config.description.length === 0) {
+    issues.push({ severity: 'critical', message: 'Missing meta description' });
+  } else if (config.description.length < 120) {
+    issues.push({ severity: 'warning', message: 'Description is too short (< 120 characters)' });
+    score += 7;
+  } else if (config.description.length > 160) {
+    issues.push({ severity: 'warning', message: 'Description is too long (> 160 characters)' });
+    score += 10;
+  } else {
+    score += 15;
+  }
+  
+  // Keywords check (10 points)
+  if (!config.keywords || config.keywords.length === 0) {
+    issues.push({ severity: 'warning', message: 'No keywords defined' });
+  } else if (config.keywords.length < 5) {
+    issues.push({ severity: 'info', message: 'Consider adding more keywords (< 5)' });
+    score += 5;
+    recommendations.push('Add at least 10 keywords for better coverage');
+  } else if (config.keywords.length >= 10) {
+    score += 10;
+  } else {
+    score += 7;
+  }
+  
+  // Canonical URL (10 points)
+  if (!config.canonicalUrl) {
+    issues.push({ severity: 'warning', message: 'Missing canonical URL' });
+  } else if (!config.canonicalUrl.startsWith('https://')) {
+    issues.push({ severity: 'critical', message: 'Canonical URL should use HTTPS' });
+    score += 5;
+  } else {
+    score += 10;
+  }
+  
+  // Open Graph image (10 points)
+  if (!config.ogImage) {
+    issues.push({ severity: 'warning', message: 'Missing Open Graph image' });
+    recommendations.push('Add an og:image (1200x630px) for better social sharing');
+  } else {
+    score += 10;
+  }
+  
+  // Robots.txt (5 points)
+  if (config.robotsTxt === false) {
+    issues.push({ severity: 'critical', message: 'robots.txt not found or inaccessible' });
+  } else if (config.robotsTxt === true) {
+    score += 5;
+  }
+  
+  // Sitemap.xml (10 points)
+  if (config.sitemapXml === false) {
+    issues.push({ severity: 'critical', message: 'sitemap.xml not found or not submitted' });
+    recommendations.push('Create and submit sitemap.xml to Google Search Console');
+  } else if (config.sitemapXml === true) {
+    score += 10;
+  }
+  
+  // Structured data (10 points)
+  if (config.structuredData === false) {
+    issues.push({ severity: 'warning', message: 'No structured data (JSON-LD) detected' });
+    recommendations.push('Add Schema.org structured data for better search visibility');
+  } else if (config.structuredData === true) {
+    score += 10;
+  }
+  
+  // Hreflang tags for multilingual (5 points)
+  if (config.hreflangTags === false) {
+    issues.push({ severity: 'info', message: 'No hreflang tags for multilingual support' });
+    recommendations.push('Add hreflang tags for nl-BE, en, and es');
+  } else if (config.hreflangTags === true) {
+    score += 5;
+  }
+  
+  // Mobile optimization (5 points)
+  if (config.mobileOptimized === false) {
+    issues.push({ severity: 'critical', message: 'Site not mobile-optimized' });
+    recommendations.push('Implement responsive design for mobile devices');
+  } else if (config.mobileOptimized === true) {
+    score += 5;
+  }
+  
+  // Page speed (5 points)
+  if (config.pageSpeed !== undefined) {
+    if (config.pageSpeed < 50) {
+      issues.push({ severity: 'critical', message: `Poor page speed score: ${config.pageSpeed}/100` });
+      recommendations.push('Optimize images, minify CSS/JS, enable caching');
+    } else if (config.pageSpeed < 75) {
+      issues.push({ severity: 'warning', message: `Average page speed score: ${config.pageSpeed}/100` });
+      score += 3;
+      recommendations.push('Further optimize page speed for better performance');
+    } else {
+      score += 5;
+    }
+  }
+  
+  // HTTPS (5 points)
+  if (config.httpsEnabled === false) {
+    issues.push({ severity: 'critical', message: 'Site not using HTTPS' });
+    recommendations.push('Enable HTTPS with valid SSL certificate');
+  } else if (config.httpsEnabled === true) {
+    score += 5;
+  }
+  
+  const percentage = Math.round((score / maxScore) * 100);
+  const passed = percentage >= 70; // 70% threshold for passing
+  
+  // Add general recommendations
+  if (passed) {
+    recommendations.push('SEO configuration is good! Continue monitoring and improving.');
+  } else {
+    recommendations.push('Address critical and warning issues to improve SEO score.');
+  }
+  
+  return {
+    score,
+    maxScore,
+    percentage,
+    issues,
+    recommendations,
+    passed
+  };
+}
