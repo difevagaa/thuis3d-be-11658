@@ -274,14 +274,14 @@ export default function Payment() {
   };
 
   const calculateGiftCardAmount = () => {
-    if (!appliedGiftCard) return 0;
+    if (!appliedGiftCard || !appliedGiftCard.current_balance) return 0;
     const subtotal = calculateSubtotal();
     const tax = calculateTax();
     const couponDiscount = calculateCouponDiscount();
     const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
     // Gift card covers: subtotal - couponDiscount + IVA + envío
     const totalBeforeGiftCard = subtotal - couponDiscount + tax + effectiveShipping;
-    return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
+    return Math.min(Number(appliedGiftCard.current_balance) || 0, Math.max(0, totalBeforeGiftCard));
   };
 
   // Total = subtotal - couponDiscount + IVA + envío - gift card
