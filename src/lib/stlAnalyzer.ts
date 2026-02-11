@@ -4,6 +4,56 @@ import { calculateSupportRisk, type SupportRiskFactors } from './supportRiskAnal
 import { SUPPORT_CONSTANTS } from './calibrationConstants';
 import { logger } from '@/lib/logger';
 
+// ============================================================
+// 🧠 CONSTANTES DE IA PARA ANÁLISIS INTELIGENTE
+// ============================================================
+
+/**
+ * Configuración de la impresora (Bambu Lab X1C como referencia)
+ */
+const PRINTER_CONFIG = {
+  BED_SIZE_MM: 256,                    // Tamaño de cama en mm
+  BED_VOLUME_CM3: (256 * 256 * 256) / 1000,  // ~16.7L
+  PACKING_EFFICIENCY_FACTOR: 0.70,     // 70% eficiencia de empaquetamiento
+  SETUP_TIME_MINUTES: 5,               // Tiempo de preparación por trabajo
+} as const;
+
+/**
+ * Factores de eficiencia de batch según tamaño de pieza
+ */
+const BATCH_EFFICIENCY_FACTORS = {
+  VERY_SMALL: { threshold: 20, discount: 0.85 },  // 15% ahorro
+  SMALL: { threshold: 10, discount: 0.88 },       // 12% ahorro
+  MEDIUM: { threshold: 4, discount: 0.90 },       // 10% ahorro
+  LARGE: { threshold: 2, discount: 0.93 },        // 7% ahorro
+  VERY_LARGE: { threshold: 0, discount: 0.95 },   // 5% ahorro
+  SUPPORT_PENALTY: 0.03,                          // +3% si requiere soportes
+} as const;
+
+/**
+ * Configuración para detección de islas flotantes
+ */
+const ISLAND_DETECTION_CONFIG = {
+  LAYER_TOLERANCE_MM: 0.2,             // Tolerancia para agrupar capas (altura de capa típica)
+  SEARCH_RADIUS_MM: 2,                 // Radio de búsqueda de soporte debajo (±2mm)
+  MIN_ISLAND_COUNT_THRESHOLD: 5,       // Umbral para agregar volumen de islas
+  SUPPORT_HEIGHT_FACTOR: 0.5,          // 50% de altura para soportes de islas
+} as const;
+
+/**
+ * Umbrales de ángulo para clasificación de voladizos
+ */
+const OVERHANG_SEVERITY = {
+  SEVERE_ANGLE: 60,     // >60° = crítico, necesita soportes pesados
+  STANDARD_ANGLE: 45,   // >45° = estándar, necesita soportes
+  MILD_ANGLE: 35,       // >35° = leve, posiblemente necesita
+  
+  // Ponderaciones para cálculo de área
+  SEVERE_WEIGHT: 1.5,   // Voladizos severos pesan 1.5x
+  STANDARD_WEIGHT: 1.0, // Voladizos estándar pesan 1.0x
+  MILD_WEIGHT: 0.5,     // Voladizos leves pesan 0.5x
+} as const;
+
 export interface AnalysisResult {
   volume: number;      // cm³
   weight: number;      // gramos
@@ -788,7 +838,7 @@ export const analyzeSTLFile = async (
       
       // 5. COSTOS FIJOS (se cobran una sola vez, no importa la cantidad)
       // MEJORA: Agregar tiempo de setup proporcional al trabajo
-      const setupTimeHours = 0.083; // 5 minutos de setup (preparación, nivelación, carga de filamento)
+      const setupTimeHours = PRINTER_CONFIG.SETUP_TIME_MINUTES / 60;
       const setupCost = setupTimeHours * machineCostPerHour + setupTimeHours * powerConsumptionKw * electricityCostPerKwh;
       const fixedCostsPerJob = electricityCostFixed + setupCost;
       
@@ -812,36 +862,31 @@ export const analyzeSTLFile = async (
         // 2. Densidad de empaquetamiento estimada
         // 3. Complejidad geométrica
         
-        const bedVolumeCm3 = 256 * 256 * 256 / 1000; // ~16.7L para Bambu Lab X1C
+        const bedVolumeCm3 = PRINTER_CONFIG.BED_VOLUME_CM3;
         const pieceVolume = volumeCm3;
         const volumeRatioPerPiece = pieceVolume / bedVolumeCm3;
         
-        // Calcular cuántas piezas caben teóricamente (con margen de seguridad del 70%)
-        const theoreticalFitCount = Math.floor(0.70 / Math.max(0.01, volumeRatioPerPiece));
+        // Calcular cuántas piezas caben teóricamente
+        const theoreticalFitCount = Math.floor(PRINTER_CONFIG.PACKING_EFFICIENCY_FACTOR / Math.max(0.01, volumeRatioPerPiece));
         
         // Factor de eficiencia basado en empaquetamiento
         // Si caben muchas piezas: alta eficiencia (descuento mayor)
         // Si caben pocas piezas: baja eficiencia (descuento menor)
-        if (theoreticalFitCount >= 20) {
-          // Piezas muy pequeñas: 15% de ahorro por batch
-          batchEfficiencyFactor = 0.85;
-        } else if (theoreticalFitCount >= 10) {
-          // Piezas pequeñas: 12% de ahorro
-          batchEfficiencyFactor = 0.88;
-        } else if (theoreticalFitCount >= 4) {
-          // Piezas medianas: 10% de ahorro (original)
-          batchEfficiencyFactor = 0.90;
-        } else if (theoreticalFitCount >= 2) {
-          // Piezas grandes: 7% de ahorro
-          batchEfficiencyFactor = 0.93;
+        if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.VERY_SMALL.threshold) {
+          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.VERY_SMALL.discount;
+        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.SMALL.threshold) {
+          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.SMALL.discount;
+        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.MEDIUM.threshold) {
+          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.MEDIUM.discount;
+        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.LARGE.threshold) {
+          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.LARGE.discount;
         } else {
-          // Piezas muy grandes: 5% de ahorro (requieren múltiples trabajos)
-          batchEfficiencyFactor = 0.95;
+          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.VERY_LARGE.discount;
         }
         
         // Ajuste adicional si la pieza requiere soportes (reduce eficiencia)
         if (supportsRequired) {
-          batchEfficiencyFactor += 0.03; // Reduce el ahorro en 3% si hay soportes
+          batchEfficiencyFactor += BATCH_EFFICIENCY_FACTORS.SUPPORT_PENALTY;
           batchEfficiencyFactor = Math.min(1.0, batchEfficiencyFactor);
         }
         
@@ -1612,9 +1657,9 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   // MEJORA IA: Sistema de umbrales adaptativos basados en geometría tensorial
   // Ángulos críticos múltiples para mejor detección
   const criticalAngles = {
-    severe: Math.cos(60 * Math.PI / 180),    // >60° = crítico (necesita soportes pesados)
-    standard: Math.cos(45 * Math.PI / 180),  // >45° = estándar (necesita soportes)
-    mild: Math.cos(35 * Math.PI / 180),      // >35° = leve (posiblemente necesita)
+    severe: Math.cos(OVERHANG_SEVERITY.SEVERE_ANGLE * Math.PI / 180),
+    standard: Math.cos(OVERHANG_SEVERITY.STANDARD_ANGLE * Math.PI / 180),
+    mild: Math.cos(OVERHANG_SEVERITY.MILD_ANGLE * Math.PI / 180),
   };
   
   // Contadores por severidad para análisis inteligente
@@ -1624,7 +1669,7 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   
   // MEJORA: Detección de islas (regiones sin soporte debajo)
   const layerMap = new Map<number, Set<string>>();
-  const layerTolerance = 0.2; // mm (altura de capa típica)
+  const layerTolerance = ISLAND_DETECTION_CONFIG.LAYER_TOLERANCE_MM;
   
   // Analizar ÁREA con ponderación por severidad
   for (let i = 0; i < position.count; i += 3) {
@@ -1661,17 +1706,17 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
     // n.z > -0.1 evita contar caras del fondo
     if (n.z > -0.1) {
       if (n.z < criticalAngles.severe) {
-        // Voladizo severo (>60°): peso máximo
+        // Voladizo severo: peso máximo
         severeOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * 1.5; // Ponderación 1.5x
+        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.SEVERE_WEIGHT;
       } else if (n.z < criticalAngles.standard) {
-        // Voladizo estándar (45-60°): peso normal
+        // Voladizo estándar: peso normal
         standardOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * 1.0; // Ponderación 1.0x
+        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.STANDARD_WEIGHT;
       } else if (n.z < criticalAngles.mild) {
-        // Voladizo leve (35-45°): peso reducido
+        // Voladizo leve: peso reducido
         mildOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * 0.5; // Ponderación 0.5x
+        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.MILD_WEIGHT;
       }
     }
   }
@@ -1688,12 +1733,12 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
     
     // Buscar puntos en capa actual que no tienen soporte en capa anterior
     currentLayer.forEach(point => {
-      // Buscar en área circundante de capa anterior (±2mm)
       const [x, y] = point.split(',').map(Number);
       let hasSupport = false;
+      const searchRadius = ISLAND_DETECTION_CONFIG.SEARCH_RADIUS_MM;
       
-      for (let dx = -2; dx <= 2 && !hasSupport; dx++) {
-        for (let dy = -2; dy <= 2 && !hasSupport; dy++) {
+      for (let dx = -searchRadius; dx <= searchRadius && !hasSupport; dx++) {
+        for (let dy = -searchRadius; dy <= searchRadius && !hasSupport; dy++) {
           if (previousLayer.has(`${x + dx},${y + dy}`)) {
             hasSupport = true;
           }
@@ -1734,8 +1779,8 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   let estimatedSupportVolume = (overhangAreaMm2 * averageSupportHeight * adaptiveDensity) / 1000;
   
   // Agregar volumen adicional para islas flotantes
-  if (islandCount > 5) {
-    const islandVolume = (islandArea * pieceHeight * 0.5 * baseDensity) / 1000;
+  if (islandCount > ISLAND_DETECTION_CONFIG.MIN_ISLAND_COUNT_THRESHOLD) {
+    const islandVolume = (islandArea * pieceHeight * ISLAND_DETECTION_CONFIG.SUPPORT_HEIGHT_FACTOR * baseDensity) / 1000;
     estimatedSupportVolume += islandVolume;
     logger.log('🏝️ Islas flotantes detectadas:', {
       cantidad: islandCount,
