@@ -10,13 +10,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FilePlus, Pencil, Trash2, FileText } from "lucide-react";
+import { FilePlus, Pencil, Trash2, FileText, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import { FieldHelp } from "@/components/admin/FieldHelp";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { sendNotificationWithBroadcast } from "@/lib/notificationUtils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Quotes() {
   const navigate = useNavigate();
@@ -235,9 +243,8 @@ export default function Quotes() {
     }
   };
 
-  const handleDeleteQuote = async (id: string) => {
-    if (!confirm("¿Mover esta cotización a la papelera?")) return;
-    
+  const handleDeleteQuote = async (id: string, quoteName: string) => {
+    // No need for confirm() - DeleteConfirmDialog handles it
     try {
       const { error } = await supabase
         .from("quotes")
@@ -309,10 +316,58 @@ export default function Quotes() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Material</TableHead>
-                  <TableHead>Peso</TableHead>
-                  <TableHead>Tiempo</TableHead>
-                  <TableHead>Precio Auto</TableHead>
-                  <TableHead>Precio Est.</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Peso
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Peso calculado del modelo 3D</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Tiempo
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Tiempo estimado de impresión</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Precio Auto
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Precio calculado automáticamente por el sistema</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Precio Est.
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Precio estimado establecido manualmente por el administrador</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -379,30 +434,46 @@ export default function Quotes() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
-                            title="Ver detalles"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setEditingQuote(quote)}
-                            title="Editar"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDeleteQuote(quote.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Ver detalles completos</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => setEditingQuote(quote)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Editar cotización</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <DeleteConfirmDialog
+                            title="¿Eliminar esta cotización?"
+                            itemName={`Cotización de ${quote.customer_name}`}
+                            onConfirm={() => handleDeleteQuote(quote.id, quote.customer_name)}
+                            trigger={
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -462,7 +533,10 @@ export default function Quotes() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Precio Estimado (€)</Label>
+                  <Label className="flex items-center gap-2">
+                    Precio Estimado (€)
+                    <FieldHelp content="Precio final que se cobrará al cliente. Puede ser diferente del precio calculado automáticamente." />
+                  </Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -473,7 +547,10 @@ export default function Quotes() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Estado</Label>
+                  <Label className="flex items-center gap-2">
+                    Estado
+                    <FieldHelp content="Cambiar a 'Aprobado' generará automáticamente una factura y un pedido." />
+                  </Label>
                   <Select
                     value={editingQuote.status_id}
                     onValueChange={(value) => setEditingQuote({ ...editingQuote, status_id: value })}
