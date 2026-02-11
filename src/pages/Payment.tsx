@@ -545,50 +545,13 @@ export default function Payment() {
         staleGiftCardBalance: appliedGiftCard.current_balance
       });
 
-      // CRITICAL: Re-validate gift card from database before processing
-      const { data: freshGiftCard, error: giftCardFetchError } = await supabase
-        .from("gift_cards")
-        .select("*")
-        .eq("id", appliedGiftCard.id)
-        .eq("is_active", true)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (giftCardFetchError || !freshGiftCard) {
-        logger.error('[INVOICE GIFT CARD PAYMENT] Gift card no longer valid:', giftCardFetchError);
-        // Check for schema cache errors
-        if (isSchemaGCacheError(giftCardFetchError)) {
-          toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-        } else {
-          toast.error("La tarjeta de regalo ya no es válida");
-        }
-        removeGiftCard();
-        return;
-      }
-
-      // Check if gift card expired
-      if (freshGiftCard.expires_at && new Date(freshGiftCard.expires_at) < new Date()) {
-        toast.error("La tarjeta de regalo ha expirado");
-        removeGiftCard();
-        return;
-      }
-
-      // Check if gift card has sufficient balance
-      if (freshGiftCard.current_balance <= 0) {
-        toast.error("La tarjeta de regalo no tiene saldo disponible");
-        removeGiftCard();
-        return;
-      }
-
-      const giftCardAmount = Math.min(freshGiftCard.current_balance, invoiceTotal);
+      // Calculate amounts
+      const giftCardAmount = Math.min(appliedGiftCard.current_balance, invoiceTotal);
       const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
-      const newGiftCardBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
 
-      logger.log('[INVOICE GIFT CARD PAYMENT] Validated amounts:', {
-        freshGiftCardBalance: freshGiftCard.current_balance,
+      logger.log('[INVOICE GIFT CARD PAYMENT] Calculated amounts:', {
         giftCardAmount,
         remainingTotal,
-        newGiftCardBalance,
         willMarkPaid: remainingTotal <= 0
       });
 
@@ -622,39 +585,16 @@ export default function Payment() {
         return;
       }
 
-      // Start a transaction-like sequence
-      // 1. Update gift card balance FIRST (so if this fails, nothing else happens)
-      const { error: giftCardError, count: giftCardUpdateCount } = await supabase
-        .from("gift_cards")
-        .update({ 
-          current_balance: newGiftCardBalance,
-          updated_at: new Date().toISOString()
-        }, { count: 'exact' })
-        .eq("id", freshGiftCard.id)
-        .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
+      // CRITICAL: Process gift card using unified function
+      const giftCardResult = await processGiftCardPayment(
+        appliedGiftCard.id,
+        giftCardAmount,
+        'INVOICE_PAYMENT'
+      );
 
-      if (giftCardError) {
-        logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
-        
-        // Check for schema cache errors
-        if (isSchemaGCacheError(giftCardError)) {
-          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
-        }
-        
-        // Check if it's because balance changed (race condition with optimistic locking)
-        if (giftCardError.code === POSTGREST_NO_ROWS_UPDATED) {
-          toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
-          removeGiftCard();
-          return;
-        }
-        
-        throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
-      }
-
-      // CRITICAL: Check if optimistic locking prevented the update (count === 0 means no rows updated)
-      if (giftCardUpdateCount === 0) {
-        logger.error('[INVOICE GIFT CARD PAYMENT] Optimistic locking failed - balance changed');
-        toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
+      if (!giftCardResult.success) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Gift card processing failed:', giftCardResult);
+        toast.error(giftCardResult.error || 'Error al procesar la tarjeta de regalo');
         removeGiftCard();
         return;
       }
@@ -667,9 +607,9 @@ export default function Payment() {
         .update({
           payment_status: remainingTotal <= 0 ? "paid" : "pending",
           payment_method: "gift_card",
-          gift_card_code: freshGiftCard.code,
+          gift_card_code: appliedGiftCard.code,
           gift_card_amount: giftCardAmount,
-          notes: `Pagado con tarjeta de regalo: ${freshGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
         })
         .eq("id", invoiceData.invoiceId)
         .eq("user_id", user.id);
@@ -677,22 +617,13 @@ export default function Payment() {
       if (updateError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
         
-        // CRITICAL: Rollback gift card balance if invoice update fails
-        const { error: rollbackError } = await supabase
-          .from("gift_cards")
-          .update({ 
-            current_balance: freshGiftCard.current_balance,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", freshGiftCard.id);
-        
-        if (rollbackError) {
-          logger.error('[INVOICE GIFT CARD PAYMENT] CRITICAL: Rollback failed - gift card balance may be incorrect:', rollbackError);
-        }
+        // Note: Gift card balance already updated - cannot rollback automatically
+        // Admin will need to handle this manually if invoice update fails
+        logger.error('[INVOICE GIFT CARD PAYMENT] CRITICAL: Invoice update failed after gift card deduction');
         
         // Check for schema cache errors
         if (isSchemaGCacheError(updateError)) {
-          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+          throw new Error('Error de base de datos: Por favor contacta soporte - tu tarjeta fue debitada pero la factura no se actualizó');
         }
         
         throw new Error('Error al actualizar la factura: ' + updateError.message);
