@@ -118,7 +118,7 @@ export default function PaymentInstructions() {
       if (giftCardData && giftCardDiscount > 0) {
         await updateGiftCardBalance(
           giftCardData.id,
-          giftCardData.current_balance - giftCardDiscount
+          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
         );
         sessionStorage.removeItem("applied_gift_card");
       }

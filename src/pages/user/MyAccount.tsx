@@ -175,8 +175,8 @@ export default function MyAccount() {
       const userCoupons = redemptionsRes.data?.map(redemption => ({
         id: redemption.id,
         code: redemption.coupon_code,
-        discount_type: 'percentage', // Default, idealmente obtenerlo del cupón original
-        discount_value: 10, // Default
+        discount_type: redemption.coupons?.discount_type || 'percentage',
+        discount_value: redemption.coupons?.discount_value || 0,
         created_at: redemption.created_at,
         status: redemption.status,
         reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'

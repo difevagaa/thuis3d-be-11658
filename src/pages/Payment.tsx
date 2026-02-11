@@ -422,7 +422,7 @@ export default function Payment() {
 
       await updateGiftCardBalance(
         appliedGiftCard.id,
-        appliedGiftCard.current_balance - giftCardAmount
+        Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2))
       );
 
       // Actualizar uso del cupón si se aplicó
@@ -759,7 +759,7 @@ export default function Payment() {
         if (giftCardData && giftCardDiscount > 0) {
           await updateGiftCardBalance(
             giftCardData.id,
-            giftCardData.current_balance - giftCardDiscount
+            Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
           );
           sessionStorage.removeItem("applied_gift_card");
         }
