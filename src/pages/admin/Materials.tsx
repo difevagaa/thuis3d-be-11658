@@ -300,9 +300,9 @@ export default function Materials() {
                   <TableCell className="text-right">
                     <TooltipProvider>
                       <div className="flex justify-end gap-2">
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <Dialog>
+                        <Dialog>
+                          <Tooltip delayDuration={300}>
+                            <TooltipTrigger asChild>
                               <DialogTrigger asChild>
                                 <Button
                                   variant="outline"
@@ -315,7 +315,12 @@ export default function Materials() {
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Editar material</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Editar Material</DialogTitle>
                             <DialogDescription>
@@ -402,24 +407,21 @@ export default function Materials() {
                             <Button onClick={updateMaterial}>Actualizar Material</Button>
                           </DialogFooter>
                         </DialogContent>
-                            </Dialog>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Editar material</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        </Dialog>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
-                            <DeleteConfirmDialog
-                              title="¿Eliminar material?"
-                              itemName={material.name}
-                              onConfirm={() => deleteMaterial(material.id)}
-                              trigger={
-                                <Button variant="destructive" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              }
-                            />
+                            <span>
+                              <DeleteConfirmDialog
+                                title="¿Eliminar material?"
+                                itemName={material.name}
+                                onConfirm={() => deleteMaterial(material.id)}
+                                trigger={
+                                  <Button variant="destructive" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Mover a papelera</p>
