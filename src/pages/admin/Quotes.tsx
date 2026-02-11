@@ -111,7 +111,7 @@ export default function Quotes() {
       const selectedStatus = statuses.find(s => s.id === editingQuote.status_id);
       const statusSlug = selectedStatus?.slug?.toLowerCase();
       const normalizedStatusName = selectedStatus?.name?.toLowerCase();
-      const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada' || normalizedStatusName === 'approved';
+      const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada';
       const statusChanged = originalQuote?.status_id !== editingQuote.status_id;
       const priceChanged = Number(originalQuote?.estimated_price || 0) !== Number(editingQuote.estimated_price || 0);
       const nameChanged = originalQuote?.customer_name !== editingQuote.customer_name;
@@ -187,11 +187,8 @@ export default function Quotes() {
 
       // If quote is being approved, trigger automation
       if (isApproving) {
-        toast.info('Procesando aprobación y generando factura y pedido...');
+        toast.info('Procesando aprobación y generando factura...');
 
-        let automationSuccess = false;
-
-        // Try edge function first
         try {
           const { data: profile } = await supabase
             .from('profiles')
@@ -211,8 +208,9 @@ export default function Quotes() {
             }
           );
 
-          if (!functionError && data?.success) {
-            automationSuccess = true;
+          if (functionError) {
+            toast.warning('Cotización aprobada, pero hubo un error en la automatización. Revisa los detalles.');
+          } else if (data?.success) {
             const automations = data.automations || {};
             
             let message = `✅ Cotización aprobada exitosamente`;
@@ -230,190 +228,9 @@ export default function Quotes() {
             }
             
             toast.success(message, { duration: 6000 });
-          } else {
-            console.error('Edge function error, falling back to client-side automation:', functionError || data?.error);
           }
         } catch (autoError) {
-          console.error('Edge function exception, falling back to client-side automation:', autoError);
-        }
-
-        // Client-side fallback: create invoice and order directly
-        if (!automationSuccess) {
-          try {
-            // Get full quote data
-            const { data: fullQuote } = await supabase
-              .from('quotes')
-              .select('*')
-              .eq('id', editingQuote.id)
-              .single();
-
-            if (fullQuote) {
-              const subtotal = parseFloat(fullQuote.estimated_price || '0');
-              const shippingCost = parseFloat(fullQuote.shipping_cost || '0');
-
-              // Check tax settings
-              const shouldApplyTax = fullQuote.tax_enabled ?? true;
-              let taxRate = 0;
-              if (shouldApplyTax) {
-                const { data: taxSettings } = await supabase
-                  .from('tax_settings')
-                  .select('tax_rate')
-                  .eq('is_enabled', true)
-                  .maybeSingle();
-                taxRate = taxSettings?.tax_rate || 0;
-              }
-              const tax = shouldApplyTax ? (subtotal * taxRate) / 100 : 0;
-              const total = subtotal + tax + shippingCost;
-
-              // Check if invoice already exists for this quote
-              const { data: existingInvoice } = await supabase
-                .from('invoices')
-                .select('id, invoice_number')
-                .eq('quote_id', editingQuote.id)
-                .maybeSingle();
-
-              let invoiceId = existingInvoice?.id;
-              let invoiceNumber = existingInvoice?.invoice_number;
-
-              // Create invoice if not exists
-              if (!existingInvoice) {
-                // Generate invoice number - use RPC function with unique format
-                let genInvoiceNumber: string | null = null;
-                const { data: genInvNum } = await supabase.rpc('generate_invoice_number');
-                genInvoiceNumber = genInvNum;
-                
-                // If RPC fails, generate a random number with same format (L1N1L2N2L3N3)
-                if (!genInvoiceNumber) {
-                  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                  genInvoiceNumber = 
-                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10);
-                }
-                invoiceNumber = genInvoiceNumber;
-
-                const { data: newInvoice, error: invError } = await supabase
-                  .from('invoices')
-                  .insert({
-                    invoice_number: invoiceNumber,
-                    quote_id: editingQuote.id,
-                    user_id: fullQuote.user_id,
-                    issue_date: new Date().toISOString(),
-                    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    payment_status: 'pending',
-                    subtotal, tax, total,
-                    notes: `Factura generada automáticamente para cotización ${fullQuote.quote_type}`,
-                    shipping: shippingCost,
-                    discount: 0
-                  })
-                  .select()
-                  .single();
-
-                if (invError) {
-                  console.error('Error creating invoice:', invError);
-                } else if (newInvoice) {
-                  invoiceId = newInvoice.id;
-
-                  await supabase.from('invoice_items').insert({
-                    invoice_id: newInvoice.id,
-                    product_name: `Cotización ${fullQuote.quote_type}`,
-                    description: fullQuote.description || 'Servicio de impresión 3D',
-                    quantity: 1,
-                    unit_price: subtotal,
-                    total_price: subtotal,
-                    tax_enabled: shouldApplyTax
-                  });
-                }
-              }
-
-              // Check if order already exists for this quote
-              const quoteMarker = `quote_id:${editingQuote.id}`;
-              const { data: existingOrder } = await supabase
-                .from('orders')
-                .select('id, order_number')
-                .ilike('admin_notes', `%${quoteMarker}%`)
-                .maybeSingle();
-
-              let orderData = existingOrder;
-
-              // Create order if not exists
-              if (!existingOrder) {
-                // Get "Recibido" status
-                const { data: orderStatus } = await supabase
-                  .from('order_statuses')
-                  .select('id')
-                  .eq('name', 'Recibido')
-                  .maybeSingle();
-
-                let statusId = orderStatus?.id;
-                if (!statusId) {
-                  const { data: fallback } = await supabase
-                    .from('order_statuses')
-                    .select('id')
-                    .order('name', { ascending: true })
-                    .limit(1)
-                    .maybeSingle();
-                  statusId = fallback?.id || null;
-                }
-
-                const addressParts = [fullQuote.address, fullQuote.city, fullQuote.postal_code, fullQuote.country].filter(Boolean).join(', ');
-                const quantity = fullQuote.quantity && fullQuote.quantity > 0 ? fullQuote.quantity : 1;
-                const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
-                const fileInfo = fullQuote.file_storage_path ? ` | Archivo: ${fullQuote.file_storage_path}` : '';
-                const quoteNum = fullQuote.quote_number ? ` #${fullQuote.quote_number}` : '';
-
-                const { data: newOrder, error: orderError } = await supabase
-                  .from('orders')
-                  .insert({
-                    user_id: fullQuote.user_id,
-                    status_id: statusId,
-                    subtotal, tax, discount: 0,
-                    shipping: shippingCost, total,
-                    notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${fullQuote.quote_type})${fileInfo}`,
-                    admin_notes: quoteMarker,
-                    shipping_address: addressParts || null,
-                    billing_address: addressParts || null,
-                    payment_status: 'pending'
-                  })
-                  .select('id, order_number')
-                  .single();
-
-                if (orderError) {
-                  console.error('Error creating order:', orderError);
-                } else if (newOrder) {
-                  orderData = newOrder;
-
-                  await supabase.from('order_items').insert({
-                    order_id: newOrder.id,
-                    product_name: `Cotización ${fullQuote.quote_type}`,
-                    quantity: quantity,
-                    unit_price: unitPrice,
-                    total_price: subtotal,
-                    selected_material: fullQuote.material_id || null,
-                    selected_color: fullQuote.color_id || null,
-                    custom_text: fullQuote.description || null
-                  });
-
-                  // Link invoice to order
-                  if (invoiceId) {
-                    await supabase.from('invoices').update({ order_id: newOrder.id }).eq('id', invoiceId);
-                  }
-                }
-              }
-
-              let message = `✅ Cotización aprobada exitosamente`;
-              if (invoiceNumber) {
-                message += `\n📄 Factura ${invoiceNumber} generada (€${total.toFixed(2)})`;
-              }
-              if (orderData) {
-                message += `\n📦 Pedido ${orderData.order_number} generado`;
-              }
-              toast.success(message, { duration: 6000 });
-            }
-          } catch (fallbackError) {
-            console.error('Client-side automation fallback error:', fallbackError);
-            toast.warning('Cotización aprobada, pero hubo problemas generando la factura y pedido automáticamente.');
-          }
+          toast.warning('Cotización aprobada, pero la automatización falló. Crea la factura manualmente.');
         }
       } else {
         toast.success("Cotización actualizada");

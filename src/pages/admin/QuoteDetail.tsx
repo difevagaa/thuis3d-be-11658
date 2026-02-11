@@ -279,67 +279,6 @@ export default function QuoteDetail() {
         </div>
       </div>
 
-      {/* Customer Response Banner - shown prominently at top when there's a response */}
-      {quote.custom_text && (
-        <Card className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageSquare className="h-5 w-5 text-blue-600" />
-              Respuesta del Cliente
-            </CardTitle>
-            <CardDescription>
-              Última actividad del cliente en esta cotización
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm whitespace-pre-wrap space-y-1">
-              {quote.custom_text.split('\n').map((line: string, idx: number) => {
-                const isApproval = line.includes('Aprobación del cliente');
-                const isRejection = line.includes('Rechazo del cliente');
-                const isComment = line.includes('Comentario del cliente');
-                
-                if (isApproval) {
-                  return (
-                    <div key={idx} className="font-medium text-green-700 dark:text-green-400 py-1 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else if (isRejection) {
-                  return (
-                    <div key={idx} className="font-medium text-red-700 dark:text-red-400 py-1 flex items-center gap-2">
-                      <XCircle className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else if (isComment) {
-                  return (
-                    <div key={idx} className="font-medium text-blue-700 dark:text-blue-400 py-1 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                      {line}
-                    </div>
-                  );
-                } else {
-                  return <div key={idx} className="text-gray-700 dark:text-gray-300 py-1">{line}</div>;
-                }
-              })}
-            </div>
-            {quote.user_id && (
-              <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
-                <Button 
-                  onClick={() => navigate(`/admin/messages?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
-                  variant="default"
-                  size="sm"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Contactar Cliente
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Información del Cliente */}
         <Card className="lg:col-span-1">
@@ -395,7 +334,7 @@ export default function QuoteDetail() {
               <>
                 <Separator />
                 <Button 
-                  onClick={() => navigate(`/admin/messages?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
+                  onClick={() => navigate(`/admin/mensajes?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
                   className="w-full"
                   variant="default"
                 >

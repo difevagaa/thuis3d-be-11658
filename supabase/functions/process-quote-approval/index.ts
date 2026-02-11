@@ -152,36 +152,17 @@ const handler = async (req: Request): Promise<Response> => {
     let invoiceId = existingInvoice?.id;
 
     if (!existingInvoice) {
-      // Generate unique invoice number with retry logic
-      let invoiceGenAttempts = 0;
-      const maxAttempts = 5;
-      while (invoiceGenAttempts < maxAttempts) {
-        const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
-          .rpc('generate_invoice_number');
+      // Get next invoice number
+      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+        .rpc('generate_next_invoice_number');
 
-        if (invoiceNumError) {
-          console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
-          throw new Error('Failed to generate invoice number');
-        }
-
-        invoiceNumber = nextInvoiceNumber;
-        console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
-
-        // Check uniqueness before inserting
-        const { data: existing } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('invoice_number', invoiceNumber)
-          .maybeSingle();
-
-        if (!existing) break; // Unique number found
-        invoiceGenAttempts++;
-        console.log('[QUOTE APPROVAL] Invoice number collision, retrying...', invoiceGenAttempts);
+      if (invoiceNumError) {
+        console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
+        throw new Error('Failed to generate invoice number');
       }
 
-      if (invoiceGenAttempts >= maxAttempts) {
-        throw new Error('Failed to generate unique invoice number after multiple attempts');
-      }
+      invoiceNumber = nextInvoiceNumber;
+      console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
 
       // Create invoice
       const { data: newInvoice, error: invoiceError } = await supabase
@@ -260,8 +241,6 @@ const handler = async (req: Request): Promise<Response> => {
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
-      const fileInfo = quote.file_storage_path ? ` | Archivo: ${quote.file_storage_path}` : '';
-      const quoteNum = quote.quote_number ? ` #${quote.quote_number}` : '';
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -273,7 +252,7 @@ const handler = async (req: Request): Promise<Response> => {
           discount: 0,
           shipping: shippingCost,
           total: total,
-          notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${quote.quote_type})${fileInfo}`,
+          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
           admin_notes: quoteMarker,
           shipping_address: addressParts || null,
           billing_address: addressParts || null,
