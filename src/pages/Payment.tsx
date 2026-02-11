@@ -17,7 +17,9 @@ import {
   generateOrderNotes,
   updateGiftCardBalance,
   getOrCreateOrderNumber,
-  generateOrderNumber
+  generateOrderNumber,
+  processGiftCardPayment,
+  createInvoiceForOrder
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
@@ -436,53 +438,26 @@ export default function Payment() {
         throw new Error('Error creating order items');
       }
 
-      // CRITICAL: Re-validate gift card from database before updating
-      const { data: freshGiftCard, error: freshGiftCardError } = await supabase
-        .from("gift_cards")
-        .select("*")
-        .eq("id", appliedGiftCard.id)
-        .eq("is_active", true)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (freshGiftCardError || !freshGiftCard) {
-        logger.error('[GIFT CARD ONLY PAYMENT] Gift card no longer valid:', freshGiftCardError);
-        // Rollback: delete created order
-        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
-        if (rollbackError) {
-          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed after invalid gift card:', rollbackError);
-        }
-        throw new Error('La tarjeta de regalo ya no es válida');
-      }
-
-      // Check if gift card has sufficient balance
-      if (freshGiftCard.current_balance < giftCardAmount) {
-        // Rollback: delete created order
-        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
-        if (rollbackError) {
-          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed after insufficient balance:', rollbackError);
-        }
-        throw new Error(`Saldo insuficiente en tarjeta de regalo. Disponible: €${freshGiftCard.current_balance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`);
-      }
-
-      const newGiftCardBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
-      const giftCardUpdateSuccess = await updateGiftCardBalance(
-        freshGiftCard.id,
-        newGiftCardBalance,
-        freshGiftCard.current_balance // Use fresh balance for optimistic locking
+      // CRITICAL: Process gift card using unified function
+      const giftCardResult = await processGiftCardPayment(
+        appliedGiftCard.id,
+        giftCardAmount,
+        'GIFT_CARD_ONLY_PAYMENT'
       );
 
-      if (!giftCardUpdateSuccess) {
-        logger.error('[GIFT CARD ONLY PAYMENT] Failed to update gift card balance - optimistic locking or database error');
+      if (!giftCardResult.success) {
+        logger.error('[GIFT CARD ONLY PAYMENT] Gift card processing failed:', giftCardResult);
         // Rollback: delete created order
         const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
         if (rollbackError) {
-          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed - order may be orphaned:', rollbackError);
+          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed:', rollbackError);
         }
-        toast.error("No se pudo procesar el pago. Por favor, vuelve a intentarlo.");
+        toast.error(giftCardResult.error || "No se pudo procesar el pago con la tarjeta de regalo");
         removeGiftCard();
         return;
       }
+
+      logger.log('[GIFT CARD ONLY PAYMENT] Gift card processed successfully');
 
       // Actualizar uso del cupón si se aplicó
       if (appliedCoupon) {
@@ -494,6 +469,29 @@ export default function Payment() {
         } catch (couponError) {
           logger.error('Error updating coupon usage:', couponError);
         }
+      }
+
+      // CRITICAL: Create invoice automatically
+      const invoice = await createInvoiceForOrder(order.id, {
+        order_number: orderNumber,
+        user_id: user.id,
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
+        shipping: effShipping,
+        discount: couponDisc + giftCardAmount,
+        payment_status: 'paid',
+        payment_method: 'gift_card',
+        gift_card_code: appliedGiftCard.code,
+        gift_card_amount: giftCardAmount,
+        coupon_code: appliedCoupon?.code || null,
+        coupon_discount: couponDisc,
+        notes: `Pedido pagado completamente con tarjeta de regalo ${appliedGiftCard.code}`
+      });
+
+      if (!invoice) {
+        logger.error('[GIFT CARD ONLY PAYMENT] Warning: Invoice creation failed');
+        // Continue - invoice can be created manually
       }
 
       localStorage.removeItem("cart");
