@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { logger } from '@/lib/logger';
 import { QuoteResponseTimeline } from "@/components/QuoteResponseTimeline";
+import { HelpAlert, HELP_MESSAGES } from "@/components/HelpComponents";
 
 export default function QuoteDetail() {
   const { id } = useParams();
@@ -279,6 +280,15 @@ export default function QuoteDetail() {
           )}
         </div>
       </div>
+
+      {/* Help Alert for Quote Response Management */}
+      {quote.custom_text && (
+        <HelpAlert 
+          title={HELP_MESSAGES.quoteResponseHistory.title}
+          description={HELP_MESSAGES.quoteResponseHistory.description}
+          className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+        />
+      )}
 
       {/* Customer Response Banner - shown prominently at top when there's a response */}
       {quote.custom_text && (
