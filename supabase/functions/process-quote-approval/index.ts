@@ -152,17 +152,36 @@ const handler = async (req: Request): Promise<Response> => {
     let invoiceId = existingInvoice?.id;
 
     if (!existingInvoice) {
-      // Get next invoice number
-      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
-        .rpc('generate_next_invoice_number');
+      // Generate unique invoice number with retry logic
+      let invoiceGenAttempts = 0;
+      const maxAttempts = 5;
+      while (invoiceGenAttempts < maxAttempts) {
+        const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+          .rpc('generate_invoice_number');
 
-      if (invoiceNumError) {
-        console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
-        throw new Error('Failed to generate invoice number');
+        if (invoiceNumError) {
+          console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
+          throw new Error('Failed to generate invoice number');
+        }
+
+        invoiceNumber = nextInvoiceNumber;
+        console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
+
+        // Check uniqueness before inserting
+        const { data: existing } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('invoice_number', invoiceNumber)
+          .maybeSingle();
+
+        if (!existing) break; // Unique number found
+        invoiceGenAttempts++;
+        console.log('[QUOTE APPROVAL] Invoice number collision, retrying...', invoiceGenAttempts);
       }
 
-      invoiceNumber = nextInvoiceNumber;
-      console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
+      if (invoiceGenAttempts >= maxAttempts) {
+        throw new Error('Failed to generate unique invoice number after multiple attempts');
+      }
 
       // Create invoice
       const { data: newInvoice, error: invoiceError } = await supabase
