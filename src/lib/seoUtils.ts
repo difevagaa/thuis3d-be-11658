@@ -37,7 +37,7 @@ const STOP_WORDS_NL = new Set([
   'mijn', 'we', 'hij', 'haar', 'hem', 'ons', 'onze', 'jullie'
 ]);
 
-// Industry-specific SEO terms for 3D printing (multilingual)
+// Industry-specific SEO terms - Now supports dynamic detection (fallback to 3D printing)
 const INDUSTRY_TERMS: Record<SupportedSEOLanguage, string[]> = {
   es: [
     'impresión 3d', 'filamento', 'pla', 'abs', 'petg', 'nylon', 'resina',
@@ -58,6 +58,105 @@ const INDUSTRY_TERMS: Record<SupportedSEOLanguage, string[]> = {
     'additieve fabricage', '3d-ontwerp', '3d-printer'
   ]
 };
+
+/**
+ * Auto-detects business/product type from content for dynamic keyword generation
+ * Returns detected industry terms for multilingual SEO
+ */
+function detectIndustryTerms(text: string, category?: string): Record<SupportedSEOLanguage, string[]> {
+  const normalizedText = text.toLowerCase();
+  const normalizedCategory = category?.toLowerCase() || '';
+  const combinedText = `${normalizedText} ${normalizedCategory}`;
+  
+  // Business type patterns for auto-detection
+  const businessPatterns: Record<string, {
+    patterns: RegExp[];
+    terms: Record<SupportedSEOLanguage, string[]>;
+  }> = {
+    '3d_printing': {
+      patterns: [/3d[\s-]?(print|impr|druk)/i, /fdm|sla|resin|filament|prototype/i],
+      terms: INDUSTRY_TERMS // Use existing 3D printing terms
+    },
+    'automotive': {
+      patterns: [/car|auto|vehicle|vehiculo|wagen/i, /motor|engine|transmission/i],
+      terms: {
+        es: ['coche', 'auto', 'vehículo', 'motor', 'repuesto', 'accesorio', 'tuning', 'profesional', 'calidad', 'garantía'],
+        en: ['car', 'auto', 'vehicle', 'motor', 'spare part', 'accessory', 'tuning', 'professional', 'quality', 'warranty'],
+        nl: ['auto', 'wagen', 'voertuig', 'motor', 'onderdeel', 'accessoire', 'tuning', 'professioneel', 'kwaliteit', 'garantie']
+      }
+    },
+    'electronics': {
+      patterns: [/electronic|electr[oó]nic|elektronisch/i, /circuit|sensor|component/i],
+      terms: {
+        es: ['electrónica', 'componente', 'circuito', 'sensor', 'dispositivo', 'tecnología', 'calidad', 'profesional'],
+        en: ['electronics', 'component', 'circuit', 'sensor', 'device', 'technology', 'quality', 'professional'],
+        nl: ['elektronica', 'component', 'circuit', 'sensor', 'apparaat', 'technologie', 'kwaliteit', 'professioneel']
+      }
+    },
+    'fashion': {
+      patterns: [/fashion|moda|clothing|ropa|kleding/i, /design|dise[ñn]o|ontwerp/i],
+      terms: {
+        es: ['moda', 'ropa', 'diseño', 'estilo', 'tendencia', 'calidad', 'único', 'personalizado'],
+        en: ['fashion', 'clothing', 'design', 'style', 'trend', 'quality', 'unique', 'custom'],
+        nl: ['mode', 'kleding', 'ontwerp', 'stijl', 'trend', 'kwaliteit', 'uniek', 'op maat']
+      }
+    },
+    'food': {
+      patterns: [/food|comida|voedsel|restaurant|cocina/i, /recipe|receta/i],
+      terms: {
+        es: ['comida', 'alimento', 'cocina', 'receta', 'gourmet', 'fresco', 'calidad', 'delicioso'],
+        en: ['food', 'meal', 'cooking', 'recipe', 'gourmet', 'fresh', 'quality', 'delicious'],
+        nl: ['voedsel', 'maaltijd', 'koken', 'recept', 'gourmet', 'vers', 'kwaliteit', 'heerlijk']
+      }
+    },
+    'jewelry': {
+      patterns: [/jewe[l|ll]ry|joya|sieraad/i, /gold|silver|diamond|oro|plata/i],
+      terms: {
+        es: ['joya', 'joyería', 'oro', 'plata', 'diamante', 'elegante', 'exclusivo', 'personalizado'],
+        en: ['jewelry', 'jewellery', 'gold', 'silver', 'diamond', 'elegant', 'exclusive', 'custom'],
+        nl: ['sieraad', 'juweel', 'goud', 'zilver', 'diamant', 'elegant', 'exclusief', 'op maat']
+      }
+    },
+    'furniture': {
+      patterns: [/furniture|mueble|meubel/i, /chair|table|mesa|silla/i],
+      terms: {
+        es: ['mueble', 'mobiliario', 'diseño', 'calidad', 'moderno', 'elegante', 'personalizado'],
+        en: ['furniture', 'furnishing', 'design', 'quality', 'modern', 'elegant', 'custom'],
+        nl: ['meubel', 'meubilair', 'ontwerp', 'kwaliteit', 'modern', 'elegant', 'op maat']
+      }
+    },
+    'healthcare': {
+      patterns: [/health|salud|gezondheid|medical|m[eé]dico/i, /care|treatment|tratamiento/i],
+      terms: {
+        es: ['salud', 'médico', 'cuidado', 'tratamiento', 'profesional', 'calidad', 'certificado'],
+        en: ['health', 'medical', 'care', 'treatment', 'professional', 'quality', 'certified'],
+        nl: ['gezondheid', 'medisch', 'zorg', 'behandeling', 'professioneel', 'kwaliteit', 'gecertificeerd']
+      }
+    },
+    // Generic/fallback pattern for unknown business types
+    'generic_service': {
+      patterns: [/service|servicio|dienst/i, /product|producto/i],
+      terms: {
+        es: ['servicio', 'producto', 'calidad', 'profesional', 'rápido', 'personalizado', 'garantía', 'bélgica'],
+        en: ['service', 'product', 'quality', 'professional', 'fast', 'custom', 'warranty', 'belgium'],
+        nl: ['dienst', 'product', 'kwaliteit', 'professioneel', 'snel', 'op maat', 'garantie', 'belgie']
+      }
+    }
+  };
+
+  // Detect which business type matches
+  for (const [businessType, config] of Object.entries(businessPatterns)) {
+    for (const pattern of config.patterns) {
+      if (pattern.test(combinedText)) {
+        console.log(`SEO: Auto-detected business type: ${businessType}`);
+        return config.terms;
+      }
+    }
+  }
+
+  // Default to 3D printing if nothing detected (current business)
+  return INDUSTRY_TERMS;
+}
 
 // Trending SEO modifiers that boost search visibility (multilingual)
 const TRENDING_MODIFIERS: Record<SupportedSEOLanguage, string[]> = {
@@ -374,17 +473,20 @@ export function extractMultilingualKeywords(
     combined: []
   };
 
+  // Auto-detect business type and get appropriate industry terms
+  const detectedIndustryTerms = detectIndustryTerms(text, context?.category);
+
   // ONLY extract keywords from the source text in Spanish (source language)
   // This prevents mixing Spanish words with English/Dutch modifiers
   const spanishKeywords = extractKeywords(text, { ...context, language: 'es' });
   result.es = spanishKeywords;
   result.combined.push(...spanishKeywords);
 
-  // Generate native keywords for each target language based on industry terms
+  // Generate native keywords for each target language based on detected industry terms
   // Belgian customers predominantly search in Dutch and English
   for (const lang of languages) {
     const locationTerms = BELGIUM_LOCATIONS[lang];
-    const industryTerms = INDUSTRY_TERMS[lang];
+    const industryTerms = detectedIndustryTerms[lang];
     const modifiers = TRENDING_MODIFIERS[lang];
     
     // Create location + industry combinations (e.g., "3d printing belgium", "3d-printen belgie")
@@ -552,8 +654,13 @@ function calculateRelevance(
 ): number {
   let score = 50;
   
+  // Auto-detect industry terms based on context
+  const detectedIndustryTerms = context?.category || context?.productType 
+    ? detectIndustryTerms(`${context?.category} ${context?.productType}`, context?.category)
+    : INDUSTRY_TERMS;
+  
   // Boost for industry-specific terms
-  const industryTerms = INDUSTRY_TERMS[language];
+  const industryTerms = detectedIndustryTerms[language];
   industryTerms.forEach(term => {
     if (keyword.includes(term)) {
       score += 15;
@@ -639,6 +746,7 @@ function categorizeKeyword(keyword: string): string {
 
 /**
  * Generates optimized meta description for SEO
+ * Now supports multilingual CTAs and content-agnostic generation
  */
 export function generateMetaDescription(
   title: string,
@@ -647,11 +755,13 @@ export function generateMetaDescription(
     maxLength?: number;
     keywords?: string[];
     includeCallToAction?: boolean;
+    language?: SupportedSEOLanguage;
   }
 ): MetaDescriptionResult {
   const maxLength = options?.maxLength || 160;
   const keywords = options?.keywords || [];
   const includeCallToAction = options?.includeCallToAction ?? true;
+  const language = options?.language || 'nl'; // Default to Dutch for Belgium
   
   // Clean content
   const cleanContent = content
@@ -677,16 +787,35 @@ export function generateMetaDescription(
     description = cleanContent;
   }
   
-  // Add call to action if space permits
-  const callToActions = [
-    '¡Solicita tu cotización ahora!',
-    'Descubre más aquí.',
-    '¡Cotiza gratis hoy!',
-    'Envío rápido a toda Bélgica.'
-  ];
+  // Multilingual call-to-action options
+  const callToActions: Record<SupportedSEOLanguage, string[]> = {
+    es: [
+      '¡Solicita tu cotización ahora!',
+      'Descubre más aquí.',
+      '¡Cotiza gratis hoy!',
+      'Envío rápido a toda Bélgica.',
+      'Calidad garantizada.'
+    ],
+    en: [
+      'Request your quote now!',
+      'Discover more here.',
+      'Get a free quote today!',
+      'Fast shipping across Belgium.',
+      'Quality guaranteed.'
+    ],
+    nl: [
+      'Vraag nu uw offerte aan!',
+      'Ontdek hier meer.',
+      'Ontvang vandaag een gratis offerte!',
+      'Snelle verzending door heel België.',
+      'Kwaliteit gegarandeerd.'
+    ]
+  };
   
+  // Add call to action if space permits
   if (includeCallToAction && description.length < maxLength - 30) {
-    const cta = callToActions[Math.floor(Math.random() * callToActions.length)];
+    const ctas = callToActions[language];
+    const cta = ctas[Math.floor(Math.random() * ctas.length)];
     if (description.length + cta.length + 2 <= maxLength) {
       description = `${description}. ${cta}`;
     }

@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Cache SEO data globally to avoid repeated requests
 const seoCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Increased from 5 to 15 minutes for better performance
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
 // Supported languages for Belgium market
 const SUPPORTED_LANGUAGES = ['es', 'en', 'nl'] as const;
@@ -21,6 +22,8 @@ interface SEOHeadProps {
   currency?: string;
   availability?: string;
   breadcrumbs?: Array<{ name: string; url: string }>;
+  faq?: Array<{ question: string; answer: string }>;
+  rating?: { value: number; count: number };
 }
 
 export function SEOHead({ 
@@ -32,7 +35,9 @@ export function SEOHead({
   price,
   currency = "EUR",
   availability = "InStock",
-  breadcrumbs
+  breadcrumbs,
+  faq,
+  rating
 }: SEOHeadProps) {
   const location = useLocation();
   const [seoData, setSeoData] = useState<any>(null);
@@ -237,7 +242,31 @@ export function SEOHead({
         "@type": "Organization",
         "name": "Thuis 3D"
       }
-    }
+    },
+    // Add aggregateRating if available
+    ...(rating && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": rating.value.toString(),
+        "reviewCount": rating.count.toString(),
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    })
+  } : null;
+
+  // FAQ structured data for better visibility in search results
+  const faqData = faq && faq.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faq.map(item => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
   } : null;
 
   // WebSite structured data with search action
@@ -354,6 +383,11 @@ export function SEOHead({
       {productData && (
         <script type="application/ld+json">
           {JSON.stringify(productData)}
+        </script>
+      )}
+      {faqData && (
+        <script type="application/ld+json">
+          {JSON.stringify(faqData)}
         </script>
       )}
 
