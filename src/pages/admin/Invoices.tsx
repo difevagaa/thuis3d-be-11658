@@ -325,14 +325,14 @@ export default function Invoices() {
         return;
       }
 
-      const balance = parseFloat(String(giftCard.current_balance));
+      const balance = Number(giftCard.current_balance);
       setNewInvoice({
         ...newInvoice,
         gift_card_amount: balance.toFixed(2)
       });
 
       toast.success(`Tarjeta regalo aplicada: €${balance.toFixed(2)}`);
-      calculateTotalsWithDiscounts(newInvoice.items, parseFloat(newInvoice.coupon_discount) || 0, balance);
+      calculateTotalsWithDiscounts(newInvoice.items, Number(newInvoice.coupon_discount) || 0, balance);
     } catch (error) {
       toast.error("Error al aplicar tarjeta regalo");
     }
@@ -463,8 +463,8 @@ export default function Invoices() {
       }
 
       // Update gift card balance if used - with optimistic locking and validation
-      if (newInvoice.gift_card_code && parseFloat(newInvoice.gift_card_amount) > 0) {
-        const amountUsed = parseFloat(newInvoice.gift_card_amount);
+      if (newInvoice.gift_card_code && Number(newInvoice.gift_card_amount) > 0) {
+        const amountUsed = Number(newInvoice.gift_card_amount);
         const { data: giftCardData, error: giftCardFetchError } = await supabase
           .from("gift_cards")
           .select("id, current_balance, is_active")
