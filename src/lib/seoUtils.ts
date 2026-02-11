@@ -37,7 +37,7 @@ const STOP_WORDS_NL = new Set([
   'mijn', 'we', 'hij', 'haar', 'hem', 'ons', 'onze', 'jullie'
 ]);
 
-// Industry-specific SEO terms for 3D printing (multilingual)
+// Industry-specific SEO terms - Now supports dynamic detection (fallback to 3D printing)
 const INDUSTRY_TERMS: Record<SupportedSEOLanguage, string[]> = {
   es: [
     'impresión 3d', 'filamento', 'pla', 'abs', 'petg', 'nylon', 'resina',
@@ -58,6 +58,105 @@ const INDUSTRY_TERMS: Record<SupportedSEOLanguage, string[]> = {
     'additieve fabricage', '3d-ontwerp', '3d-printer'
   ]
 };
+
+/**
+ * Auto-detects business/product type from content for dynamic keyword generation
+ * Returns detected industry terms for multilingual SEO
+ */
+function detectIndustryTerms(text: string, category?: string): Record<SupportedSEOLanguage, string[]> {
+  const normalizedText = text.toLowerCase();
+  const normalizedCategory = category?.toLowerCase() || '';
+  const combinedText = `${normalizedText} ${normalizedCategory}`;
+  
+  // Business type patterns for auto-detection
+  const businessPatterns: Record<string, {
+    patterns: RegExp[];
+    terms: Record<SupportedSEOLanguage, string[]>;
+  }> = {
+    '3d_printing': {
+      patterns: [/3d[\s-]?(print|impr|druk)/i, /fdm|sla|resin|filament|prototype/i],
+      terms: INDUSTRY_TERMS // Use existing 3D printing terms
+    },
+    'automotive': {
+      patterns: [/car|auto|vehicle|vehiculo|wagen/i, /motor|engine|transmission/i],
+      terms: {
+        es: ['coche', 'auto', 'vehículo', 'motor', 'repuesto', 'accesorio', 'tuning', 'profesional', 'calidad', 'garantía'],
+        en: ['car', 'auto', 'vehicle', 'motor', 'spare part', 'accessory', 'tuning', 'professional', 'quality', 'warranty'],
+        nl: ['auto', 'wagen', 'voertuig', 'motor', 'onderdeel', 'accessoire', 'tuning', 'professioneel', 'kwaliteit', 'garantie']
+      }
+    },
+    'electronics': {
+      patterns: [/electronic|electr[oó]nic|elektronisch/i, /circuit|sensor|component/i],
+      terms: {
+        es: ['electrónica', 'componente', 'circuito', 'sensor', 'dispositivo', 'tecnología', 'calidad', 'profesional'],
+        en: ['electronics', 'component', 'circuit', 'sensor', 'device', 'technology', 'quality', 'professional'],
+        nl: ['elektronica', 'component', 'circuit', 'sensor', 'apparaat', 'technologie', 'kwaliteit', 'professioneel']
+      }
+    },
+    'fashion': {
+      patterns: [/fashion|moda|clothing|ropa|kleding/i, /design|dise[ñn]o|ontwerp/i],
+      terms: {
+        es: ['moda', 'ropa', 'diseño', 'estilo', 'tendencia', 'calidad', 'único', 'personalizado'],
+        en: ['fashion', 'clothing', 'design', 'style', 'trend', 'quality', 'unique', 'custom'],
+        nl: ['mode', 'kleding', 'ontwerp', 'stijl', 'trend', 'kwaliteit', 'uniek', 'op maat']
+      }
+    },
+    'food': {
+      patterns: [/food|comida|voedsel|restaurant|cocina/i, /recipe|receta/i],
+      terms: {
+        es: ['comida', 'alimento', 'cocina', 'receta', 'gourmet', 'fresco', 'calidad', 'delicioso'],
+        en: ['food', 'meal', 'cooking', 'recipe', 'gourmet', 'fresh', 'quality', 'delicious'],
+        nl: ['voedsel', 'maaltijd', 'koken', 'recept', 'gourmet', 'vers', 'kwaliteit', 'heerlijk']
+      }
+    },
+    'jewelry': {
+      patterns: [/jewe[l|ll]ry|joya|sieraad/i, /gold|silver|diamond|oro|plata/i],
+      terms: {
+        es: ['joya', 'joyería', 'oro', 'plata', 'diamante', 'elegante', 'exclusivo', 'personalizado'],
+        en: ['jewelry', 'jewellery', 'gold', 'silver', 'diamond', 'elegant', 'exclusive', 'custom'],
+        nl: ['sieraad', 'juweel', 'goud', 'zilver', 'diamant', 'elegant', 'exclusief', 'op maat']
+      }
+    },
+    'furniture': {
+      patterns: [/furniture|mueble|meubel/i, /chair|table|mesa|silla/i],
+      terms: {
+        es: ['mueble', 'mobiliario', 'diseño', 'calidad', 'moderno', 'elegante', 'personalizado'],
+        en: ['furniture', 'furnishing', 'design', 'quality', 'modern', 'elegant', 'custom'],
+        nl: ['meubel', 'meubilair', 'ontwerp', 'kwaliteit', 'modern', 'elegant', 'op maat']
+      }
+    },
+    'healthcare': {
+      patterns: [/health|salud|gezondheid|medical|m[eé]dico/i, /care|treatment|tratamiento/i],
+      terms: {
+        es: ['salud', 'médico', 'cuidado', 'tratamiento', 'profesional', 'calidad', 'certificado'],
+        en: ['health', 'medical', 'care', 'treatment', 'professional', 'quality', 'certified'],
+        nl: ['gezondheid', 'medisch', 'zorg', 'behandeling', 'professioneel', 'kwaliteit', 'gecertificeerd']
+      }
+    },
+    // Generic/fallback pattern for unknown business types
+    'generic_service': {
+      patterns: [/service|servicio|dienst/i, /product|producto/i],
+      terms: {
+        es: ['servicio', 'producto', 'calidad', 'profesional', 'rápido', 'personalizado', 'garantía', 'bélgica'],
+        en: ['service', 'product', 'quality', 'professional', 'fast', 'custom', 'warranty', 'belgium'],
+        nl: ['dienst', 'product', 'kwaliteit', 'professioneel', 'snel', 'op maat', 'garantie', 'belgie']
+      }
+    }
+  };
+
+  // Detect which business type matches
+  for (const [businessType, config] of Object.entries(businessPatterns)) {
+    for (const pattern of config.patterns) {
+      if (pattern.test(combinedText)) {
+        console.log(`SEO: Auto-detected business type: ${businessType}`);
+        return config.terms;
+      }
+    }
+  }
+
+  // Default to 3D printing if nothing detected (current business)
+  return INDUSTRY_TERMS;
+}
 
 // Trending SEO modifiers that boost search visibility (multilingual)
 const TRENDING_MODIFIERS: Record<SupportedSEOLanguage, string[]> = {
@@ -374,17 +473,20 @@ export function extractMultilingualKeywords(
     combined: []
   };
 
+  // Auto-detect business type and get appropriate industry terms
+  const detectedIndustryTerms = detectIndustryTerms(text, context?.category);
+
   // ONLY extract keywords from the source text in Spanish (source language)
   // This prevents mixing Spanish words with English/Dutch modifiers
   const spanishKeywords = extractKeywords(text, { ...context, language: 'es' });
   result.es = spanishKeywords;
   result.combined.push(...spanishKeywords);
 
-  // Generate native keywords for each target language based on industry terms
+  // Generate native keywords for each target language based on detected industry terms
   // Belgian customers predominantly search in Dutch and English
   for (const lang of languages) {
     const locationTerms = BELGIUM_LOCATIONS[lang];
-    const industryTerms = INDUSTRY_TERMS[lang];
+    const industryTerms = detectedIndustryTerms[lang];
     const modifiers = TRENDING_MODIFIERS[lang];
     
     // Create location + industry combinations (e.g., "3d printing belgium", "3d-printen belgie")
@@ -552,8 +654,13 @@ function calculateRelevance(
 ): number {
   let score = 50;
   
+  // Auto-detect industry terms based on context
+  const detectedIndustryTerms = context?.category || context?.productType 
+    ? detectIndustryTerms(`${context?.category} ${context?.productType}`, context?.category)
+    : INDUSTRY_TERMS;
+  
   // Boost for industry-specific terms
-  const industryTerms = INDUSTRY_TERMS[language];
+  const industryTerms = detectedIndustryTerms[language];
   industryTerms.forEach(term => {
     if (keyword.includes(term)) {
       score += 15;
@@ -639,6 +746,7 @@ function categorizeKeyword(keyword: string): string {
 
 /**
  * Generates optimized meta description for SEO
+ * Now supports multilingual CTAs and content-agnostic generation
  */
 export function generateMetaDescription(
   title: string,
@@ -647,11 +755,13 @@ export function generateMetaDescription(
     maxLength?: number;
     keywords?: string[];
     includeCallToAction?: boolean;
+    language?: SupportedSEOLanguage;
   }
 ): MetaDescriptionResult {
   const maxLength = options?.maxLength || 160;
   const keywords = options?.keywords || [];
   const includeCallToAction = options?.includeCallToAction ?? true;
+  const language = options?.language || 'nl'; // Default to Dutch for Belgium
   
   // Clean content
   const cleanContent = content
@@ -677,16 +787,35 @@ export function generateMetaDescription(
     description = cleanContent;
   }
   
-  // Add call to action if space permits
-  const callToActions = [
-    '¡Solicita tu cotización ahora!',
-    'Descubre más aquí.',
-    '¡Cotiza gratis hoy!',
-    'Envío rápido a toda Bélgica.'
-  ];
+  // Multilingual call-to-action options
+  const callToActions: Record<SupportedSEOLanguage, string[]> = {
+    es: [
+      '¡Solicita tu cotización ahora!',
+      'Descubre más aquí.',
+      '¡Cotiza gratis hoy!',
+      'Envío rápido a toda Bélgica.',
+      'Calidad garantizada.'
+    ],
+    en: [
+      'Request your quote now!',
+      'Discover more here.',
+      'Get a free quote today!',
+      'Fast shipping across Belgium.',
+      'Quality guaranteed.'
+    ],
+    nl: [
+      'Vraag nu uw offerte aan!',
+      'Ontdek hier meer.',
+      'Ontvang vandaag een gratis offerte!',
+      'Snelle verzending door heel België.',
+      'Kwaliteit gegarandeerd.'
+    ]
+  };
   
+  // Add call to action if space permits
   if (includeCallToAction && description.length < maxLength - 30) {
-    const cta = callToActions[Math.floor(Math.random() * callToActions.length)];
+    const ctas = callToActions[language];
+    const cta = ctas[Math.floor(Math.random() * ctas.length)];
     if (description.length + cta.length + 2 <= maxLength) {
       description = `${description}. ${cta}`;
     }
@@ -922,5 +1051,288 @@ export function generateArticleStructuredData(article: {
     ...(article.datePublished && { datePublished: article.datePublished }),
     ...(article.dateModified && { dateModified: article.dateModified }),
     ...(article.image && { image: article.image })
+  };
+}
+
+/**
+ * Generates content-aware alt text for images
+ * Automatically detects context and generates SEO-optimized alt text
+ */
+export function generateImageAltText(
+  context: {
+    imageName?: string;
+    productName?: string;
+    pageTitle?: string;
+    category?: string;
+    keywords?: string[];
+  },
+  language: SupportedSEOLanguage = 'nl'
+): string {
+  const { imageName, productName, pageTitle, category, keywords } = context;
+  
+  // Extract meaningful information from filename if available
+  let baseName = imageName || productName || pageTitle || 'product image';
+  baseName = baseName
+    .replace(/\.(jpg|jpeg|png|webp|gif|svg)$/i, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\d+/g, '')
+    .trim();
+  
+  // If still generic, add more context
+  if (baseName === 'product image' && category) {
+    baseName = `${category} product`;
+  }
+  
+  // Detect business type from context
+  const combinedText = `${baseName} ${category || ''} ${keywords?.join(' ') || ''}`;
+  const detectedTerms = detectIndustryTerms(combinedText, category);
+  const industryTerms = detectedTerms[language];
+  
+  // Templates for different languages
+  const templates: Record<SupportedSEOLanguage, string[]> = {
+    es: [
+      `Imagen de ${baseName}`,
+      `${baseName} - Vista detallada`,
+      `Foto de ${baseName}`,
+      `${baseName} en alta calidad`
+    ],
+    en: [
+      `Image of ${baseName}`,
+      `${baseName} - Detailed view`,
+      `Photo of ${baseName}`,
+      `${baseName} in high quality`
+    ],
+    nl: [
+      `Afbeelding van ${baseName}`,
+      `${baseName} - Gedetailleerd beeld`,
+      `Foto van ${baseName}`,
+      `${baseName} in hoge kwaliteit`
+    ]
+  };
+  
+  // Choose a template with rotation for variety
+  const templateIndex = Math.floor(Math.random() * templates[language].length);
+  const template = templates[language][templateIndex];
+  
+  // Add industry context if available
+  let altText = template;
+  if (industryTerms.length > 0 && category) {
+    const industryContext: Record<SupportedSEOLanguage, string> = {
+      es: `para ${category}`,
+      en: `for ${category}`,
+      nl: `voor ${category}`
+    };
+    altText += ` ${industryContext[language]}`;
+  }
+  
+  // Clean and optimize
+  altText = altText
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 125); // Keep under 125 chars for optimal SEO
+  
+  return altText;
+}
+
+/**
+ * Batch generate alt texts for multiple images
+ */
+export function generateBatchImageAltTexts(
+  images: Array<{ filename: string; index: number }>,
+  context: {
+    productName?: string;
+    pageTitle?: string;
+    category?: string;
+    keywords?: string[];
+  },
+  language: SupportedSEOLanguage = 'nl'
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  
+  images.forEach(({ filename, index }) => {
+    const viewSuffixes: Record<SupportedSEOLanguage, string[]> = {
+      es: ['vista principal', 'vista lateral', 'vista detallada', 'otra perspectiva'],
+      en: ['main view', 'side view', 'detailed view', 'another perspective'],
+      nl: ['hoofdaanzicht', 'zijaanzicht', 'gedetailleerd beeld', 'ander perspectief']
+    };
+    
+    const baseAlt = generateImageAltText(
+      { ...context, imageName: filename },
+      language
+    );
+    
+    const suffix = viewSuffixes[language][index % viewSuffixes[language].length];
+    result[filename] = `${baseAlt} - ${suffix}`;
+  });
+  
+  return result;
+}
+
+/**
+ * SEO Health Check - Validates and scores SEO configuration
+ */
+export interface SEOHealthCheck {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  issues: Array<{ severity: 'critical' | 'warning' | 'info'; message: string }>;
+  recommendations: string[];
+  passed: boolean;
+}
+
+export function performSEOHealthCheck(config: {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  ogImage?: string;
+  robotsTxt?: boolean;
+  sitemapXml?: boolean;
+  structuredData?: boolean;
+  hreflangTags?: boolean;
+  mobileOptimized?: boolean;
+  pageSpeed?: number; // 0-100
+  httpsEnabled?: boolean;
+}): SEOHealthCheck {
+  const issues: Array<{ severity: 'critical' | 'warning' | 'info'; message: string }> = [];
+  const recommendations: string[] = [];
+  let score = 0;
+  const maxScore = 100;
+  
+  // Title check (15 points)
+  if (!config.title || config.title.length === 0) {
+    issues.push({ severity: 'critical', message: 'Missing page title' });
+  } else if (config.title.length < 30) {
+    issues.push({ severity: 'warning', message: 'Title is too short (< 30 characters)' });
+    score += 7;
+  } else if (config.title.length > 60) {
+    issues.push({ severity: 'warning', message: 'Title is too long (> 60 characters)' });
+    score += 10;
+  } else {
+    score += 15;
+  }
+  
+  // Description check (15 points)
+  if (!config.description || config.description.length === 0) {
+    issues.push({ severity: 'critical', message: 'Missing meta description' });
+  } else if (config.description.length < 120) {
+    issues.push({ severity: 'warning', message: 'Description is too short (< 120 characters)' });
+    score += 7;
+  } else if (config.description.length > 160) {
+    issues.push({ severity: 'warning', message: 'Description is too long (> 160 characters)' });
+    score += 10;
+  } else {
+    score += 15;
+  }
+  
+  // Keywords check (10 points)
+  if (!config.keywords || config.keywords.length === 0) {
+    issues.push({ severity: 'warning', message: 'No keywords defined' });
+  } else if (config.keywords.length < 5) {
+    issues.push({ severity: 'info', message: 'Consider adding more keywords (< 5)' });
+    score += 5;
+    recommendations.push('Add at least 10 keywords for better coverage');
+  } else if (config.keywords.length >= 10) {
+    score += 10;
+  } else {
+    score += 7;
+  }
+  
+  // Canonical URL (10 points)
+  if (!config.canonicalUrl) {
+    issues.push({ severity: 'warning', message: 'Missing canonical URL' });
+  } else if (!config.canonicalUrl.startsWith('https://')) {
+    issues.push({ severity: 'critical', message: 'Canonical URL should use HTTPS' });
+    score += 5;
+  } else {
+    score += 10;
+  }
+  
+  // Open Graph image (10 points)
+  if (!config.ogImage) {
+    issues.push({ severity: 'warning', message: 'Missing Open Graph image' });
+    recommendations.push('Add an og:image (1200x630px) for better social sharing');
+  } else {
+    score += 10;
+  }
+  
+  // Robots.txt (5 points)
+  if (config.robotsTxt === false) {
+    issues.push({ severity: 'critical', message: 'robots.txt not found or inaccessible' });
+  } else if (config.robotsTxt === true) {
+    score += 5;
+  }
+  
+  // Sitemap.xml (10 points)
+  if (config.sitemapXml === false) {
+    issues.push({ severity: 'critical', message: 'sitemap.xml not found or not submitted' });
+    recommendations.push('Create and submit sitemap.xml to Google Search Console');
+  } else if (config.sitemapXml === true) {
+    score += 10;
+  }
+  
+  // Structured data (10 points)
+  if (config.structuredData === false) {
+    issues.push({ severity: 'warning', message: 'No structured data (JSON-LD) detected' });
+    recommendations.push('Add Schema.org structured data for better search visibility');
+  } else if (config.structuredData === true) {
+    score += 10;
+  }
+  
+  // Hreflang tags for multilingual (5 points)
+  if (config.hreflangTags === false) {
+    issues.push({ severity: 'info', message: 'No hreflang tags for multilingual support' });
+    recommendations.push('Add hreflang tags for nl-BE, en, and es');
+  } else if (config.hreflangTags === true) {
+    score += 5;
+  }
+  
+  // Mobile optimization (5 points)
+  if (config.mobileOptimized === false) {
+    issues.push({ severity: 'critical', message: 'Site not mobile-optimized' });
+    recommendations.push('Implement responsive design for mobile devices');
+  } else if (config.mobileOptimized === true) {
+    score += 5;
+  }
+  
+  // Page speed (5 points)
+  if (config.pageSpeed !== undefined) {
+    if (config.pageSpeed < 50) {
+      issues.push({ severity: 'critical', message: `Poor page speed score: ${config.pageSpeed}/100` });
+      recommendations.push('Optimize images, minify CSS/JS, enable caching');
+    } else if (config.pageSpeed < 75) {
+      issues.push({ severity: 'warning', message: `Average page speed score: ${config.pageSpeed}/100` });
+      score += 3;
+      recommendations.push('Further optimize page speed for better performance');
+    } else {
+      score += 5;
+    }
+  }
+  
+  // HTTPS (5 points)
+  if (config.httpsEnabled === false) {
+    issues.push({ severity: 'critical', message: 'Site not using HTTPS' });
+    recommendations.push('Enable HTTPS with valid SSL certificate');
+  } else if (config.httpsEnabled === true) {
+    score += 5;
+  }
+  
+  const percentage = Math.round((score / maxScore) * 100);
+  const passed = percentage >= 70; // 70% threshold for passing
+  
+  // Add general recommendations
+  if (passed) {
+    recommendations.push('SEO configuration is good! Continue monitoring and improving.');
+  } else {
+    recommendations.push('Address critical and warning issues to improve SEO score.');
+  }
+  
+  return {
+    score,
+    maxScore,
+    percentage,
+    issues,
+    recommendations,
+    passed
   };
 }
