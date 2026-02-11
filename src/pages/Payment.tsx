@@ -448,14 +448,20 @@ export default function Payment() {
       if (freshGiftCardError || !freshGiftCard) {
         logger.error('[GIFT CARD ONLY PAYMENT] Gift card no longer valid:', freshGiftCardError);
         // Rollback: delete created order
-        await supabase.from("orders").delete().eq("id", order.id);
+        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+        if (rollbackError) {
+          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed after invalid gift card:', rollbackError);
+        }
         throw new Error('La tarjeta de regalo ya no es válida');
       }
 
       // Check if gift card has sufficient balance
       if (freshGiftCard.current_balance < giftCardAmount) {
         // Rollback: delete created order
-        await supabase.from("orders").delete().eq("id", order.id);
+        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+        if (rollbackError) {
+          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed after insufficient balance:', rollbackError);
+        }
         throw new Error(`Saldo insuficiente en tarjeta de regalo. Disponible: €${freshGiftCard.current_balance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`);
       }
 
@@ -467,10 +473,13 @@ export default function Payment() {
       );
 
       if (!giftCardUpdateSuccess) {
-        logger.error('[GIFT CARD ONLY PAYMENT] Failed to update gift card balance');
+        logger.error('[GIFT CARD ONLY PAYMENT] Failed to update gift card balance - optimistic locking or database error');
         // Rollback: delete created order
-        await supabase.from("orders").delete().eq("id", order.id);
-        toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
+        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+        if (rollbackError) {
+          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed - order may be orphaned:', rollbackError);
+        }
+        toast.error("No se pudo procesar el pago. Por favor, vuelve a intentarlo.");
         removeGiftCard();
         return;
       }
@@ -670,28 +679,23 @@ export default function Payment() {
       if (updateError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
         
-        // Check for schema cache errors
-        if (isSchemaGCacheError(updateError)) {
-          // CRITICAL: Rollback gift card balance if invoice update fails
-          await supabase
-            .from("gift_cards")
-            .update({ 
-              current_balance: freshGiftCard.current_balance,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", freshGiftCard.id);
-          
-          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
-        }
-        
         // CRITICAL: Rollback gift card balance if invoice update fails
-        await supabase
+        const { error: rollbackError } = await supabase
           .from("gift_cards")
           .update({ 
             current_balance: freshGiftCard.current_balance,
             updated_at: new Date().toISOString()
           })
           .eq("id", freshGiftCard.id);
+        
+        if (rollbackError) {
+          logger.error('[INVOICE GIFT CARD PAYMENT] CRITICAL: Rollback failed - gift card balance may be incorrect:', rollbackError);
+        }
+        
+        // Check for schema cache errors
+        if (isSchemaGCacheError(updateError)) {
+          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+        }
         
         throw new Error('Error al actualizar la factura: ' + updateError.message);
       }

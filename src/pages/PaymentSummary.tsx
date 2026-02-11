@@ -301,11 +301,21 @@ export default function PaymentSummary() {
 
         if (freshGiftCardError || !freshGiftCard) {
           logger.error('[PAYMENT SUMMARY] Gift card no longer valid:', freshGiftCardError);
+          // Rollback: delete created order
+          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+          if (rollbackError) {
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after invalid gift card:', rollbackError);
+          }
           throw new Error('La tarjeta de regalo ya no es válida');
         }
 
         // Check if gift card has sufficient balance
         if (freshGiftCard.current_balance < giftCardAmount) {
+          // Rollback: delete created order
+          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+          if (rollbackError) {
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after insufficient balance:', rollbackError);
+          }
           throw new Error(`Saldo insuficiente en tarjeta de regalo. Disponible: €${freshGiftCard.current_balance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`);
         }
 
@@ -323,7 +333,10 @@ export default function PaymentSummary() {
         if (giftCardError) {
           logger.error('[PAYMENT SUMMARY] Error updating gift card:', giftCardError);
           // Rollback: delete created order
-          await supabase.from("orders").delete().eq("id", order.id);
+          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+          if (rollbackError) {
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after gift card update error:', rollbackError);
+          }
           throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
         }
 
@@ -331,7 +344,10 @@ export default function PaymentSummary() {
         if (giftCardUpdateCount === 0) {
           logger.error('[PAYMENT SUMMARY] Optimistic locking failed - balance changed');
           // Rollback: delete created order
-          await supabase.from("orders").delete().eq("id", order.id);
+          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+          if (rollbackError) {
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after optimistic locking failure:', rollbackError);
+          }
           throw new Error('El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.');
         }
 
