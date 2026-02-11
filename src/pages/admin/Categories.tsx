@@ -13,6 +13,14 @@ import { toast } from "sonner";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import { FieldHelp } from "@/components/admin/FieldHelp";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Categories() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -121,8 +129,6 @@ export default function Categories() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Mover esta categoría a la papelera?")) return;
-
     try {
       const { error } = await supabase
         .from("categories")
@@ -196,7 +202,10 @@ export default function Categories() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="name">Nombre</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="name">Nombre</Label>
+                  <FieldHelp content="Nombre único de la categoría. Debe ser descriptivo y fácil de identificar." />
+                </div>
                 <Input
                   id="name"
                   value={formData.name}
@@ -205,7 +214,10 @@ export default function Categories() {
                 />
               </div>
               <div>
-                <Label htmlFor="description">Descripción</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="description">Descripción</Label>
+                  <FieldHelp content="Descripción opcional que ayuda a entender el propósito de la categoría." />
+                </div>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -259,22 +271,41 @@ export default function Categories() {
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(category)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-2">
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(category)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar categoría</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <DeleteConfirmDialog
+                              title="¿Eliminar categoría?"
+                              itemName={category.name}
+                              onConfirm={() => handleDelete(category.id)}
+                              trigger={
+                                <Button variant="destructive" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mover a papelera</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))}

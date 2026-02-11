@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
+import { FieldHelp } from "@/components/admin/FieldHelp";
 
 interface OrderItem {
   product_name: string;
@@ -286,7 +287,10 @@ export default function CreateOrder() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Cliente *</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Cliente *</Label>
+                  <FieldHelp content="Selecciona el cliente para este pedido. Los datos del perfil (dirección, teléfono) se cargarán automáticamente." />
+                </div>
                 <UserSearchSelector
                   value={orderData.user_id}
                   onValueChange={(value) => {
@@ -336,21 +340,27 @@ export default function CreateOrder() {
               </div>
 
               <div>
-                <Label>Dirección de Envío *</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Dirección de Envío *</Label>
+                  <FieldHelp content="Dirección completa donde se enviará el pedido. Se autocompleta al seleccionar un cliente." />
+                </div>
                 <Textarea
                   value={orderData.shipping_address}
                   onChange={(e) => setOrderData({ ...orderData, shipping_address: e.target.value })}
-                  placeholder="Dirección completa de envío"
+                  placeholder="Calle, número, piso, ciudad, código postal, país"
                   rows={2}
                 />
               </div>
 
               <div>
-                <Label>Dirección de Facturación</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Dirección de Facturación</Label>
+                  <FieldHelp content="Opcional. Solo necesario si es diferente a la dirección de envío. Déjalo vacío para usar la misma dirección." />
+                </div>
                 <Textarea
                   value={orderData.billing_address}
                   onChange={(e) => setOrderData({ ...orderData, billing_address: e.target.value })}
-                  placeholder="Dirección de facturación (si es diferente)"
+                  placeholder="Deja vacío si es igual a la dirección de envío"
                   rows={2}
                 />
               </div>
@@ -360,25 +370,29 @@ export default function CreateOrder() {
           <Card>
             <CardHeader>
               <CardTitle>Productos</CardTitle>
-              <CardDescription>Añade los productos del pedido</CardDescription>
+              <CardDescription>Añade los productos del pedido. El IVA (21%) se calculará automáticamente según el tipo de producto.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {items.map((item, index) => (
                 <div key={index} className="flex gap-4 items-end p-4 border rounded-lg">
                   <div className="flex-1 space-y-4">
                     <div>
-                      <Label>Producto</Label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label>Producto</Label>
+                        <FieldHelp content="Selecciona un producto del catálogo. El precio se cargará automáticamente y podrás ajustarlo si es necesario." />
+                      </div>
                       <Select
                         value={products.find(p => p.name === item.product_name)?.id || ""}
                         onValueChange={(productId) => selectProduct(index, productId)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un producto" />
+                          <SelectValue placeholder="Selecciona un producto del catálogo" />
                         </SelectTrigger>
                         <SelectContent>
                           {products.map((product) => (
                             <SelectItem key={product.id} value={product.id}>
                               {product.name} - €{product.price?.toFixed(2) || '0.00'}
+                              {product.tax_enabled === false ? ' (Sin IVA)' : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -401,7 +415,10 @@ export default function CreateOrder() {
                         />
                       </div>
                       <div>
-                        <Label>Precio Unitario (€)</Label>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label>Precio Unitario (€)</Label>
+                          <FieldHelp content="Precio sin IVA. Puedes ajustarlo si necesitas aplicar un descuento específico a este producto." />
+                        </div>
                         <Input
                           type="number"
                           step="0.01"
@@ -445,13 +462,16 @@ export default function CreateOrder() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Estado del Pedido *</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Estado del Pedido *</Label>
+                  <FieldHelp content="Define el estado inicial del pedido. Puedes cambiarlo después en la página de detalles del pedido." />
+                </div>
                 <Select
                   value={orderData.status_id}
                   onValueChange={(value) => setOrderData({ ...orderData, status_id: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un estado" />
+                    <SelectValue placeholder="Selecciona el estado inicial del pedido" />
                   </SelectTrigger>
                   <SelectContent>
                     {statuses.map((status) => (
@@ -465,7 +485,10 @@ export default function CreateOrder() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Descuento (€)</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label>Descuento (€)</Label>
+                    <FieldHelp content="Descuento en euros a aplicar al subtotal. Se restará antes de calcular el IVA y añadir el envío." />
+                  </div>
                   <Input
                     type="number"
                     step="0.01"
@@ -475,7 +498,10 @@ export default function CreateOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Coste de Envío (€)</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label>Coste de Envío (€)</Label>
+                    <FieldHelp content="Coste del envío sin IVA. El IVA se calculará automáticamente y se añadirá al total." />
+                  </div>
                   <Input
                     type="number"
                     step="0.01"
@@ -487,20 +513,26 @@ export default function CreateOrder() {
               </div>
 
               <div>
-                <Label>Código de Cupón (opcional)</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Código de Cupón</Label>
+                  <FieldHelp content="Opcional. Código de cupón para registro o trazabilidad. No aplica descuento automático, usa el campo 'Descuento' arriba." />
+                </div>
                 <Input
                   value={orderData.coupon_code}
                   onChange={(e) => setOrderData({ ...orderData, coupon_code: e.target.value })}
-                  placeholder="DESCUENTO10"
+                  placeholder="ej: DESCUENTO10, VERANO2024"
                 />
               </div>
 
               <div>
-                <Label>Notas</Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Notas</Label>
+                  <FieldHelp content="Notas internas sobre el pedido. Visibles solo para administradores, no para el cliente." />
+                </div>
                 <Textarea
                   value={orderData.notes}
                   onChange={(e) => setOrderData({ ...orderData, notes: e.target.value })}
-                  placeholder="Notas adicionales sobre el pedido"
+                  placeholder="ej: Cliente requiere embalaje especial, entrega urgente, etc."
                   rows={3}
                 />
               </div>
@@ -535,6 +567,9 @@ export default function CreateOrder() {
                   <span className="text-muted-foreground">IVA (21%)</span>
                   <span className="font-semibold">€{totals.tax.toFixed(2)}</span>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  * IVA aplicado solo a productos gravables
+                </p>
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-primary">€{totals.total.toFixed(2)}</span>

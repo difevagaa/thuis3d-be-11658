@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt, MessageSquare } from "lucide-react";
+import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt, MessageSquare, Send } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { logger } from '@/lib/logger';
@@ -329,6 +329,20 @@ export default function QuoteDetail() {
               </div>
               <Badge variant="outline">{quote.quote_type === 'file_upload' ? 'Archivo 3D' : quote.quote_type}</Badge>
             </div>
+
+            {quote.user_id && (
+              <>
+                <Separator />
+                <Button 
+                  onClick={() => navigate(`/admin/mensajes?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
+                  className="w-full"
+                  variant="default"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Contactar Cliente
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -366,12 +380,43 @@ export default function QuoteDetail() {
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
+                  <h3 className="font-semibold flex items-center gap-2 text-lg">
+                    <MessageSquare className="h-5 w-5 text-primary" />
                     Respuesta del Cliente
                   </h3>
-                  <div className="p-4 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap">
-                    {quote.custom_text}
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
+                    <div className="text-sm whitespace-pre-wrap">
+                      {quote.custom_text.split('\n').map((line: string, idx: number) => {
+                        const isApproval = line.includes('Aprobación del cliente');
+                        const isRejection = line.includes('Rechazo del cliente');
+                        const isComment = line.includes('Comentario del cliente');
+                        
+                        if (isApproval) {
+                          return (
+                            <div key={idx} className="font-medium text-green-700 dark:text-green-400 py-1 flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4" />
+                              {line}
+                            </div>
+                          );
+                        } else if (isRejection) {
+                          return (
+                            <div key={idx} className="font-medium text-red-700 dark:text-red-400 py-1 flex items-center gap-2">
+                              <XCircle className="h-4 w-4" />
+                              {line}
+                            </div>
+                          );
+                        } else if (isComment) {
+                          return (
+                            <div key={idx} className="font-medium text-blue-700 dark:text-blue-400 py-1 flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              {line}
+                            </div>
+                          );
+                        } else {
+                          return <div key={idx} className="text-gray-700 dark:text-gray-300 py-1">{line}</div>;
+                        }
+                      })}
+                    </div>
                   </div>
                 </div>
               </>

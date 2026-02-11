@@ -18,6 +18,14 @@ import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
 import { logger } from "@/lib/logger";
+import { FieldHelp } from "@/components/admin/FieldHelp";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface InvoiceItem {
   product_id?: string;
@@ -498,8 +506,6 @@ export default function Invoices() {
   };
 
   const handleDeleteInvoice = async (id: string) => {
-    if (!confirm("¿Mover esta factura a la papelera?")) return;
-    
     try {
       const { error } = await supabase
         .from("invoices")
@@ -517,8 +523,6 @@ export default function Invoices() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`¿Estás seguro de mover ${selectedIds.size} facturas a la papelera?`)) return;
-    
     try {
       const idsArray = Array.from(selectedIds);
       
@@ -765,7 +769,10 @@ export default function Invoices() {
               {/* Products/Items Section */}
               <div className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">Productos / Servicios</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-semibold">Productos / Servicios</Label>
+                    <FieldHelp content="Agrega los productos o servicios que incluye esta factura. El total se calcula automáticamente" />
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={addItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Agregar Item
@@ -878,7 +885,10 @@ export default function Invoices() {
               {/* Discounts and Coupons */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm">Descuento Manual (€)</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Descuento Manual (€)</Label>
+                    <FieldHelp content="Aplica un descuento fijo en euros que se restará del subtotal" />
+                  </div>
                   <Input
                     type="number"
                     step="0.01"
@@ -893,7 +903,10 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Cupón</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Cupón</Label>
+                    <FieldHelp content="Introduce un código de cupón válido para aplicar su descuento. El uso del cupón se registrará" />
+                  </div>
                   <div className="flex gap-2">
                     <Input
                       value={newInvoice.coupon_code}
@@ -913,7 +926,10 @@ export default function Invoices() {
                 </div>
 
                 <div className="col-span-2 space-y-2">
-                  <Label className="text-sm">Tarjeta Regalo</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Tarjeta Regalo</Label>
+                    <FieldHelp content="Introduce el código de una tarjeta regalo para aplicar su saldo. El balance se actualizará automáticamente" />
+                  </div>
                   <div className="flex gap-2">
                     <Input
                       value={newInvoice.gift_card_code}
@@ -975,7 +991,10 @@ export default function Invoices() {
 
               {/* Shipping Cost */}
               <div className="space-y-2">
-                <Label>Costo de Envío (€)</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Costo de Envío (€)</Label>
+                  <FieldHelp content="Costo de envío que se añadirá al total de la factura" />
+                </div>
                 <Input
                   type="number"
                   step="0.01"
@@ -998,7 +1017,10 @@ export default function Invoices() {
               {/* Payment Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Método de Pago</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Método de Pago</Label>
+                    <FieldHelp content="Selecciona el método de pago que usará el cliente para esta factura" />
+                  </div>
                   <Select
                     value={newInvoice.payment_method}
                     onValueChange={(value) => setNewInvoice({ ...newInvoice, payment_method: value })}
@@ -1017,7 +1039,10 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Estado de Pago</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Estado de Pago</Label>
+                    <FieldHelp content="Estado actual del pago. Si marcas 'Requiere Pago del Cliente', se establecerá como Pendiente" />
+                  </div>
                   <Select
                     value={newInvoice.payment_status}
                     onValueChange={(value) => setNewInvoice({ ...newInvoice, payment_status: value })}
@@ -1043,7 +1068,10 @@ export default function Invoices() {
               {/* Requires Payment Switch */}
               <div className="flex items-center justify-between border rounded-lg p-4">
                 <div className="space-y-0.5">
-                  <Label className="text-base">¿Requiere Pago del Cliente?</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base">¿Requiere Pago del Cliente?</Label>
+                    <FieldHelp content="Activa esto si el cliente debe pagar esta factura. Se creará un enlace de pago para el cliente" />
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Si activas esto, el cliente verá un botón para pagar esta factura
                   </p>
@@ -1062,7 +1090,10 @@ export default function Invoices() {
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label>Notas</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Notas</Label>
+                  <FieldHelp content="Agrega notas o información adicional sobre esta factura (opcional)" />
+                </div>
                 <Textarea
                   value={newInvoice.notes}
                   onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
@@ -1098,12 +1129,27 @@ export default function Invoices() {
                       aria-label="Seleccionar todos"
                     />
                   </TableHead>
-                  <TableHead>Nº Factura</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Nº Factura
+                      <FieldHelp content="Número único de identificación de la factura generado automáticamente" />
+                    </div>
+                  </TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Nº Pedido</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Nº Pedido
+                      <FieldHelp content="Número del pedido asociado. Facturas manuales no tienen pedido asociado" />
+                    </div>
+                  </TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      Estado
+                      <FieldHelp content="Estado del pago: Pagado, Pendiente o Fallido" />
+                    </div>
+                  </TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1147,30 +1193,51 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/admin/facturas/${invoice.id}`)}
-                            title="Ver factura"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditInvoice(invoice)}
-                            title="Editar factura"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteInvoice(invoice.id)}
-                            title="Eliminar factura"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/facturas/${invoice.id}`)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Ver detalles de la factura</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditInvoice(invoice)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Editar factura</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <DeleteConfirmDialog
+                            title="¿Mover factura a la papelera?"
+                            itemName={invoice.invoice_number}
+                            onConfirm={() => handleDeleteInvoice(invoice.id)}
+                            actionText="Mover a papelera"
+                            trigger={
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1207,7 +1274,10 @@ export default function Invoices() {
               {/* Products/Items Section */}
               <div className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">Productos / Servicios</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-semibold">Productos / Servicios</Label>
+                    <FieldHelp content="Edita los productos o servicios de esta factura. El total se recalculará automáticamente" />
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={addEditingItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Agregar Item
@@ -1360,7 +1430,10 @@ export default function Invoices() {
               {/* Payment Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Método de Pago</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Método de Pago</Label>
+                    <FieldHelp content="Método de pago utilizado o a utilizar para esta factura" />
+                  </div>
                   <Select
                     value={editingInvoice.payment_method}
                     onValueChange={(value) => setEditingInvoice({ ...editingInvoice, payment_method: value })}
@@ -1379,7 +1452,10 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Estado de Pago</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Estado de Pago</Label>
+                    <FieldHelp content="Actualizar a 'Pagado' actualizará también el estado del pedido asociado si existe" />
+                  </div>
                   <Select
                     value={editingInvoice.payment_status}
                     onValueChange={(value) => setEditingInvoice({ ...editingInvoice, payment_status: value })}

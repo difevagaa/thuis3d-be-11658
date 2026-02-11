@@ -261,26 +261,50 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id, order_number')
         .single();
 
-      if (orderError || !newOrder) {
+      if (orderError) {
         console.error('[QUOTE APPROVAL] Error creating order:', orderError);
-      } else {
-        orderData = newOrder;
+        throw new Error(`Failed to create order: ${orderError.message}`);
+      }
+      
+      if (!newOrder) {
+        throw new Error('Order creation returned no data');
+      }
+      
+      orderData = newOrder;
+      console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
 
-        const { error: orderItemsError } = await supabase
-          .from('order_items')
-          .insert({
-            order_id: newOrder.id,
-            product_name: `Cotización ${quote.quote_type}`,
-            quantity: quantity,
-            unit_price: unitPrice,
-            total_price: subtotal,
-            selected_material: quote.material_id,
-            selected_color: quote.color_id,
-            custom_text: quote.description || null
-          });
+      const { error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert({
+          order_id: newOrder.id,
+          product_name: `Cotización ${quote.quote_type}`,
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_price: subtotal,
+          selected_material: quote.material_id,
+          selected_color: quote.color_id,
+          custom_text: quote.description || null
+        });
 
-        if (orderItemsError) {
-          console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+      if (orderItemsError) {
+        console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+        throw new Error(`Failed to create order items: ${orderItemsError.message}`);
+      }
+      
+      console.log('[QUOTE APPROVAL] Order items created successfully');
+      
+      // Link the invoice to the order if both were just created
+      if (invoiceId && !existingInvoice) {
+        const { error: linkError } = await supabase
+          .from('invoices')
+          .update({ order_id: newOrder.id })
+          .eq('id', invoiceId);
+        
+        if (linkError) {
+          console.error('[QUOTE APPROVAL] Error linking invoice to order:', linkError);
+          // Non-critical error, continue
+        } else {
+          console.log('[QUOTE APPROVAL] Invoice linked to order successfully');
         }
       }
     }
