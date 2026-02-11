@@ -15,6 +15,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
+import { HelpAlert, HelpTooltip, HELP_MESSAGES } from "@/components/HelpComponents";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -164,6 +165,21 @@ export default function OrderDetail() {
 
   const updatePaymentStatus = async (paymentStatus: string) => {
     try {
+      // If status is being changed to refunded, use the refund utility
+      if (paymentStatus === 'refunded' && id) {
+        const { processOrderRefund } = await import('@/lib/refundUtils');
+        const result = await processOrderRefund(id, 'Reembolso solicitado por administrador');
+        
+        if (result.success) {
+          toast.success(result.message);
+          loadOrderData();
+          return;
+        } else {
+          toast.error(result.message);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("orders")
         .update({ payment_status: paymentStatus })
@@ -317,6 +333,24 @@ export default function OrderDetail() {
         </AlertDialog>
       </div>
 
+      {/* Help Alert for Order Refunds */}
+      {order.payment_status === 'paid' && (
+        <HelpAlert 
+          title={HELP_MESSAGES.orderRefund.title}
+          description={HELP_MESSAGES.orderRefund.description}
+          className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+        />
+      )}
+
+      {/* Show specific help if gift card was used */}
+      {order.notes && (order.notes.includes('Tarjeta Regalo') || order.notes.includes('Gift Card')) && (
+        <HelpAlert 
+          title={HELP_MESSAGES.giftCardRefund.title}
+          description={HELP_MESSAGES.giftCardRefund.description}
+          className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+        />
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -411,7 +445,10 @@ export default function OrderDetail() {
               </Select>
             </div>
             <div>
-              <Label>Estado de Pago</Label>
+              <div className="flex items-center gap-2 mb-2">
+                <Label>Estado de Pago</Label>
+                <HelpTooltip content="Al cambiar a 'Reembolsado', el sistema restaurará automáticamente el saldo si el pedido fue pagado con tarjeta de regalo." />
+              </div>
               <Select value={order.payment_status || "pending"} onValueChange={updatePaymentStatus}>
                 <SelectTrigger>
                   <SelectValue />
