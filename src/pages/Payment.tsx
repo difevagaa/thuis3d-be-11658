@@ -17,12 +17,14 @@ import {
   generateOrderNotes,
   updateGiftCardBalance,
   getOrCreateOrderNumber,
-  generateOrderNumber
+  generateOrderNumber,
+  processGiftCardPayment,
+  createInvoiceForOrder
 } from "@/lib/paymentUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { handleSupabaseError, isSchemaGCacheError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 
 // Constants
@@ -436,10 +438,26 @@ export default function Payment() {
         throw new Error('Error creating order items');
       }
 
-      await updateGiftCardBalance(
+      // CRITICAL: Process gift card using unified function
+      const giftCardResult = await processGiftCardPayment(
         appliedGiftCard.id,
-        Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2))
+        giftCardAmount,
+        'GIFT_CARD_ONLY_PAYMENT'
       );
+
+      if (!giftCardResult.success) {
+        logger.error('[GIFT CARD ONLY PAYMENT] Gift card processing failed:', giftCardResult);
+        // Rollback: delete created order
+        const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+        if (rollbackError) {
+          logger.error('[GIFT CARD ONLY PAYMENT] CRITICAL: Rollback failed:', rollbackError);
+        }
+        toast.error(giftCardResult.error || "No se pudo procesar el pago con la tarjeta de regalo");
+        removeGiftCard();
+        return;
+      }
+
+      logger.log('[GIFT CARD ONLY PAYMENT] Gift card processed successfully');
 
       // Actualizar uso del cupón si se aplicó
       if (appliedCoupon) {
@@ -451,6 +469,29 @@ export default function Payment() {
         } catch (couponError) {
           logger.error('Error updating coupon usage:', couponError);
         }
+      }
+
+      // CRITICAL: Create invoice automatically
+      const invoice = await createInvoiceForOrder(order.id, {
+        order_number: orderNumber,
+        user_id: user.id,
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
+        shipping: effShipping,
+        discount: couponDisc + giftCardAmount,
+        payment_status: 'paid',
+        payment_method: 'gift_card',
+        gift_card_code: appliedGiftCard.code,
+        gift_card_amount: giftCardAmount,
+        coupon_code: appliedCoupon?.code || null,
+        coupon_discount: couponDisc,
+        notes: `Pedido pagado completamente con tarjeta de regalo ${appliedGiftCard.code}`
+      });
+
+      if (!invoice) {
+        logger.error('[GIFT CARD ONLY PAYMENT] Warning: Invoice creation failed');
+        // Continue - invoice can be created manually
       }
 
       localStorage.removeItem("cart");
@@ -504,45 +545,13 @@ export default function Payment() {
         staleGiftCardBalance: appliedGiftCard.current_balance
       });
 
-      // CRITICAL: Re-validate gift card from database before processing
-      const { data: freshGiftCard, error: giftCardFetchError } = await supabase
-        .from("gift_cards")
-        .select("*")
-        .eq("id", appliedGiftCard.id)
-        .eq("is_active", true)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (giftCardFetchError || !freshGiftCard) {
-        logger.error('[INVOICE GIFT CARD PAYMENT] Gift card no longer valid:', giftCardFetchError);
-        toast.error("La tarjeta de regalo ya no es válida");
-        removeGiftCard();
-        return;
-      }
-
-      // Check if gift card expired
-      if (freshGiftCard.expires_at && new Date(freshGiftCard.expires_at) < new Date()) {
-        toast.error("La tarjeta de regalo ha expirado");
-        removeGiftCard();
-        return;
-      }
-
-      // Check if gift card has sufficient balance
-      if (freshGiftCard.current_balance <= 0) {
-        toast.error("La tarjeta de regalo no tiene saldo disponible");
-        removeGiftCard();
-        return;
-      }
-
-      const giftCardAmount = Math.min(freshGiftCard.current_balance, invoiceTotal);
+      // Calculate amounts
+      const giftCardAmount = Math.min(appliedGiftCard.current_balance, invoiceTotal);
       const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
-      const newGiftCardBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
 
-      logger.log('[INVOICE GIFT CARD PAYMENT] Validated amounts:', {
-        freshGiftCardBalance: freshGiftCard.current_balance,
+      logger.log('[INVOICE GIFT CARD PAYMENT] Calculated amounts:', {
         giftCardAmount,
         remainingTotal,
-        newGiftCardBalance,
         willMarkPaid: remainingTotal <= 0
       });
 
@@ -556,6 +565,10 @@ export default function Payment() {
 
       if (invoiceError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error fetching invoice:', invoiceError);
+        // Check for schema cache errors
+        if (isSchemaGCacheError(invoiceError)) {
+          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+        }
         throw new Error('Error al obtener la factura: ' + invoiceError.message);
       }
 
@@ -572,28 +585,18 @@ export default function Payment() {
         return;
       }
 
-      // Start a transaction-like sequence
-      // 1. Update gift card balance FIRST (so if this fails, nothing else happens)
-      const { error: giftCardError } = await supabase
-        .from("gift_cards")
-        .update({ 
-          current_balance: newGiftCardBalance,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", freshGiftCard.id)
-        .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
+      // CRITICAL: Process gift card using unified function
+      const giftCardResult = await processGiftCardPayment(
+        appliedGiftCard.id,
+        giftCardAmount,
+        'INVOICE_PAYMENT'
+      );
 
-      if (giftCardError) {
-        logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
-        
-        // Check if it's because balance changed (race condition with optimistic locking)
-        if (giftCardError.code === POSTGREST_NO_ROWS_UPDATED) {
-          toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
-          removeGiftCard();
-          return;
-        }
-        
-        throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
+      if (!giftCardResult.success) {
+        logger.error('[INVOICE GIFT CARD PAYMENT] Gift card processing failed:', giftCardResult);
+        toast.error(giftCardResult.error || 'Error al procesar la tarjeta de regalo');
+        removeGiftCard();
+        return;
       }
 
       logger.log('[INVOICE GIFT CARD PAYMENT] Gift card balance updated successfully');
@@ -604,9 +607,9 @@ export default function Payment() {
         .update({
           payment_status: remainingTotal <= 0 ? "paid" : "pending",
           payment_method: "gift_card",
-          gift_card_code: freshGiftCard.code,
+          gift_card_code: appliedGiftCard.code,
           gift_card_amount: giftCardAmount,
-          notes: `Pagado con tarjeta de regalo: ${freshGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
         })
         .eq("id", invoiceData.invoiceId)
         .eq("user_id", user.id);
@@ -614,14 +617,14 @@ export default function Payment() {
       if (updateError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
         
-        // CRITICAL: Rollback gift card balance if invoice update fails
-        await supabase
-          .from("gift_cards")
-          .update({ 
-            current_balance: freshGiftCard.current_balance,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", freshGiftCard.id);
+        // Note: Gift card balance already updated - cannot rollback automatically
+        // Admin will need to handle this manually if invoice update fails
+        logger.error('[INVOICE GIFT CARD PAYMENT] CRITICAL: Invoice update failed after gift card deduction');
+        
+        // Check for schema cache errors
+        if (isSchemaGCacheError(updateError)) {
+          throw new Error('Error de base de datos: Por favor contacta soporte - tu tarjeta fue debitada pero la factura no se actualizó');
+        }
         
         throw new Error('Error al actualizar la factura: ' + updateError.message);
       }
@@ -642,8 +645,13 @@ export default function Payment() {
 
         if (orderUpdateError) {
           logger.error('[INVOICE GIFT CARD PAYMENT] Error updating order:', orderUpdateError);
-          // Log but don't fail - invoice is already paid
-          toast.warning('Factura pagada, pero hubo un error al actualizar el pedido. Contacta soporte si es necesario.');
+          // Check for schema cache errors
+          if (isSchemaGCacheError(orderUpdateError)) {
+            toast.warning('Factura pagada. Si el pedido no se actualiza automáticamente, contacta soporte.');
+          } else {
+            // Log but don't fail - invoice is already paid
+            toast.warning('Factura pagada, pero hubo un error al actualizar el pedido. Contacta soporte si es necesario.');
+          }
         } else {
           logger.log('[INVOICE GIFT CARD PAYMENT] Order payment status updated successfully');
         }
@@ -849,7 +857,7 @@ export default function Payment() {
       const totalBeforeGiftCard = Number(Math.max(0, subtotal - couponDiscount + tax + shipping).toFixed(2));
       const total = calculateTotal(); // subtotal - couponDiscount + IVA + envío - gift card
 
-      // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut tienen comportamientos especiales
+      // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut - CREAR PEDIDO Y FACTURA PRIMERO
       if (method === "bank_transfer") {
         // Get or create persistent order number from checkout session
         const sessionId = sessionStorage.getItem("checkout_session_id");
@@ -863,27 +871,99 @@ export default function Payment() {
         if (!orderNumber) {
           orderNumber = generateOrderNumber();
         }
-        
-        // Transferencia bancaria: Guardar info y redirigir a instrucciones (creará pedido allí)
-        sessionStorage.setItem("pending_order", JSON.stringify({
-          cartItems,
-          shippingInfo,
-          total: totalBeforeGiftCard,
-          subtotal,
-          tax,
-          shipping,
-          method: "bank_transfer",
-          orderNumber
-        }));
 
-        toast.success(t('payment:messages.redirectingToInstructions'));
+        // CRITICAL: Create order FIRST before redirecting
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert([{
+            user_id: user.id,
+            order_number: orderNumber,
+            status: "pending",
+            payment_status: "pending",
+            payment_method: "bank_transfer",
+            subtotal: subtotal,
+            shipping: shipping,
+            tax: tax,
+            discount: couponDiscount, // Only coupon discount, gift card is NOT processed yet for bank transfer
+            total: totalBeforeGiftCard,
+            shipping_info: shippingInfo,
+            notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
+          }])
+          .select()
+          .single();
+
+        if (orderError) {
+          logger.error('[BANK TRANSFER] Error creating order:', orderError);
+          toast.error("Error al crear el pedido. Por favor, intenta nuevamente.");
+          setProcessing(false);
+          return;
+        }
+
+        logger.log('[BANK TRANSFER] Order created:', order.id);
+
+        // Create order items
+        const orderItems = convertCartToOrderItems(cartItems, order.id);
+        const insertedItems = await createOrderItems(orderItems);
+        
+        if (insertedItems.length === 0) {
+          logger.error('[BANK TRANSFER] Error creating order items');
+          // Rollback: delete order
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error("Error al crear los items del pedido.");
+          setProcessing(false);
+          return;
+        }
+
+        // CRITICAL: Create invoice automatically
+        const invoice = await createInvoiceForOrder(order.id, {
+          order_number: orderNumber,
+          user_id: user.id,
+          subtotal: subtotal,
+          tax: tax,
+          total: totalBeforeGiftCard,
+          shipping: shipping,
+          discount: couponDiscount,
+          payment_status: 'pending',
+          payment_method: 'bank_transfer',
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: couponDiscount,
+          notes: `Pedido pendiente de pago por transferencia bancaria`
+        });
+
+        if (!invoice) {
+          logger.error('[BANK TRANSFER] Warning: Invoice creation failed');
+          toast.warning("Pedido creado. La factura se generará manualmente.");
+        }
+
+        // Update coupon usage if applied
+        if (appliedCoupon) {
+          try {
+            await supabase
+              .from("coupons")
+              .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+              .eq("id", appliedCoupon.id);
+          } catch (couponError) {
+            logger.error('[BANK TRANSFER] Error updating coupon usage:', couponError);
+          }
+        }
+
+        // Clean up
+        localStorage.removeItem("cart");
+        sessionStorage.removeItem("applied_coupon");
+        if (sessionId) {
+          await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+          sessionStorage.removeItem("checkout_session_id");
+        }
+
+        toast.success("Pedido creado. Procede con el pago por transferencia.");
         
         navigate("/pago-instrucciones", { 
           state: { 
             orderNumber: orderNumber,
             method: "bank_transfer",
-            total,
-            isPending: true
+            total: totalBeforeGiftCard,
+            isPending: true, // FIXED: Actually pending until payment confirmed
+            orderId: order.id
           } 
         });
         
@@ -891,7 +971,7 @@ export default function Payment() {
         return;
       }
 
-      // Tarjeta de crédito: Redirigir a página intermedia
+      // Tarjeta de crédito: Crear pedido y factura PRIMERO, luego redirigir
       if (method === "card") {
         // Get or create persistent order number from checkout session
         const sessionId = sessionStorage.getItem("checkout_session_id");
@@ -905,15 +985,98 @@ export default function Payment() {
         if (!orderNumber) {
           orderNumber = generateOrderNumber();
         }
+
+        // CRITICAL: Create order FIRST before redirecting
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert([{
+            user_id: user.id,
+            order_number: orderNumber,
+            status: "pending",
+            payment_status: "pending",
+            payment_method: "card",
+            subtotal: subtotal,
+            shipping: shipping,
+            tax: tax,
+            discount: couponDiscount, // Only coupon discount, gift card handled separately
+            total: totalBeforeGiftCard,
+            shipping_info: shippingInfo,
+            notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
+          }])
+          .select()
+          .single();
+
+        if (orderError) {
+          logger.error('[CARD PAYMENT] Error creating order:', orderError);
+          toast.error("Error al crear el pedido. Por favor, intenta nuevamente.");
+          setProcessing(false);
+          return;
+        }
+
+        logger.log('[CARD PAYMENT] Order created:', order.id);
+
+        // Create order items
+        const orderItems = convertCartToOrderItems(cartItems, order.id);
+        const insertedItems = await createOrderItems(orderItems);
         
+        if (insertedItems.length === 0) {
+          logger.error('[CARD PAYMENT] Error creating order items');
+          // Rollback: delete order
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error("Error al crear los items del pedido.");
+          setProcessing(false);
+          return;
+        }
+
+        // CRITICAL: Create invoice automatically
+        const invoice = await createInvoiceForOrder(order.id, {
+          order_number: orderNumber,
+          user_id: user.id,
+          subtotal: subtotal,
+          tax: tax,
+          total: totalBeforeGiftCard,
+          shipping: shipping,
+          discount: couponDiscount,
+          payment_status: 'pending',
+          payment_method: 'card',
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: couponDiscount,
+          notes: `Pedido pendiente de pago con tarjeta`
+        });
+
+        if (!invoice) {
+          logger.error('[CARD PAYMENT] Warning: Invoice creation failed');
+          toast.warning("Pedido creado. La factura se generará manualmente.");
+        }
+
+        // Update coupon usage if applied
+        if (appliedCoupon) {
+          try {
+            await supabase
+              .from("coupons")
+              .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+              .eq("id", appliedCoupon.id);
+          } catch (couponError) {
+            logger.error('[CARD PAYMENT] Error updating coupon usage:', couponError);
+          }
+        }
+
+        // Clean up cart but keep gift card info for card payment page
+        localStorage.removeItem("cart");
+        sessionStorage.removeItem("applied_coupon");
+        if (sessionId) {
+          await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+          sessionStorage.removeItem("checkout_session_id");
+        }
+
+        // Store order info for card payment page
         sessionStorage.setItem("pending_card_order", JSON.stringify({
-          cartItems,
-          shippingInfo,
+          orderId: order.id,
+          orderNumber: orderNumber,
           total: totalBeforeGiftCard,
           subtotal,
           tax,
-          shipping,
-          orderNumber
+          shipping
         }));
 
         // No mostrar toast aquí - se mostrará en la página de pago con tarjeta
@@ -923,7 +1086,7 @@ export default function Payment() {
         return;
       }
 
-      // Revolut: Redirigir a página intermedia
+      // Revolut: Crear pedido y factura PRIMERO, luego redirigir
       if (method === "revolut") {
         // Get or create persistent order number from checkout session
         const sessionId = sessionStorage.getItem("checkout_session_id");
@@ -937,15 +1100,98 @@ export default function Payment() {
         if (!orderNumber) {
           orderNumber = generateOrderNumber();
         }
+
+        // CRITICAL: Create order FIRST before redirecting
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert([{
+            user_id: user.id,
+            order_number: orderNumber,
+            status: "pending",
+            payment_status: "pending",
+            payment_method: "revolut",
+            subtotal: subtotal,
+            shipping: shipping,
+            tax: tax,
+            discount: couponDiscount, // Only coupon discount, gift card handled separately
+            total: totalBeforeGiftCard,
+            shipping_info: shippingInfo,
+            notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
+          }])
+          .select()
+          .single();
+
+        if (orderError) {
+          logger.error('[REVOLUT PAYMENT] Error creating order:', orderError);
+          toast.error("Error al crear el pedido. Por favor, intenta nuevamente.");
+          setProcessing(false);
+          return;
+        }
+
+        logger.log('[REVOLUT PAYMENT] Order created:', order.id);
+
+        // Create order items
+        const orderItems = convertCartToOrderItems(cartItems, order.id);
+        const insertedItems = await createOrderItems(orderItems);
         
+        if (insertedItems.length === 0) {
+          logger.error('[REVOLUT PAYMENT] Error creating order items');
+          // Rollback: delete order
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error("Error al crear los items del pedido.");
+          setProcessing(false);
+          return;
+        }
+
+        // CRITICAL: Create invoice automatically
+        const invoice = await createInvoiceForOrder(order.id, {
+          order_number: orderNumber,
+          user_id: user.id,
+          subtotal: subtotal,
+          tax: tax,
+          total: totalBeforeGiftCard,
+          shipping: shipping,
+          discount: couponDiscount,
+          payment_status: 'pending',
+          payment_method: 'revolut',
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: couponDiscount,
+          notes: `Pedido pendiente de pago con Revolut`
+        });
+
+        if (!invoice) {
+          logger.error('[REVOLUT PAYMENT] Warning: Invoice creation failed');
+          toast.warning("Pedido creado. La factura se generará manualmente.");
+        }
+
+        // Update coupon usage if applied
+        if (appliedCoupon) {
+          try {
+            await supabase
+              .from("coupons")
+              .update({ times_used: (appliedCoupon.times_used || 0) + 1 })
+              .eq("id", appliedCoupon.id);
+          } catch (couponError) {
+            logger.error('[REVOLUT PAYMENT] Error updating coupon usage:', couponError);
+          }
+        }
+
+        // Clean up cart but keep gift card info for revolut payment page
+        localStorage.removeItem("cart");
+        sessionStorage.removeItem("applied_coupon");
+        if (sessionId) {
+          await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+          sessionStorage.removeItem("checkout_session_id");
+        }
+
+        // Store order info for revolut payment page
         sessionStorage.setItem("pending_revolut_order", JSON.stringify({
-          cartItems,
-          shippingInfo,
+          orderId: order.id,
+          orderNumber: orderNumber,
           total: totalBeforeGiftCard,
           subtotal,
           tax,
-          shipping,
-          orderNumber
+          shipping
         }));
 
         // No mostrar toast aquí - se mostrará en la página de pago con Revolut

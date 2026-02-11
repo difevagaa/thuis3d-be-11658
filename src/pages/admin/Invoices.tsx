@@ -24,6 +24,7 @@ import { logger } from "@/lib/logger";
 import { FieldHelp } from "@/components/admin/FieldHelp";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
+import { isSchemaGCacheError } from "@/lib/errorHandler";
 import {
   Tooltip,
   TooltipContent,
@@ -325,14 +326,14 @@ export default function Invoices() {
         return;
       }
 
-      const balance = parseFloat(String(giftCard.current_balance));
+      const balance = Number(giftCard.current_balance);
       setNewInvoice({
         ...newInvoice,
         gift_card_amount: balance.toFixed(2)
       });
 
       toast.success(`Tarjeta regalo aplicada: €${balance.toFixed(2)}`);
-      calculateTotalsWithDiscounts(newInvoice.items, parseFloat(newInvoice.coupon_discount) || 0, balance);
+      calculateTotalsWithDiscounts(newInvoice.items, Number(newInvoice.coupon_discount) || 0, balance);
     } catch (error) {
       toast.error("Error al aplicar tarjeta regalo");
     }
@@ -463,8 +464,8 @@ export default function Invoices() {
       }
 
       // Update gift card balance if used - with optimistic locking and validation
-      if (newInvoice.gift_card_code && parseFloat(newInvoice.gift_card_amount) > 0) {
-        const amountUsed = parseFloat(newInvoice.gift_card_amount);
+      if (newInvoice.gift_card_code && Number(newInvoice.gift_card_amount) > 0) {
+        const amountUsed = Number(newInvoice.gift_card_amount);
         const { data: giftCardData, error: giftCardFetchError } = await supabase
           .from("gift_cards")
           .select("id, current_balance, is_active")
@@ -475,7 +476,12 @@ export default function Invoices() {
         
         if (giftCardFetchError || !giftCardData) {
           logger.error("Error fetching gift card:", giftCardFetchError);
-          toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
+          // Check for schema cache errors
+          if (isSchemaGCacheError(giftCardFetchError)) {
+            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
+          } else {
+            toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
+          }
           // Rollback: delete created invoice
           await supabase.from("invoices").delete().eq("id", newInvoice.id);
           return;
@@ -499,13 +505,18 @@ export default function Invoices() {
           .update({ 
             current_balance: newBalance,
             updated_at: new Date().toISOString()
-          })
+          }, { count: 'exact' })
           .eq("id", giftCardData.id)
           .eq("current_balance", currentBalance); // Optimistic lock
         
         if (updateError || count === 0) {
           logger.error("Error updating gift card balance:", updateError);
-          toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
+          // Check for schema cache errors
+          if (isSchemaGCacheError(updateError)) {
+            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
+          } else {
+            toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
+          }
           // Rollback: delete created invoice
           await supabase.from("invoices").delete().eq("id", newInvoice.id);
           return;

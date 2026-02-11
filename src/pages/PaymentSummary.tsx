@@ -13,6 +13,7 @@ import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { processGiftCardPayment, createInvoiceForOrder } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;
@@ -290,14 +291,24 @@ export default function PaymentSummary() {
 
         if (orderError) throw orderError;
 
-        // Actualizar balance de tarjeta de regalo
-        const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
-        const { error: giftCardError } = await supabase
-          .from("gift_cards")
-          .update({ current_balance: newBalance })
-          .eq("id", appliedGiftCard.id);
+        // CRITICAL: Process gift card payment using unified function
+        const giftCardResult = await processGiftCardPayment(
+          appliedGiftCard.id,
+          giftCardAmount,
+          'CART_PAYMENT'
+        );
 
-        if (giftCardError) throw giftCardError;
+        if (!giftCardResult.success) {
+          logger.error('[PAYMENT SUMMARY] Gift card payment failed:', giftCardResult);
+          // Rollback: delete created order
+          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
+          if (rollbackError) {
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed:', rollbackError);
+          }
+          throw new Error(giftCardResult.error || 'Error al procesar la tarjeta de regalo');
+        }
+
+        logger.log('[PAYMENT SUMMARY] Gift card payment processed successfully');
 
         // Crear items del pedido
         const orderItemsData = cartItems.map(item => ({
@@ -326,32 +337,27 @@ export default function PaymentSummary() {
             .eq("id", appliedCoupon.id);
         }
 
-        // Crear factura automáticamente
-        try {
-          const invoiceNote = `Factura generada automáticamente para el pedido ${order.order_number} - Pagado con tarjeta de regalo`;
-          
-          await supabase.from("invoices").insert({
-            invoice_number: order.order_number,
-            user_id: user.id,
-            order_id: order.id,
-            subtotal: subtotal,
-            tax: tax,
-            shipping: effectiveShipping,
-            discount: discount + giftCardAmount,
-            coupon_discount: isFreeShippingCoupon ? 0 : discount,
-            coupon_code: appliedCoupon?.code || null,
-            gift_card_code: appliedGiftCard?.code || null,
-            gift_card_amount: giftCardAmount || 0,
-            total: 0,
-            payment_method: "gift_card",
-            payment_status: "paid", // CRITICAL: Invoice also marked as PAID
-            issue_date: new Date().toISOString(),
-            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            notes: invoiceNote
-          });
-        } catch (invoiceError) {
-          logger.error('Error creating invoice:', invoiceError);
-          // No lanzar error, continuar con el flujo
+        // CRITICAL: Create invoice automatically using unified function
+        const invoice = await createInvoiceForOrder(order.id, {
+          order_number: order.order_number,
+          user_id: user.id,
+          subtotal: subtotal,
+          tax: tax,
+          total: 0, // Paid completely with gift card
+          shipping: effectiveShipping,
+          discount: discount + giftCardAmount,
+          payment_status: 'paid',
+          payment_method: 'gift_card',
+          gift_card_code: appliedGiftCard?.code || null,
+          gift_card_amount: giftCardAmount || 0,
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: isFreeShippingCoupon ? 0 : discount,
+          notes: `Pedido pagado completamente con tarjeta de regalo ${appliedGiftCard?.code}`
+        });
+
+        if (!invoice) {
+          logger.error('[PAYMENT SUMMARY] Warning: Invoice creation failed, but order was created');
+          // Continue - invoice can be created manually by admin if needed
         }
 
         // Enviar correo de confirmación al cliente
