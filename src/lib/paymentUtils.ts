@@ -262,26 +262,36 @@ export const convertCartToOrderItems = (
 };
 
 /**
- * Calculates order totals considering tax and discounts
+ * Calculates order totals considering tax, discounts, and shipping.
+ * Coupon discount is applied proportionally to the taxable amount before calculating tax.
+ * Fixed coupon discounts are capped at the subtotal to prevent negative intermediates.
  */
 export const calculateOrderTotals = (
   cartItems: CartItem[],
   taxRate: number = 0.21,
   giftCardDiscount: number = 0,
-  couponDiscount: number = 0
+  couponDiscount: number = 0,
+  shippingCost: number = 0
 ) => {
   const subtotal = Number(cartItems.reduce(
     (sum, item) => sum + (item.price * item.quantity),
     0
   ).toFixed(2));
 
+  // Cap coupon discount at subtotal to avoid negative intermediates
+  const cappedCouponDiscount = Math.min(couponDiscount, subtotal);
+  const discount = Number((giftCardDiscount + cappedCouponDiscount).toFixed(2));
+
   const taxableAmount = Number(cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
 
-  const tax = Number((taxableAmount * taxRate).toFixed(2));
-  const shipping = 0; // Always 0 as per business logic
-  const discount = Number((giftCardDiscount + couponDiscount).toFixed(2));
+  // Apply coupon discount proportionally to the taxable amount before calculating tax
+  const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+  const taxableAfterDiscount = Math.max(0, taxableAmount - (cappedCouponDiscount * discountRatio));
+  const tax = Number((taxableAfterDiscount * taxRate).toFixed(2));
+
+  const shipping = Number(shippingCost.toFixed(2));
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {

@@ -167,13 +167,14 @@ export default function PaymentSummary() {
     if (!appliedCoupon) return 0;
     
     const subtotal = calculateSubtotal();
+    let discount = 0;
     if (appliedCoupon.discount_type === "percentage") {
-      return subtotal * (appliedCoupon.discount_value / 100);
+      discount = subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      return appliedCoupon.discount_value;
+      discount = Math.min(appliedCoupon.discount_value, subtotal);
     }
     // free_shipping type: no monetary discount on products, shipping is set to 0 separately
-    return 0;
+    return Number(discount.toFixed(2));
   };
 
   const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";
@@ -209,7 +210,7 @@ export default function PaymentSummary() {
     // Gift card covers: subtotal - discount + tax + shipping
     const totalBeforeGiftCard = subtotal - discount + tax + effectiveShipping;
     
-    return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
+    return Number(Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard)).toFixed(2));
   };
 
   const calculateTotal = () => {
@@ -219,7 +220,7 @@ export default function PaymentSummary() {
     const giftCardAmount = calculateGiftCardAmount();
     const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
     
-    return Math.max(0, subtotal - discount + tax + effectiveShipping - giftCardAmount);
+    return Number(Math.max(0, subtotal - discount + tax + effectiveShipping - giftCardAmount).toFixed(2));
   };
 
   const [processing, setProcessing] = useState(false);
@@ -290,7 +291,7 @@ export default function PaymentSummary() {
         if (orderError) throw orderError;
 
         // Actualizar balance de tarjeta de regalo
-        const newBalance = appliedGiftCard.current_balance - giftCardAmount;
+        const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
         const { error: giftCardError } = await supabase
           .from("gift_cards")
           .update({ current_balance: newBalance })
