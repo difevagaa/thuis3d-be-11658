@@ -277,34 +277,20 @@ export default function Quotes() {
 
               // Create invoice if not exists
               if (!existingInvoice) {
-                // Generate unique invoice number with retry
-                let generatedNumber: string | null = null;
-                for (let attempt = 0; attempt < 5; attempt++) {
-                  const { data: rpcResult } = await supabase.rpc('generate_invoice_number');
-                  let candidate = rpcResult;
-                  
-                  // If RPC fails, generate a random number with same format (L1N1L2N2L3N3)
-                  if (!candidate) {
-                    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                    candidate = 
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10);
-                  }
-
-                  // Check uniqueness
-                  const { data: collision } = await supabase
-                    .from('invoices')
-                    .select('id')
-                    .eq('invoice_number', candidate)
-                    .maybeSingle();
-
-                  if (!collision) {
-                    generatedNumber = candidate;
-                    break;
-                  }
+                // Generate invoice number - use RPC function with unique format
+                let genInvoiceNumber: string | null = null;
+                const { data: genInvNum } = await supabase.rpc('generate_invoice_number');
+                genInvoiceNumber = genInvNum;
+                
+                // If RPC fails, generate a random number with same format (L1N1L2N2L3N3)
+                if (!genInvoiceNumber) {
+                  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                  genInvoiceNumber = 
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
+                    letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10);
                 }
-                invoiceNumber = generatedNumber || `${Date.now()}`;
+                invoiceNumber = genInvoiceNumber;
 
                 const { data: newInvoice, error: invError } = await supabase
                   .from('invoices')

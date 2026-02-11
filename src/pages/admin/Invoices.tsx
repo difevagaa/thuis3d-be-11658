@@ -8,9 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-// Constants
-const DEFAULT_TAX_RATE = 0.21; // 21% - Used when tax settings are not configured
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -23,8 +20,6 @@ import UserSearchSelector from "@/components/admin/UserSearchSelector";
 import { logger } from "@/lib/logger";
 import { FieldHelp } from "@/components/admin/FieldHelp";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { useTaxSettings } from "@/hooks/useTaxSettings";
-import { isSchemaGCacheError } from "@/lib/errorHandler";
 import {
   Tooltip,
   TooltipContent,
@@ -55,10 +50,6 @@ export default function Invoices() {
   const [products, setProducts] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [giftCards, setGiftCards] = useState<any[]>([]);
-  
-  // Get tax settings
-  const { taxSettings } = useTaxSettings();
-  const taxRate = taxSettings?.is_enabled ? (taxSettings.tax_rate / 100) : DEFAULT_TAX_RATE;
   
   const {
     selectedIds,
@@ -326,14 +317,14 @@ export default function Invoices() {
         return;
       }
 
-      const balance = Number(giftCard.current_balance);
+      const balance = parseFloat(String(giftCard.current_balance));
       setNewInvoice({
         ...newInvoice,
         gift_card_amount: balance.toFixed(2)
       });
 
       toast.success(`Tarjeta regalo aplicada: €${balance.toFixed(2)}`);
-      calculateTotalsWithDiscounts(newInvoice.items, Number(newInvoice.coupon_discount) || 0, balance);
+      calculateTotalsWithDiscounts(newInvoice.items, parseFloat(newInvoice.coupon_discount) || 0, balance);
     } catch (error) {
       toast.error("Error al aplicar tarjeta regalo");
     }
@@ -348,7 +339,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number((subtotal + tax + shipping).toFixed(2));
     
     setNewInvoice(prev => ({
@@ -370,7 +361,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number(Math.max(0, subtotal + tax + shipping - totalDiscount).toFixed(2));
     
     setNewInvoice(prev => ({
@@ -463,63 +454,21 @@ export default function Invoices() {
         }
       }
 
-      // Update gift card balance if used - with optimistic locking and validation
-      if (newInvoice.gift_card_code && Number(newInvoice.gift_card_amount) > 0) {
-        const amountUsed = Number(newInvoice.gift_card_amount);
-        const { data: giftCardData, error: giftCardFetchError } = await supabase
+      // Update gift card balance if used
+      if (newInvoice.gift_card_code && parseFloat(newInvoice.gift_card_amount) > 0) {
+        const amountUsed = parseFloat(newInvoice.gift_card_amount);
+        const { data: giftCardData } = await supabase
           .from("gift_cards")
-          .select("id, current_balance, is_active")
+          .select("current_balance")
           .eq("code", newInvoice.gift_card_code)
-          .eq("is_active", true)
-          .is("deleted_at", null)
           .maybeSingle();
         
-        if (giftCardFetchError || !giftCardData) {
-          logger.error("Error fetching gift card:", giftCardFetchError);
-          // Check for schema cache errors
-          if (isSchemaGCacheError(giftCardFetchError)) {
-            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-          } else {
-            toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
-          }
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
-          return;
-        }
-
-        const currentBalance = Number(giftCardData.current_balance);
-        
-        // Validate sufficient balance
-        if (currentBalance < amountUsed) {
-          toast.error(`Error: Saldo insuficiente en tarjeta de regalo. Disponible: €${currentBalance.toFixed(2)}, Requerido: €${amountUsed.toFixed(2)}`);
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
-          return;
-        }
-        
-        const newBalance = Number((currentBalance - amountUsed).toFixed(2));
-        
-        // Update with optimistic locking
-        const { error: updateError, count } = await supabase
-          .from("gift_cards")
-          .update({ 
-            current_balance: newBalance,
-            updated_at: new Date().toISOString()
-          }, { count: 'exact' })
-          .eq("id", giftCardData.id)
-          .eq("current_balance", currentBalance); // Optimistic lock
-        
-        if (updateError || count === 0) {
-          logger.error("Error updating gift card balance:", updateError);
-          // Check for schema cache errors
-          if (isSchemaGCacheError(updateError)) {
-            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-          } else {
-            toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
-          }
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
-          return;
+        if (giftCardData) {
+          const newBalance = parseFloat(String(giftCardData.current_balance)) - amountUsed;
+          await supabase
+            .from("gift_cards")
+            .update({ current_balance: newBalance })
+            .eq("code", newInvoice.gift_card_code);
         }
       }
 
@@ -742,7 +691,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number(Math.max(0, subtotal + tax + shipping - discount).toFixed(2));
     
     setEditingInvoice((prev: any) => ({
