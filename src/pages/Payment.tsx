@@ -515,7 +515,12 @@ export default function Payment() {
 
       if (giftCardFetchError || !freshGiftCard) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Gift card no longer valid:', giftCardFetchError);
-        toast.error("La tarjeta de regalo ya no es válida");
+        // Check for schema cache errors
+        if (giftCardFetchError && giftCardFetchError.message && giftCardFetchError.message.includes('Could not find')) {
+          toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
+        } else {
+          toast.error("La tarjeta de regalo ya no es válida");
+        }
         removeGiftCard();
         return;
       }
@@ -556,6 +561,10 @@ export default function Payment() {
 
       if (invoiceError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error fetching invoice:', invoiceError);
+        // Check for schema cache errors
+        if (invoiceError.message && invoiceError.message.includes('Could not find')) {
+          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+        }
         throw new Error('Error al obtener la factura: ' + invoiceError.message);
       }
 
@@ -586,6 +595,11 @@ export default function Payment() {
       if (giftCardError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating gift card:', giftCardError);
         
+        // Check for schema cache errors
+        if (giftCardError.message && giftCardError.message.includes('Could not find')) {
+          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+        }
+        
         // Check if it's because balance changed (race condition with optimistic locking)
         if (giftCardError.code === POSTGREST_NO_ROWS_UPDATED) {
           toast.error("El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.");
@@ -613,6 +627,20 @@ export default function Payment() {
 
       if (updateError) {
         logger.error('[INVOICE GIFT CARD PAYMENT] Error updating invoice:', updateError);
+        
+        // Check for schema cache errors
+        if (updateError.message && updateError.message.includes('Could not find')) {
+          // CRITICAL: Rollback gift card balance if invoice update fails
+          await supabase
+            .from("gift_cards")
+            .update({ 
+              current_balance: freshGiftCard.current_balance,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", freshGiftCard.id);
+          
+          throw new Error('Error de base de datos: Por favor recarga la página e intenta nuevamente');
+        }
         
         // CRITICAL: Rollback gift card balance if invoice update fails
         await supabase
@@ -642,8 +670,13 @@ export default function Payment() {
 
         if (orderUpdateError) {
           logger.error('[INVOICE GIFT CARD PAYMENT] Error updating order:', orderUpdateError);
-          // Log but don't fail - invoice is already paid
-          toast.warning('Factura pagada, pero hubo un error al actualizar el pedido. Contacta soporte si es necesario.');
+          // Check for schema cache errors
+          if (orderUpdateError.message && orderUpdateError.message.includes('Could not find')) {
+            toast.warning('Factura pagada. Si el pedido no se actualiza automáticamente, contacta soporte.');
+          } else {
+            // Log but don't fail - invoice is already paid
+            toast.warning('Factura pagada, pero hubo un error al actualizar el pedido. Contacta soporte si es necesario.');
+          }
         } else {
           logger.log('[INVOICE GIFT CARD PAYMENT] Order payment status updated successfully');
         }

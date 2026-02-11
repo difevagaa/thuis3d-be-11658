@@ -475,7 +475,12 @@ export default function Invoices() {
         
         if (giftCardFetchError || !giftCardData) {
           logger.error("Error fetching gift card:", giftCardFetchError);
-          toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
+          // Check for schema cache errors
+          if (giftCardFetchError && giftCardFetchError.message && giftCardFetchError.message.includes('Could not find')) {
+            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
+          } else {
+            toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
+          }
           // Rollback: delete created invoice
           await supabase.from("invoices").delete().eq("id", newInvoice.id);
           return;
@@ -505,7 +510,12 @@ export default function Invoices() {
         
         if (updateError || count === 0) {
           logger.error("Error updating gift card balance:", updateError);
-          toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
+          // Check for schema cache errors
+          if (updateError && updateError.message && updateError.message.includes('Could not find')) {
+            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
+          } else {
+            toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
+          }
           // Rollback: delete created invoice
           await supabase.from("invoices").delete().eq("id", newInvoice.id);
           return;
