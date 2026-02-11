@@ -271,8 +271,8 @@ export default function Categories() {
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <TooltipProvider>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-2">
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <Button
@@ -287,27 +287,25 @@ export default function Categories() {
                             <p>Editar categoría</p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
-                      <DeleteConfirmDialog
-                        title="¿Eliminar categoría?"
-                        itemName={category.name}
-                        onConfirm={() => handleDelete(category.id)}
-                        trigger={
-                          <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                              <TooltipTrigger asChild>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <DeleteConfirmDialog
+                              title="¿Eliminar categoría?"
+                              itemName={category.name}
+                              onConfirm={() => handleDelete(category.id)}
+                              trigger={
                                 <Button variant="destructive" size="sm">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Mover a papelera</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        }
-                      />
-                    </div>
+                              }
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mover a papelera</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))}
