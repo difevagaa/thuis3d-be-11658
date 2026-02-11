@@ -23,7 +23,8 @@ export function QuoteResponseTimeline({ customText, className = "" }: QuoteRespo
     const entries: ResponseEntry[] = [];
 
     for (const line of lines) {
-      // Format: "DD/MM/YYYY, HH:MM:SS - Action: message"
+      // Expected format: "DD/MM/YYYY, HH:MM:SS - Action type: optional message"
+      // Capture groups: 1=timestamp, 2=action text, 3=optional message
       const match = line.match(/^(.+?)\s*-\s*(.+?)(?::\s*(.+))?$/);
       if (match) {
         const [, timestamp, actionText, message] = match;

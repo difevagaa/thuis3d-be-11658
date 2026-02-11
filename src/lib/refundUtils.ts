@@ -41,7 +41,7 @@ export async function processOrderRefund(orderId: string, reason?: string): Prom
     }
 
     // Get invoice data to check for gift card payment
-    const invoice = order.invoices;
+    const invoice = Array.isArray(order.invoices) ? order.invoices[0] : order.invoices;
     let giftCardRestored = false;
     let restoredAmount = 0;
 
@@ -63,7 +63,9 @@ export async function processOrderRefund(orderId: string, reason?: string): Prom
         toast.error('No se pudo encontrar la tarjeta de regalo para restaurar el saldo');
       } else {
         // Restore gift card balance
-        const newBalance = parseFloat(giftCard.current_balance.toString()) + parseFloat(invoice.gift_card_amount.toString());
+        const currentBalance = Number(giftCard.current_balance);
+        const amountToRestore = Number(invoice.gift_card_amount);
+        const newBalance = currentBalance + amountToRestore;
         
         const { error: updateError } = await supabase
           .from('gift_cards')
@@ -78,7 +80,7 @@ export async function processOrderRefund(orderId: string, reason?: string): Prom
           toast.error('Error al restaurar el saldo de la tarjeta de regalo');
         } else {
           giftCardRestored = true;
-          restoredAmount = parseFloat(invoice.gift_card_amount.toString());
+          restoredAmount = Number(invoice.gift_card_amount);
           console.log('[REFUND] Gift card balance restored:', {
             previousBalance: giftCard.current_balance,
             restoredAmount,
@@ -117,10 +119,10 @@ export async function processOrderRefund(orderId: string, reason?: string): Prom
     };
 
     if (reason) {
+      const timestamp = new Date().toLocaleString('es-ES');
+      const refundNote = `[REEMBOLSO] ${timestamp}: ${reason}`;
       const currentNotes = order.notes || '';
-      updateData.notes = currentNotes 
-        ? `${currentNotes}\n\n[REEMBOLSO] ${new Date().toLocaleString('es-ES')}: ${reason}`
-        : `[REEMBOLSO] ${new Date().toLocaleString('es-ES')}: ${reason}`;
+      updateData.notes = currentNotes ? `${currentNotes}\n\n${refundNote}` : refundNote;
     }
 
     const { error: updateOrderError } = await supabase

@@ -200,21 +200,25 @@ export default function UserQuoteDetail() {
                 quote_id: quote.id,
                 status_name: statusData?.name || 'Aprobada',
                 status_slug: statusData?.slug || 'approved',
-                admin_name: quote.customer_name
+                admin_name: quote.customer_name // Used for notification purposes, represents who triggered the approval
               }
             }
           );
 
           if (!automationError && automationResult?.success) {
-            let successMessage = "✅ Tu respuesta ha sido enviada correctamente.";
+            const messageParts = ["✅ Tu respuesta ha sido enviada correctamente."];
+            
             if (automationResult.invoice) {
-              successMessage += `\n📄 Factura ${automationResult.invoice.invoice_number} generada automáticamente.`;
+              messageParts.push(`📄 Factura ${automationResult.invoice.invoice_number} generada automáticamente.`);
             }
+            
             if (automationResult.order) {
-              successMessage += `\n📦 Pedido ${automationResult.order.order_number} generado automáticamente.`;
+              messageParts.push(`📦 Pedido ${automationResult.order.order_number} generado automáticamente.`);
             }
-            successMessage += "\n\nPuedes proceder con el pago desde tu panel de facturas.";
-            i18nToast.directSuccess(successMessage);
+            
+            messageParts.push("\nPuedes proceder con el pago desde tu panel de facturas.");
+            
+            i18nToast.directSuccess(messageParts.join('\n'));
           } else {
             console.error("Automation error:", automationError);
             i18nToast.directSuccess("Tu respuesta se ha enviado correctamente. La factura y pedido se generarán automáticamente.");
