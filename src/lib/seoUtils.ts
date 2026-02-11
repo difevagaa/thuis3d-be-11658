@@ -1071,12 +1071,17 @@ export function generateImageAltText(
   const { imageName, productName, pageTitle, category, keywords } = context;
   
   // Extract meaningful information from filename if available
-  let baseName = imageName || productName || pageTitle || 'image';
+  let baseName = imageName || productName || pageTitle || 'product image';
   baseName = baseName
     .replace(/\.(jpg|jpeg|png|webp|gif|svg)$/i, '')
     .replace(/[-_]/g, ' ')
     .replace(/\d+/g, '')
     .trim();
+  
+  // If still generic, add more context
+  if (baseName === 'product image' && category) {
+    baseName = `${category} product`;
+  }
   
   // Detect business type from context
   const combinedText = `${baseName} ${category || ''} ${keywords?.join(' ') || ''}`;
@@ -1105,8 +1110,9 @@ export function generateImageAltText(
     ]
   };
   
-  // Choose a template
-  const template = templates[language][0];
+  // Choose a template with rotation for variety
+  const templateIndex = Math.floor(Math.random() * templates[language].length);
+  const template = templates[language][templateIndex];
   
   // Add industry context if available
   let altText = template;
