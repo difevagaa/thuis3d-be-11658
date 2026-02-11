@@ -196,38 +196,19 @@ export const createOrderItems = async (items: OrderItemData[]) => {
 };
 
 /**
- * Updates gift card balance after use with optimistic locking
- * Returns true if successful, false if balance was already modified (race condition)
+ * Updates gift card balance after use
  */
 export const updateGiftCardBalance = async (
   giftCardId: string,
-  newBalance: number,
-  expectedCurrentBalance?: number
+  newBalance: number
 ) => {
   try {
-    let query = supabase
+    const { error } = await supabase
       .from("gift_cards")
-      .update({ 
-        current_balance: newBalance,
-        updated_at: new Date().toISOString()
-      })
+      .update({ current_balance: newBalance })
       .eq("id", giftCardId);
 
-    // Add optimistic locking if expected balance provided
-    if (expectedCurrentBalance !== undefined) {
-      query = query.eq("current_balance", expectedCurrentBalance);
-    }
-
-    const { error, count } = await query;
-
     if (error) throw error;
-    
-    // If optimistic locking was used and no rows updated, balance changed
-    if (expectedCurrentBalance !== undefined && count === 0) {
-      logger.warn("Gift card balance changed by another transaction");
-      return false;
-    }
-
     return true;
   } catch (error) {
     logger.error("Error updating gift card balance:", error);
@@ -264,11 +245,11 @@ export const convertCartToOrderItems = (
       // New item, add to map
       itemsMap.set(uniqueKey, {
         orderId,
-        productId: productId || '', // Safely handle null - empty string for gift cards
+        productId: productId as string,
         productName: item.name,
         quantity: item.quantity,
-        unitPrice: Number(item.price) || 0, // Ensure number type
-        totalPrice: (Number(item.price) || 0) * item.quantity,
+        unitPrice: item.price,
+        totalPrice: item.price * item.quantity,
         selectedMaterial: item.materialId || null,
         selectedColor: item.colorId || null,
         customText: item.customText || null,
@@ -284,7 +265,6 @@ export const convertCartToOrderItems = (
  * Calculates order totals considering tax, discounts, and shipping.
  * Coupon discount is applied proportionally to the taxable amount before calculating tax.
  * Fixed coupon discounts are capped at the subtotal to prevent negative intermediates.
- * All calculations use proper number coercion to prevent string concatenation issues.
  */
 export const calculateOrderTotals = (
   cartItems: CartItem[],
@@ -293,27 +273,25 @@ export const calculateOrderTotals = (
   couponDiscount: number = 0,
   shippingCost: number = 0
 ) => {
-  // Ensure all inputs are numbers and calculate subtotal
   const subtotal = Number(cartItems.reduce(
-    (sum, item) => sum + (Number(item.price) * Number(item.quantity)),
+    (sum, item) => sum + (item.price * item.quantity),
     0
   ).toFixed(2));
 
   // Cap coupon discount at subtotal to avoid negative intermediates
-  const cappedCouponDiscount = Math.min(Number(couponDiscount), subtotal);
-  const discount = Number((Number(giftCardDiscount) + cappedCouponDiscount).toFixed(2));
+  const cappedCouponDiscount = Math.min(couponDiscount, subtotal);
+  const discount = Number((giftCardDiscount + cappedCouponDiscount).toFixed(2));
 
-  // Calculate taxable amount (excluding gift cards and non-taxable items)
   const taxableAmount = Number(cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
-    .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0).toFixed(2));
+    .reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
 
   // Apply coupon discount proportionally to the taxable amount before calculating tax
   const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
   const taxableAfterDiscount = Math.max(0, taxableAmount - (cappedCouponDiscount * discountRatio));
-  const tax = Number((taxableAfterDiscount * Number(taxRate)).toFixed(2));
+  const tax = Number((taxableAfterDiscount * taxRate).toFixed(2));
 
-  const shipping = Number(Number(shippingCost).toFixed(2));
+  const shipping = Number(shippingCost.toFixed(2));
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {
