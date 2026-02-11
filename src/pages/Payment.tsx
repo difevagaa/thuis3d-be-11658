@@ -294,6 +294,18 @@ export default function Payment() {
     return Number(Math.max(0, subtotal - couponDiscount + tax + effectiveShipping - giftCardAmount).toFixed(2));
   };
 
+  // Helper to calculate remaining balance after gift card for both orders and invoices
+  const calculateRemainingBalance = () => {
+    if (isInvoicePayment) {
+      const invoiceTotal = Number(shippingInfo.total || 0);
+      if (appliedGiftCard) {
+        return Math.max(0, invoiceTotal - Math.min(appliedGiftCard.current_balance, invoiceTotal));
+      }
+      return invoiceTotal;
+    }
+    return calculateTotal();
+  };
+
   const applyGiftCard = async () => {
     const validation = validateGiftCardCode(giftCardCode);
     if (!validation.isValid) {
@@ -1144,7 +1156,7 @@ export default function Payment() {
                       Quitar
                     </Button>
                   </div>
-                  {(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()) <= 0 && (
+                  {calculateRemainingBalance() <= 0 && (
                     <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <p className="text-sm font-medium text-green-800 dark:text-green-200">
                         ✓ Tu tarjeta de regalo cubre el total {isInvoicePayment ? "de la factura" : "de la compra"}
@@ -1158,10 +1170,10 @@ export default function Payment() {
                       </Button>
                     </div>
                   )}
-                  {(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()) > 0 && (
+                  {calculateRemainingBalance() > 0 && (
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-sm text-muted-foreground">
-                        Saldo restante a pagar: €{(isInvoicePayment ? (shippingInfo.total - Math.min(appliedGiftCard.current_balance, shippingInfo.total)) : calculateTotal()).toFixed(2)}
+                        Saldo restante a pagar: €{calculateRemainingBalance().toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Selecciona un método de pago para el saldo restante
@@ -1200,7 +1212,7 @@ export default function Payment() {
           )}
           
           {/* Only show payment methods if there's an amount to pay */}
-          {(isInvoicePayment ? shippingInfo.total : calculateTotal()) > 0 && (
+          {calculateRemainingBalance() > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
