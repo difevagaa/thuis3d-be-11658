@@ -55,7 +55,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is admin
+    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
+
+    // Check if user is admin OR is the quote owner
     const { data: adminRole } = await supabaseClient
       .from('user_roles')
       .select('role')
@@ -63,14 +65,34 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('role', 'admin')
       .maybeSingle();
 
-    if (!adminRole) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const isAdmin = !!adminRole;
+    
+    // If not admin, verify the user owns the quote
+    if (!isAdmin) {
+      const { data: quote, error: quoteError } = await supabaseClient
+        .from('quotes')
+        .select('user_id, customer_email')
+        .eq('id', quote_id)
+        .maybeSingle();
+      
+      if (quoteError || !quote) {
+        return new Response(
+          JSON.stringify({ error: 'Quote not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Check if user owns the quote (by user_id or email)
+      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
+      const isQuoteOwner = quote.user_id === user.id || quote.customer_email === authUser?.email;
+      
+      if (!isQuoteOwner) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: You can only approve your own quotes' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
-
-    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
 
     console.log('[QUOTE APPROVAL] Processing quote:', quote_id, 'Status:', status_name);
 
