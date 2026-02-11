@@ -168,10 +168,11 @@ const Cart = () => {
     if (appliedCoupon.discount_type === "percentage") {
       discount = subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      discount = appliedCoupon.discount_value;
+      discount = Math.min(appliedCoupon.discount_value, subtotal);
     }
     // free_shipping type: discount stays 0, shipping handled in PaymentSummary
   }
+  discount = Number(discount.toFixed(2));
   
   // IMPORTANTE: IVA solo se aplica a productos con tax_enabled=true (no tarjetas de regalo)
   // Calcular IVA SIN considerar gift card para evitar dependencia circular

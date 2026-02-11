@@ -71,9 +71,10 @@ export default function PaymentInstructions() {
           if (couponData.discount_type === "percentage") {
             couponDiscount = orderSubtotal * (couponData.discount_value / 100);
           } else if (couponData.discount_type === "fixed") {
-            couponDiscount = couponData.discount_value;
+            couponDiscount = Math.min(couponData.discount_value, orderSubtotal);
           }
           // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
+          couponDiscount = Number(couponDiscount.toFixed(2));
         } catch (e) {
           logger.error("Error parsing coupon:", e);
         }

@@ -167,13 +167,14 @@ export default function PaymentSummary() {
     if (!appliedCoupon) return 0;
     
     const subtotal = calculateSubtotal();
+    let discount = 0;
     if (appliedCoupon.discount_type === "percentage") {
-      return subtotal * (appliedCoupon.discount_value / 100);
+      discount = subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      return appliedCoupon.discount_value;
+      discount = Math.min(appliedCoupon.discount_value, subtotal);
     }
     // free_shipping type: no monetary discount on products, shipping is set to 0 separately
-    return 0;
+    return Number(discount.toFixed(2));
   };
 
   const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";

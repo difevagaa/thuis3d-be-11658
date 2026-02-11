@@ -232,6 +232,7 @@ export default function Payment() {
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   // CRITICAL: Sin gift card en el cálculo de IVA para evitar dependencia circular
+  // Coupon discount is applied proportionally to the taxable amount before calculating tax
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
     if (subtotal === 0) return 0;
@@ -244,9 +245,16 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
+    if (taxableAmount === 0) return 0;
+
+    // Apply coupon discount proportionally to the taxable amount
+    const couponDisc = calculateCouponDiscount();
+    const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+    const taxableAfterDiscount = Math.max(0, taxableAmount - (couponDisc * discountRatio));
+
     // Use tax rate from settings
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((taxableAmount * taxRate).toFixed(2));
+    return Number((taxableAfterDiscount * taxRate).toFixed(2));
   };
 
   // Calcular descuento por cupón
@@ -255,13 +263,14 @@ export default function Payment() {
   const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     const subtotal = calculateSubtotal();
+    let discount = 0;
     if (appliedCoupon.discount_type === "percentage") {
-      return subtotal * (appliedCoupon.discount_value / 100);
+      discount = subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      return appliedCoupon.discount_value;
+      discount = Math.min(appliedCoupon.discount_value, subtotal);
     }
     // free_shipping: no monetary discount on products
-    return 0;
+    return Number(discount.toFixed(2));
   };
 
   const calculateGiftCardAmount = () => {
@@ -716,10 +725,11 @@ export default function Payment() {
         
         if (savedGiftCard) {
           giftCardData = JSON.parse(savedGiftCard);
-          giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
+          // CRITICAL: Use totalBeforeGiftCard to correctly calculate how much the gift card covers
+          giftCardDiscount = Number(Math.min(giftCardData.current_balance, Math.max(0, totalBeforeGiftCard)).toFixed(2));
         }
 
-        const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+        const finalTotal = Number(Math.max(0, totalBeforeGiftCard - giftCardDiscount).toFixed(2));
 
         // Preparar notas del pedido
         const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
@@ -983,6 +993,15 @@ export default function Payment() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
+                    {appliedCoupon && !isFreeShippingCoupon && (
+                      <div className="flex justify-between text-green-600">
+                        <span className="flex items-center gap-1">
+                          <Gift className="h-4 w-4" />
+                          {t('cart:summary.discount')} ({appliedCoupon.code})
+                        </span>
+                        <span className="font-semibold">-€{calculateCouponDiscount().toFixed(2)}</span>
+                      </div>
+                    )}
                     {appliedGiftCard && (
                       <div className="flex justify-between text-blue-600">
                         <span className="flex items-center gap-1">
@@ -992,10 +1011,17 @@ export default function Payment() {
                         <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Envío</span>
-                      <span>€{shippingCost.toFixed(2)}</span>
-                    </div>
+                    {isFreeShippingCoupon ? (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('cart:summary.shipping', 'Envío')} ({appliedCoupon.code})</span>
+                        <span className="font-semibold">{t('cart:freeShipping', 'Envío Gratis')}</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Envío</span>
+                        <span>€{shippingCost.toFixed(2)}</span>
+                      </div>
+                    )}
                     {(() => {
                       const tax = calculateTax();
                       const total = calculateTotal();
