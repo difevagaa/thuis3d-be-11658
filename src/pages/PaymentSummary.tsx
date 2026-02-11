@@ -13,6 +13,7 @@ import { Tag, Gift } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { processGiftCardPayment, createInvoiceForOrder } from "@/lib/paymentUtils";
 
 interface CartItem {
   id: string;
@@ -290,68 +291,24 @@ export default function PaymentSummary() {
 
         if (orderError) throw orderError;
 
-        // CRITICAL: Re-validate gift card from database before updating
-        const { data: freshGiftCard, error: freshGiftCardError } = await supabase
-          .from("gift_cards")
-          .select("*")
-          .eq("id", appliedGiftCard.id)
-          .eq("is_active", true)
-          .is("deleted_at", null)
-          .maybeSingle();
+        // CRITICAL: Process gift card payment using unified function
+        const giftCardResult = await processGiftCardPayment(
+          appliedGiftCard.id,
+          giftCardAmount,
+          'CART_PAYMENT'
+        );
 
-        if (freshGiftCardError || !freshGiftCard) {
-          logger.error('[PAYMENT SUMMARY] Gift card no longer valid:', freshGiftCardError);
+        if (!giftCardResult.success) {
+          logger.error('[PAYMENT SUMMARY] Gift card payment failed:', giftCardResult);
           // Rollback: delete created order
           const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
           if (rollbackError) {
-            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after invalid gift card:', rollbackError);
+            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed:', rollbackError);
           }
-          throw new Error('La tarjeta de regalo ya no es válida');
+          throw new Error(giftCardResult.error || 'Error al procesar la tarjeta de regalo');
         }
 
-        // Check if gift card has sufficient balance
-        if (freshGiftCard.current_balance < giftCardAmount) {
-          // Rollback: delete created order
-          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
-          if (rollbackError) {
-            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after insufficient balance:', rollbackError);
-          }
-          throw new Error(`Saldo insuficiente en tarjeta de regalo. Disponible: €${freshGiftCard.current_balance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`);
-        }
-
-        // Actualizar balance de tarjeta de regalo con optimistic locking
-        const newBalance = Number(Math.max(0, freshGiftCard.current_balance - giftCardAmount).toFixed(2));
-        const { error: giftCardError, count: giftCardUpdateCount } = await supabase
-          .from("gift_cards")
-          .update({ 
-            current_balance: newBalance,
-            updated_at: new Date().toISOString()
-          }, { count: 'exact' })
-          .eq("id", freshGiftCard.id)
-          .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
-
-        if (giftCardError) {
-          logger.error('[PAYMENT SUMMARY] Error updating gift card:', giftCardError);
-          // Rollback: delete created order
-          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
-          if (rollbackError) {
-            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after gift card update error:', rollbackError);
-          }
-          throw new Error('Error al actualizar el saldo de la tarjeta: ' + giftCardError.message);
-        }
-
-        // CRITICAL: Check if optimistic locking prevented the update
-        if (giftCardUpdateCount === 0) {
-          logger.error('[PAYMENT SUMMARY] Optimistic locking failed - balance changed');
-          // Rollback: delete created order
-          const { error: rollbackError } = await supabase.from("orders").delete().eq("id", order.id);
-          if (rollbackError) {
-            logger.error('[PAYMENT SUMMARY] CRITICAL: Rollback failed after optimistic locking failure:', rollbackError);
-          }
-          throw new Error('El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta.');
-        }
-
-        logger.log('[PAYMENT SUMMARY] Gift card balance updated successfully');
+        logger.log('[PAYMENT SUMMARY] Gift card payment processed successfully');
 
         // Crear items del pedido
         const orderItemsData = cartItems.map(item => ({
@@ -380,32 +337,27 @@ export default function PaymentSummary() {
             .eq("id", appliedCoupon.id);
         }
 
-        // Crear factura automáticamente
-        try {
-          const invoiceNote = `Factura generada automáticamente para el pedido ${order.order_number} - Pagado con tarjeta de regalo`;
-          
-          await supabase.from("invoices").insert({
-            invoice_number: order.order_number,
-            user_id: user.id,
-            order_id: order.id,
-            subtotal: subtotal,
-            tax: tax,
-            shipping: effectiveShipping,
-            discount: discount + giftCardAmount,
-            coupon_discount: isFreeShippingCoupon ? 0 : discount,
-            coupon_code: appliedCoupon?.code || null,
-            gift_card_code: appliedGiftCard?.code || null,
-            gift_card_amount: giftCardAmount || 0,
-            total: 0,
-            payment_method: "gift_card",
-            payment_status: "paid", // CRITICAL: Invoice also marked as PAID
-            issue_date: new Date().toISOString(),
-            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            notes: invoiceNote
-          });
-        } catch (invoiceError) {
-          logger.error('Error creating invoice:', invoiceError);
-          // No lanzar error, continuar con el flujo
+        // CRITICAL: Create invoice automatically using unified function
+        const invoice = await createInvoiceForOrder(order.id, {
+          order_number: order.order_number,
+          user_id: user.id,
+          subtotal: subtotal,
+          tax: tax,
+          total: 0, // Paid completely with gift card
+          shipping: effectiveShipping,
+          discount: discount + giftCardAmount,
+          payment_status: 'paid',
+          payment_method: 'gift_card',
+          gift_card_code: appliedGiftCard?.code || null,
+          gift_card_amount: giftCardAmount || 0,
+          coupon_code: appliedCoupon?.code || null,
+          coupon_discount: isFreeShippingCoupon ? 0 : discount,
+          notes: `Pedido pagado completamente con tarjeta de regalo ${appliedGiftCard?.code}`
+        });
+
+        if (!invoice) {
+          logger.error('[PAYMENT SUMMARY] Warning: Invoice creation failed, but order was created');
+          // Continue - invoice can be created manually by admin if needed
         }
 
         // Enviar correo de confirmación al cliente
