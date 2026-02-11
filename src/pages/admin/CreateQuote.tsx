@@ -452,30 +452,10 @@ export default function CreateQuote() {
                   <SelectValue placeholder="Selecciona el tipo de servicio..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Archivo 3D">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">Archivo 3D</span>
-                      <span className="text-xs text-muted-foreground">Impresión de modelos 3D existentes</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Servicio">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">Servicio</span>
-                      <span className="text-xs text-muted-foreground">Trabajo personalizado o consultoría</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Diseño">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">Diseño</span>
-                      <span className="text-xs text-muted-foreground">Creación de modelos 3D desde cero</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Reparación">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">Reparación</span>
-                      <span className="text-xs text-muted-foreground">Arreglo de piezas dañadas</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="Archivo 3D">Archivo 3D - Impresión de modelos existentes</SelectItem>
+                  <SelectItem value="Servicio">Servicio - Trabajo personalizado</SelectItem>
+                  <SelectItem value="Diseño">Diseño - Creación de modelos 3D</SelectItem>
+                  <SelectItem value="Reparación">Reparación - Arreglo de piezas dañadas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
