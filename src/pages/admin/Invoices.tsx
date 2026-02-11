@@ -505,7 +505,7 @@ export default function Invoices() {
           .update({ 
             current_balance: newBalance,
             updated_at: new Date().toISOString()
-          })
+          }, { count: 'exact' })
           .eq("id", giftCardData.id)
           .eq("current_balance", currentBalance); // Optimistic lock
         

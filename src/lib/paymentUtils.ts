@@ -210,7 +210,7 @@ export const updateGiftCardBalance = async (
       .update({ 
         current_balance: newBalance,
         updated_at: new Date().toISOString()
-      })
+      }, { count: 'exact' })
       .eq("id", giftCardId);
 
     // Add optimistic locking if expected balance provided

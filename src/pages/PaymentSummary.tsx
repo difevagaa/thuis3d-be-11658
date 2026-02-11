@@ -326,7 +326,7 @@ export default function PaymentSummary() {
           .update({ 
             current_balance: newBalance,
             updated_at: new Date().toISOString()
-          })
+          }, { count: 'exact' })
           .eq("id", freshGiftCard.id)
           .eq("current_balance", freshGiftCard.current_balance); // Optimistic locking
 
