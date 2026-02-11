@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
 
 export default function Messages() {
+  const [searchParams] = useSearchParams();
   const [messages, setMessages] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
@@ -33,6 +35,20 @@ export default function Messages() {
     loadMessages();
     loadUsers();
 
+    // Check for URL parameters to pre-fill compose dialog
+    const userId = searchParams.get('userId');
+    const userName = searchParams.get('userName');
+    const userEmail = searchParams.get('userEmail');
+    
+    if (userId) {
+      setNewMessage({
+        recipient_id: userId,
+        subject: `Consulta sobre cotización - ${userName || userEmail || 'Cliente'}`,
+        message: `Hola ${userName || 'Cliente'},\n\nNos ponemos en contacto contigo para...\n\n`
+      });
+      setShowComposeDialog(true);
+    }
+
     // Realtime subscription
     const channel = supabase
       .channel('messages-changes')
@@ -48,7 +64,7 @@ export default function Messages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [searchParams]);
 
   const loadMessages = async () => {
     try {
