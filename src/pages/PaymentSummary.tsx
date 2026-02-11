@@ -340,6 +340,8 @@ export default function PaymentSummary() {
             discount: discount + giftCardAmount,
             coupon_discount: isFreeShippingCoupon ? 0 : discount,
             coupon_code: appliedCoupon?.code || null,
+            gift_card_code: appliedGiftCard?.code || null,
+            gift_card_amount: giftCardAmount || 0,
             total: 0,
             payment_method: "gift_card",
             payment_status: "paid", // CRITICAL: Invoice also marked as PAID

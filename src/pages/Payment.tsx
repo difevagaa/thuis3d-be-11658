@@ -489,6 +489,8 @@ export default function Payment() {
         .update({
           payment_status: remainingTotal <= 0 ? "paid" : "pending",
           payment_method: "gift_card",
+          gift_card_code: appliedGiftCard.code,
+          gift_card_amount: giftCardAmount,
           notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
         })
         .eq("id", invoiceData.invoiceId)
@@ -859,6 +861,8 @@ export default function Payment() {
             discount: couponDiscount + giftCardDiscount,
             coupon_discount: isFreeShippingCoupon ? 0 : couponDiscount,
             coupon_code: appliedCoupon?.code || null,
+            gift_card_code: giftCardData?.code || null,
+            gift_card_amount: giftCardDiscount || 0,
             total: finalTotal,
             payment_method: "paypal",
             payment_status: "pending", // CRÍTICO: SIEMPRE pending
