@@ -387,7 +387,6 @@ export default function Payment() {
         .insert([{
           user_id: user.id,
           order_number: orderNumber,
-          status: "pending",
           payment_status: "paid",
           payment_method: "gift_card",
           subtotal: subtotal,
@@ -395,7 +394,8 @@ export default function Payment() {
           tax: tax,
           discount: couponDisc + giftCardAmount,
           total: total,
-          shipping_info: shippingInfo,
+          shipping_address: JSON.stringify(shippingInfo),
+          billing_address: JSON.stringify(shippingInfo),
           notes: `Pedido pagado completamente con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})${appliedCoupon ? `\nCupón aplicado: ${appliedCoupon.code}` : ''}`
         }])
         .select()
@@ -862,7 +862,6 @@ export default function Payment() {
           .insert([{
             user_id: user.id,
             order_number: orderNumber,
-            status: "pending",
             payment_status: "pending",
             payment_method: "bank_transfer",
             subtotal: subtotal,
@@ -870,7 +869,8 @@ export default function Payment() {
             tax: tax,
             discount: couponDiscount, // Only coupon discount, gift card is NOT processed yet for bank transfer
             total: totalBeforeGiftCard,
-            shipping_info: shippingInfo,
+            shipping_address: JSON.stringify(shippingInfo),
+            billing_address: JSON.stringify(shippingInfo),
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
           }])
           .select()
@@ -976,7 +976,6 @@ export default function Payment() {
           .insert([{
             user_id: user.id,
             order_number: orderNumber,
-            status: "pending",
             payment_status: "pending",
             payment_method: "card",
             subtotal: subtotal,
@@ -984,7 +983,8 @@ export default function Payment() {
             tax: tax,
             discount: couponDiscount, // Only coupon discount, gift card handled separately
             total: totalBeforeGiftCard,
-            shipping_info: shippingInfo,
+            shipping_address: JSON.stringify(shippingInfo),
+            billing_address: JSON.stringify(shippingInfo),
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
           }])
           .select()
@@ -1091,7 +1091,6 @@ export default function Payment() {
           .insert([{
             user_id: user.id,
             order_number: orderNumber,
-            status: "pending",
             payment_status: "pending",
             payment_method: "revolut",
             subtotal: subtotal,
@@ -1099,7 +1098,8 @@ export default function Payment() {
             tax: tax,
             discount: couponDiscount, // Only coupon discount, gift card handled separately
             total: totalBeforeGiftCard,
-            shipping_info: shippingInfo,
+            shipping_address: JSON.stringify(shippingInfo),
+            billing_address: JSON.stringify(shippingInfo),
             notes: appliedCoupon ? `Cupón aplicado: ${appliedCoupon.code}` : null
           }])
           .select()
