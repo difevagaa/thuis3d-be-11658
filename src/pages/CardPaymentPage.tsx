@@ -12,8 +12,9 @@ import {
   createOrderItems, 
   convertCartToOrderItems,
   generateOrderNotes,
-  updateGiftCardBalance
+  processGiftCardPayment
 } from "@/lib/paymentUtils";
+import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
 
 export default function CardPaymentPage() {
   const navigate = useNavigate();
@@ -66,27 +67,12 @@ export default function CardPaymentPage() {
 
   const loadPaymentConfig = useCallback(async () => {
     try {
-      const settingKeys = ['revolut_link', 'card_payment_link', 'payment_images'];
-      const { data } = await supabase
-        .from("site_settings")
-        .select("*")
-        .in("setting_key", settingKeys);
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-        data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else {
-            settings[setting.setting_key] = setting.setting_value;
-          }
-        });
-        setPaymentConfig(settings);
-      }
+      const settings = await loadSpecificPaymentSettings(['revolut_link', 'card_payment_link', 'payment_images']);
+      setPaymentConfig({
+        card_payment_link: settings.card_payment_link || '',
+        revolut_link: settings.revolut_link || ''
+      });
+      setPaymentImages(settings.payment_images || []);
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }
@@ -127,6 +113,12 @@ export default function CardPaymentPage() {
   }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.log('[CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     
     try {
@@ -235,12 +227,26 @@ export default function CardPaymentPage() {
         throw new Error(t('payment:messages.errorProcessingOrder'));
       }
 
-      // Update gift card balance if used
+      // CRITICAL: Process gift card using unified function with optimistic locking
       if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
+        const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardDiscount,
+          'CARD_PAYMENT'
         );
+
+        if (!giftCardResult.success) {
+          logger.error('[CARD PAYMENT] Gift card processing failed:', giftCardResult);
+          // Rollback: delete created order and items
+          await supabase.from("order_items").delete().eq("order_id", order.id);
+          await supabase.from("orders").delete().eq("id", order.id);
+          
+          i18nToast.error("error.giftCardProcessing");
+          setProcessing(false);
+          return;
+        }
+        
+        logger.log('[CARD PAYMENT] Gift card processed successfully');
         sessionStorage.removeItem("applied_gift_card");
       }
 

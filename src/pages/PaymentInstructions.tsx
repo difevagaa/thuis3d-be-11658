@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, updateGiftCardBalance } from "@/lib/paymentUtils";
+import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, processGiftCardPayment } from "@/lib/paymentUtils";
+import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -114,12 +115,27 @@ export default function PaymentInstructions() {
 
       logger.info('Order items created:', insertedItems.length);
 
-      // Update gift card balance if used
+      // CRITICAL: Process gift card using unified function with optimistic locking
       if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
+        const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardDiscount,
+          'BANK_TRANSFER_PAYMENT'
         );
+
+        if (!giftCardResult.success) {
+          logger.error('[BANK TRANSFER PAYMENT] Gift card processing failed:', giftCardResult);
+          // Rollback: delete created order and items
+          await supabase.from("order_items").delete().eq("order_id", order.id);
+          await supabase.from("orders").delete().eq("id", order.id);
+          
+          toast.error(t('payment:messages.giftCardError', 'Error al procesar la tarjeta de regalo'));
+          setCreatingOrder(false);
+          navigate("/pago");
+          return;
+        }
+        
+        logger.log('[BANK TRANSFER PAYMENT] Gift card processed successfully');
         sessionStorage.removeItem("applied_gift_card");
       }
 
@@ -259,34 +275,15 @@ export default function PaymentInstructions() {
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer solo las claves de configuración de pago relevantes, igual que en el panel admin
-      const settingKeys = [
+      const settings = await loadSpecificPaymentSettings([
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
         'company_info', 'payment_images'
-      ];
-
-      const { data } = await supabase
-        .from("site_settings")
-        .select("*")
-        .in("setting_key", settingKeys);
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-
-        data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else {
-            settings[setting.setting_key] = setting.setting_value;
-          }
-        });
-
-        setPaymentConfig(settings);
-      }
+      ]);
+      
+      // Separate payment_images from other settings
+      const { payment_images, ...otherSettings } = settings;
+      setPaymentConfig(otherSettings);
+      setPaymentImages(payment_images || []);
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }

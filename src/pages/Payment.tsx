@@ -21,6 +21,7 @@ import {
   processGiftCardPayment,
   createInvoiceForOrder
 } from "@/lib/paymentUtils";
+import { loadPaymentConfig } from "@/lib/paymentConfigUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
@@ -57,48 +58,14 @@ export default function Payment() {
   const { taxSettings, calculateTax: calculateTaxFromSettings } = useTaxSettings();
 
   useEffect(() => {
-    loadPaymentConfig();
+    loadPaymentConfigInternal();
   }, []);
 
-  const loadPaymentConfig = async () => {
+  const loadPaymentConfigInternal = async () => {
     try {
-      // Leer solo las claves de configuración de pago que usamos en todo el sistema
-      const settingKeys = [
-        'bank_transfer_enabled', 'card_enabled', 'paypal_enabled', 'revolut_enabled',
-        'paypal_email', 'revolut_link', 'company_info', 'payment_images'
-      ];
-
-      const { data } = await supabase
-        .from("site_settings")
-        .select("*")
-        .in("setting_key", settingKeys);
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-        data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else if (setting.setting_key.includes('enabled')) {
-            settings[setting.setting_key] = setting.setting_value === "true";
-          } else {
-            settings[setting.setting_key] = setting.setting_value;
-          }
-        });
-
-        setPaymentConfig({
-          bank_transfer_enabled: settings.bank_transfer_enabled ?? true,
-          card_enabled: settings.card_enabled ?? true,
-          paypal_enabled: settings.paypal_enabled ?? false,
-          revolut_enabled: settings.revolut_enabled ?? false,
-          paypal_email: settings.paypal_email || "",
-          revolut_link: settings.revolut_link || "",
-          company_info: settings.company_info || ""
-        });
-      }
+      const result = await loadPaymentConfig(true);
+      setPaymentConfig(result.config);
+      setPaymentImages(result.images);
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }
@@ -392,6 +359,12 @@ export default function Payment() {
   };
 
   const processGiftCardOnlyPayment = async () => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.warn('[GIFT CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -514,6 +487,12 @@ export default function Payment() {
   };
 
   const processInvoiceGiftCardPayment = async () => {
+    // Prevent double-clicking and duplicate payments
+    if (processing) {
+      logger.warn('[INVOICE GIFT CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -704,6 +683,12 @@ export default function Payment() {
   };
 
   const handlePayment = async (method: string) => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.warn('[PAYMENT] Already processing payment, ignoring duplicate click');
+      return;
+    }
+    
     // Check if gift card covers the total amount
     const total = calculateTotal();
     const giftCardAmount = calculateGiftCardAmount();
