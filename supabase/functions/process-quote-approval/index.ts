@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 function escapeHtml(text: string): string {
@@ -55,7 +55,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is admin
+    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
+
+    // Check if user is admin OR is the quote owner
     const { data: adminRole } = await supabaseClient
       .from('user_roles')
       .select('role')
@@ -63,14 +65,34 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('role', 'admin')
       .maybeSingle();
 
-    if (!adminRole) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const isAdmin = !!adminRole;
+    
+    // If not admin, verify the user owns the quote
+    if (!isAdmin) {
+      const { data: quote, error: quoteError } = await supabaseClient
+        .from('quotes')
+        .select('user_id, customer_email')
+        .eq('id', quote_id)
+        .maybeSingle();
+      
+      if (quoteError || !quote) {
+        return new Response(
+          JSON.stringify({ error: 'Quote not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Check if user owns the quote (by user_id or email)
+      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
+      const isQuoteOwner = quote.user_id === authUser?.id || quote.customer_email === authUser?.email;
+      
+      if (!isQuoteOwner) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: You can only approve your own quotes' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
-
-    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
 
     console.log('[QUOTE APPROVAL] Processing quote:', quote_id, 'Status:', status_name);
 
@@ -152,17 +174,36 @@ const handler = async (req: Request): Promise<Response> => {
     let invoiceId = existingInvoice?.id;
 
     if (!existingInvoice) {
-      // Get next invoice number
-      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
-        .rpc('generate_next_invoice_number');
+      // Generate unique invoice number with retry logic
+      let invoiceGenAttempts = 0;
+      const maxAttempts = 5;
+      while (invoiceGenAttempts < maxAttempts) {
+        const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+          .rpc('generate_invoice_number');
 
-      if (invoiceNumError) {
-        console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
-        throw new Error('Failed to generate invoice number');
+        if (invoiceNumError) {
+          console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
+          throw new Error('Failed to generate invoice number');
+        }
+
+        invoiceNumber = nextInvoiceNumber;
+        console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
+
+        // Check uniqueness before inserting
+        const { data: existing } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('invoice_number', invoiceNumber)
+          .maybeSingle();
+
+        if (!existing) break; // Unique number found
+        invoiceGenAttempts++;
+        console.log('[QUOTE APPROVAL] Invoice number collision, retrying...', invoiceGenAttempts);
       }
 
-      invoiceNumber = nextInvoiceNumber;
-      console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
+      if (invoiceGenAttempts >= maxAttempts) {
+        throw new Error('Failed to generate unique invoice number after multiple attempts');
+      }
 
       // Create invoice
       const { data: newInvoice, error: invoiceError } = await supabase
@@ -241,6 +282,8 @@ const handler = async (req: Request): Promise<Response> => {
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+      const fileInfo = quote.file_storage_path ? ` | Archivo: ${quote.file_storage_path}` : '';
+      const quoteNum = quote.quote_number ? ` #${quote.quote_number}` : '';
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -252,7 +295,7 @@ const handler = async (req: Request): Promise<Response> => {
           discount: 0,
           shipping: shippingCost,
           total: total,
-          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
+          notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${quote.quote_type})${fileInfo}`,
           admin_notes: quoteMarker,
           shipping_address: addressParts || null,
           billing_address: addressParts || null,

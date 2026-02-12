@@ -219,9 +219,6 @@ export default function GiftCard() {
         }
       }
 
-      // CRÍTICO: Limpiar invoice_payment al comprar tarjeta de regalo
-      sessionStorage.removeItem("invoice_payment");
-      
       toast.success("Tarjeta creada. Redirigiendo al pago...");
       navigate("/pago");
       

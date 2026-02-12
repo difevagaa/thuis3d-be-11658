@@ -1373,8 +1373,6 @@ export type Database = {
       }
       gift_cards: {
         Row: {
-          buyer_email: string | null
-          buyer_id: string | null
           code: string
           created_at: string | null
           current_balance: number
@@ -1389,8 +1387,6 @@ export type Database = {
           tax_enabled: boolean | null
         }
         Insert: {
-          buyer_email?: string | null
-          buyer_id?: string | null
           code: string
           created_at?: string | null
           current_balance: number
@@ -1405,8 +1401,6 @@ export type Database = {
           tax_enabled?: boolean | null
         }
         Update: {
-          buyer_email?: string | null
-          buyer_id?: string | null
           code?: string
           created_at?: string | null
           current_balance?: number

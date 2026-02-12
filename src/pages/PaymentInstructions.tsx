@@ -135,6 +135,8 @@ export default function PaymentInstructions() {
         discount: couponDiscount + giftCardDiscount,
         coupon_discount: couponData?.discount_type === "free_shipping" ? 0 : couponDiscount,
         coupon_code: couponData?.code || null,
+        gift_card_code: giftCardData?.code || null,
+        gift_card_amount: giftCardDiscount || 0,
         total: finalTotal,
         payment_method: method,
         payment_status: "pending",

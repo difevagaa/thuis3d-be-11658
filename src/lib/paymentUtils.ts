@@ -196,19 +196,38 @@ export const createOrderItems = async (items: OrderItemData[]) => {
 };
 
 /**
- * Updates gift card balance after use
+ * Updates gift card balance after use with optimistic locking
+ * Returns true if successful, false if balance was already modified (race condition)
  */
 export const updateGiftCardBalance = async (
   giftCardId: string,
-  newBalance: number
+  newBalance: number,
+  expectedCurrentBalance?: number
 ) => {
   try {
-    const { error } = await supabase
+    let query = supabase
       .from("gift_cards")
-      .update({ current_balance: newBalance })
+      .update({ 
+        current_balance: newBalance,
+        updated_at: new Date().toISOString()
+      }, { count: 'exact' })
       .eq("id", giftCardId);
 
+    // Add optimistic locking if expected balance provided
+    if (expectedCurrentBalance !== undefined) {
+      query = query.eq("current_balance", expectedCurrentBalance);
+    }
+
+    const { error, count } = await query;
+
     if (error) throw error;
+    
+    // If optimistic locking was used and no rows updated, balance changed
+    if (expectedCurrentBalance !== undefined && count === 0) {
+      logger.warn("Gift card balance changed by another transaction");
+      return false;
+    }
+
     return true;
   } catch (error) {
     logger.error("Error updating gift card balance:", error);
@@ -245,11 +264,11 @@ export const convertCartToOrderItems = (
       // New item, add to map
       itemsMap.set(uniqueKey, {
         orderId,
-        productId: productId as string,
+        productId: productId || '', // Safely handle null - empty string for gift cards
         productName: item.name,
         quantity: item.quantity,
-        unitPrice: item.price,
-        totalPrice: item.price * item.quantity,
+        unitPrice: Number(item.price) || 0, // Ensure number type
+        totalPrice: (Number(item.price) || 0) * item.quantity,
         selectedMaterial: item.materialId || null,
         selectedColor: item.colorId || null,
         customText: item.customText || null,
@@ -265,6 +284,7 @@ export const convertCartToOrderItems = (
  * Calculates order totals considering tax, discounts, and shipping.
  * Coupon discount is applied proportionally to the taxable amount before calculating tax.
  * Fixed coupon discounts are capped at the subtotal to prevent negative intermediates.
+ * All calculations use proper number coercion to prevent string concatenation issues.
  */
 export const calculateOrderTotals = (
   cartItems: CartItem[],
@@ -273,25 +293,27 @@ export const calculateOrderTotals = (
   couponDiscount: number = 0,
   shippingCost: number = 0
 ) => {
+  // Ensure all inputs are numbers and calculate subtotal
   const subtotal = Number(cartItems.reduce(
-    (sum, item) => sum + (item.price * item.quantity),
+    (sum, item) => sum + (Number(item.price) * Number(item.quantity)),
     0
   ).toFixed(2));
 
   // Cap coupon discount at subtotal to avoid negative intermediates
-  const cappedCouponDiscount = Math.min(couponDiscount, subtotal);
-  const discount = Number((giftCardDiscount + cappedCouponDiscount).toFixed(2));
+  const cappedCouponDiscount = Math.min(Number(couponDiscount), subtotal);
+  const discount = Number((Number(giftCardDiscount) + cappedCouponDiscount).toFixed(2));
 
+  // Calculate taxable amount (excluding gift cards and non-taxable items)
   const taxableAmount = Number(cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
-    .reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
+    .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0).toFixed(2));
 
   // Apply coupon discount proportionally to the taxable amount before calculating tax
   const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
   const taxableAfterDiscount = Math.max(0, taxableAmount - (cappedCouponDiscount * discountRatio));
-  const tax = Number((taxableAfterDiscount * taxRate).toFixed(2));
+  const tax = Number((taxableAfterDiscount * Number(taxRate)).toFixed(2));
 
-  const shipping = Number(shippingCost.toFixed(2));
+  const shipping = Number(Number(shippingCost).toFixed(2));
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {
@@ -384,5 +406,225 @@ export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<v
     }
   } catch (error) {
     logger.error('Error updating invoice status:', error);
+  }
+};
+
+/**
+ * Creates an invoice automatically for an order
+ * This ensures ALL orders have corresponding invoices for customer payment tracking
+ * 
+ * @param orderId - The order ID
+ * @param orderData - Order details (subtotal, tax, total, payment_status, etc)
+ * @returns The created invoice or null if error
+ */
+export const createInvoiceForOrder = async (
+  orderId: string,
+  orderData: {
+    order_number?: string;
+    user_id: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+    shipping?: number;
+    discount?: number;
+    payment_status: string;
+    payment_method?: string;
+    gift_card_code?: string;
+    gift_card_amount?: number;
+    coupon_code?: string;
+    coupon_discount?: number;
+    notes?: string;
+  }
+): Promise<any> => {
+  try {
+    logger.log('[CREATE INVOICE] Creating invoice for order:', orderId);
+
+    // Check if invoice already exists for this order
+    const { data: existingInvoice } = await supabase
+      .from("invoices")
+      .select("id, invoice_number")
+      .eq("order_id", orderId)
+      .maybeSingle();
+
+    if (existingInvoice) {
+      logger.log('[CREATE INVOICE] Invoice already exists:', existingInvoice.invoice_number);
+      return existingInvoice;
+    }
+
+    // Generate invoice number (use order number as base or generate new)
+    const invoiceNumber = orderData.order_number || generateOrderNumber();
+
+    // Create invoice
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .insert({
+        invoice_number: invoiceNumber,
+        order_id: orderId,
+        user_id: orderData.user_id,
+        issue_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        payment_status: orderData.payment_status || 'pending',
+        payment_method: orderData.payment_method || null,
+        subtotal: orderData.subtotal,
+        tax: orderData.tax || 0,
+        total: orderData.total,
+        shipping: orderData.shipping || 0,
+        discount: orderData.discount || 0,
+        gift_card_code: orderData.gift_card_code || null,
+        gift_card_amount: orderData.gift_card_amount || 0,
+        coupon_code: orderData.coupon_code || null,
+        coupon_discount: orderData.coupon_discount || 0,
+        notes: orderData.notes || `Factura generada automáticamente para pedido ${orderData.order_number || orderId}`
+      })
+      .select()
+      .single();
+
+    if (invoiceError) {
+      logger.error('[CREATE INVOICE] Error creating invoice:', invoiceError);
+      return null;
+    }
+
+    logger.log('[CREATE INVOICE] Invoice created successfully:', invoice.invoice_number);
+
+    // Send notification to user
+    if (orderData.user_id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: orderData.user_id,
+          type: 'invoice_created',
+          title: '📄 Factura Generada',
+          message: `Se ha generado la factura ${invoiceNumber} para tu pedido. Total: €${orderData.total.toFixed(2)}`,
+          link: `/mi-cuenta?tab=invoices`,
+          is_read: false
+        });
+        await triggerNotificationRefresh(orderData.user_id);
+      } catch (notifError) {
+        logger.error('[CREATE INVOICE] Error creating notification:', notifError);
+        // Don't fail invoice creation for notification errors
+      }
+    }
+
+    return invoice;
+  } catch (error) {
+    logger.error('[CREATE INVOICE] Unexpected error:', error);
+    return null;
+  }
+};
+
+/**
+ * Unified function to process gift card payment with proper validation and optimistic locking
+ * 
+ * @param giftCardId - The gift card ID from sessionStorage/state
+ * @param giftCardAmount - Amount to deduct from gift card
+ * @param context - Context for logging (e.g., 'INVOICE_PAYMENT', 'CART_PAYMENT')
+ * @returns Object with success status and optional error details
+ */
+export const processGiftCardPayment = async (
+  giftCardId: string,
+  giftCardAmount: number,
+  context: string = 'PAYMENT'
+): Promise<{
+  success: boolean;
+  error?: string;
+  errorType?: 'INVALID_CARD' | 'INSUFFICIENT_BALANCE' | 'RACE_CONDITION' | 'EXPIRED' | 'DATABASE_ERROR';
+  freshBalance?: number;
+}> => {
+  try {
+    logger.log(`[${context}] Processing gift card payment:`, { giftCardId, amount: giftCardAmount });
+
+    // STEP 1: Re-validate gift card from database (FRESH DATA)
+    const { data: freshGiftCard, error: fetchError } = await supabase
+      .from("gift_cards")
+      .select("*")
+      .eq("id", giftCardId)
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (fetchError) {
+      logger.error(`[${context}] Error fetching gift card:`, fetchError);
+      return {
+        success: false,
+        error: 'Error de base de datos al validar la tarjeta',
+        errorType: 'DATABASE_ERROR'
+      };
+    }
+
+    if (!freshGiftCard) {
+      logger.error(`[${context}] Gift card not found or inactive`);
+      return {
+        success: false,
+        error: 'Tarjeta de regalo no válida o inactiva',
+        errorType: 'INVALID_CARD'
+      };
+    }
+
+    // STEP 2: Check expiration
+    if (freshGiftCard.expires_at && new Date(freshGiftCard.expires_at) < new Date()) {
+      logger.error(`[${context}] Gift card expired:`, freshGiftCard.expires_at);
+      return {
+        success: false,
+        error: 'La tarjeta de regalo ha expirado',
+        errorType: 'EXPIRED'
+      };
+    }
+
+    // STEP 3: Check sufficient balance
+    const currentBalance = Number(freshGiftCard.current_balance);
+    if (currentBalance < giftCardAmount) {
+      logger.error(`[${context}] Insufficient balance:`, { current: currentBalance, required: giftCardAmount });
+      return {
+        success: false,
+        error: `Saldo insuficiente. Disponible: €${currentBalance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`,
+        errorType: 'INSUFFICIENT_BALANCE',
+        freshBalance: currentBalance
+      };
+    }
+
+    // STEP 4: Calculate new balance
+    const newBalance = Number(Math.max(0, currentBalance - giftCardAmount).toFixed(2));
+
+    // STEP 5: Update with optimistic locking
+    const { error: updateError, count } = await supabase
+      .from("gift_cards")
+      .update({
+        current_balance: newBalance,
+        updated_at: new Date().toISOString()
+      }, { count: 'exact' })
+      .eq("id", freshGiftCard.id)
+      .eq("current_balance", currentBalance); // Optimistic lock
+
+    if (updateError) {
+      logger.error(`[${context}] Error updating gift card:`, updateError);
+      return {
+        success: false,
+        error: 'Error al actualizar el saldo de la tarjeta',
+        errorType: 'DATABASE_ERROR'
+      };
+    }
+
+    // STEP 6: Check if optimistic locking prevented update
+    if (count === 0) {
+      logger.error(`[${context}] Optimistic locking failed - balance changed`);
+      return {
+        success: false,
+        error: 'El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta',
+        errorType: 'RACE_CONDITION'
+      };
+    }
+
+    logger.log(`[${context}] Gift card balance updated successfully:`, { oldBalance: currentBalance, newBalance });
+
+    return {
+      success: true,
+      freshBalance: newBalance
+    };
+  } catch (error) {
+    logger.error(`[${context}] Unexpected error processing gift card:`, error);
+    return {
+      success: false,
+      error: 'Error inesperado al procesar la tarjeta de regalo',
+      errorType: 'DATABASE_ERROR'
+    };
   }
 };
