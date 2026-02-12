@@ -87,13 +87,15 @@ export async function loadPaymentConfig(includeImages: boolean = true): Promise<
             images = [];
           }
         }
-        // Parse boolean settings
-        else if (key.includes('enabled')) {
-          config[key as keyof PaymentConfig] = value === "true" || value === true;
+        // Parse boolean settings - use explicit key checks
+        else if (key === 'bank_transfer_enabled' || key === 'card_enabled' || 
+                 key === 'paypal_enabled' || key === 'revolut_enabled') {
+          config[key] = value === "true" || value === true;
         }
-        // Parse string settings
-        else {
-          config[key as keyof PaymentConfig] = value || "";
+        // Parse string settings - use explicit key checks
+        else if (key === 'paypal_email' || key === 'revolut_link' || 
+                 key === 'card_payment_link' || key === 'company_info') {
+          config[key] = value || "";
         }
       });
     }

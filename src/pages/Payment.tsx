@@ -21,7 +21,7 @@ import {
   processGiftCardPayment,
   createInvoiceForOrder
 } from "@/lib/paymentUtils";
-import { loadPaymentConfig as loadPaymentConfiguration } from "@/lib/paymentConfigUtils";
+import { loadPaymentConfig } from "@/lib/paymentConfigUtils";
 import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
@@ -58,12 +58,12 @@ export default function Payment() {
   const { taxSettings, calculateTax: calculateTaxFromSettings } = useTaxSettings();
 
   useEffect(() => {
-    loadPaymentConfig();
+    loadPaymentConfigInternal();
   }, []);
 
-  const loadPaymentConfig = async () => {
+  const loadPaymentConfigInternal = async () => {
     try {
-      const result = await loadPaymentConfiguration(true);
+      const result = await loadPaymentConfig(true);
       setPaymentConfig(result.config);
       setPaymentImages(result.images);
     } catch (error) {
