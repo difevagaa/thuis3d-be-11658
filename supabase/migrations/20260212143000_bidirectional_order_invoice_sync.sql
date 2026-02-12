@@ -54,17 +54,19 @@ DROP TRIGGER IF EXISTS trigger_sync_invoice_to_order ON invoices;
 DROP TRIGGER IF EXISTS trigger_sync_order_to_invoice ON orders;
 
 -- Create trigger for invoice → order sync
+-- WHEN clause ensures trigger only fires when status CHANGES to 'paid' (prevents loops)
 CREATE TRIGGER trigger_sync_invoice_to_order
   AFTER UPDATE OF payment_status ON invoices
   FOR EACH ROW
-  WHEN (NEW.payment_status = 'paid')
+  WHEN (NEW.payment_status = 'paid' AND (OLD.payment_status IS DISTINCT FROM 'paid'))
   EXECUTE FUNCTION sync_invoice_to_order();
 
 -- Create trigger for order → invoice sync
+-- WHEN clause ensures trigger only fires when status CHANGES to 'paid' (prevents loops)
 CREATE TRIGGER trigger_sync_order_to_invoice
   AFTER UPDATE OF payment_status ON orders
   FOR EACH ROW
-  WHEN (NEW.payment_status = 'paid')
+  WHEN (NEW.payment_status = 'paid' AND (OLD.payment_status IS DISTINCT FROM 'paid'))
   EXECUTE FUNCTION sync_order_to_invoice();
 
 -- Add comment for documentation
