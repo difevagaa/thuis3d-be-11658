@@ -7,11 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Pencil, Trash2, Download, Info, Gift } from "lucide-react";
+import { Mail, Pencil, Trash2, Info, Gift } from "lucide-react";
 import { logger } from '@/lib/logger';
 
 function generateGiftCardCode(): string {
@@ -37,36 +37,30 @@ export default function GiftCardsEnhanced() {
     sender_name: "",
     initial_amount: 0,
     message: "",
-    tax_enabled: false // FALSE por defecto: las tarjetas regalo NO deben tener IVA
+    tax_enabled: false
   });
 
   useEffect(() => {
     loadGiftCards();
 
-    // Realtime subscription con logging
     const channel = supabase
       .channel('gift-cards-enhanced-admin-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'gift_cards'
-      }, (payload) => {
-        logger.log('🔔 Realtime event in GiftCardsEnhanced:', payload);
+      }, () => {
         loadGiftCards();
       })
-      .subscribe((status) => {
-        logger.log('📡 Realtime subscription status (Enhanced):', status);
-      });
+      .subscribe();
 
     return () => {
-      logger.log('🔌 Unsubscribing from gift-cards-enhanced-admin-changes');
       supabase.removeChannel(channel);
     };
   }, []);
 
   const loadGiftCards = async () => {
     try {
-      logger.log('📥 Loading gift cards (Enhanced)...');
       const { data, error } = await supabase
         .from("gift_cards")
         .select("*")
@@ -74,10 +68,9 @@ export default function GiftCardsEnhanced() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      logger.log('✅ Gift cards loaded (Enhanced):', data?.length);
       setGiftCards(data || []);
     } catch (error) {
-      logger.error('❌ Error loading gift cards (Enhanced):', error);
+      logger.error('Error loading gift cards:', error);
       toast.error("Error al cargar tarjetas regalo");
     } finally {
       setLoading(false);
@@ -95,7 +88,6 @@ export default function GiftCardsEnhanced() {
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newCard.recipient_email)) {
       toast.error("El email no tiene un formato válido");
@@ -122,13 +114,11 @@ export default function GiftCardsEnhanced() {
 
       if (error) throw error;
 
-      // Send email
+      // Send email automatically
       await sendGiftCardEmail(newGiftCard);
 
       toast.success("Tarjeta regalo creada y email enviado exitosamente");
       setNewCard({ recipient_email: "", sender_name: "", initial_amount: 0, message: "", tax_enabled: false });
-      
-      // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
       logger.error("Error creating gift card:", error);
@@ -138,7 +128,6 @@ export default function GiftCardsEnhanced() {
 
   const sendGiftCardEmail = async (card: any) => {
     try {
-      // Parse message to extract customization data
       let userMessage = card.message;
       let themeId = 'ocean';
       let iconId = 'gift';
@@ -150,7 +139,6 @@ export default function GiftCardsEnhanced() {
           themeId = parsed.themeId || 'ocean';
           iconId = parsed.iconId || 'gift';
         } catch {
-          // If not JSON, use as plain message
           userMessage = card.message;
         }
       }
@@ -168,6 +156,7 @@ export default function GiftCardsEnhanced() {
       });
 
       if (error) throw error;
+      logger.log('Gift card email sent to:', card.recipient_email);
     } catch (error: any) {
       logger.error('Email error:', error);
       toast.error("Tarjeta creada pero falló el envío de email");
@@ -188,6 +177,9 @@ export default function GiftCardsEnhanced() {
     }
 
     try {
+      const wasInactive = !giftCards.find(c => c.id === editingCard.id)?.is_active;
+      const isNowActive = editingCard.is_active;
+
       const { error } = await supabase
         .from("gift_cards")
         .update({ 
@@ -199,10 +191,17 @@ export default function GiftCardsEnhanced() {
         .eq("id", editingCard.id);
 
       if (error) throw error;
-      toast.success("Tarjeta actualizada exitosamente");
+
+      // If gift card was just activated, automatically send email to recipient
+      if (wasInactive && isNowActive) {
+        toast.info("Enviando tarjeta de regalo al destinatario...");
+        await sendGiftCardEmail(editingCard);
+        toast.success("Tarjeta activada y enviada al destinatario");
+      } else {
+        toast.success("Tarjeta actualizada exitosamente");
+      }
+
       setEditingCard(null);
-      
-      // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
       logger.error("Error updating gift card:", error);
@@ -214,24 +213,17 @@ export default function GiftCardsEnhanced() {
     if (!confirm("¿Eliminar esta tarjeta regalo permanentemente?")) return;
 
     try {
-      logger.log('🗑️ Deleting gift card (Enhanced):', id);
       const { error } = await supabase
         .from("gift_cards")
         .delete()
         .eq("id", id);
 
-      if (error) {
-        logger.error('❌ Delete error (Enhanced):', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      logger.log('✅ Gift card deleted successfully (Enhanced)');
       toast.success("Tarjeta eliminada exitosamente");
-      
-      // Actualizar lista inmediatamente sin esperar al realtime
       await loadGiftCards();
     } catch (error: any) {
-      logger.error("❌ Error deleting gift card (Enhanced):", error);
+      logger.error("Error deleting gift card:", error);
       toast.error("Error al eliminar tarjeta: " + (error.message || "Error desconocido"));
     }
   };
@@ -261,7 +253,7 @@ export default function GiftCardsEnhanced() {
           <CardTitle>Crear Nueva Tarjeta Regalo</CardTitle>
           <CardDescription>Genera y envía tarjetas regalo por email</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-4">
           <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-blue-800 dark:text-blue-300">
@@ -332,14 +324,15 @@ export default function GiftCardsEnhanced() {
       <Card className="border-2 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-cyan-500/10 to-sky-500/10 border-b">
           <CardTitle>Tarjetas Regalo Existentes</CardTitle>
-          <CardDescription>Administra todas las tarjetas regalo</CardDescription>
+          <CardDescription>Administra todas las tarjetas regalo. Al activar una tarjeta inactiva, se envía automáticamente al destinatario.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Destinatario</TableHead>
+                <TableHead>Comprador</TableHead>
                 <TableHead>Monto Inicial</TableHead>
                 <TableHead>Saldo Actual</TableHead>
                 <TableHead>Estado</TableHead>
@@ -352,6 +345,7 @@ export default function GiftCardsEnhanced() {
                 <TableRow key={card.id}>
                   <TableCell className="font-mono">{card.code}</TableCell>
                   <TableCell>{card.recipient_email}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{(card as any).buyer_email || '-'}</TableCell>
                   <TableCell>€{card.initial_amount}</TableCell>
                   <TableCell className="font-bold">€{card.current_balance}</TableCell>
                   <TableCell>
@@ -436,7 +430,14 @@ export default function GiftCardsEnhanced() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Estado Activo</Label>
+              <div>
+                <Label>Estado Activo</Label>
+                {!editingCard?.is_active && (
+                  <p className="text-xs text-muted-foreground">
+                    Al activar, se enviará automáticamente la tarjeta al destinatario por email.
+                  </p>
+                )}
+              </div>
               <Switch
                 checked={editingCard?.is_active || false}
                 onCheckedChange={(checked) => setEditingCard({ ...editingCard, is_active: checked })}

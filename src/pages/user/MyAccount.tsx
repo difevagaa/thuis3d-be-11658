@@ -152,10 +152,10 @@ export default function MyAccount() {
         supabase.from("quotes").select("*").or(`user_id.eq.${userId},customer_email.eq.${profileData?.email || ""}`).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("messages").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("loyalty_points").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
+        supabase.from("gift_cards").select("*").or(`recipient_email.eq.${profileData?.email || ""},buyer_email.eq.${profileData?.email || ""}`).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name)").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
       ]);
 
@@ -172,15 +172,25 @@ export default function MyAccount() {
       setAvailableCoupons(couponsRes.data || []);
       
       // Cargar cupones canjeados directamente desde loyalty_redemptions
-      const userCoupons = redemptionsRes.data?.map(redemption => ({
+      // coupon_code is a plain string, not a FK - fetch coupon details separately if needed
+      const redemptionCodes = (redemptionsRes.data || []).map(r => r.coupon_code).filter(Boolean);
+      let couponDetailsMap: Record<string, any> = {};
+      if (redemptionCodes.length > 0) {
+        const { data: couponDetails } = await supabase
+          .from("coupons")
+          .select("code, discount_type, discount_value")
+          .in("code", redemptionCodes);
+        (couponDetails || []).forEach(c => { couponDetailsMap[c.code] = c; });
+      }
+      const userCoupons = (redemptionsRes.data || []).map(redemption => ({
         id: redemption.id,
         code: redemption.coupon_code,
-        discount_type: redemption.coupons?.discount_type || 'percentage',
-        discount_value: redemption.coupons?.discount_value || 0,
+        discount_type: couponDetailsMap[redemption.coupon_code || '']?.discount_type || 'percentage',
+        discount_value: couponDetailsMap[redemption.coupon_code || '']?.discount_value || 0,
         created_at: redemption.created_at,
         status: redemption.status,
         reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
-      })) || [];
+      }));
       
       setMyCoupons(userCoupons);
     } catch (error) {
