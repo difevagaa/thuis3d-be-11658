@@ -406,6 +406,8 @@ const Cart = () => {
                     navigate("/auth");
                     return;
                   }
+                  // CRÍTICO: Limpiar invoice_payment al iniciar nuevo checkout desde carrito
+                  sessionStorage.removeItem("invoice_payment");
                   navigate("/informacion-envio");
                 }}
               >
