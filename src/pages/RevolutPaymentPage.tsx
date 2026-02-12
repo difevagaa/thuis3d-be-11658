@@ -12,7 +12,7 @@ import {
   createOrderItems, 
   convertCartToOrderItems,
   generateOrderNotes,
-  updateGiftCardBalance
+  processGiftCardPayment
 } from "@/lib/paymentUtils";
 
 export default function RevolutPaymentPage() {
@@ -127,6 +127,12 @@ export default function RevolutPaymentPage() {
   }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.log('[REVOLUT PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     
     try {
@@ -235,12 +241,26 @@ export default function RevolutPaymentPage() {
         throw new Error(t('payment:messages.errorProcessingOrder'));
       }
 
-      // Update gift card balance if used
+      // CRITICAL: Process gift card using unified function with optimistic locking
       if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
+        const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardDiscount,
+          'REVOLUT_PAYMENT'
         );
+
+        if (!giftCardResult.success) {
+          logger.error('[REVOLUT PAYMENT] Gift card processing failed:', giftCardResult);
+          // Rollback: delete created order and items
+          await supabase.from("order_items").delete().eq("order_id", order.id);
+          await supabase.from("orders").delete().eq("id", order.id);
+          
+          toast.error(t('payment:messages.giftCardError', 'Error al procesar la tarjeta de regalo'));
+          setProcessing(false);
+          return;
+        }
+        
+        logger.log('[REVOLUT PAYMENT] Gift card processed successfully');
         sessionStorage.removeItem("applied_gift_card");
       }
 

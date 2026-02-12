@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, updateGiftCardBalance } from "@/lib/paymentUtils";
+import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, processGiftCardPayment } from "@/lib/paymentUtils";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -114,12 +114,27 @@ export default function PaymentInstructions() {
 
       logger.info('Order items created:', insertedItems.length);
 
-      // Update gift card balance if used
+      // CRITICAL: Process gift card using unified function with optimistic locking
       if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
+        const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardDiscount,
+          'BANK_TRANSFER_PAYMENT'
         );
+
+        if (!giftCardResult.success) {
+          logger.error('[BANK TRANSFER PAYMENT] Gift card processing failed:', giftCardResult);
+          // Rollback: delete created order and items
+          await supabase.from("order_items").delete().eq("order_id", order.id);
+          await supabase.from("orders").delete().eq("id", order.id);
+          
+          toast.error(t('payment:messages.giftCardError', 'Error al procesar la tarjeta de regalo'));
+          setCreatingOrder(false);
+          navigate("/pago");
+          return;
+        }
+        
+        logger.log('[BANK TRANSFER PAYMENT] Gift card processed successfully');
         sessionStorage.removeItem("applied_gift_card");
       }
 

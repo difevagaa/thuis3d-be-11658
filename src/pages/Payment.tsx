@@ -392,6 +392,12 @@ export default function Payment() {
   };
 
   const processGiftCardOnlyPayment = async () => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.warn('[GIFT CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -514,6 +520,12 @@ export default function Payment() {
   };
 
   const processInvoiceGiftCardPayment = async () => {
+    // Prevent double-clicking and duplicate payments
+    if (processing) {
+      logger.warn('[INVOICE GIFT CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -704,6 +716,12 @@ export default function Payment() {
   };
 
   const handlePayment = async (method: string) => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.warn('[PAYMENT] Already processing payment, ignoring duplicate click');
+      return;
+    }
+    
     // Check if gift card covers the total amount
     const total = calculateTotal();
     const giftCardAmount = calculateGiftCardAmount();

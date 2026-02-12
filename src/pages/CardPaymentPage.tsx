@@ -12,7 +12,7 @@ import {
   createOrderItems, 
   convertCartToOrderItems,
   generateOrderNotes,
-  updateGiftCardBalance
+  processGiftCardPayment
 } from "@/lib/paymentUtils";
 
 export default function CardPaymentPage() {
@@ -127,6 +127,12 @@ export default function CardPaymentPage() {
   }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
+    // Prevent double-clicking and duplicate order creation
+    if (processing) {
+      logger.log('[CARD PAYMENT] Already processing, ignoring duplicate click');
+      return;
+    }
+    
     setProcessing(true);
     
     try {
@@ -235,12 +241,26 @@ export default function CardPaymentPage() {
         throw new Error(t('payment:messages.errorProcessingOrder'));
       }
 
-      // Update gift card balance if used
+      // CRITICAL: Process gift card using unified function with optimistic locking
       if (giftCardData && giftCardDiscount > 0) {
-        await updateGiftCardBalance(
+        const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardDiscount,
+          'CARD_PAYMENT'
         );
+
+        if (!giftCardResult.success) {
+          logger.error('[CARD PAYMENT] Gift card processing failed:', giftCardResult);
+          // Rollback: delete created order and items
+          await supabase.from("order_items").delete().eq("order_id", order.id);
+          await supabase.from("orders").delete().eq("id", order.id);
+          
+          i18nToast.error("error.giftCardProcessing");
+          setProcessing(false);
+          return;
+        }
+        
+        logger.log('[CARD PAYMENT] Gift card processed successfully');
         sessionStorage.removeItem("applied_gift_card");
       }
 
