@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, processGiftCardPayment } from "@/lib/paymentUtils";
+import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -274,34 +275,15 @@ export default function PaymentInstructions() {
 
   const loadPaymentConfig = async () => {
     try {
-      // Leer solo las claves de configuración de pago relevantes, igual que en el panel admin
-      const settingKeys = [
+      const settings = await loadSpecificPaymentSettings([
         'bank_account_number', 'bank_account_name', 'bank_name', 'bank_instructions',
         'company_info', 'payment_images'
-      ];
-
-      const { data } = await supabase
-        .from("site_settings")
-        .select("*")
-        .in("setting_key", settingKeys);
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-
-        data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else {
-            settings[setting.setting_key] = setting.setting_value;
-          }
-        });
-
-        setPaymentConfig(settings);
-      }
+      ]);
+      
+      // Separate payment_images from other settings
+      const { payment_images, ...otherSettings } = settings;
+      setPaymentConfig(otherSettings);
+      setPaymentImages(payment_images || []);
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }

@@ -14,6 +14,7 @@ import {
   generateOrderNotes,
   processGiftCardPayment
 } from "@/lib/paymentUtils";
+import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
 
 export default function CardPaymentPage() {
   const navigate = useNavigate();
@@ -66,27 +67,12 @@ export default function CardPaymentPage() {
 
   const loadPaymentConfig = useCallback(async () => {
     try {
-      const settingKeys = ['revolut_link', 'card_payment_link', 'payment_images'];
-      const { data } = await supabase
-        .from("site_settings")
-        .select("*")
-        .in("setting_key", settingKeys);
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-        data.forEach((setting) => {
-          if (setting.setting_key === 'payment_images') {
-            try {
-              setPaymentImages(JSON.parse(setting.setting_value));
-            } catch (e) {
-              setPaymentImages([]);
-            }
-          } else {
-            settings[setting.setting_key] = setting.setting_value;
-          }
-        });
-        setPaymentConfig(settings);
-      }
+      const settings = await loadSpecificPaymentSettings(['revolut_link', 'card_payment_link', 'payment_images']);
+      setPaymentConfig({
+        card_payment_link: settings.card_payment_link || '',
+        revolut_link: settings.revolut_link || ''
+      });
+      setPaymentImages(settings.payment_images || []);
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }
