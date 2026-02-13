@@ -61,8 +61,8 @@ BEGIN
   -- Only create invoice if it doesn't exist
   IF NOT invoice_exists THEN
     -- Use order number as invoice number for consistency
-    -- If order_number is null, generate one
-    invoice_num := COALESCE(NEW.order_number, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0'));
+    -- If order_number is null, generate one using order ID to ensure uniqueness
+    invoice_num := COALESCE(NEW.order_number, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || SUBSTRING(NEW.id::TEXT, 1, 8));
     
     RAISE NOTICE '[AUTO INVOICE] Creating invoice % for order %', invoice_num, NEW.order_number;
 
@@ -92,6 +92,7 @@ BEGIN
       v_payment_status, -- Use the determined payment status
       NOW(),
       NOW() + INTERVAL '30 days',
+      -- Use existing notes or generate default message (Spanish for consistency with existing system)
       COALESCE(NEW.notes, 'Factura generada automáticamente para el pedido ' || COALESCE(NEW.order_number, 'N/A'))
     )
     RETURNING id INTO new_invoice_id;
@@ -113,7 +114,14 @@ BEGIN
         new_invoice_id,
         order_item.product_id,
         order_item.product_name,
-        NULL,
+        -- Copy description from order_item if available (e.g., custom text, material/color info)
+        CASE 
+          WHEN order_item.custom_text IS NOT NULL THEN 'Texto personalizado: ' || order_item.custom_text
+          WHEN order_item.selected_material IS NOT NULL OR order_item.selected_color IS NOT NULL THEN 
+            COALESCE('Material: ' || order_item.selected_material || ' ', '') || 
+            COALESCE('Color: ' || order_item.selected_color, '')
+          ELSE NULL
+        END,
         order_item.quantity,
         order_item.unit_price,
         order_item.total_price,
