@@ -236,7 +236,7 @@ export default function OrderDetail() {
           }
         }
         
-        toast.success("Estado de pago actualizado. Emails enviados automáticamente.");
+        toast.success(t('common:success.paymentStatusUpdated') || "Estado de pago actualizado. Emails enviados automáticamente.");
       } else {
         toast.success("Estado de pago actualizado");
       }

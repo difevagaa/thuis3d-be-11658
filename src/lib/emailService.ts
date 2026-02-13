@@ -375,6 +375,9 @@ export const sendAdminNotificationEmail = async (
 // BATCH EMAIL FUNCTIONS
 // ============================================================================
 
+// Constants for email sending logic
+const HIGH_VALUE_ORDER_THRESHOLD = 100; // €100 or more triggers admin email
+
 /**
  * Send all emails related to a new order
  * This includes: order confirmation to customer, notification to admin
@@ -387,21 +390,24 @@ export const sendOrderEmails = async (orderId: string): Promise<void> => {
     await sendOrderConfirmationEmail({ orderId });
 
     // Admin notification is handled by database trigger + in-app notification
-    // But we can send an email too for important orders
+    // But we send an email too for high-value orders
     const { data: order } = await supabase
       .from('orders')
       .select('order_number, total, user_id, profiles(full_name, email)')
       .eq('id', orderId)
       .single();
 
-    if (order && order.total && order.total > 100) {
-      // Send admin email for orders over €100
-      await sendAdminNotificationEmail(
-        'high_value_order',
-        `Pedido Importante: ${order.order_number}`,
-        `Nuevo pedido por €${order.total} de ${order.profiles?.full_name || 'Cliente'}`,
-        `/admin/pedidos`
-      );
+    if (order && order.total && order.total > HIGH_VALUE_ORDER_THRESHOLD) {
+      // Verify profiles relationship exists
+      if (order.profiles) {
+        const customerName = order.profiles.full_name || 'Cliente';
+        await sendAdminNotificationEmail(
+          'high_value_order',
+          `Pedido Importante: ${order.order_number}`,
+          `Nuevo pedido por €${order.total} de ${customerName}`,
+          `/admin/pedidos`
+        );
+      }
     }
 
     logger.info('✅ All order emails sent successfully');
