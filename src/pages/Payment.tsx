@@ -488,7 +488,7 @@ export default function Payment() {
         subtotal: subtotal,
         tax: tax,
         total: total,
-        shipping: effShipping,
+        shipping: effectiveShipping,
         discount: couponDisc + giftCardAmount,
         payment_status: 'paid',
         payment_method: 'gift_card',
@@ -1317,6 +1317,19 @@ export default function Payment() {
 
       // PayPal: Crear pedido inmediatamente y redirigir (SOLO PARA PAYPAL)
       if (method === "paypal") {
+        // Get or create persistent order number from checkout session
+        const sessionId = sessionStorage.getItem("checkout_session_id");
+        let orderNumber = null;
+        
+        if (sessionId) {
+          orderNumber = await getOrCreateOrderNumber(sessionId);
+        }
+        
+        // If we couldn't get order number from session, generate one now
+        if (!orderNumber) {
+          orderNumber = generateOrderNumber();
+        }
+
         // Get saved gift card from cart if applied
         const savedGiftCard = sessionStorage.getItem("applied_gift_card");
         let giftCardDiscount = 0;
@@ -1338,6 +1351,8 @@ export default function Payment() {
           .from("orders")
           .insert({
             user_id: user.id,
+            status_id: orderStatusId,
+            order_number: orderNumber,
             subtotal,
             tax,
             shipping,
@@ -1415,7 +1430,7 @@ export default function Payment() {
         // Create invoice automatically
         try {
           await supabase.from("invoices").insert({
-            invoice_number: order.order_number,
+            invoice_number: orderNumber,
             user_id: user.id,
             order_id: order.id,
             subtotal: subtotal,
@@ -1431,7 +1446,7 @@ export default function Payment() {
             payment_status: "pending", // CRÍTICO: SIEMPRE pending
             issue_date: new Date().toISOString(),
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            notes: `Factura generada automáticamente para el pedido ${order.order_number}`
+            notes: `Factura generada automáticamente para el pedido ${orderNumber}`
           });
         } catch (invoiceError) {
           logger.error('Error creating invoice:', invoiceError);
