@@ -8,10 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { ExternalLink, Copy, Loader2 } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
-  createOrder, 
-  createOrderItems, 
-  convertCartToOrderItems,
-  generateOrderNotes,
   processGiftCardPayment
 } from "@/lib/paymentUtils";
 import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
@@ -112,7 +108,7 @@ export default function RevolutPaymentPage() {
   }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
-    // Prevent double-clicking and duplicate order creation
+    // Prevent double-clicking
     if (processing) {
       logger.log('[REVOLUT PAYMENT] Already processing, ignoring duplicate click');
       return;
@@ -168,8 +164,15 @@ export default function RevolutPaymentPage() {
         return;
       }
 
+      // ==================================================================================
       // Normal order payment flow
-      const { cartItems, shippingInfo, total, subtotal, tax, shipping, orderNumber: persistedOrderNumber } = orderData;
+      // NOTE: Order and invoice were already created in Payment.tsx
+      // We just need to process gift card payment (if applicable) and redirect to gateway
+      // ==================================================================================
+      
+      const { orderId, orderNumber: persistedOrderNumber, total } = orderData;
+      
+      logger.log('[REVOLUT PAYMENT] Order already exists:', { orderId, orderNumber: persistedOrderNumber, total });
 
       // Get saved gift card if applied
       const savedGiftCard = sessionStorage.getItem("applied_gift_card");
@@ -181,53 +184,10 @@ export default function RevolutPaymentPage() {
         giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
-      // Get saved coupon if applied
-      const savedCoupon = sessionStorage.getItem("applied_coupon");
-      let couponData = null;
-      let couponDiscount = 0;
-      
-      if (savedCoupon) {
-        try {
-          couponData = JSON.parse(savedCoupon);
-          if (couponData.discount_type === "percentage") {
-            couponDiscount = subtotal * (couponData.discount_value / 100);
-          } else if (couponData.discount_type === "fixed") {
-            couponDiscount = Math.min(couponData.discount_value, subtotal);
-          }
-          // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
-          couponDiscount = Number(couponDiscount.toFixed(2));
-        } catch (e) {
-          logger.error("Error parsing coupon:", e);
-        }
-      }
-
-      const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
-
-      // Generate order notes
-      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
-
-      // Create order with persistent order number
-      const order = await createOrder({
-        userId: user.id,
-        orderNumber: persistedOrderNumber || null,
-        subtotal,
-        tax,
-        shipping,
-        discount: couponDiscount + giftCardDiscount,
-        total: finalTotal,
-        paymentMethod: "revolut",
-        paymentStatus: "pending",
-        shippingAddress: shippingInfo,
-        billingAddress: shippingInfo,
-        notes: orderNotes
-      });
-
-      if (!order) {
-        throw new Error(t('payment:messages.errorProcessingOrder'));
-      }
-
-      // CRITICAL: Process gift card using unified function with optimistic locking
+      // Process gift card payment if applicable
       if (giftCardData && giftCardDiscount > 0) {
+        logger.log('[REVOLUT PAYMENT] Processing gift card payment:', { cardId: giftCardData.id, discount: giftCardDiscount });
+        
         const giftCardResult = await processGiftCardPayment(
           giftCardData.id,
           giftCardDiscount,
@@ -236,115 +196,92 @@ export default function RevolutPaymentPage() {
 
         if (!giftCardResult.success) {
           logger.error('[REVOLUT PAYMENT] Gift card processing failed:', giftCardResult);
-          // Rollback: delete created order and items
-          await supabase.from("order_items").delete().eq("order_id", order.id);
-          await supabase.from("orders").delete().eq("id", order.id);
-          
           toast.error(t('payment:messages.giftCardError', 'Error al procesar la tarjeta de regalo'));
           setProcessing(false);
           return;
         }
         
         logger.log('[REVOLUT PAYMENT] Gift card processed successfully');
+        
+        // Fetch existing order to preserve discount and notes
+        try {
+          const { data: existingOrder, error: fetchError } = await supabase
+            .from("orders")
+            .select("discount, notes")
+            .eq("id", orderId)
+            .single();
+          
+          if (fetchError) {
+            logger.error('[REVOLUT PAYMENT] Error fetching existing order:', fetchError);
+          }
+
+          const existingDiscount = Number(existingOrder?.discount || 0);
+          const existingNotes = existingOrder?.notes || '';
+          
+          // Update order with combined gift card info
+          const { error: updateError } = await supabase
+            .from("orders")
+            .update({
+              discount: existingDiscount + giftCardDiscount,
+              total: Math.max(0, total - giftCardDiscount),
+              notes: existingNotes ? 
+                `${existingNotes}\n\nTarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})` :
+                `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
+            })
+            .eq("id", orderId);
+          
+          if (updateError) {
+            logger.error('[REVOLUT PAYMENT] Error updating order with gift card:', updateError);
+          }
+
+          // Update invoice with gift card info (preserving existing discount)
+          const { data: existingInvoice, error: fetchInvoiceError } = await supabase
+            .from("invoices")
+            .select("discount")
+            .eq("order_id", orderId)
+            .single();
+          
+          if (fetchInvoiceError) {
+            logger.error('[REVOLUT PAYMENT] Error fetching existing invoice:', fetchInvoiceError);
+          }
+
+          const existingInvoiceDiscount = Number(existingInvoice?.discount || 0);
+          
+          const { error: invoiceUpdateError } = await supabase
+            .from("invoices")
+            .update({
+              gift_card_code: giftCardData.code,
+              gift_card_amount: giftCardDiscount,
+              discount: existingInvoiceDiscount + giftCardDiscount,
+              total: Math.max(0, total - giftCardDiscount)
+            })
+            .eq("order_id", orderId);
+          
+          if (invoiceUpdateError) {
+            logger.error('[REVOLUT PAYMENT] Error updating invoice with gift card:', invoiceUpdateError);
+          }
+        } catch (updateError) {
+          logger.error('[REVOLUT PAYMENT] Error updating order/invoice:', updateError);
+        }
+        
         sessionStorage.removeItem("applied_gift_card");
       }
 
-      // Create order items
-      const orderItemsData = convertCartToOrderItems(cartItems, order.id);
-      const insertedItems = await createOrderItems(orderItemsData);
+      const finalTotal = giftCardDiscount > 0 ? Math.max(0, total - giftCardDiscount) : total;
 
-      if (!insertedItems || insertedItems.length === 0) {
-        throw new Error(t('payment:messages.errorCreatingOrderItems'));
-      }
-
-      // Create invoice
-      try {
-        await supabase.from("invoices").insert({
-          invoice_number: order.order_number,
-          user_id: user.id,
-          order_id: order.id,
-          subtotal: subtotal,
-          tax: tax,
-          shipping: shipping,
-          discount: couponDiscount + giftCardDiscount,
-          coupon_discount: couponData?.discount_type === "free_shipping" ? 0 : couponDiscount,
-          coupon_code: couponData?.code || null,
-          gift_card_code: giftCardData?.code || null,
-          gift_card_amount: giftCardDiscount || 0,
-          total: finalTotal,
-          payment_method: "revolut",
-          payment_status: "pending",
-          issue_date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          notes: `Factura generada para el pedido ${order.order_number}`
-        });
-      } catch (invoiceError) {
-        logger.error('Error creating invoice:', invoiceError);
-      }
-
-      // Update coupon usage
-      if (couponData) {
-        try {
-          await supabase
-            .from("coupons")
-            .update({ times_used: (couponData.times_used || 0) + 1 })
-            .eq("id", couponData.id);
-        } catch (couponError) {
-          logger.error('Error updating coupon usage:', couponError);
-        }
-      }
-
-      // Send notifications
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email, full_name')
-          .eq('id', user.id)
-          .single();
-
-        if (profile?.email) {
-          await supabase.functions.invoke('send-order-confirmation', {
-            body: {
-              to: profile.email,
-              customer_name: profile.full_name || 'Cliente',
-              order_number: order.order_number,
-              subtotal: subtotal,
-              tax: tax,
-              shipping: shipping,
-              discount: couponDiscount + giftCardDiscount,
-              total: finalTotal,
-              items: cartItems.map(item => ({
-                product_name: item.name,
-                quantity: item.quantity,
-                unit_price: item.price
-              }))
-            }
-          });
-        }
-      } catch (emailError) {
-        logger.error('Error sending order confirmation:', emailError);
-      }
-
-      // Clear cart and session
-      localStorage.removeItem("cart");
+      // Clear session storage
       sessionStorage.removeItem("pending_revolut_order");
-      sessionStorage.removeItem("applied_coupon");
-      const sessionId = sessionStorage.getItem("checkout_session_id");
-      if (sessionId) {
-        await supabase.from('checkout_sessions').delete().eq('id', sessionId);
-        sessionStorage.removeItem("checkout_session_id");
-      }
 
       // Show redirect overlay - la pestaña se abrirá después de 4s desde useEffect
       if (paymentConfig?.revolut_link) {
-        setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
+        setPendingOrderInfo({ orderNumber: persistedOrderNumber, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
         // Silent error - navigate away
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
-      logger.error("Error creating order:", error);
+      logger.error("[REVOLUT PAYMENT] Error processing payment:", error);
       toast.error(t('payment:messages.errorProcessingOrder'));
       setProcessing(false);
     }
