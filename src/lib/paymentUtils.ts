@@ -628,3 +628,216 @@ export const processGiftCardPayment = async (
     };
   }
 };
+
+/**
+ * Rolls back a gift card payment transaction
+ * Reverts the balance deduction made by processGiftCardPayment
+ * 
+ * @param giftCardId - UUID of the gift card
+ * @param amountToRestore - Amount to restore to the gift card balance
+ * @param context - Context string for logging purposes
+ * @returns Promise<boolean> - true if rollback successful, false otherwise
+ */
+export const rollbackGiftCardPayment = async (
+  giftCardId: string,
+  amountToRestore: number,
+  context: string = 'ROLLBACK'
+): Promise<boolean> => {
+  try {
+    logger.warn(`[${context}] Rolling back gift card payment: ${giftCardId}, restoring €${amountToRestore.toFixed(2)}`);
+    
+    // Fetch current balance with locking
+    const { data: freshGiftCard, error: fetchError } = await supabase
+      .from('gift_cards')
+      .select('id, current_balance, initial_balance, is_active, expiry_date, deleted_at')
+      .eq('id', giftCardId)
+      .single();
+
+    if (fetchError || !freshGiftCard) {
+      logger.error(`[${context}] Gift card not found for rollback:`, fetchError);
+      return false;
+    }
+
+    // Calculate new balance (current + amount to restore)
+    const newBalance = Number(Math.min(
+      freshGiftCard.initial_balance,
+      freshGiftCard.current_balance + amountToRestore
+    ).toFixed(2));
+
+    // Update with optimistic locking
+    const { error: updateError } = await supabase
+      .from('gift_cards')
+      .update({ current_balance: newBalance })
+      .eq('id', giftCardId)
+      .eq('current_balance', freshGiftCard.current_balance); // Optimistic lock
+
+    if (updateError) {
+      logger.error(`[${context}] Failed to rollback gift card:`, updateError);
+      return false;
+    }
+
+    logger.log(`[${context}] Gift card rollback successful: ${giftCardId}, new balance: €${newBalance.toFixed(2)}`);
+    return true;
+  } catch (error) {
+    logger.error(`[${context}] Unexpected error during gift card rollback:`, error);
+    return false;
+  }
+};
+
+/**
+ * Rolls back a complete order transaction including:
+ * - Deletes order items
+ * - Deletes the order itself
+ * - Optionally restores gift card balance
+ * 
+ * This ensures no orphaned records remain in the database
+ * 
+ * @param orderId - UUID of the order to rollback
+ * @param giftCardInfo - Optional gift card info to rollback {id: string, amount: number}
+ * @param context - Context string for logging purposes
+ * @returns Promise<boolean> - true if rollback successful, false otherwise
+ */
+export const rollbackOrderTransaction = async (
+  orderId: string,
+  giftCardInfo?: { id: string; amount: number },
+  context: string = 'ROLLBACK'
+): Promise<boolean> => {
+  try {
+    logger.warn(`[${context}] Rolling back order transaction: ${orderId}`);
+    
+    let rollbackSuccess = true;
+
+    // Step 1: Delete order items first (foreign key constraint)
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (itemsError) {
+      logger.error(`[${context}] Failed to delete order items:`, itemsError);
+      rollbackSuccess = false;
+    } else {
+      logger.log(`[${context}] Order items deleted successfully`);
+    }
+
+    // Step 2: Delete the order
+    const { error: orderError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (orderError) {
+      logger.error(`[${context}] Failed to delete order:`, orderError);
+      rollbackSuccess = false;
+    } else {
+      logger.log(`[${context}] Order deleted successfully`);
+    }
+
+    // Step 3: Rollback gift card if applicable
+    if (giftCardInfo && giftCardInfo.amount > 0) {
+      const giftCardRollback = await rollbackGiftCardPayment(
+        giftCardInfo.id,
+        giftCardInfo.amount,
+        context
+      );
+      if (!giftCardRollback) {
+        logger.error(`[${context}] Failed to rollback gift card payment`);
+        rollbackSuccess = false;
+      }
+    }
+
+    if (rollbackSuccess) {
+      logger.log(`[${context}] Complete order rollback successful`);
+    } else {
+      logger.error(`[${context}] Order rollback completed with errors`);
+    }
+
+    return rollbackSuccess;
+  } catch (error) {
+    logger.error(`[${context}] Unexpected error during order rollback:`, error);
+    return false;
+  }
+};
+
+/**
+ * Interface for payment validation results
+ */
+export interface PaymentValidationResult {
+  valid: boolean;
+  error?: string;
+  errorKey?: string;
+}
+
+/**
+ * Validates common payment prerequisites:
+ * - User is authenticated
+ * - Cart has items
+ * - Shipping info is valid
+ * - Numeric values are valid (no NaN, no negatives)
+ * 
+ * This consolidates duplicate validation logic across payment methods
+ * 
+ * @param user - Authenticated user object
+ * @param cartItems - Array of cart items
+ * @param shippingInfo - Shipping information object
+ * @param financials - Object containing subtotal, tax, shipping, discount
+ * @returns PaymentValidationResult with validation status and error details
+ */
+export const validatePaymentPrerequisites = (
+  user: any,
+  cartItems: any[],
+  shippingInfo: any,
+  financials: { subtotal: number; tax: number; shipping: number; discount: number }
+): PaymentValidationResult => {
+  // Validate user authentication
+  if (!user || !user.id) {
+    return {
+      valid: false,
+      error: 'User authentication required',
+      errorKey: 'payment:messages.loginRequired'
+    };
+  }
+
+  // Validate cart is not empty
+  if (!cartItems || cartItems.length === 0) {
+    return {
+      valid: false,
+      error: 'Cart is empty',
+      errorKey: 'cart:messages.cartEmpty'
+    };
+  }
+
+  // Validate shipping info structure
+  if (!shippingInfo || !shippingInfo.address || !shippingInfo.city || !shippingInfo.postal_code) {
+    return {
+      valid: false,
+      error: 'Invalid shipping information',
+      errorKey: 'payment:messages.invalidShippingInfo'
+    };
+  }
+
+  // Validate numeric values are not NaN
+  if (
+    isNaN(financials.subtotal) ||
+    isNaN(financials.tax) ||
+    isNaN(financials.shipping) ||
+    isNaN(financials.discount)
+  ) {
+    return {
+      valid: false,
+      error: 'Invalid numeric values in calculation',
+      errorKey: 'payment:messages.calculationError'
+    };
+  }
+
+  // Validate numeric values are not negative
+  if (financials.subtotal < 0 || financials.tax < 0 || financials.shipping < 0) {
+    return {
+      valid: false,
+      error: 'Negative values detected',
+      errorKey: 'payment:messages.invalidPrices'
+    };
+  }
+
+  return { valid: true };
+};
