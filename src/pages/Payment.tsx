@@ -367,9 +367,23 @@ export default function Payment() {
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         toast.error(t('payment:messages.loginRequired'));
         navigate("/auth");
+        return;
+      }
+
+      // Validar cart no vacío
+      if (!cartItems || cartItems.length === 0) {
+        toast.error(t('cart:messages.cartEmpty'));
+        navigate("/carrito");
+        return;
+      }
+
+      // Validar shippingInfo
+      if (!shippingInfo || !shippingInfo.address || !shippingInfo.city) {
+        toast.error(t('payment:messages.invalidShippingInfo'));
+        navigate("/informacion-envio");
         return;
       }
 
@@ -380,12 +394,32 @@ export default function Payment() {
       const effShipping = isFreeShippingCoupon ? 0 : shippingCost;
       const total = 0;
 
+      // Validar valores numéricos
+      if (isNaN(subtotal) || isNaN(tax) || isNaN(effShipping) || isNaN(couponDisc)) {
+        toast.error(t('payment:messages.calculationError'));
+        return;
+      }
+
+      // Obtener status_id "Recibido"
+      let orderStatusId: string | null = null;
+      try {
+        const { data: orderStatus } = await supabase
+          .from('order_statuses')
+          .select('id')
+          .eq('name', 'Recibido')
+          .maybeSingle();
+        orderStatusId = orderStatus?.id || null;
+      } catch (error) {
+        logger.error('[GIFT CARD PAYMENT] Error loading order status:', error);
+      }
+
       const orderNumber = generateOrderNumber();
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert([{
           user_id: user.id,
+          status_id: orderStatusId,
           order_number: orderNumber,
           payment_status: "paid",
           payment_method: "gift_card",
@@ -826,6 +860,33 @@ export default function Payment() {
         return;
       }
 
+      // CRÍTICO: Validar que el usuario esté autenticado y tenga ID válido
+      if (!user?.id) {
+        logger.error('[PAYMENT] User ID is missing or invalid');
+        toast.error(t('payment:messages.loginRequired'));
+        navigate("/auth");
+        setProcessing(false);
+        return;
+      }
+
+      // CRÍTICO: Validar que el carrito no esté vacío
+      if (!cartItems || cartItems.length === 0) {
+        logger.error('[PAYMENT] Cart is empty');
+        toast.error(t('cart:messages.cartEmpty'));
+        navigate("/carrito");
+        setProcessing(false);
+        return;
+      }
+
+      // CRÍTICO: Validar que shippingInfo existe y tiene estructura válida
+      if (!shippingInfo || !shippingInfo.address || !shippingInfo.city || !shippingInfo.postal_code) {
+        logger.error('[PAYMENT] Invalid shipping info:', shippingInfo);
+        toast.error(t('payment:messages.invalidShippingInfo'));
+        navigate("/informacion-envio");
+        setProcessing(false);
+        return;
+      }
+
       // IMPORTANTE: Calcular correctamente subtotal, IVA, envío y total
       const isGiftCardPurchase = cartItems.some(item => item.isGiftCard);
       const hasOnlyGiftCards = cartItems.every(item => item.isGiftCard);
@@ -835,11 +896,54 @@ export default function Payment() {
       const couponDiscount = calculateCouponDiscount(); // Descuento por cupón
       const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost; // Envío (0 si cupón envío gratis)
       const shipping = effectiveShipping; // Costo de envío efectivo
+
+      // CRÍTICO: Validar que todos los valores numéricos son válidos
+      if (isNaN(subtotal) || isNaN(tax) || isNaN(shipping) || isNaN(couponDiscount)) {
+        logger.error('[PAYMENT] Invalid numeric values:', { subtotal, tax, shipping, couponDiscount });
+        toast.error(t('payment:messages.calculationError'));
+        setProcessing(false);
+        return;
+      }
+
+      // CRÍTICO: Validar que los valores no son negativos
+      if (subtotal < 0 || tax < 0 || shipping < 0) {
+        logger.error('[PAYMENT] Negative values detected:', { subtotal, tax, shipping });
+        toast.error(t('payment:messages.invalidPrices'));
+        setProcessing(false);
+        return;
+      }
+
       // CRITICAL: Use total BEFORE gift card deduction for pending order flows.
       // The downstream pages (CardPaymentPage, RevolutPaymentPage, PaymentInstructions)
       // will read the gift card from sessionStorage and apply the deduction themselves.
       const totalBeforeGiftCard = Number(Math.max(0, subtotal - couponDiscount + tax + shipping).toFixed(2));
       const total = calculateTotal(); // subtotal - couponDiscount + IVA + envío - gift card
+
+      // CRÍTICO: Obtener status_id "Recibido" para pedidos nuevos
+      let orderStatusId: string | null = null;
+      try {
+        const { data: orderStatus } = await supabase
+          .from('order_statuses')
+          .select('id')
+          .eq('name', 'Recibido')
+          .maybeSingle();
+        
+        orderStatusId = orderStatus?.id || null;
+        
+        // Si no existe "Recibido", usar el primer status disponible
+        if (!orderStatusId) {
+          const { data: fallbackStatus } = await supabase
+            .from('order_statuses')
+            .select('id')
+            .order('name', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          orderStatusId = fallbackStatus?.id || null;
+        }
+      } catch (statusError) {
+        logger.error('[PAYMENT] Error loading order status:', statusError);
+        // Continuar sin status_id (será NULL en BD)
+      }
 
       // NUEVO FLUJO: Transferencia bancaria, tarjeta y Revolut - CREAR PEDIDO Y FACTURA PRIMERO
       if (method === "bank_transfer") {
@@ -861,6 +965,7 @@ export default function Payment() {
           .from("orders")
           .insert([{
             user_id: user.id,
+            status_id: orderStatusId,
             order_number: orderNumber,
             payment_status: "pending",
             payment_method: "bank_transfer",
@@ -975,6 +1080,7 @@ export default function Payment() {
           .from("orders")
           .insert([{
             user_id: user.id,
+            status_id: orderStatusId,
             order_number: orderNumber,
             payment_status: "pending",
             payment_method: "card",
@@ -1090,6 +1196,7 @@ export default function Payment() {
           .from("orders")
           .insert([{
             user_id: user.id,
+            status_id: orderStatusId,
             order_number: orderNumber,
             payment_status: "pending",
             payment_method: "revolut",

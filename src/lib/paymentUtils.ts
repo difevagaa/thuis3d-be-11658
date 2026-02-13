@@ -108,7 +108,7 @@ export interface OrderData {
 
 export interface OrderItemData {
   orderId: string;
-  productId: string;
+  productId: string | null; // Allow null for gift cards
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -264,7 +264,7 @@ export const convertCartToOrderItems = (
       // New item, add to map
       itemsMap.set(uniqueKey, {
         orderId,
-        productId: productId || '', // Safely handle null - empty string for gift cards
+        productId: productId || null, // Use null explicitly for gift cards, not empty string
         productName: item.name,
         quantity: item.quantity,
         unitPrice: Number(item.price) || 0, // Ensure number type
