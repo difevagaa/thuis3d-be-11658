@@ -248,19 +248,19 @@ export default function Quotes() {
               .single();
 
             if (fullQuote) {
-              const subtotal = parseFloat(fullQuote.estimated_price || '0');
-              const shippingCost = parseFloat(fullQuote.shipping_cost || '0');
+              const subtotal = parseFloat(String(fullQuote.estimated_price || '0'));
+              const shippingCost = parseFloat(String(fullQuote.shipping_cost || '0'));
 
               // Check tax settings
               const shouldApplyTax = fullQuote.tax_enabled ?? true;
               let taxRate = 0;
               if (shouldApplyTax) {
-                const { data: taxSettings } = await supabase
-                  .from('tax_settings')
-                  .select('tax_rate')
-                  .eq('is_enabled', true)
+                const { data: taxEnabledSetting } = await supabase
+                  .from('site_settings')
+                  .select('setting_value')
+                  .eq('setting_key', 'tax_rate')
                   .maybeSingle();
-                taxRate = taxSettings?.tax_rate || 0;
+                taxRate = taxEnabledSetting ? parseFloat(String(taxEnabledSetting.setting_value)) : 0;
               }
               const tax = shouldApplyTax ? (subtotal * taxRate) / 100 : 0;
               const total = subtotal + tax + shippingCost;
@@ -374,7 +374,7 @@ export default function Quotes() {
                 const quantity = fullQuote.quantity && fullQuote.quantity > 0 ? fullQuote.quantity : 1;
                 const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
                 const fileInfo = fullQuote.file_storage_path ? ` | Archivo: ${fullQuote.file_storage_path}` : '';
-                const quoteNum = fullQuote.quote_number ? ` #${fullQuote.quote_number}` : '';
+                const quoteNum = fullQuote.id ? ` #${fullQuote.id.substring(0, 8)}` : '';
 
                 const { data: newOrder, error: orderError } = await supabase
                   .from('orders')

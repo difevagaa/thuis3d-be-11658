@@ -90,7 +90,7 @@ export async function loadPaymentConfig(includeImages: boolean = true): Promise<
         // Parse boolean settings - use explicit key checks
         else if (key === 'bank_transfer_enabled' || key === 'card_enabled' || 
                  key === 'paypal_enabled' || key === 'revolut_enabled') {
-          config[key] = value === "true" || value === true;
+          config[key] = value === "true";
         }
         // Parse string settings - use explicit key checks
         else if (key === 'paypal_email' || key === 'revolut_link' || 
@@ -158,7 +158,7 @@ export async function loadSpecificPaymentSettings(keys: string[]): Promise<Recor
         } catch {
           // If not JSON, treat as string or boolean
           if (key.includes('enabled')) {
-            settings[key] = value === "true" || value === true;
+            settings[key] = value === "true";
           } else {
             settings[key] = value;
           }

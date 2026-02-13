@@ -650,7 +650,7 @@ export default function Payment() {
             });
 
           // Trigger notification refresh
-          await triggerNotificationRefresh();
+          await triggerNotificationRefresh(user.id);
         } catch (notifError) {
           logger.error('[INVOICE GIFT CARD PAYMENT] Error creating notification:', notifError);
           // Don't fail payment for notification errors
