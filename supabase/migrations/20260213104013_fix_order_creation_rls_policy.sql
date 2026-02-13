@@ -17,19 +17,16 @@ DROP POLICY IF EXISTS "Users can create their own orders" ON public.orders;
 
 -- 2. Crear política mejorada que permite:
 --    - Usuarios autenticados crear pedidos para sí mismos
---    - Invitados crear pedidos sin user_id
 --    - Admins crear pedidos para cualquier usuario
-CREATE POLICY "Users and guests can create orders"
+--    NOTA: Los usuarios deben estar autenticados para realizar compras
+CREATE POLICY "Users can create orders"
 ON public.orders
 FOR INSERT
 WITH CHECK (
   -- Caso 1: Usuario autenticado creando su propio pedido
-  (auth.uid() = user_id)
+  (auth.uid() IS NOT NULL AND auth.uid() = user_id)
   OR
-  -- Caso 2: Invitado creando pedido sin usuario
-  (auth.uid() IS NULL AND user_id IS NULL)
-  OR
-  -- Caso 3: Admin creando pedido para cualquier usuario
+  -- Caso 2: Admin creando pedido para cualquier usuario
   (
     EXISTS (
       SELECT 1 FROM user_roles 
@@ -85,5 +82,5 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id_auth ON public.orders(user_id)
 WHERE user_id IS NOT NULL;
 
 -- 6. Comentario de auditoría
-COMMENT ON POLICY "Users and guests can create orders" ON public.orders IS 
-  'Permite a usuarios autenticados, invitados y admins crear pedidos. Corrige el error de creación de pedidos en el flujo de pago.';
+COMMENT ON POLICY "Users can create orders" ON public.orders IS 
+  'Permite a usuarios autenticados y admins crear pedidos. Corrige el error de creación de pedidos en el flujo de pago.';
