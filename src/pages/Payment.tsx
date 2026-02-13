@@ -1056,7 +1056,7 @@ export default function Payment() {
             orderNumber: orderNumber,
             method: "bank_transfer",
             total: totalBeforeGiftCard,
-            isPending: false, // Order already created above, do NOT create again in PaymentInstructions
+            isPending: false, // Order and invoice already created in this handler, do NOT create again in PaymentInstructions
             orderId: order.id
           } 
         });
