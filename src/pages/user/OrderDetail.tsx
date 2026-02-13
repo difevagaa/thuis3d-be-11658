@@ -113,6 +113,29 @@ export default function OrderDetail() {
     window.print();
   };
 
+  const handlePayNow = () => {
+    if (!order || !invoice) {
+      i18nToast.error("error.noInvoiceAvailable");
+      return;
+    }
+
+    // Save invoice payment information to sessionStorage
+    sessionStorage.setItem("invoice_payment", JSON.stringify({
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoice_number,
+      orderId: order.id,
+      orderNumber: order.order_number,
+      total: order.total,
+      subtotal: order.subtotal,
+      tax: order.tax,
+      shipping: order.shipping || 0,
+      discount: order.discount || 0
+    }));
+    
+    // Navigate to payment page
+    navigate("/pago");
+  };
+
   const downloadInvoice = async () => {
     if (!invoice) {
       i18nToast.error("error.noInvoiceAvailable");
@@ -228,6 +251,12 @@ export default function OrderDetail() {
           {t('common:orderDetail.backToAccount')}
         </Button>
         <div className="flex gap-2">
+          {order.payment_status === "pending" && invoice && (
+            <Button onClick={handlePayNow}>
+              <CreditCard className="h-4 w-4 mr-2" />
+              {t('common:orderDetail.payNow')}
+            </Button>
+          )}
           {invoice && order.payment_status === "paid" && (
             <Button variant="outline" onClick={printInvoice}>
               <Printer className="h-4 w-4 mr-2" />
@@ -271,6 +300,31 @@ export default function OrderDetail() {
             </div>
           </CardHeader>
         </Card>
+
+        {/* Payment Status Alert for Pending Orders */}
+        {order.payment_status === "pending" && invoice && (
+          <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <CreditCard className="h-6 w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                      {t('common:orderDetail.pendingPaymentTitle')}
+                    </h3>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      {t('common:orderDetail.pendingPaymentMessage')}
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={handlePayNow} className="md:flex-shrink-0">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {t('common:orderDetail.payNow')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Order Details Grid */}
         <div className="grid md:grid-cols-3 gap-6">
