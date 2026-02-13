@@ -394,11 +394,12 @@ export default function Payment() {
       const giftCardAmount = calculateGiftCardAmount();
       const tax = calculateTax();
       const couponDisc = calculateCouponDiscount();
-      const effShipping = isFreeShippingCoupon ? 0 : shippingCost;
+      const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
+      // CRÍTICO: Total es 0 porque el gift card cubre todo
       const total = 0;
 
       // Validar valores numéricos
-      if (isNaN(subtotal) || isNaN(tax) || isNaN(effShipping) || isNaN(couponDisc)) {
+      if (isNaN(subtotal) || isNaN(tax) || isNaN(effectiveShipping) || isNaN(couponDisc)) {
         toast.error(t('payment:messages.calculationError'));
         return;
       }
@@ -427,7 +428,7 @@ export default function Payment() {
           payment_status: "paid",
           payment_method: "gift_card",
           subtotal: subtotal,
-          shipping: effShipping,
+          shipping: effectiveShipping,
           tax: tax,
           discount: couponDisc + giftCardAmount,
           total: total,
@@ -933,11 +934,12 @@ export default function Payment() {
         
         orderStatusId = orderStatus?.id || null;
         
-        // Si no existe "Recibido", usar el primer status disponible
+        // Si no existe "Recibido", usar el primer status que no sea "Cancelado"
         if (!orderStatusId) {
           const { data: fallbackStatus } = await supabase
             .from('order_statuses')
             .select('id')
+            .not('name', 'ilike', '%cancel%')
             .order('name', { ascending: true })
             .limit(1)
             .maybeSingle();

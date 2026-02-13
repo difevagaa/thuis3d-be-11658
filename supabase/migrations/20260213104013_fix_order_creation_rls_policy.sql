@@ -61,14 +61,16 @@ CREATE POLICY "Users can create order items"
 ON public.order_items
 FOR INSERT
 WITH CHECK (
-  -- Permitir si el pedido asociado pertenece al usuario actual
+  -- Permitir si el pedido asociado pertenece al usuario autenticado
   EXISTS (
     SELECT 1 FROM orders 
     WHERE orders.id = order_items.order_id
     AND (
-      orders.user_id = auth.uid()
-      OR orders.user_id IS NULL
-      OR EXISTS (
+      -- Usuario autenticado es dueño del pedido
+      (orders.user_id = auth.uid() AND auth.uid() IS NOT NULL)
+      OR
+      -- Admin puede crear items para cualquier pedido
+      EXISTS (
         SELECT 1 FROM user_roles 
         WHERE user_roles.user_id = auth.uid() 
         AND user_roles.role IN ('admin', 'superadmin')
