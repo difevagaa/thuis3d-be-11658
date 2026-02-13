@@ -1022,16 +1022,12 @@ export default function Payment() {
           notes: `Pedido pendiente de pago por transferencia bancaria`
         });
 
-        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[BANK TRANSFER] Invoice creation failed, rolling back order');
-          await rollbackOrderTransaction(order.id, undefined, 'BANK_TRANSFER');
-          toast.error(t('payment:messages.errorCreatingInvoice'));
-          setProcessing(false);
-          return;
+          logger.warn('[BANK TRANSFER] Invoice creation failed, but order was created successfully. Invoice can be created manually by admin.');
+          // Do NOT rollback order - invoice creation is non-critical
+        } else {
+          logger.log('[BANK TRANSFER] Invoice created:', invoice.invoice_number);
         }
-
-        logger.log('[BANK TRANSFER] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
@@ -1060,7 +1056,7 @@ export default function Payment() {
             orderNumber: orderNumber,
             method: "bank_transfer",
             total: totalBeforeGiftCard,
-            isPending: true, // FIXED: Actually pending until payment confirmed
+            isPending: false, // Order already created above, do NOT create again in PaymentInstructions
             orderId: order.id
           } 
         });
@@ -1143,16 +1139,12 @@ export default function Payment() {
           notes: `Pedido pendiente de pago con tarjeta`
         });
 
-        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[CARD PAYMENT] Invoice creation failed, rolling back order');
-          await rollbackOrderTransaction(order.id, undefined, 'CARD_PAYMENT');
-          toast.error(t('payment:messages.errorCreatingInvoice'));
-          setProcessing(false);
-          return;
+          logger.warn('[CARD PAYMENT] Invoice creation failed, but order was created successfully. Invoice can be created manually by admin.');
+          // Do NOT rollback order - invoice creation is non-critical
+        } else {
+          logger.log('[CARD PAYMENT] Invoice created:', invoice.invoice_number);
         }
-
-        logger.log('[CARD PAYMENT] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
@@ -1265,16 +1257,12 @@ export default function Payment() {
           notes: `Pedido pendiente de pago con Revolut`
         });
 
-        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[REVOLUT PAYMENT] Invoice creation failed, rolling back order');
-          await rollbackOrderTransaction(order.id, undefined, 'REVOLUT_PAYMENT');
-          toast.error(t('payment:messages.errorCreatingInvoice'));
-          setProcessing(false);
-          return;
+          logger.warn('[REVOLUT PAYMENT] Invoice creation failed, but order was created successfully. Invoice can be created manually by admin.');
+          // Do NOT rollback order - invoice creation is non-critical
+        } else {
+          logger.log('[REVOLUT PAYMENT] Invoice created:', invoice.invoice_number);
         }
-
-        logger.log('[REVOLUT PAYMENT] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
