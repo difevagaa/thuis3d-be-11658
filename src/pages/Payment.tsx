@@ -242,6 +242,9 @@ export default function Payment() {
       discount = Math.min(appliedCoupon.discount_value, subtotal);
     }
     // free_shipping: no monetary discount on products
+    
+    // CRÍTICO: Validar que discount no sea negativo ni mayor que subtotal
+    discount = Math.max(0, Math.min(discount, subtotal));
     return Number(discount.toFixed(2));
   };
 
@@ -1019,10 +1022,16 @@ export default function Payment() {
           notes: `Pedido pendiente de pago por transferencia bancaria`
         });
 
+        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[BANK TRANSFER] Warning: Invoice creation failed');
-          toast.warning(t('payment:messages.orderCreatedInvoiceManual'));
+          logger.error('[BANK TRANSFER] Invoice creation failed, rolling back order');
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error(t('payment:messages.errorCreatingInvoice'));
+          setProcessing(false);
+          return;
         }
+
+        logger.log('[BANK TRANSFER] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
@@ -1134,10 +1143,16 @@ export default function Payment() {
           notes: `Pedido pendiente de pago con tarjeta`
         });
 
+        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[CARD PAYMENT] Warning: Invoice creation failed');
-          toast.warning(t('payment:messages.orderCreatedInvoiceManual'));
+          logger.error('[CARD PAYMENT] Invoice creation failed, rolling back order');
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error(t('payment:messages.errorCreatingInvoice'));
+          setProcessing(false);
+          return;
         }
+
+        logger.log('[CARD PAYMENT] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
@@ -1250,10 +1265,16 @@ export default function Payment() {
           notes: `Pedido pendiente de pago con Revolut`
         });
 
+        // CRÍTICO: Si falla la creación de factura, hacer rollback del pedido
         if (!invoice) {
-          logger.error('[REVOLUT PAYMENT] Warning: Invoice creation failed');
-          toast.warning(t('payment:messages.orderCreatedInvoiceManual'));
+          logger.error('[REVOLUT PAYMENT] Invoice creation failed, rolling back order');
+          await supabase.from("orders").delete().eq("id", order.id);
+          toast.error(t('payment:messages.errorCreatingInvoice'));
+          setProcessing(false);
+          return;
         }
+
+        logger.log('[REVOLUT PAYMENT] Invoice created:', invoice.invoice_number);
 
         // Update coupon usage if applied
         if (appliedCoupon) {
