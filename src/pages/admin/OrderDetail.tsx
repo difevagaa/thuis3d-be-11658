@@ -15,6 +15,7 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
+import { emailService } from '@/lib/emailService';
 import { HelpAlert, HelpTooltip, HELP_MESSAGES } from "@/components/HelpComponents";
 
 export default function OrderDetail() {
@@ -187,65 +188,55 @@ export default function OrderDetail() {
 
       if (error) throw error;
       
-      // Actualizar la factura asociada al pedido
+      // When payment is marked as paid, trigger all necessary emails
       if (paymentStatus === 'paid' && id) {
-        await updateInvoiceStatusOnOrderPaid(id);
-      }
-      
-      // Si el pago se marca como pagado y hay una tarjeta de regalo, enviar email y notificación
-      if (paymentStatus === 'paid' && order.notes && order.notes.includes('Tarjeta Regalo:')) {
-        logger.log('Payment marked as paid, gift card will be activated by trigger');
+        logger.info('💰 Payment marked as paid, sending emails', { orderId: id });
         
-        // Extraer código de tarjeta de regalo de las notas
-        const codeMatch = order.notes.match(/Tarjeta Regalo: ([A-Z0-9-]+)/);
-        if (codeMatch && codeMatch[1]) {
-          const giftCardCode = codeMatch[1];
-          logger.log('Found gift card code:', giftCardCode);
+        // Update associated invoice
+        await updateInvoiceStatusOnOrderPaid(id);
+        
+        // Send invoice email
+        const { data: invoice } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('order_id', id)
+          .maybeSingle();
+        
+        if (invoice) {
+          logger.info('📄 Sending invoice email', { invoiceId: invoice.id });
+          emailService.sendInvoice({ invoiceId: invoice.id }).catch(err => {
+            logger.error('Failed to send invoice email (non-blocking)', err);
+          });
+        }
+        
+        // Check for gift cards and send emails
+        logger.info('🎁 Checking for gift cards to activate', { orderId: id });
+        emailService.sendAllGiftCardEmails(id).catch(err => {
+          logger.error('Failed to send gift card emails (non-blocking)', err);
+        });
+        
+        // Send payment confirmation to customer if they have an account
+        if (order.user_id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', order.user_id)
+            .maybeSingle();
           
-          // Esperar un momento para que el trigger active la tarjeta
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          try {
-            // Obtener datos de la tarjeta de regalo
-            const { data: giftCard, error: gcError } = await supabase
-              .from('gift_cards')
-              .select('*')
-              .eq('code', giftCardCode)
-              .single();
-            
-            if (!gcError && giftCard) {
-              // Enviar email con la tarjeta
-              logger.log('Sending gift card email to:', giftCard.recipient_email);
-              const { data: emailData, error: emailError } = await supabase.functions.invoke('send-gift-card-email', {
-                body: {
-                  recipient_email: giftCard.recipient_email,
-                  sender_name: giftCard.sender_name || "Thuis3D.be",
-                  gift_card_code: giftCard.code,
-                  amount: giftCard.initial_amount,
-                  message: giftCard.message || ""
-                }
-              });
-              
-              if (emailError) {
-                logger.error('Error sending gift card email:', emailError);
-                toast.error("Error al enviar email de tarjeta regalo");
-              } else {
-                logger.log('Gift card email sent successfully:', emailData);
-              }
-              
-              // Enviar notificación in-app al destinatario de la tarjeta si tiene cuenta
-              await sendGiftCardActivationNotification(giftCard.recipient_email, {
-                initial_amount: giftCard.initial_amount,
-                sender_name: giftCard.sender_name
-              });
-              
-              toast.success("Tarjeta activada, email y notificación enviados");
-            }
-          } catch (gcErr) {
-            logger.error('Error processing gift card:', gcErr);
-            toast.error("Error al procesar tarjeta regalo");
+          if (profile?.email) {
+            logger.info('📧 Sending payment confirmation', { email: profile.email });
+            // Payment confirmation can be sent via order status email
+            emailService.sendOrderStatus({
+              orderId: id,
+              oldStatus: 'pending',
+              newStatus: 'paid'
+            }).catch(err => {
+              logger.error('Failed to send payment confirmation (non-blocking)', err);
+            });
           }
         }
+        
+        toast.success("Estado de pago actualizado. Emails enviados automáticamente.");
       } else {
         toast.success("Estado de pago actualizado");
       }
