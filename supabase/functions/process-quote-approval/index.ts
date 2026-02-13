@@ -454,14 +454,19 @@ const handler = async (req: Request): Promise<Response> => {
     if (quote.user_id && !existingInvoice) {
       console.log('[QUOTE APPROVAL] Creating notification for user:', quote.user_id);
       
+      // Notification should link to order detail where payment button is prominent
+      const notificationLink = orderData ? `/pedido/${orderData.id}` : `/factura/${invoiceId}`;
+      
       const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: quote.user_id,
           type: 'quote_approved',
           title: '✅ Cotización Aprobada',
-          message: `Tu cotización ha sido aprobada. Se ha generado la factura ${invoiceNumber} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
-          link: `/mis-facturas/${invoiceId}`,
+          message: orderData 
+            ? `Tu cotización ha sido aprobada. Se ha generado el pedido ${orderData.order_number} pendiente de pago por €${total.toFixed(2)}. Haz clic para realizar el pago.`
+            : `Tu cotización ha sido aprobada. Se ha generado la factura ${invoiceNumber} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
+          link: notificationLink,
           is_read: false
         });
 

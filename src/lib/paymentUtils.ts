@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { emailService } from "@/lib/emailService";
 
 /**
  * Interface for shipping info stored in checkout sessions
@@ -151,6 +152,15 @@ export const createOrder = async (orderData: OrderData) => {
       .single();
 
     if (orderError) throw orderError;
+    
+    // Send order confirmation email asynchronously (don't wait for it)
+    if (order && order.id) {
+      logger.info('📧 Triggering order confirmation email', { orderId: order.id });
+      emailService.sendAllOrderEmails(order.id).catch(err => {
+        logger.error('Failed to send order emails (non-blocking)', err);
+      });
+    }
+    
     return order;
   } catch (error) {
     logger.error("Error creating order:", error);
