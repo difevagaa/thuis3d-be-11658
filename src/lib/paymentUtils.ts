@@ -760,6 +760,24 @@ export const rollbackOrderTransaction = async (
 };
 
 /**
+ * Interface for authenticated user
+ */
+export interface AuthenticatedUser {
+  id: string;
+  [key: string]: any;
+}
+
+/**
+ * Interface for shipping information
+ */
+export interface ShippingInformation {
+  address: string;
+  city: string;
+  postal_code: string;
+  [key: string]: any;
+}
+
+/**
  * Interface for payment validation results
  */
 export interface PaymentValidationResult {
@@ -784,9 +802,9 @@ export interface PaymentValidationResult {
  * @returns PaymentValidationResult with validation status and error details
  */
 export const validatePaymentPrerequisites = (
-  user: any,
-  cartItems: any[],
-  shippingInfo: any,
+  user: AuthenticatedUser | null,
+  cartItems: CartItem[],
+  shippingInfo: ShippingInformation | null,
   financials: { subtotal: number; tax: number; shipping: number; discount: number }
 ): PaymentValidationResult => {
   // Validate user authentication

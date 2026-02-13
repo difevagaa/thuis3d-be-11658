@@ -433,7 +433,7 @@ export default function Payment() {
           subtotal: subtotal,
           shipping: effectiveShipping,
           tax: tax,
-          discount: couponDisc, // Solo cupón en discount - gift card info en notes
+          discount: couponDisc, // Only coupon in discount - gift card info in notes
           total: total, // Total es 0 porque gift card cubre todo
           shipping_address: JSON.stringify(shippingInfo),
           billing_address: JSON.stringify(shippingInfo),
@@ -489,7 +489,7 @@ export default function Payment() {
         tax: tax,
         total: total,
         shipping: effectiveShipping,
-        discount: couponDisc, // Solo cupón - gift card se guarda en campos separados
+        discount: couponDisc, // Only coupon - gift card saved in separate fields
         payment_status: 'paid',
         payment_method: 'gift_card',
         gift_card_code: appliedGiftCard.code,
@@ -1354,7 +1354,7 @@ export default function Payment() {
             subtotal,
             tax,
             shipping,
-            discount: couponDiscount, // Solo cupón - gift card se almacena en invoice
+            discount: couponDiscount, // Only coupon - gift card stored in invoice
             total: finalTotal, // Total ya tiene gift card deducido
             payment_method: "paypal",
             payment_status: "pending", // CRÍTICO: SIEMPRE pending
@@ -1437,7 +1437,7 @@ export default function Payment() {
             subtotal: subtotal,
             tax: tax,
             shipping: shipping,
-            discount: couponDiscount, // Solo cupón - gift card en campos separados
+            discount: couponDiscount, // Only coupon - gift card in separate fields
             coupon_discount: isFreeShippingCoupon ? 0 : couponDiscount,
             coupon_code: appliedCoupon?.code || null,
             gift_card_code: giftCardData?.code || null,
