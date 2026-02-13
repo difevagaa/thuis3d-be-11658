@@ -58,7 +58,7 @@ export default function Invoices() {
   
   // Get tax settings
   const { taxSettings } = useTaxSettings();
-  const taxRate = taxSettings?.is_enabled ? (taxSettings.tax_rate / 100) : DEFAULT_TAX_RATE;
+  const taxRate = taxSettings?.enabled ? (taxSettings.rate / 100) : DEFAULT_TAX_RATE;
   
   const {
     selectedIds,
@@ -483,7 +483,7 @@ export default function Invoices() {
             toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
           }
           // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
+          await supabase.from("invoices").delete().eq("id", invoiceData.id);
           return;
         }
 
@@ -493,7 +493,7 @@ export default function Invoices() {
         if (currentBalance < amountUsed) {
           toast.error(`Error: Saldo insuficiente en tarjeta de regalo. Disponible: €${currentBalance.toFixed(2)}, Requerido: €${amountUsed.toFixed(2)}`);
           // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
+          await supabase.from("invoices").delete().eq("id", invoiceData.id);
           return;
         }
         
@@ -518,7 +518,7 @@ export default function Invoices() {
             toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
           }
           // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", newInvoice.id);
+          await supabase.from("invoices").delete().eq("id", invoiceData.id);
           return;
         }
       }
