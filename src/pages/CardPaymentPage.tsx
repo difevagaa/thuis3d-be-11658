@@ -204,14 +204,30 @@ export default function CardPaymentPage() {
         
         logger.log('[CARD PAYMENT] Gift card processed successfully');
         
-        // Update order with gift card info
+        // Fetch existing order to preserve discount and notes
         try {
+          const { data: existingOrder, error: fetchError } = await supabase
+            .from("orders")
+            .select("discount, notes")
+            .eq("id", orderId)
+            .single();
+          
+          if (fetchError) {
+            logger.error('[CARD PAYMENT] Error fetching existing order:', fetchError);
+          }
+
+          const existingDiscount = Number(existingOrder?.discount || 0);
+          const existingNotes = existingOrder?.notes || '';
+          
+          // Update order with combined gift card info
           const { error: updateError } = await supabase
             .from("orders")
             .update({
-              discount: giftCardDiscount,
+              discount: existingDiscount + giftCardDiscount,
               total: Math.max(0, total - giftCardDiscount),
-              notes: `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
+              notes: existingNotes ? 
+                `${existingNotes}\n\nTarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})` :
+                `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
             })
             .eq("id", orderId);
           
@@ -219,13 +235,25 @@ export default function CardPaymentPage() {
             logger.error('[CARD PAYMENT] Error updating order with gift card:', updateError);
           }
 
-          // Update invoice with gift card info
+          // Update invoice with gift card info (preserving existing discount)
+          const { data: existingInvoice, error: fetchInvoiceError } = await supabase
+            .from("invoices")
+            .select("discount")
+            .eq("order_id", orderId)
+            .single();
+          
+          if (fetchInvoiceError) {
+            logger.error('[CARD PAYMENT] Error fetching existing invoice:', fetchInvoiceError);
+          }
+
+          const existingInvoiceDiscount = Number(existingInvoice?.discount || 0);
+          
           const { error: invoiceUpdateError } = await supabase
             .from("invoices")
             .update({
               gift_card_code: giftCardData.code,
               gift_card_amount: giftCardDiscount,
-              discount: giftCardDiscount,
+              discount: existingInvoiceDiscount + giftCardDiscount,
               total: Math.max(0, total - giftCardDiscount)
             })
             .eq("order_id", orderId);
