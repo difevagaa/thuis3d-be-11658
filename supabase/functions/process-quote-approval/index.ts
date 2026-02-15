@@ -220,6 +220,17 @@ const handler = async (req: Request): Promise<Response> => {
     let orderData: { id: string; order_number: string } | null = existingOrder ?? null;
 
     if (!existingOrder) {
+      // Generate order number first
+      const { data: orderNumber, error: orderNumError } = await supabase
+        .rpc('generate_order_number');
+
+      if (orderNumError || !orderNumber) {
+        console.error('[QUOTE APPROVAL] Error generating order number:', orderNumError);
+        throw new Error('Failed to generate order number');
+      }
+
+      console.log('[QUOTE APPROVAL] Generated order number:', orderNumber);
+
       const { data: orderStatus } = await supabase
         .from('order_statuses')
         .select('id')
@@ -237,7 +248,13 @@ const handler = async (req: Request): Promise<Response> => {
         fallbackStatus = data;
       }
 
-      const statusId = orderStatus?.id || fallbackStatus?.id || null;
+      const statusId = orderStatus?.id || fallbackStatus?.id;
+      
+      if (!statusId) {
+        console.error('[QUOTE APPROVAL] No order status found in database');
+        throw new Error('No order status available');
+      }
+
       // Safely construct address from available quote fields
       const addressParts = [
         quote.address || null, 
@@ -249,6 +266,7 @@ const handler = async (req: Request): Promise<Response> => {
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
 
       console.log('[QUOTE APPROVAL] Creating order with data:', {
+        order_number: orderNumber,
         user_id: quote.user_id,
         status_id: statusId,
         subtotal,
@@ -262,6 +280,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
+          order_number: orderNumber,
           user_id: quote.user_id,
           status_id: statusId,
           subtotal: subtotal,
@@ -283,36 +302,34 @@ const handler = async (req: Request): Promise<Response> => {
         console.error('[QUOTE APPROVAL] Order error details:', JSON.stringify(orderError, null, 2));
         console.error('[QUOTE APPROVAL] Order error code:', orderError.code);
         console.error('[QUOTE APPROVAL] Order error message:', orderError.message);
-        // Don't fail the entire operation, just log and continue
-        // The invoice was created successfully, which is the most important part
+        console.error('[QUOTE APPROVAL] Order error hint:', orderError.hint);
+        // This is critical - if order creation fails, throw error so admin knows
+        throw new Error(`Failed to create order: ${orderError.message}`);
       }
       
-      if (newOrder) {
-        orderData = newOrder;
-        console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
+      orderData = newOrder;
+      console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
 
-        // Try to create order items, but don't fail if it doesn't work
-        try {
-          const { error: orderItemsError } = await supabase
-            .from('order_items')
-            .insert({
-              order_id: newOrder.id,
-              product_name: `Cotización ${quote.quote_type}`,
-              quantity: quantity,
-              unit_price: unitPrice,
-              total_price: subtotal,
-              selected_material: quote.material_id,
-              selected_color: quote.color_id,
-              custom_text: quote.description || null
-            });
+      // Create order items
+      const { error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert({
+          order_id: newOrder.id,
+          product_name: `Cotización ${quote.quote_type}`,
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_price: subtotal,
+          selected_material: quote.material_id || null,
+          selected_color: quote.color_id || null,
+          custom_text: quote.description || null
+        });
 
-          if (orderItemsError) {
-            console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
-            console.error('[QUOTE APPROVAL] Order items error details:', JSON.stringify(orderItemsError, null, 2));
-          }
-        } catch (itemError) {
-          console.error('[QUOTE APPROVAL] Exception creating order items:', itemError);
-        }
+      if (orderItemsError) {
+        console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+        console.error('[QUOTE APPROVAL] Order items error details:', JSON.stringify(orderItemsError, null, 2));
+        // Log but don't fail - order was created successfully
+      } else {
+        console.log('[QUOTE APPROVAL] Order items created successfully');
       }
     }
 
