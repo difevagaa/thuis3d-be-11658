@@ -210,11 +210,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    const quoteMarker = `quote_id:${quote_id}`;
+    const quoteMarker = `[QUOTE:${quote_id}]`;
     const { data: existingOrder } = await supabase
       .from('orders')
       .select('id, order_number')
-      .ilike('admin_notes', `%${quoteMarker}%`)
+      .ilike('notes', `%${quoteMarker}%`)
       .maybeSingle();
 
     let orderData: { id: string; order_number: string } | null = existingOrder ?? null;
@@ -293,8 +293,7 @@ const handler = async (req: Request): Promise<Response> => {
             discount: 0,
             shipping: shippingCost,
             total: total,
-            notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
-            admin_notes: quoteMarker,
+            notes: `${quoteMarker}\n\nPedido generado automáticamente desde la cotización ${quote.quote_type}`,
             shipping_address: addressParts || null,
             billing_address: addressParts || null,
             payment_method: 'bank_transfer', // Default payment method for quote-based orders
