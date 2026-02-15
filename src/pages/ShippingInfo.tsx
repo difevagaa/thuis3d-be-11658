@@ -13,6 +13,9 @@ import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateShippingInfo, showValidationError } from "@/lib/validation";
 
+// Checkout session expiry time (24 hours in milliseconds)
+const CHECKOUT_SESSION_EXPIRY_MS = 1000 * 60 * 60 * 24;
+
 export default function ShippingInfo() {
   const navigate = useNavigate();
   const { t } = useTranslation(['shipping', 'common']);
@@ -154,7 +157,7 @@ export default function ShippingInfo() {
             shipping_info: formData,
             cart_data: cartData,
             last_activity: new Date().toISOString(),
-            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // 24 hours for abandoned cart detection
+            expires_at: new Date(Date.now() + CHECKOUT_SESSION_EXPIRY_MS).toISOString() // 24 hours for abandoned cart detection
           })
           .eq('id', existingSessionId);
         
@@ -177,7 +180,7 @@ export default function ShippingInfo() {
           cart_data: cartData,
           status: 'active',
           last_activity: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // 24 hours for abandoned cart detection
+          expires_at: new Date(Date.now() + CHECKOUT_SESSION_EXPIRY_MS).toISOString() // 24 hours for abandoned cart detection
         })
         .select()
         .single();

@@ -28,12 +28,30 @@ interface OrderItem {
   selected_color: string | null;
 }
 
+interface CustomerInfo {
+  full_name: string;
+  email: string;
+  phone: string;
+}
+
+interface ParsedAddress {
+  full_name?: string;
+  address?: string;
+  street?: string;
+  city?: string;
+  postal_code?: string;
+  postalCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+}
+
 export default function OrderLabelPrint() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [customerInfo, setCustomerInfo] = useState<any>(null);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,7 +107,7 @@ export default function OrderLabelPrint() {
     window.print();
   };
 
-  const parseAddress = (addressStr: string | null): any => {
+  const parseAddress = (addressStr: string | null): ParsedAddress => {
     if (!addressStr) return {};
     try {
       return JSON.parse(addressStr);
@@ -152,6 +170,7 @@ export default function OrderLabelPrint() {
         </div>
 
         {/* Barcode - Using Code 128 compatible format */}
+        {/* TODO: Replace with actual barcode library (e.g., react-barcode or JsBarcode) for scannable barcodes */}
         <div className="mb-8 text-center">
           <svg 
             className="mx-auto" 
@@ -159,7 +178,7 @@ export default function OrderLabelPrint() {
             height="80"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Simple barcode representation */}
+            {/* Simple barcode representation - decorative placeholder */}
             <rect x="10" y="10" width="2" height="50" fill="black" />
             <rect x="14" y="10" width="4" height="50" fill="black" />
             <rect x="20" y="10" width="2" height="50" fill="black" />

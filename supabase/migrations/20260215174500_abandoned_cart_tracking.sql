@@ -22,11 +22,14 @@ ON checkout_sessions(status, expires_at)
 WHERE status = 'active';
 
 -- Create function to mark carts as abandoned after 24 hours
+-- Uses 25-hour window to ensure we catch all carts older than 24 hours with some buffer
 CREATE OR REPLACE FUNCTION mark_abandoned_carts()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  CHECKOUT_BUFFER_HOURS CONSTANT INTEGER := 25; -- 25 hours buffer to ensure 24+ hour old carts are caught
 BEGIN
   -- Mark checkout sessions as abandoned if:
   -- 1. Status is still 'active'
@@ -41,9 +44,10 @@ BEGIN
     AND cs.expires_at < NOW()
     AND NOT EXISTS (
       SELECT 1 FROM orders o
-      WHERE o.shipping_address::text LIKE '%' || (cs.shipping_info->>'full_name') || '%'
+      WHERE o.user_id = cs.user_id
+        AND o.user_id IS NOT NULL
         AND o.created_at > cs.created_at
-        AND o.created_at < (cs.created_at + INTERVAL '25 hours')
+        AND o.created_at < (cs.created_at + (CHECKOUT_BUFFER_HOURS || ' hours')::INTERVAL)
     );
     
   RAISE NOTICE 'Marked % checkout sessions as abandoned', FOUND;
