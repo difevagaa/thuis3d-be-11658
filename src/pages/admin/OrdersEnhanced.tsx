@@ -13,6 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
 import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Search, Filter, RefreshCw } from "lucide-react";
+import { useStatusTransitionRules } from "@/hooks/useStatusTransitionRules";
+import { useContextualHelp } from "@/hooks/useContextualHelp";
+import { SmartStatusDialog } from "@/components/admin/SmartStatusDialog";
+import { HelpSidebar } from "@/components/admin/HelpSidebar";
+import { ContextualHelpButton } from "@/components/admin/ContextualHelpButton";
 
 // Popular carriers with tracking URL templates
 const CARRIERS = [
@@ -47,6 +52,12 @@ export default function OrdersEnhanced() {
   const [adminNotes, setAdminNotes] = useState("");
   const [newPaymentStatus, setNewPaymentStatus] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Smart help system
+  const { checkTransition, applyRuleAction, trackRuleInteraction } = useStatusTransitionRules();
+  const { helps, trackHelpViewed, trackHelpClicked, trackHelpDismissed, trackHelpHelpful } = useContextualHelp('orders');
+  const [pendingTransitionRule, setPendingTransitionRule] = useState<any>(null);
+  const [showSmartDialog, setShowSmartDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -161,13 +172,64 @@ export default function OrdersEnhanced() {
     return slug.includes('rechazado') || slug.includes('rejected') || slug.includes('afgewezen') || slug.includes('cancelado') || slug.includes('cancelled');
   };
 
-  const updateOrderStatus = async () => {
+  const updateOrderStatus = async (skipTransitionCheck = false) => {
     if (!editingOrder) return;
     setSaving(true);
 
     try {
       const oldPaymentStatus = editingOrder.payment_status;
       const oldStatusName = editingOrder.status?.name;
+      const oldStatusId = editingOrder.status_id;
+
+      // Check for transition rules before updating
+      if (!skipTransitionCheck) {
+        // Check if order status changed
+        if (selectedStatus && selectedStatus !== oldStatusId) {
+          const statusName = statuses.find(s => s.id === selectedStatus)?.name || '';
+          const transitionCheck = await checkTransition(
+            'order',
+            editingOrder.id,
+            'orders',
+            oldStatusId,
+            statusName,
+            'order_status'
+          );
+
+          if (transitionCheck.shouldPrompt && transitionCheck.rules.length > 0) {
+            // Show smart dialog for the first rule
+            setPendingTransitionRule({
+              rule: transitionCheck.rules[0],
+              context: 'order_status'
+            });
+            setShowSmartDialog(true);
+            setSaving(false);
+            return; // Exit and wait for user decision
+          }
+        }
+
+        // Check if payment status changed
+        if (newPaymentStatus && newPaymentStatus !== oldPaymentStatus) {
+          const transitionCheck = await checkTransition(
+            'order',
+            editingOrder.id,
+            'orders',
+            oldPaymentStatus,
+            newPaymentStatus,
+            'payment_status'
+          );
+
+          if (transitionCheck.shouldPrompt && transitionCheck.rules.length > 0) {
+            // Show smart dialog for the first rule
+            setPendingTransitionRule({
+              rule: transitionCheck.rules[0],
+              context: 'payment_status'
+            });
+            setShowSmartDialog(true);
+            setSaving(false);
+            return; // Exit and wait for user decision
+          }
+        }
+      }
       
       // Build update object
       const updates: any = {
@@ -256,12 +318,60 @@ export default function OrdersEnhanced() {
 
       toast.success("✅ Estado actualizado exitosamente");
       closeEditDialog();
+      await loadData(); // Reload to show updated data
     } catch (error: any) {
       console.error("Error updating order:", error);
       toast.error("Error al actualizar estado: " + (error.message || "Error desconocido"));
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle smart dialog option selection
+  const handleSmartDialogOption = async (option: string, reason?: string) => {
+    if (!pendingTransitionRule || !editingOrder) return;
+
+    const { rule, context } = pendingTransitionRule;
+    const selectedOption = rule.options.find((opt: any) => opt.value === option);
+
+    if (!selectedOption) {
+      setShowSmartDialog(false);
+      setPendingTransitionRule(null);
+      return;
+    }
+
+    // Track that user completed the action
+    await trackRuleInteraction(rule.id, 'completed');
+
+    // Apply the suggested action
+    if (selectedOption.action && selectedOption.action !== 'none') {
+      const success = await applyRuleAction(
+        editingOrder.id,
+        'orders',
+        selectedOption.action,
+        rule.suggests_status_type,
+        selectedOption.status || rule.suggests_status_value,
+        rule.id
+      );
+
+      if (success) {
+        // Update local state based on the action
+        if (rule.suggests_status_type === 'payment_status') {
+          setNewPaymentStatus(selectedOption.status || rule.suggests_status_value);
+        } else if (rule.suggests_status_type === 'order_status') {
+          const statusToSet = statuses.find(s => s.name === (selectedOption.status || rule.suggests_status_value));
+          if (statusToSet) {
+            setSelectedStatus(statusToSet.id);
+          }
+        }
+      }
+    }
+
+    setShowSmartDialog(false);
+    setPendingTransitionRule(null);
+    
+    // Now proceed with the update, skipping transition check
+    await updateOrderStatus(true);
   };
 
   const checkAndSendGiftCardEmail = async (orderId: string) => {
@@ -463,8 +573,18 @@ export default function OrdersEnhanced() {
 
       <Card>
         <CardHeader className="px-4 md:px-6">
-          <CardTitle className="text-lg md:text-xl">Pedidos Activos ({filteredOrders.length})</CardTitle>
-          <CardDescription className="text-sm">Gestiona estados, tracking y envíos de tus clientes</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg md:text-xl">Pedidos Activos ({filteredOrders.length})</CardTitle>
+              <CardDescription className="text-sm">Gestiona estados, tracking y envíos de tus clientes</CardDescription>
+            </div>
+            <HelpSidebar 
+              helps={helps} 
+              sectionName="Gestión de Pedidos"
+              onViewed={trackHelpViewed}
+              onFeedback={trackHelpHelpful}
+            />
+          </div>
         </CardHeader>
         <CardContent className="px-0 md:px-6">
           {/* Desktop Table */}
@@ -627,7 +747,19 @@ export default function OrdersEnhanced() {
             <TabsContent value="status" className="space-y-4 mt-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>📋 Estado del Pedido</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>📋 Estado del Pedido</Label>
+                    {helps.find(h => h.title.includes('Estado') && h.title.includes('Cambio')) && (
+                      <ContextualHelpButton 
+                        help={helps.find(h => h.title.includes('Estado') && h.title.includes('Cambio'))!}
+                        onViewed={trackHelpViewed}
+                        onClicked={trackHelpClicked}
+                        onDismissed={trackHelpDismissed}
+                        onFeedback={trackHelpHelpful}
+                        size="sm"
+                      />
+                    )}
+                  </div>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona un estado" />
@@ -649,7 +781,19 @@ export default function OrdersEnhanced() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>💳 Estado de Pago</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>💳 Estado de Pago</Label>
+                    {helps.find(h => h.title.includes('Pago')) && (
+                      <ContextualHelpButton 
+                        help={helps.find(h => h.title.includes('Pago'))!}
+                        onViewed={trackHelpViewed}
+                        onClicked={trackHelpClicked}
+                        onDismissed={trackHelpDismissed}
+                        onFeedback={trackHelpHelpful}
+                        size="sm"
+                      />
+                    )}
+                  </div>
                   <Select value={newPaymentStatus} onValueChange={setNewPaymentStatus}>
                     <SelectTrigger>
                       <SelectValue />
@@ -818,12 +962,23 @@ export default function OrdersEnhanced() {
             <Button variant="outline" onClick={closeEditDialog} disabled={saving}>
               Cancelar
             </Button>
-            <Button onClick={updateOrderStatus} disabled={saving}>
+            <Button onClick={() => updateOrderStatus(false)} disabled={saving}>
               {saving ? "Guardando..." : "💾 Guardar Cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Smart Status Transition Dialog */}
+      {pendingTransitionRule && (
+        <SmartStatusDialog
+          open={showSmartDialog}
+          onOpenChange={setShowSmartDialog}
+          rule={pendingTransitionRule.rule}
+          onOptionSelected={handleSmartDialogOption}
+          entityName={editingOrder?.order_number || 'pedido'}
+        />
+      )}
     </div>
   );
 }
