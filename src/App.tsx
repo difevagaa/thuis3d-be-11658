@@ -64,6 +64,7 @@ const QuoteDetail = lazy(() => import("./pages/admin/QuoteDetail"));
 const CreateQuote = lazy(() => import("./pages/admin/CreateQuote"));
 const AbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const AdminOrderDetail = lazy(() => import("./pages/admin/OrderDetail"));
+const OrderLabelPrint = lazy(() => import("./pages/admin/OrderLabelPrint"));
 const CreateOrder = lazy(() => import("./pages/admin/CreateOrder"));
 const Users = lazy(() => import("./pages/admin/Users"));
 const Materials = lazy(() => import("./pages/admin/Materials"));
@@ -176,6 +177,7 @@ const App = () => {
             <Route path="/admin/pages" element={<AdminLayout><Pages /></AdminLayout>} />
             <Route path="/admin/pedidos" element={<AdminLayout><OrdersEnhanced /></AdminLayout>} />
             <Route path="/admin/pedidos/:id" element={<AdminLayout><AdminOrderDetail /></AdminLayout>} />
+            <Route path="/admin/pedidos/:id/imprimir" element={<OrderLabelPrint />} />
             <Route path="/admin/pedidos/crear" element={<AdminLayout><CreateOrder /></AdminLayout>} />
             <Route path="/admin/carritos-abandonados" element={<AdminLayout><AbandonedCarts /></AdminLayout>} />
             <Route path="/admin/cotizaciones" element={<AdminLayout><AdminQuotes /></AdminLayout>} />
