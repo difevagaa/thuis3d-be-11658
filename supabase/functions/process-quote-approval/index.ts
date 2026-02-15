@@ -220,117 +220,141 @@ const handler = async (req: Request): Promise<Response> => {
     let orderData: { id: string; order_number: string } | null = existingOrder ?? null;
 
     if (!existingOrder) {
-      // Generate order number first
-      const { data: orderNumber, error: orderNumError } = await supabase
-        .rpc('generate_order_number');
+      console.log('[QUOTE APPROVAL] Creating new order...');
+      
+      try {
+        // Generate order number first
+        const { data: orderNumber, error: orderNumError } = await supabase
+          .rpc('generate_order_number');
 
-      if (orderNumError || !orderNumber) {
-        console.error('[QUOTE APPROVAL] Error generating order number:', orderNumError);
-        throw new Error('Failed to generate order number');
-      }
+        if (orderNumError || !orderNumber) {
+          console.error('[QUOTE APPROVAL] Error generating order number:', orderNumError);
+          throw new Error(`Failed to generate order number: ${orderNumError?.message || 'Unknown error'}`);
+        }
 
-      console.log('[QUOTE APPROVAL] Generated order number:', orderNumber);
+        console.log('[QUOTE APPROVAL] Generated order number:', orderNumber);
 
-      const { data: orderStatus } = await supabase
-        .from('order_statuses')
-        .select('id')
-        .eq('name', 'Recibido')
-        .maybeSingle();
-
-      let fallbackStatus: { id: string } | null = null;
-      if (!orderStatus) {
-        const { data } = await supabase
+        const { data: orderStatus } = await supabase
           .from('order_statuses')
           .select('id')
-          .order('name', { ascending: true })
-          .limit(1)
+          .eq('name', 'Recibido')
           .maybeSingle();
-        fallbackStatus = data;
-      }
 
-      const statusId = orderStatus?.id || fallbackStatus?.id;
-      
-      if (!statusId) {
-        console.error('[QUOTE APPROVAL] No order status found in database');
-        console.error('[QUOTE APPROVAL] Searched for status "Recibido" or first available status');
-        throw new Error('No order status available. Database may not have any order statuses configured. Please create at least one order status before approving quotes.');
-      }
+        let fallbackStatus: { id: string } | null = null;
+        if (!orderStatus) {
+          const { data } = await supabase
+            .from('order_statuses')
+            .select('id')
+            .order('name', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          fallbackStatus = data;
+        }
 
-      // Safely construct address from available quote fields
-      const addressParts = [
-        quote.address || null, 
-        quote.city || null, 
-        quote.postal_code || null, 
-        quote.country || null
-      ].filter(Boolean).join(', ');
-      const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
-      const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+        const statusId = orderStatus?.id || fallbackStatus?.id;
+        
+        if (!statusId) {
+          console.error('[QUOTE APPROVAL] No order status found in database');
+          console.error('[QUOTE APPROVAL] Searched for status "Recibido" or first available status');
+          throw new Error('No order status available. Database may not have any order statuses configured. Please create at least one order status before approving quotes.');
+        }
 
-      console.log('[QUOTE APPROVAL] Creating order with data:', {
-        order_number: orderNumber,
-        user_id: quote.user_id,
-        status_id: statusId,
-        subtotal,
-        tax,
-        shipping: shippingCost,
-        total,
-        payment_status: 'pending',
-        addressParts: addressParts || 'No address provided'
-      });
+        // Safely construct address from available quote fields
+        const addressParts = [
+          quote.address || null, 
+          quote.city || null, 
+          quote.postal_code || null, 
+          quote.country || null
+        ].filter(Boolean).join(', ');
+        const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
+        const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
 
-      const { data: newOrder, error: orderError } = await supabase
-        .from('orders')
-        .insert({
+        console.log('[QUOTE APPROVAL] Creating order with data:', {
           order_number: orderNumber,
           user_id: quote.user_id,
           status_id: statusId,
-          subtotal: subtotal,
-          tax: tax,
-          discount: 0,
+          subtotal,
+          tax,
           shipping: shippingCost,
-          total: total,
-          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
-          admin_notes: quoteMarker,
-          shipping_address: addressParts || null,
-          billing_address: addressParts || null,
-          payment_status: 'pending'
-        })
-        .select('id, order_number')
-        .single();
-
-      if (orderError) {
-        console.error('[QUOTE APPROVAL] Error creating order:', orderError);
-        console.error('[QUOTE APPROVAL] Order error details:', JSON.stringify(orderError, null, 2));
-        console.error('[QUOTE APPROVAL] Order error code:', orderError.code);
-        console.error('[QUOTE APPROVAL] Order error message:', orderError.message);
-        console.error('[QUOTE APPROVAL] Order error hint:', orderError.hint);
-        // This is critical - if order creation fails, throw error so admin knows
-        throw new Error(`Failed to create order: ${orderError.message}`);
-      }
-      
-      orderData = newOrder;
-      console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
-
-      // Create order items
-      const { error: orderItemsError } = await supabase
-        .from('order_items')
-        .insert({
-          order_id: newOrder.id,
-          product_name: `Cotización ${quote.quote_type}`,
-          quantity: quantity,
-          unit_price: unitPrice,
-          total_price: subtotal,
-          selected_material: quote.material_id || null,
-          selected_color: quote.color_id || null,
-          custom_text: quote.description || null
+          total,
+          payment_status: 'pending',
+          payment_method: 'bank_transfer',
+          addressParts: addressParts || 'No address provided'
         });
 
-      if (orderItemsError) {
-        console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
-        console.error('[QUOTE APPROVAL] Order items error details:', JSON.stringify(orderItemsError, null, 2));
-        // Log but don't fail - order was created successfully
-      } else {
-        console.log('[QUOTE APPROVAL] Order items created successfully');
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            order_number: orderNumber,
+            user_id: quote.user_id,
+            status_id: statusId,
+            subtotal: subtotal,
+            tax: tax,
+            discount: 0,
+            shipping: shippingCost,
+            total: total,
+            notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
+            admin_notes: quoteMarker,
+            shipping_address: addressParts || null,
+            billing_address: addressParts || null,
+            payment_method: 'bank_transfer', // Default payment method for quote-based orders
+            payment_status: 'pending'
+          })
+          .select('id, order_number')
+          .single();
+
+        if (orderError) {
+          console.error('[QUOTE APPROVAL] Error creating order:', orderError);
+          console.error('[QUOTE APPROVAL] Order error details:', JSON.stringify(orderError, null, 2));
+          console.error('[QUOTE APPROVAL] Order error code:', orderError.code);
+          console.error('[QUOTE APPROVAL] Order error message:', orderError.message);
+          console.error('[QUOTE APPROVAL] Order error hint:', orderError.hint);
+          console.error('[QUOTE APPROVAL] Order error details:', orderError.details);
+          
+          // Build detailed error message for admin
+          let errorMsg = `Failed to create order: ${orderError.message}`;
+          if (orderError.hint) {
+            errorMsg += ` | Hint: ${orderError.hint}`;
+          }
+          if (orderError.details) {
+            errorMsg += ` | Details: ${orderError.details}`;
+          }
+          if (orderError.code) {
+            errorMsg += ` | Code: ${orderError.code}`;
+          }
+          
+          // This is critical - if order creation fails, throw error so admin knows
+          throw new Error(errorMsg);
+        }
+        
+        orderData = newOrder;
+        console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
+
+        // Create order items
+        const { error: orderItemsError } = await supabase
+          .from('order_items')
+          .insert({
+            order_id: newOrder.id,
+            product_name: `Cotización ${quote.quote_type}`,
+            quantity: quantity,
+            unit_price: unitPrice,
+            total_price: subtotal,
+            selected_material: quote.material_id || null,
+            selected_color: quote.color_id || null,
+            custom_text: quote.description || null
+          });
+
+        if (orderItemsError) {
+          console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+          console.error('[QUOTE APPROVAL] Order items error details:', JSON.stringify(orderItemsError, null, 2));
+          // Log but don't fail - order was created successfully
+        } else {
+          console.log('[QUOTE APPROVAL] Order items created successfully');
+        }
+      } catch (orderCreationError: any) {
+        console.error('[QUOTE APPROVAL] Exception during order creation:', orderCreationError);
+        // Re-throw with more context
+        throw new Error(`Order creation failed: ${orderCreationError.message || 'Unknown error occurred during order creation'}`);
       }
     }
 

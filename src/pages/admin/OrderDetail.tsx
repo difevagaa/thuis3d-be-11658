@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, Download, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Trash2, Download, Image as ImageIcon, Printer } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -295,13 +295,18 @@ export default function OrderDetail() {
             </p>
           </div>
         </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar Pedido
-            </Button>
-          </AlertDialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/pedidos/${id}/imprimir`)}>
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir Etiqueta
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Pedido
+              </Button>
+            </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
