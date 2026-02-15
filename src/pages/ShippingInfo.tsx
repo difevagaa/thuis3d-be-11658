@@ -133,6 +133,17 @@ export default function ShippingInfo() {
         if (profileError) throw profileError;
       }
       
+      // Load cart data to save with checkout session for abandoned cart recovery
+      const savedCart = localStorage.getItem("cart");
+      let cartData: any[] = [];
+      if (savedCart) {
+        try {
+          cartData = JSON.parse(savedCart);
+        } catch (e) {
+          logger.error("Error parsing cart data:", e);
+        }
+      }
+
       // Check if we already have a checkout session to prevent duplicates
       const existingSessionId = sessionStorage.getItem('checkout_session_id');
       if (existingSessionId) {
@@ -141,7 +152,9 @@ export default function ShippingInfo() {
           .from('checkout_sessions')
           .update({
             shipping_info: formData,
-            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
+            cart_data: cartData,
+            last_activity: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // 24 hours for abandoned cart detection
           })
           .eq('id', existingSessionId);
         
@@ -161,7 +174,10 @@ export default function ShippingInfo() {
         .insert({
           user_id: user ? user.id : null,
           shipping_info: shippingInfo,
-          expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
+          cart_data: cartData,
+          status: 'active',
+          last_activity: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // 24 hours for abandoned cart detection
         })
         .select()
         .single();
