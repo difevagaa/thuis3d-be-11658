@@ -223,13 +223,15 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('[QUOTE APPROVAL] Creating new order...');
       
       try {
-        // Generate order number first
-        const { data: orderNumber, error: orderNumError } = await supabase
+        // Generate order number first (with fallback if RPC is unavailable)
+        const { data: generatedOrderNumber, error: orderNumError } = await supabase
           .rpc('generate_order_number');
 
-        if (orderNumError || !orderNumber) {
+        let orderNumber = generatedOrderNumber;
+        if (orderNumError || !generatedOrderNumber) {
           console.error('[QUOTE APPROVAL] Error generating order number:', orderNumError);
-          throw new Error(`Failed to generate order number: ${orderNumError?.message || 'Unknown error'}`);
+          orderNumber = `ORD-${Date.now()}`;
+          console.warn('[QUOTE APPROVAL] Using fallback order number:', orderNumber);
         }
 
         console.log('[QUOTE APPROVAL] Generated order number:', orderNumber);
@@ -251,7 +253,21 @@ const handler = async (req: Request): Promise<Response> => {
           fallbackStatus = data;
         }
 
-        const statusId = orderStatus?.id || fallbackStatus?.id;
+        let statusId = orderStatus?.id || fallbackStatus?.id;
+        if (!statusId) {
+          const { data: createdStatus, error: statusInsertError } = await supabase
+            .from('order_statuses')
+            .insert({ name: 'Recibido', color: '#3b82f6' })
+            .select('id')
+            .maybeSingle();
+
+          if (statusInsertError) {
+            console.error('[QUOTE APPROVAL] Failed to auto-create default order status:', statusInsertError);
+          } else {
+            statusId = createdStatus?.id;
+            console.log('[QUOTE APPROVAL] Default order status created:', statusId);
+          }
+        }
         
         if (!statusId) {
           console.error('[QUOTE APPROVAL] No order status found in database');
@@ -268,10 +284,24 @@ const handler = async (req: Request): Promise<Response> => {
         ].filter(Boolean).join(', ');
         const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
         const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+        let orderUserId = quote.user_id || null;
+
+        if (orderUserId) {
+          const { data: profileExists } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', orderUserId)
+            .maybeSingle();
+
+          if (!profileExists) {
+            console.warn('[QUOTE APPROVAL] Quote user_id has no profile row; creating order without user_id:', orderUserId);
+            orderUserId = null;
+          }
+        }
 
         console.log('[QUOTE APPROVAL] Creating order with data:', {
           order_number: orderNumber,
-          user_id: quote.user_id,
+          user_id: orderUserId,
           status_id: statusId,
           subtotal,
           tax,
@@ -286,7 +316,7 @@ const handler = async (req: Request): Promise<Response> => {
           .from('orders')
           .insert({
             order_number: orderNumber,
-            user_id: quote.user_id,
+            user_id: orderUserId,
             status_id: statusId,
             subtotal: subtotal,
             tax: tax,
