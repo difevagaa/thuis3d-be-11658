@@ -293,7 +293,7 @@ const handler = async (req: Request): Promise<Response> => {
             discount: 0,
             shipping: shippingCost,
             total: total,
-            notes: `${quoteMarker} Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
+            notes: `${quoteMarker}\n\nPedido generado automáticamente desde la cotización ${quote.quote_type}`,
             shipping_address: addressParts || null,
             billing_address: addressParts || null,
             payment_method: 'bank_transfer', // Default payment method for quote-based orders
