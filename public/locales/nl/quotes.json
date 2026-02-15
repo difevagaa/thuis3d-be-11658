@@ -97,5 +97,17 @@
   "preview3D": "3D-voorbeeld",
   "shippingNotIncluded": "Voer je adres in om verzendkosten te zien.",
   "back": "Vorige",
-  "next": "Volgende"
+  "next": "Volgende",
+  "awaitingClientResponse": "In afwachting van antwoord van de klant",
+  "adminChangesTitle": "Wijzigingen in uw offerte",
+  "adminChangesMessage": "De beheerder heeft wijzigingen aangebracht in uw offerte en wacht op uw reactie.",
+  "reviewChanges": "Wijzigingen bekijken",
+  "acceptChanges": "Wijzigingen accepteren",
+  "rejectChanges": "Wijzigingen afwijzen",
+  "acceptingChanges": "Accepteren...",
+  "rejectingChanges": "Afwijzen...",
+  "changesAccepted": "Wijzigingen geaccepteerd. Uw bestelling en factuur zijn aangemaakt.",
+  "changesRejected": "Wijzigingen afgewezen. De beheerder is op de hoogte gesteld.",
+  "errorProcessingResponse": "Fout bij verwerken van uw antwoord",
+  "pendingYourResponse": "In afwachting van uw reactie"
 }

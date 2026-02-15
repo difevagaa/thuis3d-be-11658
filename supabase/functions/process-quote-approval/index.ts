@@ -238,9 +238,26 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const statusId = orderStatus?.id || fallbackStatus?.id || null;
-      const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
+      // Safely construct address from available quote fields
+      const addressParts = [
+        quote.address || null, 
+        quote.city || null, 
+        quote.postal_code || null, 
+        quote.country || null
+      ].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+
+      console.log('[QUOTE APPROVAL] Creating order with data:', {
+        user_id: quote.user_id,
+        status_id: statusId,
+        subtotal,
+        tax,
+        shipping: shippingCost,
+        total,
+        payment_status: 'pending',
+        addressParts: addressParts || 'No address provided'
+      });
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -261,26 +278,40 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id, order_number')
         .single();
 
-      if (orderError || !newOrder) {
+      if (orderError) {
         console.error('[QUOTE APPROVAL] Error creating order:', orderError);
-      } else {
+        console.error('[QUOTE APPROVAL] Order error details:', JSON.stringify(orderError, null, 2));
+        console.error('[QUOTE APPROVAL] Order error code:', orderError.code);
+        console.error('[QUOTE APPROVAL] Order error message:', orderError.message);
+        // Don't fail the entire operation, just log and continue
+        // The invoice was created successfully, which is the most important part
+      }
+      
+      if (newOrder) {
         orderData = newOrder;
+        console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
 
-        const { error: orderItemsError } = await supabase
-          .from('order_items')
-          .insert({
-            order_id: newOrder.id,
-            product_name: `Cotización ${quote.quote_type}`,
-            quantity: quantity,
-            unit_price: unitPrice,
-            total_price: subtotal,
-            selected_material: quote.material_id,
-            selected_color: quote.color_id,
-            custom_text: quote.description || null
-          });
+        // Try to create order items, but don't fail if it doesn't work
+        try {
+          const { error: orderItemsError } = await supabase
+            .from('order_items')
+            .insert({
+              order_id: newOrder.id,
+              product_name: `Cotización ${quote.quote_type}`,
+              quantity: quantity,
+              unit_price: unitPrice,
+              total_price: subtotal,
+              selected_material: quote.material_id,
+              selected_color: quote.color_id,
+              custom_text: quote.description || null
+            });
 
-        if (orderItemsError) {
-          console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+          if (orderItemsError) {
+            console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
+            console.error('[QUOTE APPROVAL] Order items error details:', JSON.stringify(orderItemsError, null, 2));
+          }
+        } catch (itemError) {
+          console.error('[QUOTE APPROVAL] Exception creating order items:', itemError);
         }
       }
     }

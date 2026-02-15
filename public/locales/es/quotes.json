@@ -97,5 +97,17 @@
   "preview3D": "Vista 3D",
   "shippingNotIncluded": "Introduce tu dirección para ver el costo de envío.",
   "back": "Anterior",
-  "next": "Siguiente"
+  "next": "Siguiente",
+  "awaitingClientResponse": "Pendiente respuesta del cliente",
+  "adminChangesTitle": "Cambios en tu Cotización",
+  "adminChangesMessage": "El administrador ha realizado cambios en tu cotización y espera tu respuesta.",
+  "reviewChanges": "Revisar cambios",
+  "acceptChanges": "Aceptar cambios",
+  "rejectChanges": "Rechazar cambios",
+  "acceptingChanges": "Aceptando...",
+  "rejectingChanges": "Rechazando...",
+  "changesAccepted": "Cambios aceptados. Se ha generado tu pedido y factura.",
+  "changesRejected": "Cambios rechazados. El administrador ha sido notificado.",
+  "errorProcessingResponse": "Error al procesar tu respuesta",
+  "pendingYourResponse": "Esperando tu respuesta"
 }
