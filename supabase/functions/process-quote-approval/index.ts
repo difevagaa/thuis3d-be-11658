@@ -242,6 +242,16 @@ const handler = async (req: Request): Promise<Response> => {
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
 
+      console.log('[QUOTE APPROVAL] Creating order with data:', {
+        user_id: quote.user_id,
+        status_id: statusId,
+        subtotal,
+        tax,
+        shipping: shippingCost,
+        total,
+        payment_status: 'pending'
+      });
+
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -261,10 +271,26 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id, order_number')
         .single();
 
-      if (orderError || !newOrder) {
+      if (orderError) {
         console.error('[QUOTE APPROVAL] Error creating order:', orderError);
-      } else {
+        console.error('[QUOTE APPROVAL] Order error details:', JSON.stringify(orderError, null, 2));
+        console.error('[QUOTE APPROVAL] Order error code:', orderError.code);
+        console.error('[QUOTE APPROVAL] Order error message:', orderError.message);
+        // Return error details in the response instead of silently failing
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to create order',
+            details: orderError.message,
+            code: orderError.code,
+            invoice_created: !!invoiceId
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (newOrder) {
         orderData = newOrder;
+        console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
 
         const { error: orderItemsError } = await supabase
           .from('order_items')

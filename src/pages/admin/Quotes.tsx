@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FilePlus, Pencil, Trash2, FileText } from "lucide-react";
+import { FilePlus, Pencil, Trash2, FileText, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
@@ -114,6 +115,17 @@ export default function Quotes() {
       const priceWasUnset = !originalQuote?.estimated_price || Number(originalQuote?.estimated_price) === 0;
       const priceNowSet = Number(editingQuote.estimated_price || 0) > 0;
       const isInitialPriceSetting = priceWasUnset && priceNowSet;
+      
+      // Check if any meaningful changes were made (excluding initial price setting)
+      const hasChanges = statusChanged || nameChanged || emailChanged || descriptionChanged || 
+                        materialChanged || colorChanged || (priceChanged && !isInitialPriceSetting);
+      
+      // If changes were made but status wasn't changed, require status update
+      if (hasChanges && !statusChanged) {
+        toast.error("Debes actualizar el estado de la cotización al realizar cambios. Selecciona el nuevo estado antes de guardar.");
+        return;
+      }
+      
       const shouldNotifyCustomer = Boolean(
         originalQuote &&
         !isInitialPriceSetting &&
@@ -126,8 +138,8 @@ export default function Quotes() {
           priceChanged)
       );
       const pendingApprovalByClient = Boolean(
-        normalizedStatusName?.includes('aprobación') &&
-        normalizedStatusName?.includes('cliente')
+        statusSlug === 'awaiting_client_response' ||
+        (normalizedStatusName?.includes('pendiente') && normalizedStatusName?.includes('respuesta'))
       );
 
       const { error } = await supabase
@@ -433,6 +445,15 @@ export default function Quotes() {
           
           {editingQuote && (
             <div className="space-y-4">
+              {/* Status Change Alert */}
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-sm text-amber-800">
+                  <strong>Importante:</strong> Al realizar cambios en la cotización, debes actualizar el estado. 
+                  Si necesitas que el cliente apruebe los cambios, selecciona "Pendiente respuesta del cliente".
+                </AlertDescription>
+              </Alert>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nombre del Cliente</Label>

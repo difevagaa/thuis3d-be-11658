@@ -241,10 +241,111 @@ export default function UserQuoteDetail() {
 
   const statusName = quote.quote_statuses?.name?.toLowerCase() || "";
   const statusSlug = quote.quote_statuses?.slug?.toLowerCase() || "";
-  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval"];
+  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval", "awaiting_client_response"];
   const isPendingClientApproval =
+    statusSlug === "awaiting_client_response" ||
     pendingApprovalSlugs.includes(statusSlug) ||
-    (statusName.includes("aprobación") && statusName.includes("cliente"));
+    (statusName.includes("aprobación") && statusName.includes("cliente")) ||
+    (statusName.includes("pendiente") && statusName.includes("respuesta"));
+
+  const handleAcceptChanges = async () => {
+    if (!quote || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      
+      // Update quote status to "approved" to trigger order/invoice creation
+      const approvedStatusId = statusIds.approved;
+      if (!approvedStatusId) {
+        i18nToast.directError("No se pudo determinar el estado aprobado.");
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from("quotes")
+        .update({ status_id: approvedStatusId })
+        .eq("id", quote.id);
+
+      if (updateError) throw updateError;
+
+      // Trigger the approval automation
+      try {
+        const { data, error: functionError } = await supabase.functions.invoke(
+          'process-quote-approval',
+          {
+            body: {
+              quote_id: quote.id,
+              status_name: 'Aprobada',
+              status_slug: 'approved'
+            }
+          }
+        );
+
+        if (functionError) {
+          console.error('Function error:', functionError);
+          i18nToast.directWarning('Cotización aceptada, pero hubo un error creando el pedido. Contacta con soporte.');
+        } else if (data?.success) {
+          i18nToast.directSuccess('¡Cambios aceptados! Se ha generado tu pedido y factura.');
+          
+          // Notify admins
+          await notifyAdminsWithBroadcast(
+            "quote_accepted",
+            "Cliente aceptó cotización",
+            `El cliente ${quote.customer_name} ha aceptado los cambios en su cotización. Pedido y factura generados automáticamente.`,
+            `/admin/cotizaciones/${quote.id}`
+          );
+        }
+      } catch (autoError) {
+        console.error('Automation error:', autoError);
+        i18nToast.directWarning('Cotización aceptada. Un administrador creará tu pedido.');
+      }
+
+      // Reload to show updated status
+      await loadQuoteDetail();
+    } catch (error) {
+      console.error("Error accepting changes:", error);
+      i18nToast.directError("No se pudieron aceptar los cambios. Inténtalo de nuevo.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectChanges = async () => {
+    if (!quote || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+      
+      const rejectedStatusId = statusIds.rejected;
+      if (!rejectedStatusId) {
+        i18nToast.directError("No se pudo determinar el estado rechazado.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("quotes")
+        .update({ status_id: rejectedStatusId })
+        .eq("id", quote.id);
+
+      if (error) throw error;
+
+      // Notify admins
+      await notifyAdminsWithBroadcast(
+        "quote_rejected",
+        "Cliente rechazó cotización",
+        `El cliente ${quote.customer_name} ha rechazado los cambios en su cotización.`,
+        `/admin/cotizaciones/${quote.id}`
+      );
+
+      i18nToast.directSuccess('Has rechazado los cambios. El administrador ha sido notificado.');
+      await loadQuoteDetail();
+    } catch (error) {
+      console.error("Error rejecting changes:", error);
+      i18nToast.directError("No se pudieron rechazar los cambios. Inténtalo de nuevo.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -558,40 +659,71 @@ export default function UserQuoteDetail() {
             {isPendingClientApproval && (
               <>
                 <Separator />
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Tu respuesta a la cotización
+                <div className="space-y-4 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <h3 className="font-semibold flex items-center gap-2 text-amber-900">
+                    <AlertCircle className="h-5 w-5" />
+                    Cambios pendientes de tu aprobación
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Revisa los cambios y confirma si apruebas la cotización o envía un comentario.
+                  <p className="text-sm text-amber-800">
+                    El administrador ha realizado cambios en tu cotización y necesita tu aprobación antes de continuar.
+                    Por favor, revisa los detalles y decide si aceptas o rechazas los cambios.
                   </p>
-                  <Textarea
-                    value={comment}
-                    onChange={(event) => setComment(event.target.value)}
-                    rows={3}
-                    placeholder="Escribe un comentario para el administrador (opcional)"
-                  />
                   <div className="flex flex-wrap gap-2">
                     <Button
-                      onClick={() => handleCustomerAction("approve")}
+                      onClick={handleAcceptChanges}
                       disabled={actionLoading}
+                      className="bg-green-600 hover:bg-green-700"
                     >
-                      Aprobar cambios
+                      {actionLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Aceptar Cambios
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => handleCustomerAction("reject")}
+                      onClick={handleRejectChanges}
                       disabled={actionLoading}
                     >
-                      Rechazar cambios
+                      {actionLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Rechazar Cambios
+                        </>
+                      )}
                     </Button>
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-amber-900">
+                      ¿Necesitas aclarar algo antes de decidir?
+                    </p>
+                    <Textarea
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      rows={3}
+                      placeholder="Escribe un comentario para el administrador (opcional)"
+                      className="bg-white"
+                    />
                     <Button
                       variant="outline"
                       onClick={() => handleCustomerAction("comment")}
                       disabled={actionLoading || !comment.trim()}
+                      className="w-full sm:w-auto"
                     >
-                      Enviar comentario
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Enviar Comentario
                     </Button>
                   </div>
                 </div>
