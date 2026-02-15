@@ -25,10 +25,12 @@ import { useHelpSearch } from '@/hooks/useHelpSearch';
 import { useContextualHelp } from '@/hooks/useContextualHelp';
 import { cn } from '@/lib/utils';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface HelpCenterSearchProps {
   section?: string;
@@ -188,61 +190,58 @@ export const HelpCenterSearch: React.FC<HelpCenterSearchProps> = ({
         </CommandList>
       </CommandDialog>
 
-      {/* Details Popover */}
+      {/* Details Dialog - Accessible alternative to Popover */}
       {selectedHelp && (
-        <Popover open={showDetails} onOpenChange={setShowDetails}>
-          <PopoverTrigger asChild>
-            <div />
-          </PopoverTrigger>
-          <PopoverContent className="w-96 p-0">
-            <div className="p-4 space-y-3">
-              <div className="flex items-start gap-3">
+        <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
                 {getIcon(selectedHelp.help_type)}
                 <div className="flex-1 space-y-1">
-                  <h4 className="font-semibold">{selectedHelp.title}</h4>
+                  <DialogTitle>{selectedHelp.title}</DialogTitle>
                   <Badge variant="outline" className="text-xs">
                     {getTypeLabel(selectedHelp.help_type)}
                   </Badge>
                 </div>
               </div>
+            </DialogHeader>
 
-              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                {selectedHelp.content}
+            <DialogDescription className="text-sm text-gray-700 leading-relaxed whitespace-pre-line pt-3">
+              {selectedHelp.content}
+            </DialogDescription>
+
+            {(selectedHelp.related_docs_url || selectedHelp.related_video_url) && (
+              <div className="flex gap-2 pt-4">
+                {selectedHelp.related_docs_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
+                    <a href={selectedHelp.related_docs_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      Documentación
+                    </a>
+                  </Button>
+                )}
+                {selectedHelp.related_video_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
+                    <a href={selectedHelp.related_video_url} target="_blank" rel="noopener noreferrer">
+                      <Video className="h-3 w-3 mr-1" />
+                      Video Tutorial
+                    </a>
+                  </Button>
+                )}
               </div>
-
-              {(selectedHelp.related_docs_url || selectedHelp.related_video_url) && (
-                <div className="flex gap-2 pt-2 border-t">
-                  {selectedHelp.related_docs_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      asChild
-                    >
-                      <a href={selectedHelp.related_docs_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Docs
-                      </a>
-                    </Button>
-                  )}
-                  {selectedHelp.related_video_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      asChild
-                    >
-                      <a href={selectedHelp.related_video_url} target="_blank" rel="noopener noreferrer">
-                        <Video className="h-3 w-3 mr-1" />
-                        Video
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+            )}
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

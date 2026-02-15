@@ -252,7 +252,8 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (!statusId) {
         console.error('[QUOTE APPROVAL] No order status found in database');
-        throw new Error('No order status available');
+        console.error('[QUOTE APPROVAL] Searched for status "Recibido" or first available status');
+        throw new Error('No order status available. Database may not have any order statuses configured. Please create at least one order status before approving quotes.');
       }
 
       // Safely construct address from available quote fields
