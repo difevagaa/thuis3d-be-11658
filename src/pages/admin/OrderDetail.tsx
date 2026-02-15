@@ -320,6 +320,7 @@ export default function OrderDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
