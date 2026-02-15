@@ -417,6 +417,7 @@ export const syncInvoiceStatusWithOrder = async (
 /**
  * Syncs payment status from invoice to its associated order.
  * Keeps orders and invoices always linked: when one changes, the other follows.
+ * Supported statuses: paid, pending, failed, refunded, cancelled.
  * @param invoiceOrderId - The order ID associated with the invoice
  * @param paymentStatus - The new payment status
  */

@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
-import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
+import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
 
 export default function OrderDetail() {
   const { id } = useParams();

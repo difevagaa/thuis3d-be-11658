@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
+import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
 import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Search, Filter, RefreshCw } from "lucide-react";
 
 // Popular carriers with tracking URL templates
