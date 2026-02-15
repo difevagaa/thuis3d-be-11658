@@ -12,7 +12,6 @@ import { ArrowLeft, Upload, X, FileText, Receipt } from "lucide-react";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from "@/lib/logger";
-import { FieldHelp } from "@/components/admin/FieldHelp";
 
 export default function CreateQuote() {
   const navigate = useNavigate();
@@ -320,24 +319,16 @@ export default function CreateQuote() {
                 checked={isNewClient}
                 onCheckedChange={setIsNewClient}
               />
-              <Label htmlFor="new-client" className="flex items-center gap-2">
-                Cliente nuevo (sin cuenta)
-                <FieldHelp content="Activa esta opción si el cliente no tiene cuenta registrada en el sistema. Deberás ingresar sus datos manualmente." />
-              </Label>
+              <Label htmlFor="new-client">Cliente nuevo (sin cuenta)</Label>
             </div>
 
             {!isNewClient ? (
-              <div className="space-y-2">
-                <UserSearchSelector
-                  value={quoteData.user_id}
-                  onValueChange={loadUserData}
-                  label="Seleccionar Cliente"
-                  placeholder="Buscar por nombre o email..."
-                />
-                <p className="text-sm text-muted-foreground">
-                  Los datos del cliente se cargarán automáticamente al seleccionarlo
-                </p>
-              </div>
+              <UserSearchSelector
+                value={quoteData.user_id}
+                onValueChange={loadUserData}
+                label="Seleccionar Cliente"
+                placeholder="Buscar cliente registrado..."
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -440,44 +431,35 @@ export default function CreateQuote() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="quote_type" className="flex items-center gap-2">
-                Tipo de Cotización
-                <FieldHelp content="Selecciona el tipo de servicio: Archivo 3D (impresión de modelos), Servicio (trabajos personalizados), Diseño (creación de modelos), o Reparación (arreglo de piezas)." />
-              </Label>
+              <Label htmlFor="quote_type">Tipo de Cotización</Label>
               <Select
                 value={quoteData.quote_type}
                 onValueChange={(value) => setQuoteData(prev => ({ ...prev, quote_type: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el tipo de servicio..." />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Archivo 3D">Archivo 3D - Impresión de modelos existentes</SelectItem>
-                  <SelectItem value="Servicio">Servicio - Trabajo personalizado</SelectItem>
-                  <SelectItem value="Diseño">Diseño - Creación de modelos 3D</SelectItem>
-                  <SelectItem value="Reparación">Reparación - Arreglo de piezas dañadas</SelectItem>
+                  <SelectItem value="Archivo 3D">Archivo 3D</SelectItem>
+                  <SelectItem value="Servicio">Servicio</SelectItem>
+                  <SelectItem value="Diseño">Diseño</SelectItem>
+                  <SelectItem value="Reparación">Reparación</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="flex items-center gap-2">
-                Descripción del Proyecto *
-                <FieldHelp content="Proporciona una descripción detallada del proyecto, incluyendo requisitos especiales, dimensiones, acabados deseados y cualquier otra especificación importante." />
-              </Label>
+              <Label htmlFor="description">Descripción del Proyecto *</Label>
               <RichTextEditor
                 value={quoteData.description}
                 onChange={(value) => setQuoteData(prev => ({ ...prev, description: value }))}
-                placeholder="Ej: Impresión de figura de 15cm de alto en PLA, acabado liso, color azul metálico..."
+                placeholder="Describe detalladamente el proyecto, requisitos especiales, etc..."
                 className="min-h-[200px]"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="files" className="flex items-center gap-2">
-                Archivos Adjuntos (STL o Imágenes)
-                <FieldHelp content="Sube archivos STL para impresión 3D o imágenes de referencia. Puedes adjuntar múltiples archivos." />
-              </Label>
+              <Label htmlFor="files">Archivos Adjuntos (STL o Imágenes)</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="files"
@@ -491,9 +473,6 @@ export default function CreateQuote() {
                   <Upload className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Formatos aceptados: STL para modelos 3D, imágenes JPG/PNG para referencias
-              </p>
               {uploadedFiles.length > 0 && (
                 <div className="space-y-2">
                   {uploadedFiles.map((file, index) => (
@@ -514,14 +493,11 @@ export default function CreateQuote() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional_notes" className="flex items-center gap-2">
-                Notas Adicionales
-                <FieldHelp content="Notas internas que solo verán los administradores. Útil para instrucciones especiales de producción o recordatorios." />
-              </Label>
+              <Label htmlFor="additional_notes">Notas Adicionales</Label>
               <RichTextEditor
                 value={quoteData.additional_notes}
                 onChange={(value) => setQuoteData(prev => ({ ...prev, additional_notes: value }))}
-                placeholder="Notas internas: prioridad alta, cliente VIP, requiere revisión especial..."
+                placeholder="Notas internas, instrucciones especiales..."
                 className="min-h-[150px]"
               />
             </div>
@@ -536,16 +512,13 @@ export default function CreateQuote() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="material_id" className="flex items-center gap-2">
-                  Material
-                  <FieldHelp content="Selecciona el material de impresión. Cada material tiene diferentes propiedades de resistencia, flexibilidad y acabado. Opcional si aún no se ha decidido." />
-                </Label>
+                <Label htmlFor="material_id">Material</Label>
                 <Select
                   value={quoteData.material_id}
                   onValueChange={(value) => setQuoteData(prev => ({ ...prev, material_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar material..." />
+                    <SelectValue placeholder="Seleccionar material" />
                   </SelectTrigger>
                   <SelectContent>
                     {materials.map((material) => (
@@ -558,16 +531,13 @@ export default function CreateQuote() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="color_id" className="flex items-center gap-2">
-                  Color
-                  <FieldHelp content="Elige el color deseado para la pieza. La disponibilidad de colores puede variar según el material seleccionado." />
-                </Label>
+                <Label htmlFor="color_id">Color</Label>
                 <Select
                   value={quoteData.color_id}
                   onValueChange={(value) => setQuoteData(prev => ({ ...prev, color_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar color..." />
+                    <SelectValue placeholder="Seleccionar color" />
                   </SelectTrigger>
                   <SelectContent>
                     {colors.map((color) => (
@@ -586,10 +556,7 @@ export default function CreateQuote() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="quantity" className="flex items-center gap-2">
-                  Cantidad
-                  <FieldHelp content="Número de unidades idénticas a producir. Cantidades mayores pueden tener descuentos." />
-                </Label>
+                <Label htmlFor="quantity">Cantidad</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -597,7 +564,6 @@ export default function CreateQuote() {
                   value={quantityInput}
                   onChange={(e) => handleQuantityChange(e.target.value)}
                   onBlur={handleQuantityBlur}
-                  placeholder="1"
                 />
               </div>
             </div>
@@ -615,10 +581,7 @@ export default function CreateQuote() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="estimated_price" className="flex items-center gap-2">
-                  Precio Estimado (€) *
-                  <FieldHelp content="Ingresa el precio base sin IVA. El IVA se calculará automáticamente si está activado. Usa el punto (.) como separador decimal." />
-                </Label>
+                <Label htmlFor="estimated_price">Precio Estimado (€) *</Label>
                 <Input
                   id="estimated_price"
                   type="number"
@@ -626,26 +589,20 @@ export default function CreateQuote() {
                   min="0"
                   value={quoteData.estimated_price}
                   onChange={(e) => setQuoteData(prev => ({ ...prev, estimated_price: e.target.value }))}
-                  placeholder="Ej: 49.99"
+                  placeholder="0.00"
                   required
                 />
-                <p className="text-xs text-muted-foreground">
-                  El precio final incluirá IVA si está activado
-                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status_id" className="flex items-center gap-2">
-                  Estado *
-                  <FieldHelp content="Define el estado inicial de la cotización. 'Pendiente' es recomendado para nuevas cotizaciones que requieren revisión." />
-                </Label>
+                <Label htmlFor="status_id">Estado *</Label>
                 <Select
                   value={quoteData.status_id}
                   onValueChange={(value) => setQuoteData(prev => ({ ...prev, status_id: value }))}
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estado..." />
+                    <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
                   <SelectContent>
                     {statuses.map((status) => (
@@ -655,21 +612,15 @@ export default function CreateQuote() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  El cliente recibirá una notificación con este estado
-                </p>
               </div>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="tax_enabled" className="text-base font-semibold">
-                    Aplicar IVA
-                  </Label>
-                  <FieldHelp content="Activa esta opción para incluir el IVA en el precio final. El porcentaje de IVA se configura en los ajustes del sistema. Desactívalo para clientes exentos o cotizaciones sin IVA." />
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
+              <div>
+                <Label htmlFor="tax_enabled" className="text-base font-semibold">
+                  Aplicar IVA
+                </Label>
+                <p className="text-sm text-muted-foreground">
                   Define si se cobrará IVA al generar la factura
                 </p>
               </div>

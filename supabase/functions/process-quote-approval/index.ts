@@ -55,9 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
-
-    // Check if user is admin OR is the quote owner
+    // Check if user is admin
     const { data: adminRole } = await supabaseClient
       .from('user_roles')
       .select('role')
@@ -65,34 +63,14 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('role', 'admin')
       .maybeSingle();
 
-    const isAdmin = !!adminRole;
-    
-    // If not admin, verify the user owns the quote
-    if (!isAdmin) {
-      const { data: quote, error: quoteError } = await supabaseClient
-        .from('quotes')
-        .select('user_id, customer_email')
-        .eq('id', quote_id)
-        .maybeSingle();
-      
-      if (quoteError || !quote) {
-        return new Response(
-          JSON.stringify({ error: 'Quote not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Check if user owns the quote (by user_id or email)
-      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
-      const isQuoteOwner = quote.user_id === authUser?.id || quote.customer_email === authUser?.email;
-      
-      if (!isQuoteOwner) {
-        return new Response(
-          JSON.stringify({ error: 'Forbidden: You can only approve your own quotes' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    if (!adminRole) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { quote_id, status_name, status_slug, admin_name }: QuoteApprovalRequest = await req.json();
 
     console.log('[QUOTE APPROVAL] Processing quote:', quote_id, 'Status:', status_name);
 
@@ -174,36 +152,17 @@ const handler = async (req: Request): Promise<Response> => {
     let invoiceId = existingInvoice?.id;
 
     if (!existingInvoice) {
-      // Generate unique invoice number with retry logic
-      let invoiceGenAttempts = 0;
-      const maxAttempts = 5;
-      while (invoiceGenAttempts < maxAttempts) {
-        const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
-          .rpc('generate_invoice_number');
+      // Get next invoice number
+      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+        .rpc('generate_next_invoice_number');
 
-        if (invoiceNumError) {
-          console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
-          throw new Error('Failed to generate invoice number');
-        }
-
-        invoiceNumber = nextInvoiceNumber;
-        console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
-
-        // Check uniqueness before inserting
-        const { data: existing } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('invoice_number', invoiceNumber)
-          .maybeSingle();
-
-        if (!existing) break; // Unique number found
-        invoiceGenAttempts++;
-        console.log('[QUOTE APPROVAL] Invoice number collision, retrying...', invoiceGenAttempts);
+      if (invoiceNumError) {
+        console.error('[QUOTE APPROVAL] Error generating invoice number:', invoiceNumError);
+        throw new Error('Failed to generate invoice number');
       }
 
-      if (invoiceGenAttempts >= maxAttempts) {
-        throw new Error('Failed to generate unique invoice number after multiple attempts');
-      }
+      invoiceNumber = nextInvoiceNumber;
+      console.log('[QUOTE APPROVAL] Generated invoice number:', invoiceNumber);
 
       // Create invoice
       const { data: newInvoice, error: invoiceError } = await supabase
@@ -282,8 +241,6 @@ const handler = async (req: Request): Promise<Response> => {
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
-      const fileInfo = quote.file_storage_path ? ` | Archivo: ${quote.file_storage_path}` : '';
-      const quoteNum = quote.quote_number ? ` #${quote.quote_number}` : '';
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -295,7 +252,7 @@ const handler = async (req: Request): Promise<Response> => {
           discount: 0,
           shipping: shippingCost,
           total: total,
-          notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${quote.quote_type})${fileInfo}`,
+          notes: `Pedido generado automáticamente desde la cotización ${quote.quote_type}`,
           admin_notes: quoteMarker,
           shipping_address: addressParts || null,
           billing_address: addressParts || null,
@@ -304,50 +261,26 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id, order_number')
         .single();
 
-      if (orderError) {
+      if (orderError || !newOrder) {
         console.error('[QUOTE APPROVAL] Error creating order:', orderError);
-        throw new Error(`Failed to create order: ${orderError.message}`);
-      }
-      
-      if (!newOrder) {
-        throw new Error('Order creation returned no data');
-      }
-      
-      orderData = newOrder;
-      console.log('[QUOTE APPROVAL] Order created successfully:', newOrder.order_number);
+      } else {
+        orderData = newOrder;
 
-      const { error: orderItemsError } = await supabase
-        .from('order_items')
-        .insert({
-          order_id: newOrder.id,
-          product_name: `Cotización ${quote.quote_type}`,
-          quantity: quantity,
-          unit_price: unitPrice,
-          total_price: subtotal,
-          selected_material: quote.material_id,
-          selected_color: quote.color_id,
-          custom_text: quote.description || null
-        });
+        const { error: orderItemsError } = await supabase
+          .from('order_items')
+          .insert({
+            order_id: newOrder.id,
+            product_name: `Cotización ${quote.quote_type}`,
+            quantity: quantity,
+            unit_price: unitPrice,
+            total_price: subtotal,
+            selected_material: quote.material_id,
+            selected_color: quote.color_id,
+            custom_text: quote.description || null
+          });
 
-      if (orderItemsError) {
-        console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
-        throw new Error(`Failed to create order items: ${orderItemsError.message}`);
-      }
-      
-      console.log('[QUOTE APPROVAL] Order items created successfully');
-      
-      // Link the invoice to the order if both were just created
-      if (invoiceId && !existingInvoice) {
-        const { error: linkError } = await supabase
-          .from('invoices')
-          .update({ order_id: newOrder.id })
-          .eq('id', invoiceId);
-        
-        if (linkError) {
-          console.error('[QUOTE APPROVAL] Error linking invoice to order:', linkError);
-          // Non-critical error, continue
-        } else {
-          console.log('[QUOTE APPROVAL] Invoice linked to order successfully');
+        if (orderItemsError) {
+          console.error('[QUOTE APPROVAL] Error creating order items:', orderItemsError);
         }
       }
     }
@@ -454,19 +387,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (quote.user_id && !existingInvoice) {
       console.log('[QUOTE APPROVAL] Creating notification for user:', quote.user_id);
       
-      // Notification should link to order detail where payment button is prominent
-      const notificationLink = orderData ? `/pedido/${orderData.id}` : `/factura/${invoiceId}`;
-      
       const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: quote.user_id,
           type: 'quote_approved',
           title: '✅ Cotización Aprobada',
-          message: orderData 
-            ? `Tu cotización ha sido aprobada. Se ha generado el pedido ${orderData.order_number} pendiente de pago por €${total.toFixed(2)}. Haz clic para realizar el pago.`
-            : `Tu cotización ha sido aprobada. Se ha generado la factura ${invoiceNumber} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
-          link: notificationLink,
+          message: `Tu cotización ha sido aprobada. Se ha generado la factura ${invoiceNumber} por €${total.toFixed(2)}. Puedes proceder con el pago.`,
+          link: `/mis-facturas/${invoiceId}`,
           is_read: false
         });
 

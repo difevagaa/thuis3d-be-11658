@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/hooks/useCart";
 import { logger } from "@/lib/logger";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
-import { emailService } from "@/lib/emailService";
 
 /**
  * Interface for shipping info stored in checkout sessions
@@ -109,7 +108,7 @@ export interface OrderData {
 
 export interface OrderItemData {
   orderId: string;
-  productId: string | null; // Allow null for gift cards
+  productId: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -152,15 +151,6 @@ export const createOrder = async (orderData: OrderData) => {
       .single();
 
     if (orderError) throw orderError;
-    
-    // Send order confirmation email asynchronously (don't wait for it)
-    if (order && order.id) {
-      logger.info('📧 Triggering order confirmation email', { orderId: order.id });
-      emailService.sendAllOrderEmails(order.id).catch(err => {
-        logger.error('Failed to send order emails (non-blocking)', err);
-      });
-    }
-    
     return order;
   } catch (error) {
     logger.error("Error creating order:", error);
@@ -206,38 +196,19 @@ export const createOrderItems = async (items: OrderItemData[]) => {
 };
 
 /**
- * Updates gift card balance after use with optimistic locking
- * Returns true if successful, false if balance was already modified (race condition)
+ * Updates gift card balance after use
  */
 export const updateGiftCardBalance = async (
   giftCardId: string,
-  newBalance: number,
-  expectedCurrentBalance?: number
+  newBalance: number
 ) => {
   try {
-    let query = supabase
+    const { error } = await supabase
       .from("gift_cards")
-      .update({ 
-        current_balance: newBalance,
-        updated_at: new Date().toISOString()
-      }, { count: 'exact' })
+      .update({ current_balance: newBalance })
       .eq("id", giftCardId);
 
-    // Add optimistic locking if expected balance provided
-    if (expectedCurrentBalance !== undefined) {
-      query = query.eq("current_balance", expectedCurrentBalance);
-    }
-
-    const { error, count } = await query;
-
     if (error) throw error;
-    
-    // If optimistic locking was used and no rows updated, balance changed
-    if (expectedCurrentBalance !== undefined && count === 0) {
-      logger.warn("Gift card balance changed by another transaction");
-      return false;
-    }
-
     return true;
   } catch (error) {
     logger.error("Error updating gift card balance:", error);
@@ -274,11 +245,11 @@ export const convertCartToOrderItems = (
       // New item, add to map
       itemsMap.set(uniqueKey, {
         orderId,
-        productId: productId || null, // Use null explicitly for gift cards, not empty string
+        productId: productId as string,
         productName: item.name,
         quantity: item.quantity,
-        unitPrice: Number(item.price) || 0, // Ensure number type
-        totalPrice: (Number(item.price) || 0) * item.quantity,
+        unitPrice: item.price,
+        totalPrice: item.price * item.quantity,
         selectedMaterial: item.materialId || null,
         selectedColor: item.colorId || null,
         customText: item.customText || null,
@@ -294,7 +265,6 @@ export const convertCartToOrderItems = (
  * Calculates order totals considering tax, discounts, and shipping.
  * Coupon discount is applied proportionally to the taxable amount before calculating tax.
  * Fixed coupon discounts are capped at the subtotal to prevent negative intermediates.
- * All calculations use proper number coercion to prevent string concatenation issues.
  */
 export const calculateOrderTotals = (
   cartItems: CartItem[],
@@ -303,27 +273,25 @@ export const calculateOrderTotals = (
   couponDiscount: number = 0,
   shippingCost: number = 0
 ) => {
-  // Ensure all inputs are numbers and calculate subtotal
   const subtotal = Number(cartItems.reduce(
-    (sum, item) => sum + (Number(item.price) * Number(item.quantity)),
+    (sum, item) => sum + (item.price * item.quantity),
     0
   ).toFixed(2));
 
   // Cap coupon discount at subtotal to avoid negative intermediates
-  const cappedCouponDiscount = Math.min(Number(couponDiscount), subtotal);
-  const discount = Number((Number(giftCardDiscount) + cappedCouponDiscount).toFixed(2));
+  const cappedCouponDiscount = Math.min(couponDiscount, subtotal);
+  const discount = Number((giftCardDiscount + cappedCouponDiscount).toFixed(2));
 
-  // Calculate taxable amount (excluding gift cards and non-taxable items)
   const taxableAmount = Number(cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
-    .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0).toFixed(2));
+    .reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
 
   // Apply coupon discount proportionally to the taxable amount before calculating tax
   const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
   const taxableAfterDiscount = Math.max(0, taxableAmount - (cappedCouponDiscount * discountRatio));
-  const tax = Number((taxableAfterDiscount * Number(taxRate)).toFixed(2));
+  const tax = Number((taxableAfterDiscount * taxRate).toFixed(2));
 
-  const shipping = Number(Number(shippingCost).toFixed(2));
+  const shipping = Number(shippingCost.toFixed(2));
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {
@@ -417,455 +385,4 @@ export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<v
   } catch (error) {
     logger.error('Error updating invoice status:', error);
   }
-};
-
-/**
- * Creates an invoice automatically for an order
- * This ensures ALL orders have corresponding invoices for customer payment tracking
- * 
- * @param orderId - The order ID
- * @param orderData - Order details (subtotal, tax, total, payment_status, etc)
- * @returns The created invoice or null if error
- */
-export const createInvoiceForOrder = async (
-  orderId: string,
-  orderData: {
-    order_number?: string;
-    user_id: string;
-    subtotal: number;
-    tax: number;
-    total: number;
-    shipping?: number;
-    discount?: number;
-    payment_status: string;
-    payment_method?: string;
-    gift_card_code?: string;
-    gift_card_amount?: number;
-    coupon_code?: string;
-    coupon_discount?: number;
-    notes?: string;
-  }
-): Promise<any> => {
-  try {
-    logger.log('[CREATE INVOICE] Creating invoice for order:', orderId);
-
-    // Check if invoice already exists for this order
-    const { data: existingInvoice } = await supabase
-      .from("invoices")
-      .select("id, invoice_number")
-      .eq("order_id", orderId)
-      .maybeSingle();
-
-    if (existingInvoice) {
-      logger.log('[CREATE INVOICE] Invoice already exists:', existingInvoice.invoice_number);
-      return existingInvoice;
-    }
-
-    // Generate invoice number (use order number as base or generate new)
-    const invoiceNumber = orderData.order_number || generateOrderNumber();
-
-    // Create invoice
-    const { data: invoice, error: invoiceError } = await supabase
-      .from("invoices")
-      .insert({
-        invoice_number: invoiceNumber,
-        order_id: orderId,
-        user_id: orderData.user_id,
-        issue_date: new Date().toISOString(),
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-        payment_status: orderData.payment_status || 'pending',
-        payment_method: orderData.payment_method || null,
-        subtotal: orderData.subtotal,
-        tax: orderData.tax || 0,
-        total: orderData.total,
-        shipping: orderData.shipping || 0,
-        discount: orderData.discount || 0,
-        gift_card_code: orderData.gift_card_code || null,
-        gift_card_amount: orderData.gift_card_amount || 0,
-        coupon_code: orderData.coupon_code || null,
-        coupon_discount: orderData.coupon_discount || 0,
-        notes: orderData.notes || `Factura generada automáticamente para pedido ${orderData.order_number || orderId}`
-      })
-      .select()
-      .single();
-
-    if (invoiceError) {
-      logger.error('[CREATE INVOICE] Error creating invoice:', invoiceError);
-      return null;
-    }
-
-    logger.log('[CREATE INVOICE] Invoice created successfully:', invoice.invoice_number);
-
-    // Send notification to user
-    if (orderData.user_id) {
-      try {
-        await supabase.from('notifications').insert({
-          user_id: orderData.user_id,
-          type: 'invoice_created',
-          title: '📄 Factura Generada',
-          message: `Se ha generado la factura ${invoiceNumber} para tu pedido. Total: €${orderData.total.toFixed(2)}`,
-          link: `/mi-cuenta?tab=invoices`,
-          is_read: false
-        });
-        await triggerNotificationRefresh(orderData.user_id);
-      } catch (notifError) {
-        logger.error('[CREATE INVOICE] Error creating notification:', notifError);
-        // Don't fail invoice creation for notification errors
-      }
-    }
-
-    return invoice;
-  } catch (error) {
-    logger.error('[CREATE INVOICE] Unexpected error:', error);
-    return null;
-  }
-};
-
-/**
- * Unified function to process gift card payment with proper validation and optimistic locking
- * 
- * @param giftCardId - The gift card ID from sessionStorage/state
- * @param giftCardAmount - Amount to deduct from gift card
- * @param context - Context for logging (e.g., 'INVOICE_PAYMENT', 'CART_PAYMENT')
- * @returns Object with success status and optional error details
- */
-export const processGiftCardPayment = async (
-  giftCardId: string,
-  giftCardAmount: number,
-  context: string = 'PAYMENT'
-): Promise<{
-  success: boolean;
-  error?: string;
-  errorType?: 'INVALID_CARD' | 'INSUFFICIENT_BALANCE' | 'RACE_CONDITION' | 'EXPIRED' | 'DATABASE_ERROR';
-  freshBalance?: number;
-}> => {
-  try {
-    logger.log(`[${context}] Processing gift card payment:`, { giftCardId, amount: giftCardAmount });
-
-    // STEP 1: Re-validate gift card from database (FRESH DATA)
-    const { data: freshGiftCard, error: fetchError } = await supabase
-      .from("gift_cards")
-      .select("*")
-      .eq("id", giftCardId)
-      .eq("is_active", true)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (fetchError) {
-      logger.error(`[${context}] Error fetching gift card:`, fetchError);
-      return {
-        success: false,
-        error: 'Error de base de datos al validar la tarjeta',
-        errorType: 'DATABASE_ERROR'
-      };
-    }
-
-    if (!freshGiftCard) {
-      logger.error(`[${context}] Gift card not found or inactive`);
-      return {
-        success: false,
-        error: 'Tarjeta de regalo no válida o inactiva',
-        errorType: 'INVALID_CARD'
-      };
-    }
-
-    // STEP 2: Check expiration
-    if (freshGiftCard.expires_at && new Date(freshGiftCard.expires_at) < new Date()) {
-      logger.error(`[${context}] Gift card expired:`, freshGiftCard.expires_at);
-      return {
-        success: false,
-        error: 'La tarjeta de regalo ha expirado',
-        errorType: 'EXPIRED'
-      };
-    }
-
-    // STEP 3: Check sufficient balance
-    const currentBalance = Number(freshGiftCard.current_balance);
-    if (currentBalance < giftCardAmount) {
-      logger.error(`[${context}] Insufficient balance:`, { current: currentBalance, required: giftCardAmount });
-      return {
-        success: false,
-        error: `Saldo insuficiente. Disponible: €${currentBalance.toFixed(2)}, Requerido: €${giftCardAmount.toFixed(2)}`,
-        errorType: 'INSUFFICIENT_BALANCE',
-        freshBalance: currentBalance
-      };
-    }
-
-    // STEP 4: Calculate new balance
-    const newBalance = Number(Math.max(0, currentBalance - giftCardAmount).toFixed(2));
-
-    // STEP 5: Update with optimistic locking
-    const { error: updateError, count } = await supabase
-      .from("gift_cards")
-      .update({
-        current_balance: newBalance,
-        updated_at: new Date().toISOString()
-      }, { count: 'exact' })
-      .eq("id", freshGiftCard.id)
-      .eq("current_balance", currentBalance); // Optimistic lock
-
-    if (updateError) {
-      logger.error(`[${context}] Error updating gift card:`, updateError);
-      return {
-        success: false,
-        error: 'Error al actualizar el saldo de la tarjeta',
-        errorType: 'DATABASE_ERROR'
-      };
-    }
-
-    // STEP 6: Check if optimistic locking prevented update
-    if (count === 0) {
-      logger.error(`[${context}] Optimistic locking failed - balance changed`);
-      return {
-        success: false,
-        error: 'El saldo de la tarjeta ha cambiado. Por favor, vuelve a aplicar la tarjeta',
-        errorType: 'RACE_CONDITION'
-      };
-    }
-
-    logger.log(`[${context}] Gift card balance updated successfully:`, { oldBalance: currentBalance, newBalance });
-
-    return {
-      success: true,
-      freshBalance: newBalance
-    };
-  } catch (error) {
-    logger.error(`[${context}] Unexpected error processing gift card:`, error);
-    return {
-      success: false,
-      error: 'Error inesperado al procesar la tarjeta de regalo',
-      errorType: 'DATABASE_ERROR'
-    };
-  }
-};
-
-/**
- * Rolls back a gift card payment transaction
- * Reverts the balance deduction made by processGiftCardPayment
- * 
- * @param giftCardId - UUID of the gift card
- * @param amountToRestore - Amount to restore to the gift card balance
- * @param context - Context string for logging purposes
- * @returns Promise<boolean> - true if rollback successful, false otherwise
- */
-export const rollbackGiftCardPayment = async (
-  giftCardId: string,
-  amountToRestore: number,
-  context: string = 'ROLLBACK'
-): Promise<boolean> => {
-  try {
-    logger.warn(`[${context}] Rolling back gift card payment: ${giftCardId}, restoring €${amountToRestore.toFixed(2)}`);
-    
-    // Fetch current balance with locking
-    const { data: freshGiftCard, error: fetchError } = await supabase
-      .from('gift_cards')
-      .select('id, current_balance, initial_balance, is_active, expiry_date, deleted_at')
-      .eq('id', giftCardId)
-      .single();
-
-    if (fetchError || !freshGiftCard) {
-      logger.error(`[${context}] Gift card not found for rollback:`, fetchError);
-      return false;
-    }
-
-    // Calculate new balance (current + amount to restore)
-    const newBalance = Number(Math.min(
-      freshGiftCard.initial_balance,
-      freshGiftCard.current_balance + amountToRestore
-    ).toFixed(2));
-
-    // Update with optimistic locking
-    const { error: updateError } = await supabase
-      .from('gift_cards')
-      .update({ current_balance: newBalance })
-      .eq('id', giftCardId)
-      .eq('current_balance', freshGiftCard.current_balance); // Optimistic lock
-
-    if (updateError) {
-      logger.error(`[${context}] Failed to rollback gift card:`, updateError);
-      return false;
-    }
-
-    logger.log(`[${context}] Gift card rollback successful: ${giftCardId}, new balance: €${newBalance.toFixed(2)}`);
-    return true;
-  } catch (error) {
-    logger.error(`[${context}] Unexpected error during gift card rollback:`, error);
-    return false;
-  }
-};
-
-/**
- * Rolls back a complete order transaction including:
- * - Deletes order items
- * - Deletes the order itself
- * - Optionally restores gift card balance
- * 
- * This ensures no orphaned records remain in the database
- * 
- * @param orderId - UUID of the order to rollback
- * @param giftCardInfo - Optional gift card info to rollback {id: string, amount: number}
- * @param context - Context string for logging purposes
- * @returns Promise<boolean> - true if rollback successful, false otherwise
- */
-export const rollbackOrderTransaction = async (
-  orderId: string,
-  giftCardInfo?: { id: string; amount: number },
-  context: string = 'ROLLBACK'
-): Promise<boolean> => {
-  try {
-    logger.warn(`[${context}] Rolling back order transaction: ${orderId}`);
-    
-    let rollbackSuccess = true;
-
-    // Step 1: Delete order items first (foreign key constraint)
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .delete()
-      .eq('order_id', orderId);
-
-    if (itemsError) {
-      logger.error(`[${context}] Failed to delete order items:`, itemsError);
-      rollbackSuccess = false;
-    } else {
-      logger.log(`[${context}] Order items deleted successfully`);
-    }
-
-    // Step 2: Delete the order
-    const { error: orderError } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', orderId);
-
-    if (orderError) {
-      logger.error(`[${context}] Failed to delete order:`, orderError);
-      rollbackSuccess = false;
-    } else {
-      logger.log(`[${context}] Order deleted successfully`);
-    }
-
-    // Step 3: Rollback gift card if applicable
-    if (giftCardInfo && giftCardInfo.amount > 0) {
-      const giftCardRollback = await rollbackGiftCardPayment(
-        giftCardInfo.id,
-        giftCardInfo.amount,
-        context
-      );
-      if (!giftCardRollback) {
-        logger.error(`[${context}] Failed to rollback gift card payment`);
-        rollbackSuccess = false;
-      }
-    }
-
-    if (rollbackSuccess) {
-      logger.log(`[${context}] Complete order rollback successful`);
-    } else {
-      logger.error(`[${context}] Order rollback completed with errors`);
-    }
-
-    return rollbackSuccess;
-  } catch (error) {
-    logger.error(`[${context}] Unexpected error during order rollback:`, error);
-    return false;
-  }
-};
-
-/**
- * Interface for authenticated user
- */
-export interface AuthenticatedUser {
-  id: string;
-  [key: string]: any;
-}
-
-/**
- * Interface for shipping information
- */
-export interface ShippingInformation {
-  address: string;
-  city: string;
-  postal_code: string;
-  [key: string]: any;
-}
-
-/**
- * Interface for payment validation results
- */
-export interface PaymentValidationResult {
-  valid: boolean;
-  error?: string;
-  errorKey?: string;
-}
-
-/**
- * Validates common payment prerequisites:
- * - User is authenticated
- * - Cart has items
- * - Shipping info is valid
- * - Numeric values are valid (no NaN, no negatives)
- * 
- * This consolidates duplicate validation logic across payment methods
- * 
- * @param user - Authenticated user object
- * @param cartItems - Array of cart items
- * @param shippingInfo - Shipping information object
- * @param financials - Object containing subtotal, tax, shipping, discount
- * @returns PaymentValidationResult with validation status and error details
- */
-export const validatePaymentPrerequisites = (
-  user: AuthenticatedUser | null,
-  cartItems: CartItem[],
-  shippingInfo: ShippingInformation | null,
-  financials: { subtotal: number; tax: number; shipping: number; discount: number }
-): PaymentValidationResult => {
-  // Validate user authentication
-  if (!user || !user.id) {
-    return {
-      valid: false,
-      error: 'User authentication required',
-      errorKey: 'payment:messages.loginRequired'
-    };
-  }
-
-  // Validate cart is not empty
-  if (!cartItems || cartItems.length === 0) {
-    return {
-      valid: false,
-      error: 'Cart is empty',
-      errorKey: 'cart:messages.cartEmpty'
-    };
-  }
-
-  // Validate shipping info structure
-  if (!shippingInfo || !shippingInfo.address || !shippingInfo.city || !shippingInfo.postal_code) {
-    return {
-      valid: false,
-      error: 'Invalid shipping information',
-      errorKey: 'payment:messages.invalidShippingInfo'
-    };
-  }
-
-  // Validate numeric values are not NaN
-  if (
-    isNaN(financials.subtotal) ||
-    isNaN(financials.tax) ||
-    isNaN(financials.shipping) ||
-    isNaN(financials.discount)
-  ) {
-    return {
-      valid: false,
-      error: 'Invalid numeric values in calculation',
-      errorKey: 'payment:messages.calculationError'
-    };
-  }
-
-  // Validate numeric values are not negative
-  if (financials.subtotal < 0 || financials.tax < 0 || financials.shipping < 0) {
-    return {
-      valid: false,
-      error: 'Negative values detected',
-      errorKey: 'payment:messages.invalidPrices'
-    };
-  }
-
-  return { valid: true };
 };

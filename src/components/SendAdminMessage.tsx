@@ -110,7 +110,7 @@ export function SendAdminMessage() {
             message: `${profile?.full_name || 'Un cliente'} ha enviado un mensaje: ${message}`,
             customer_name: profile?.full_name || 'Cliente',
             customer_email: profile?.email || user.email || '',
-            link: '/admin/messages'
+            link: '/admin/mensajes'
           }
         });
       } catch (emailError) {

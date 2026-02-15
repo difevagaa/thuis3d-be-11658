@@ -113,10 +113,7 @@
     "dueDate": "Vervaldatum",
     "paymentStatus": "Betalingsstatus",
     "invoicePaid": "Betaald",
-    "invoicePending": "In afwachting",
-    "payNow": "Nu Betalen",
-    "pendingPaymentTitle": "Bestelling wacht op betaling",
-    "pendingPaymentMessage": "Deze bestelling wacht op betaling. Klik op de knop om uw betaling te voltooien en uw bestelling te verwerken."
+    "invoicePending": "In afwachting"
   },
   "viewer3d": {
     "zoomIn": "Inzoomen",

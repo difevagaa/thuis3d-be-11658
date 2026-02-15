@@ -12,14 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
-import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Search, Filter, RefreshCw, HelpCircle } from "lucide-react";
-import { FieldHelp } from "@/components/admin/FieldHelp";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Search, Filter, RefreshCw } from "lucide-react";
 
 // Popular carriers with tracking URL templates
 const CARRIERS = [
@@ -415,16 +408,9 @@ export default function OrdersEnhanced() {
               ))}
             </SelectContent>
           </Select>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" onClick={loadData} size="icon">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Recargar pedidos</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button variant="outline" onClick={loadData} size="icon">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -482,45 +468,9 @@ export default function OrdersEnhanced() {
                   <TableHead>Número</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Estado
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Estado actual del pedido en el proceso</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Pago
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Estado del pago del pedido</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Tracking
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Número de seguimiento del envío</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead>Tracking</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
@@ -576,23 +526,16 @@ export default function OrdersEnhanced() {
                     </TableCell>
                     <TableCell className="text-sm">{new Date(order.created_at).toLocaleDateString('es-ES')}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(order);
-                              }}
-                            >
-                              ⚙️ Gestionar
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Editar estado, tracking y detalles del pedido</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(order);
+                        }}
+                      >
+                        ⚙️ Gestionar
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -676,10 +619,7 @@ export default function OrdersEnhanced() {
             <TabsContent value="status" className="space-y-4 mt-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    📋 Estado del Pedido
-                    <FieldHelp content="Actualiza el estado del pedido. Se notificará al cliente por email cuando cambies el estado." />
-                  </Label>
+                  <Label>📋 Estado del Pedido</Label>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona un estado" />
@@ -701,10 +641,7 @@ export default function OrdersEnhanced() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    💳 Estado de Pago
-                    <FieldHelp content="Cambiar a 'Pagado' actualizará la factura asociada y enviará notificaciones de tarjetas regalo si aplica." />
-                  </Label>
+                  <Label>💳 Estado de Pago</Label>
                   <Select value={newPaymentStatus} onValueChange={setNewPaymentStatus}>
                     <SelectTrigger>
                       <SelectValue />
@@ -725,10 +662,7 @@ export default function OrdersEnhanced() {
               {/* Rejection reason - only show if rejected status */}
               {isRejectedStatus() && (
                 <div className="space-y-2 p-4 border border-destructive/50 rounded-lg bg-destructive/5">
-                  <Label className="text-destructive flex items-center gap-2">
-                    ❌ Motivo del Rechazo/Cancelación
-                    <FieldHelp content="Documenta el motivo del rechazo o cancelación del pedido. Esta información es importante para registros internos." />
-                  </Label>
+                  <Label className="text-destructive">❌ Motivo del Rechazo/Cancelación</Label>
                   <Textarea
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
@@ -744,10 +678,7 @@ export default function OrdersEnhanced() {
                 <>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        🚚 Transportista
-                        <FieldHelp content="Selecciona el transportista. El enlace de tracking se generará automáticamente." />
-                      </Label>
+                      <Label>🚚 Transportista</Label>
                       <Select value={carrierName} onValueChange={handleCarrierChange}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona transportista" />
@@ -763,10 +694,7 @@ export default function OrdersEnhanced() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        📦 Número de Paquetes
-                        <FieldHelp content="Cantidad de paquetes en este envío." />
-                      </Label>
+                      <Label>📦 Número de Paquetes</Label>
                       <Input
                         type="number"
                         min={1}
@@ -777,10 +705,7 @@ export default function OrdersEnhanced() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      🔢 Número de Seguimiento (Tracking)
-                      <FieldHelp content="Introduce el número de tracking del transportista. El cliente recibirá este número por email." />
-                    </Label>
+                    <Label>🔢 Número de Seguimiento (Tracking)</Label>
                     <div className="flex gap-2">
                       <Input
                         value={trackingNumber}
@@ -789,25 +714,15 @@ export default function OrdersEnhanced() {
                         className="font-mono"
                       />
                       {trackingNumber && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="icon" onClick={() => copyToClipboard(trackingNumber)}>
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Copiar número de tracking</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(trackingNumber)}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      🔗 Enlace de Rastreo
-                      <FieldHelp content="URL generada automáticamente para que el cliente pueda rastrear su paquete." />
-                    </Label>
+                    <Label>🔗 Enlace de Rastreo</Label>
                     <div className="flex gap-2">
                       <Input
                         value={trackingUrl}
@@ -815,18 +730,11 @@ export default function OrdersEnhanced() {
                         placeholder="https://track.carrier.com/..."
                       />
                       {trackingUrl && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="icon" asChild>
-                                <a href={trackingUrl} target="_blank" rel="noopener noreferrer">
-                                  <ExternalLink className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Abrir enlace de tracking</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Button variant="outline" size="icon" asChild>
+                          <a href={trackingUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -836,10 +744,7 @@ export default function OrdersEnhanced() {
                   
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        📅 Fecha Estimada de Entrega
-                        <FieldHelp content="Fecha estimada en que el paquete llegará al cliente." />
-                      </Label>
+                      <Label>📅 Fecha Estimada de Entrega</Label>
                       <Input
                         type="date"
                         value={estimatedDeliveryDate}
@@ -848,10 +753,7 @@ export default function OrdersEnhanced() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        ⚖️ Peso Total (kg)
-                        <FieldHelp content="Peso total del envío en kilogramos." />
-                      </Label>
+                      <Label>⚖️ Peso Total (kg)</Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -873,10 +775,7 @@ export default function OrdersEnhanced() {
             
             <TabsContent value="notes" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  📝 Notas del Administrador (internas)
-                  <FieldHelp content="Notas privadas para uso interno del equipo. El cliente no verá esta información." />
-                </Label>
+                <Label>📝 Notas del Administrador (internas)</Label>
                 <Textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}

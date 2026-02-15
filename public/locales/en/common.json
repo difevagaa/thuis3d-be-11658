@@ -113,10 +113,7 @@
     "dueDate": "Due date",
     "paymentStatus": "Payment status",
     "invoicePaid": "Paid",
-    "invoicePending": "Pending",
-    "payNow": "Pay Now",
-    "pendingPaymentTitle": "Order pending payment",
-    "pendingPaymentMessage": "This order is pending payment. Click the button to complete your payment and process your order."
+    "invoicePending": "Pending"
   },
   "viewer3d": {
     "zoomIn": "Zoom in",

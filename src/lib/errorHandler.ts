@@ -14,16 +14,6 @@ export interface ErrorOptions {
 }
 
 /**
- * Check if error is a Supabase schema cache error
- */
-export const isSchemaGCacheError = (error: any): boolean => {
-  if (!error) return false;
-  const message = error.message || error.error || '';
-  return message.includes('Could not find the table') || 
-         (message.includes('relation') && message.includes('does not exist'));
-};
-
-/**
  * Handle Supabase errors
  */
 export const handleSupabaseError = (
@@ -42,12 +32,6 @@ export const handleSupabaseError = (
   }
 
   if (showToast) {
-    // Check for schema cache errors first
-    if (isSchemaGCacheError(error)) {
-      toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-      return;
-    }
-    
     const defaultMessage = i18n.t('errors:general', { defaultValue: 'Ha ocurrido un error' });
     const errMsg = (error as any)?.message as string | undefined;
     if (errMsg) {

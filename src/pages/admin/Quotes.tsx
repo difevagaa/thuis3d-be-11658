@@ -10,21 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FilePlus, Pencil, Trash2, FileText, HelpCircle } from "lucide-react";
+import { FilePlus, Pencil, Trash2, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
-import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { FieldHelp } from "@/components/admin/FieldHelp";
 import { useMaterialColors } from "@/hooks/useMaterialColors";
 import { sendNotificationWithBroadcast } from "@/lib/notificationUtils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export default function Quotes() {
   const navigate = useNavigate();
@@ -111,7 +103,7 @@ export default function Quotes() {
       const selectedStatus = statuses.find(s => s.id === editingQuote.status_id);
       const statusSlug = selectedStatus?.slug?.toLowerCase();
       const normalizedStatusName = selectedStatus?.name?.toLowerCase();
-      const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada' || normalizedStatusName === 'approved';
+      const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada';
       const statusChanged = originalQuote?.status_id !== editingQuote.status_id;
       const priceChanged = Number(originalQuote?.estimated_price || 0) !== Number(editingQuote.estimated_price || 0);
       const nameChanged = originalQuote?.customer_name !== editingQuote.customer_name;
@@ -187,11 +179,8 @@ export default function Quotes() {
 
       // If quote is being approved, trigger automation
       if (isApproving) {
-        toast.info('Procesando aprobación y generando factura y pedido...');
+        toast.info('Procesando aprobación y generando factura...');
 
-        let automationSuccess = false;
-
-        // Try edge function first
         try {
           const { data: profile } = await supabase
             .from('profiles')
@@ -211,8 +200,9 @@ export default function Quotes() {
             }
           );
 
-          if (!functionError && data?.success) {
-            automationSuccess = true;
+          if (functionError) {
+            toast.warning('Cotización aprobada, pero hubo un error en la automatización. Revisa los detalles.');
+          } else if (data?.success) {
             const automations = data.automations || {};
             
             let message = `✅ Cotización aprobada exitosamente`;
@@ -230,204 +220,9 @@ export default function Quotes() {
             }
             
             toast.success(message, { duration: 6000 });
-          } else {
-            console.error('Edge function error, falling back to client-side automation:', functionError || data?.error);
           }
         } catch (autoError) {
-          console.error('Edge function exception, falling back to client-side automation:', autoError);
-        }
-
-        // Client-side fallback: create invoice and order directly
-        if (!automationSuccess) {
-          try {
-            // Get full quote data
-            const { data: fullQuote } = await supabase
-              .from('quotes')
-              .select('*')
-              .eq('id', editingQuote.id)
-              .single();
-
-            if (fullQuote) {
-              const subtotal = parseFloat(String(fullQuote.estimated_price || '0'));
-              const shippingCost = parseFloat(String(fullQuote.shipping_cost || '0'));
-
-              // Check tax settings
-              const shouldApplyTax = fullQuote.tax_enabled ?? true;
-              let taxRate = 0;
-              if (shouldApplyTax) {
-                const { data: taxEnabledSetting } = await supabase
-                  .from('site_settings')
-                  .select('setting_value')
-                  .eq('setting_key', 'tax_rate')
-                  .maybeSingle();
-                taxRate = taxEnabledSetting ? parseFloat(String(taxEnabledSetting.setting_value)) : 0;
-              }
-              const tax = shouldApplyTax ? (subtotal * taxRate) / 100 : 0;
-              const total = subtotal + tax + shippingCost;
-
-              // Check if invoice already exists for this quote
-              const { data: existingInvoice } = await supabase
-                .from('invoices')
-                .select('id, invoice_number')
-                .eq('quote_id', editingQuote.id)
-                .maybeSingle();
-
-              let invoiceId = existingInvoice?.id;
-              let invoiceNumber = existingInvoice?.invoice_number;
-
-              // Create invoice if not exists
-              if (!existingInvoice) {
-                // Generate unique invoice number with retry
-                let generatedNumber: string | null = null;
-                for (let attempt = 0; attempt < 5; attempt++) {
-                  const { data: rpcResult } = await supabase.rpc('generate_invoice_number');
-                  let candidate = rpcResult;
-                  
-                  // If RPC fails, generate a random number with same format (L1N1L2N2L3N3)
-                  if (!candidate) {
-                    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                    candidate = 
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10) +
-                      letters[Math.floor(Math.random() * 26)] + Math.floor(Math.random() * 10);
-                  }
-
-                  // Check uniqueness
-                  const { data: collision } = await supabase
-                    .from('invoices')
-                    .select('id')
-                    .eq('invoice_number', candidate)
-                    .maybeSingle();
-
-                  if (!collision) {
-                    generatedNumber = candidate;
-                    break;
-                  }
-                }
-                invoiceNumber = generatedNumber || `${Date.now()}`;
-
-                const { data: newInvoice, error: invError } = await supabase
-                  .from('invoices')
-                  .insert({
-                    invoice_number: invoiceNumber,
-                    quote_id: editingQuote.id,
-                    user_id: fullQuote.user_id,
-                    issue_date: new Date().toISOString(),
-                    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    payment_status: 'pending',
-                    subtotal, tax, total,
-                    notes: `Factura generada automáticamente para cotización ${fullQuote.quote_type}`,
-                    shipping: shippingCost,
-                    discount: 0
-                  })
-                  .select()
-                  .single();
-
-                if (invError) {
-                  console.error('Error creating invoice:', invError);
-                } else if (newInvoice) {
-                  invoiceId = newInvoice.id;
-
-                  await supabase.from('invoice_items').insert({
-                    invoice_id: newInvoice.id,
-                    product_name: `Cotización ${fullQuote.quote_type}`,
-                    description: fullQuote.description || 'Servicio de impresión 3D',
-                    quantity: 1,
-                    unit_price: subtotal,
-                    total_price: subtotal,
-                    tax_enabled: shouldApplyTax
-                  });
-                }
-              }
-
-              // Check if order already exists for this quote
-              const quoteMarker = `quote_id:${editingQuote.id}`;
-              const { data: existingOrder } = await supabase
-                .from('orders')
-                .select('id, order_number')
-                .ilike('admin_notes', `%${quoteMarker}%`)
-                .maybeSingle();
-
-              let orderData = existingOrder;
-
-              // Create order if not exists
-              if (!existingOrder) {
-                // Get "Recibido" status
-                const { data: orderStatus } = await supabase
-                  .from('order_statuses')
-                  .select('id')
-                  .eq('name', 'Recibido')
-                  .maybeSingle();
-
-                let statusId = orderStatus?.id;
-                if (!statusId) {
-                  const { data: fallback } = await supabase
-                    .from('order_statuses')
-                    .select('id')
-                    .order('name', { ascending: true })
-                    .limit(1)
-                    .maybeSingle();
-                  statusId = fallback?.id || null;
-                }
-
-                const addressParts = [fullQuote.address, fullQuote.city, fullQuote.postal_code, fullQuote.country].filter(Boolean).join(', ');
-                const quantity = fullQuote.quantity && fullQuote.quantity > 0 ? fullQuote.quantity : 1;
-                const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
-                const fileInfo = fullQuote.file_storage_path ? ` | Archivo: ${fullQuote.file_storage_path}` : '';
-                const quoteNum = fullQuote.id ? ` #${fullQuote.id.substring(0, 8)}` : '';
-
-                const { data: newOrder, error: orderError } = await supabase
-                  .from('orders')
-                  .insert({
-                    user_id: fullQuote.user_id,
-                    status_id: statusId,
-                    subtotal, tax, discount: 0,
-                    shipping: shippingCost, total,
-                    notes: `Pedido generado automáticamente desde la cotización${quoteNum} (${fullQuote.quote_type})${fileInfo}`,
-                    admin_notes: quoteMarker,
-                    shipping_address: addressParts || null,
-                    billing_address: addressParts || null,
-                    payment_status: 'pending'
-                  })
-                  .select('id, order_number')
-                  .single();
-
-                if (orderError) {
-                  console.error('Error creating order:', orderError);
-                } else if (newOrder) {
-                  orderData = newOrder;
-
-                  await supabase.from('order_items').insert({
-                    order_id: newOrder.id,
-                    product_name: `Cotización ${fullQuote.quote_type}`,
-                    quantity: quantity,
-                    unit_price: unitPrice,
-                    total_price: subtotal,
-                    selected_material: fullQuote.material_id || null,
-                    selected_color: fullQuote.color_id || null,
-                    custom_text: fullQuote.description || null
-                  });
-
-                  // Link invoice to order
-                  if (invoiceId) {
-                    await supabase.from('invoices').update({ order_id: newOrder.id }).eq('id', invoiceId);
-                  }
-                }
-              }
-
-              let message = `✅ Cotización aprobada exitosamente`;
-              if (invoiceNumber) {
-                message += `\n📄 Factura ${invoiceNumber} generada (€${total.toFixed(2)})`;
-              }
-              if (orderData) {
-                message += `\n📦 Pedido ${orderData.order_number} generado`;
-              }
-              toast.success(message, { duration: 6000 });
-            }
-          } catch (fallbackError) {
-            console.error('Client-side automation fallback error:', fallbackError);
-            toast.warning('Cotización aprobada, pero hubo problemas generando la factura y pedido automáticamente.');
-          }
+          toast.warning('Cotización aprobada, pero la automatización falló. Crea la factura manualmente.');
         }
       } else {
         toast.success("Cotización actualizada");
@@ -440,8 +235,9 @@ export default function Quotes() {
     }
   };
 
-  const handleDeleteQuote = async (id: string, quoteName: string) => {
-    // No need for confirm() - DeleteConfirmDialog handles it
+  const handleDeleteQuote = async (id: string) => {
+    if (!confirm("¿Mover esta cotización a la papelera?")) return;
+    
     try {
       const { error } = await supabase
         .from("quotes")
@@ -513,58 +309,10 @@ export default function Quotes() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Material</TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Peso
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Peso calculado del modelo 3D</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Tiempo
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Tiempo estimado de impresión</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Precio Auto
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Precio calculado automáticamente por el sistema</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Precio Est.
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Precio estimado establecido manualmente por el administrador</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableHead>
+                  <TableHead>Peso</TableHead>
+                  <TableHead>Tiempo</TableHead>
+                  <TableHead>Precio Auto</TableHead>
+                  <TableHead>Precio Est.</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -631,46 +379,30 @@ export default function Quotes() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Ver detalles completos</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => setEditingQuote(quote)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Editar cotización</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          
-                          <DeleteConfirmDialog
-                            title="¿Eliminar esta cotización?"
-                            itemName={`Cotización de ${quote.customer_name}`}
-                            onConfirm={() => handleDeleteQuote(quote.id, quote.customer_name)}
-                            trigger={
-                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            }
-                          />
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => navigate(`/admin/cotizaciones/${quote.id}`)}
+                            title="Ver detalles"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setEditingQuote(quote)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeleteQuote(quote.id)}
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -730,10 +462,7 @@ export default function Quotes() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    Precio Estimado (€)
-                    <FieldHelp content="Precio final que se cobrará al cliente. Puede ser diferente del precio calculado automáticamente." />
-                  </Label>
+                  <Label>Precio Estimado (€)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -744,10 +473,7 @@ export default function Quotes() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    Estado
-                    <FieldHelp content="Cambiar a 'Aprobado' generará automáticamente una factura y un pedido." />
-                  </Label>
+                  <Label>Estado</Label>
                   <Select
                     value={editingQuote.status_id}
                     onValueChange={(value) => setEditingQuote({ ...editingQuote, status_id: value })}

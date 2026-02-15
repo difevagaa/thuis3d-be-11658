@@ -8,9 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, ExternalLink, Copy, Loader2 } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { 
-  processGiftCardPayment
+  createOrder, 
+  createOrderItems, 
+  convertCartToOrderItems,
+  generateOrderNotes,
+  updateGiftCardBalance
 } from "@/lib/paymentUtils";
-import { loadSpecificPaymentSettings } from "@/lib/paymentConfigUtils";
 
 export default function CardPaymentPage() {
   const navigate = useNavigate();
@@ -63,12 +66,27 @@ export default function CardPaymentPage() {
 
   const loadPaymentConfig = useCallback(async () => {
     try {
-      const settings = await loadSpecificPaymentSettings(['revolut_link', 'card_payment_link', 'payment_images']);
-      setPaymentConfig({
-        card_payment_link: settings.card_payment_link || '',
-        revolut_link: settings.revolut_link || ''
-      });
-      setPaymentImages(settings.payment_images || []);
+      const settingKeys = ['revolut_link', 'card_payment_link', 'payment_images'];
+      const { data } = await supabase
+        .from("site_settings")
+        .select("*")
+        .in("setting_key", settingKeys);
+
+      if (data && data.length > 0) {
+        const settings: any = {};
+        data.forEach((setting) => {
+          if (setting.setting_key === 'payment_images') {
+            try {
+              setPaymentImages(JSON.parse(setting.setting_value));
+            } catch (e) {
+              setPaymentImages([]);
+            }
+          } else {
+            settings[setting.setting_key] = setting.setting_value;
+          }
+        });
+        setPaymentConfig(settings);
+      }
     } catch (error) {
       logger.error("Error loading payment config:", error);
     }
@@ -109,12 +127,6 @@ export default function CardPaymentPage() {
   }, [showRedirectOverlay, pendingOrderInfo, navigate, paymentConfig]);
 
   const handleProceedToPayment = async () => {
-    // Prevent double-clicking
-    if (processing) {
-      logger.log('[CARD PAYMENT] Already processing, ignoring duplicate click');
-      return;
-    }
-    
     setProcessing(true);
     
     try {
@@ -165,15 +177,8 @@ export default function CardPaymentPage() {
         return;
       }
 
-      // ==================================================================================
       // Normal order payment flow
-      // NOTE: Order and invoice were already created in Payment.tsx
-      // We just need to process gift card payment (if applicable) and redirect to gateway
-      // ==================================================================================
-      
-      const { orderId, orderNumber: persistedOrderNumber, total } = orderData;
-      
-      logger.log('[CARD PAYMENT] Order already exists:', { orderId, orderNumber: persistedOrderNumber, total });
+      const { cartItems, shippingInfo, total, subtotal, tax, shipping, orderNumber: persistedOrderNumber } = orderData;
 
       // Get saved gift card if applied
       const savedGiftCard = sessionStorage.getItem("applied_gift_card");
@@ -185,104 +190,154 @@ export default function CardPaymentPage() {
         giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
       }
 
-      // Process gift card payment if applicable
-      if (giftCardData && giftCardDiscount > 0) {
-        logger.log('[CARD PAYMENT] Processing gift card payment:', { cardId: giftCardData.id, discount: giftCardDiscount });
-        
-        const giftCardResult = await processGiftCardPayment(
-          giftCardData.id,
-          giftCardDiscount,
-          'CARD_PAYMENT'
-        );
-
-        if (!giftCardResult.success) {
-          logger.error('[CARD PAYMENT] Gift card processing failed:', giftCardResult);
-          i18nToast.error("error.giftCardProcessing");
-          setProcessing(false);
-          return;
-        }
-        
-        logger.log('[CARD PAYMENT] Gift card processed successfully');
-        
-        // Fetch existing order to preserve discount and notes
+      // Get saved coupon if applied
+      const savedCoupon = sessionStorage.getItem("applied_coupon");
+      let couponData = null;
+      let couponDiscount = 0;
+      
+      if (savedCoupon) {
         try {
-          const { data: existingOrder, error: fetchError } = await supabase
-            .from("orders")
-            .select("discount, notes")
-            .eq("id", orderId)
-            .single();
-          
-          if (fetchError) {
-            logger.error('[CARD PAYMENT] Error fetching existing order:', fetchError);
+          couponData = JSON.parse(savedCoupon);
+          if (couponData.discount_type === "percentage") {
+            couponDiscount = subtotal * (couponData.discount_value / 100);
+          } else if (couponData.discount_type === "fixed") {
+            couponDiscount = Math.min(couponData.discount_value, subtotal);
           }
-
-          const existingDiscount = Number(existingOrder?.discount || 0);
-          const existingNotes = existingOrder?.notes || '';
-          
-          // Update order with combined gift card info
-          const { error: updateError } = await supabase
-            .from("orders")
-            .update({
-              discount: existingDiscount + giftCardDiscount,
-              total: Math.max(0, total - giftCardDiscount),
-              notes: existingNotes ? 
-                `${existingNotes}\n\nTarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})` :
-                `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
-            })
-            .eq("id", orderId);
-          
-          if (updateError) {
-            logger.error('[CARD PAYMENT] Error updating order with gift card:', updateError);
-          }
-
-          // Update invoice with gift card info (preserving existing discount)
-          const { data: existingInvoice, error: fetchInvoiceError } = await supabase
-            .from("invoices")
-            .select("discount")
-            .eq("order_id", orderId)
-            .single();
-          
-          if (fetchInvoiceError) {
-            logger.error('[CARD PAYMENT] Error fetching existing invoice:', fetchInvoiceError);
-          }
-
-          const existingInvoiceDiscount = Number(existingInvoice?.discount || 0);
-          
-          const { error: invoiceUpdateError } = await supabase
-            .from("invoices")
-            .update({
-              gift_card_code: giftCardData.code,
-              gift_card_amount: giftCardDiscount,
-              discount: existingInvoiceDiscount + giftCardDiscount,
-              total: Math.max(0, total - giftCardDiscount)
-            })
-            .eq("order_id", orderId);
-          
-          if (invoiceUpdateError) {
-            logger.error('[CARD PAYMENT] Error updating invoice with gift card:', invoiceUpdateError);
-          }
-        } catch (updateError) {
-          logger.error('[CARD PAYMENT] Error updating order/invoice:', updateError);
+          // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
+          couponDiscount = Number(couponDiscount.toFixed(2));
+        } catch (e) {
+          logger.error("Error parsing coupon:", e);
         }
-        
+      }
+
+      const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+
+      // Generate order notes
+      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
+
+      // Create order with persistent order number
+      const order = await createOrder({
+        userId: user.id,
+        orderNumber: persistedOrderNumber || null,
+        subtotal,
+        tax,
+        shipping,
+        discount: couponDiscount + giftCardDiscount,
+        total: finalTotal,
+        paymentMethod: "card",
+        paymentStatus: "pending",
+        shippingAddress: shippingInfo,
+        billingAddress: shippingInfo,
+        notes: orderNotes
+      });
+
+      if (!order) {
+        throw new Error(t('payment:messages.errorProcessingOrder'));
+      }
+
+      // Update gift card balance if used
+      if (giftCardData && giftCardDiscount > 0) {
+        await updateGiftCardBalance(
+          giftCardData.id,
+          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+        );
         sessionStorage.removeItem("applied_gift_card");
       }
 
-      const finalTotal = giftCardDiscount > 0 ? Math.max(0, total - giftCardDiscount) : total;
+      // Create order items
+      const orderItemsData = convertCartToOrderItems(cartItems, order.id);
+      const insertedItems = await createOrderItems(orderItemsData);
 
-      // Clear session storage
+      if (!insertedItems || insertedItems.length === 0) {
+        throw new Error(t('payment:messages.errorCreatingOrderItems'));
+      }
+
+      // Create invoice
+      try {
+        await supabase.from("invoices").insert({
+          invoice_number: order.order_number,
+          user_id: user.id,
+          order_id: order.id,
+          subtotal: subtotal,
+          tax: tax,
+          shipping: shipping,
+          discount: couponDiscount + giftCardDiscount,
+          coupon_discount: couponData?.discount_type === "free_shipping" ? 0 : couponDiscount,
+          coupon_code: couponData?.code || null,
+          total: finalTotal,
+          payment_method: "card",
+          payment_status: "pending",
+          issue_date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: `Factura generada para el pedido ${order.order_number}`
+        });
+      } catch (invoiceError) {
+        logger.error('Error creating invoice:', invoiceError);
+      }
+
+      // Update coupon usage
+      if (couponData) {
+        try {
+          await supabase
+            .from("coupons")
+            .update({ times_used: (couponData.times_used || 0) + 1 })
+            .eq("id", couponData.id);
+        } catch (couponError) {
+          logger.error('Error updating coupon usage:', couponError);
+        }
+      }
+
+      // Send notifications
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.email) {
+          await supabase.functions.invoke('send-order-confirmation', {
+            body: {
+              to: profile.email,
+              customer_name: profile.full_name || 'Cliente',
+              order_number: order.order_number,
+              subtotal: subtotal,
+              tax: tax,
+              shipping: shipping,
+              discount: couponDiscount + giftCardDiscount,
+              total: finalTotal,
+              items: cartItems.map(item => ({
+                product_name: item.name,
+                quantity: item.quantity,
+                unit_price: item.price
+              }))
+            }
+          });
+        }
+      } catch (emailError) {
+        logger.error('Error sending order confirmation:', emailError);
+      }
+
+      // Clear cart and session
+      localStorage.removeItem("cart");
       sessionStorage.removeItem("pending_card_order");
+      sessionStorage.removeItem("applied_coupon");
+      const sessionId = sessionStorage.getItem("checkout_session_id");
+      if (sessionId) {
+        await supabase.from('checkout_sessions').delete().eq('id', sessionId);
+        sessionStorage.removeItem("checkout_session_id");
+      }
 
       // Show redirect overlay - la pestaña se abrirá después de 4s desde useEffect
       if (paymentConfig?.card_payment_link) {
-        setPendingOrderInfo({ orderNumber: persistedOrderNumber, total: finalTotal, isInvoicePayment: false });
+        setPendingOrderInfo({ orderNumber: order.order_number, total: finalTotal, isInvoicePayment: false });
         setShowRedirectOverlay(true);
       } else {
         i18nToast.error("error.general");
         navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
       }
     } catch (error) {
-      logger.error("[CARD PAYMENT] Error processing payment:", error);
+      logger.error("Error creating order:", error);
       i18nToast.error("error.general");
       setProcessing(false);
     }

@@ -12,14 +12,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Pencil, Trash2 } from "lucide-react";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
-import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { FieldHelp } from "@/components/admin/FieldHelp";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export default function Materials() {
   const [materials, setMaterials] = useState<any[]>([]);
@@ -172,6 +164,8 @@ export default function Materials() {
   };
 
   const deleteMaterial = async (id: string) => {
+    if (!confirm("¿Mover este material a la papelera?")) return;
+    
     try {
       const { error } = await supabase
         .from("materials")
@@ -217,10 +211,7 @@ export default function Materials() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label htmlFor="name">Nombre</Label>
-              <FieldHelp content="Nombre único del material. Ej: PLA, ABS, PETG, Resina, etc." />
-            </div>
+            <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
               value={newMaterial.name}
@@ -228,10 +219,7 @@ export default function Materials() {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label htmlFor="description">Descripción</Label>
-              <FieldHelp content="Descripción opcional con las características y propiedades del material." />
-            </div>
+            <Label htmlFor="description">Descripción</Label>
             <Textarea
               id="description"
               value={newMaterial.description}
@@ -240,10 +228,7 @@ export default function Materials() {
             />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label htmlFor="cost">Costo (€)</Label>
-              <FieldHelp content="Costo base del material por kilogramo. Usado para calcular el precio final de impresión." />
-            </div>
+            <Label htmlFor="cost">Costo (€)</Label>
             <Input
               id="cost"
               type="number"
@@ -298,29 +283,21 @@ export default function Materials() {
                   <TableCell>{material.description}</TableCell>
                   <TableCell>€{material.cost?.toFixed(2) || "0.00"}</TableCell>
                   <TableCell className="text-right">
-                    <TooltipProvider>
-                      <div className="flex justify-end gap-2">
-                        <Dialog>
-                          <Tooltip delayDuration={300}>
-                            <TooltipTrigger asChild>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingMaterial(material);
-                                    loadMaterialColors(material.id);
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Editar material</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <DialogContent className="max-w-2xl">
+                    <div className="flex justify-end gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingMaterial(material);
+                              loadMaterialColors(material.id);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Editar Material</DialogTitle>
                             <DialogDescription>
@@ -407,26 +384,15 @@ export default function Materials() {
                             <Button onClick={updateMaterial}>Actualizar Material</Button>
                           </DialogFooter>
                         </DialogContent>
-                        </Dialog>
-                        <DeleteConfirmDialog
-                          title="¿Eliminar material?"
-                          itemName={material.name}
-                          onConfirm={() => deleteMaterial(material.id)}
-                          trigger={
-                            <Tooltip delayDuration={300}>
-                              <TooltipTrigger asChild>
-                                <Button variant="destructive" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Mover a papelera</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          }
-                        />
-                      </div>
-                    </TooltipProvider>
+                      </Dialog>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteMaterial(material.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -12,7 +12,6 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { i18nToast } from "@/lib/i18nToast";
 import { Textarea } from "@/components/ui/textarea";
 import { notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
-import { QuoteResponseTimeline } from "@/components/QuoteResponseTimeline";
 
 export default function UserQuoteDetail() {
   const { t } = useTranslation(['common', 'account']);
@@ -184,53 +183,6 @@ export default function UserQuoteDetail() {
 
       if (error) throw error;
 
-      // If client approved, trigger automatic invoice and order generation
-      if (action === "approve") {
-        try {
-          const { data: statusData } = await supabase
-            .from("quote_statuses")
-            .select("name, slug")
-            .eq("id", statusId)
-            .maybeSingle();
-
-          const { data: automationResult, error: automationError } = await supabase.functions.invoke(
-            'process-quote-approval',
-            {
-              body: {
-                quote_id: quote.id,
-                status_name: statusData?.name || 'Aprobada',
-                status_slug: statusData?.slug || 'approved',
-                admin_name: quote.customer_name // Used for notification purposes, represents who triggered the approval
-              }
-            }
-          );
-
-          if (!automationError && automationResult?.success) {
-            const messageParts = ["✅ Tu respuesta ha sido enviada correctamente."];
-            
-            if (automationResult.invoice) {
-              messageParts.push(`📄 Factura ${automationResult.invoice.invoice_number} generada automáticamente.`);
-            }
-            
-            if (automationResult.order) {
-              messageParts.push(`📦 Pedido ${automationResult.order.order_number} generado automáticamente.`);
-            }
-            
-            messageParts.push("\nPuedes proceder con el pago desde tu panel de facturas.");
-            
-            i18nToast.directSuccess(messageParts.join('\n'));
-          } else {
-            console.error("Automation error:", automationError);
-            i18nToast.directSuccess("Tu respuesta se ha enviado correctamente. La factura y pedido se generarán automáticamente.");
-          }
-        } catch (automationErr) {
-          console.error("Error triggering automation:", automationErr);
-          i18nToast.directSuccess("Tu respuesta se ha enviado correctamente. La factura y pedido se generarán automáticamente.");
-        }
-      } else {
-        i18nToast.directSuccess("Tu respuesta se ha enviado correctamente.");
-      }
-
       const adminMessages: Record<typeof action, string> = {
         approve: `El cliente ${quote.customer_name} aprobó la cotización.`,
         reject: `El cliente ${quote.customer_name} rechazó la cotización.`,
@@ -260,6 +212,7 @@ export default function UserQuoteDetail() {
         // Non-blocking email errors
       }
 
+      i18nToast.directSuccess("Tu respuesta se ha enviado correctamente.");
       setComment("");
       await loadQuoteDetail();
     } catch (error) {
@@ -600,20 +553,6 @@ export default function UserQuoteDetail() {
                   €{parseFloat(quote.estimated_price).toFixed(2)}
                 </p>
               </div>
-            )}
-
-            {/* Client Response History */}
-            {quote.custom_text && (
-              <>
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Historial de Respuestas
-                  </h3>
-                  <QuoteResponseTimeline customText={quote.custom_text} />
-                </div>
-              </>
             )}
 
             {isPendingClientApproval && (

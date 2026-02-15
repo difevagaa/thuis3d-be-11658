@@ -113,10 +113,7 @@
     "dueDate": "Fecha de vencimiento",
     "paymentStatus": "Estado de pago",
     "invoicePaid": "Pagada",
-    "invoicePending": "Pendiente",
-    "payNow": "Pagar Ahora",
-    "pendingPaymentTitle": "Pedido pendiente de pago",
-    "pendingPaymentMessage": "Este pedido está pendiente de pago. Haz clic en el botón para completar tu pago y procesar tu pedido."
+    "invoicePending": "Pendiente"
   },
   "viewer3d": {
     "zoomIn": "Acercar",

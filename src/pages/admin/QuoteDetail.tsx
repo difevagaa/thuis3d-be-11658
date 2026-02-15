@@ -8,12 +8,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Download, User, Mail, Phone, MapPin, FileText, Package, Palette, Clock, Weight, Ruler, Layers, Settings, CheckCircle2, XCircle, Image as ImageIcon, File, Receipt, MessageSquare } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { logger } from '@/lib/logger';
-import { QuoteResponseTimeline } from "@/components/QuoteResponseTimeline";
-import { HelpAlert, HELP_MESSAGES } from "@/components/HelpComponents";
 
 export default function QuoteDetail() {
   const { id } = useParams();
@@ -281,45 +279,6 @@ export default function QuoteDetail() {
         </div>
       </div>
 
-      {/* Help Alert for Quote Response Management */}
-      {quote.custom_text && (
-        <HelpAlert 
-          title={HELP_MESSAGES.quoteResponseHistory.title}
-          description={HELP_MESSAGES.quoteResponseHistory.description}
-          className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-        />
-      )}
-
-      {/* Customer Response Banner - shown prominently at top when there's a response */}
-      {quote.custom_text && (
-        <Card className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageSquare className="h-5 w-5 text-blue-600" />
-              Respuesta del Cliente
-            </CardTitle>
-            <CardDescription>
-              Historial completo de interacciones del cliente con esta cotización
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <QuoteResponseTimeline customText={quote.custom_text} />
-            {quote.user_id && (
-              <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
-                <Button 
-                  onClick={() => navigate(`/admin/messages?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
-                  variant="default"
-                  size="sm"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Contactar Cliente
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Información del Cliente */}
         <Card className="lg:col-span-1">
@@ -370,20 +329,6 @@ export default function QuoteDetail() {
               </div>
               <Badge variant="outline">{quote.quote_type === 'file_upload' ? 'Archivo 3D' : quote.quote_type}</Badge>
             </div>
-
-            {quote.user_id && (
-              <>
-                <Separator />
-                <Button 
-                  onClick={() => navigate(`/admin/messages?userId=${quote.user_id}&userName=${encodeURIComponent(quote.customer_name)}&userEmail=${encodeURIComponent(quote.customer_email)}`)}
-                  className="w-full"
-                  variant="default"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Contactar Cliente
-                </Button>
-              </>
-            )}
           </CardContent>
         </Card>
 
@@ -421,11 +366,13 @@ export default function QuoteDetail() {
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <h3 className="font-semibold flex items-center gap-2 text-lg">
-                    <MessageSquare className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
                     Respuesta del Cliente
                   </h3>
-                  <QuoteResponseTimeline customText={quote.custom_text} />
+                  <div className="p-4 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap">
+                    {quote.custom_text}
+                  </div>
                 </div>
               </>
             )}

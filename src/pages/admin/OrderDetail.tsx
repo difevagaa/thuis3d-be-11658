@@ -15,8 +15,6 @@ import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
 import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
-import { emailService } from '@/lib/emailService';
-import { HelpAlert, HelpTooltip, HELP_MESSAGES } from "@/components/HelpComponents";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -166,21 +164,6 @@ export default function OrderDetail() {
 
   const updatePaymentStatus = async (paymentStatus: string) => {
     try {
-      // If status is being changed to refunded, use the refund utility
-      if (paymentStatus === 'refunded' && id) {
-        const { processOrderRefund } = await import('@/lib/refundUtils');
-        const result = await processOrderRefund(id, 'Reembolso solicitado por administrador');
-        
-        if (result.success) {
-          toast.success(result.message);
-          loadOrderData();
-          return;
-        } else {
-          toast.error(result.message);
-          return;
-        }
-      }
-
       const { error } = await supabase
         .from("orders")
         .update({ payment_status: paymentStatus })
@@ -188,55 +171,65 @@ export default function OrderDetail() {
 
       if (error) throw error;
       
-      // When payment is marked as paid, trigger all necessary emails
+      // Actualizar la factura asociada al pedido
       if (paymentStatus === 'paid' && id) {
-        logger.info('💰 Payment marked as paid, sending emails', { orderId: id });
-        
-        // Update associated invoice
         await updateInvoiceStatusOnOrderPaid(id);
+      }
+      
+      // Si el pago se marca como pagado y hay una tarjeta de regalo, enviar email y notificación
+      if (paymentStatus === 'paid' && order.notes && order.notes.includes('Tarjeta Regalo:')) {
+        logger.log('Payment marked as paid, gift card will be activated by trigger');
         
-        // Send invoice email
-        const { data: invoice } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('order_id', id)
-          .maybeSingle();
-        
-        if (invoice) {
-          logger.info('📄 Sending invoice email', { invoiceId: invoice.id });
-          emailService.sendInvoice({ invoiceId: invoice.id }).catch(err => {
-            logger.error('Failed to send invoice email (non-blocking)', err);
-          });
-        }
-        
-        // Check for gift cards and send emails
-        logger.info('🎁 Checking for gift cards to activate', { orderId: id });
-        emailService.sendAllGiftCardEmails(id).catch(err => {
-          logger.error('Failed to send gift card emails (non-blocking)', err);
-        });
-        
-        // Send payment confirmation to customer if they have an account
-        if (order.user_id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', order.user_id)
-            .maybeSingle();
+        // Extraer código de tarjeta de regalo de las notas
+        const codeMatch = order.notes.match(/Tarjeta Regalo: ([A-Z0-9-]+)/);
+        if (codeMatch && codeMatch[1]) {
+          const giftCardCode = codeMatch[1];
+          logger.log('Found gift card code:', giftCardCode);
           
-          if (profile?.email) {
-            logger.info('📧 Sending payment confirmation', { email: profile.email });
-            // Payment confirmation can be sent via order status email
-            emailService.sendOrderStatus({
-              orderId: id,
-              oldStatus: 'pending',
-              newStatus: 'paid'
-            }).catch(err => {
-              logger.error('Failed to send payment confirmation (non-blocking)', err);
-            });
+          // Esperar un momento para que el trigger active la tarjeta
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          try {
+            // Obtener datos de la tarjeta de regalo
+            const { data: giftCard, error: gcError } = await supabase
+              .from('gift_cards')
+              .select('*')
+              .eq('code', giftCardCode)
+              .single();
+            
+            if (!gcError && giftCard) {
+              // Enviar email con la tarjeta
+              logger.log('Sending gift card email to:', giftCard.recipient_email);
+              const { data: emailData, error: emailError } = await supabase.functions.invoke('send-gift-card-email', {
+                body: {
+                  recipient_email: giftCard.recipient_email,
+                  sender_name: giftCard.sender_name || "Thuis3D.be",
+                  gift_card_code: giftCard.code,
+                  amount: giftCard.initial_amount,
+                  message: giftCard.message || ""
+                }
+              });
+              
+              if (emailError) {
+                logger.error('Error sending gift card email:', emailError);
+                toast.error("Error al enviar email de tarjeta regalo");
+              } else {
+                logger.log('Gift card email sent successfully:', emailData);
+              }
+              
+              // Enviar notificación in-app al destinatario de la tarjeta si tiene cuenta
+              await sendGiftCardActivationNotification(giftCard.recipient_email, {
+                initial_amount: giftCard.initial_amount,
+                sender_name: giftCard.sender_name
+              });
+              
+              toast.success("Tarjeta activada, email y notificación enviados");
+            }
+          } catch (gcErr) {
+            logger.error('Error processing gift card:', gcErr);
+            toast.error("Error al procesar tarjeta regalo");
           }
         }
-        
-        toast.success(t('common:success.paymentStatusUpdated') || "Estado de pago actualizado. Emails enviados automáticamente.");
       } else {
         toast.success("Estado de pago actualizado");
       }
@@ -323,24 +316,6 @@ export default function OrderDetail() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
-      {/* Help Alert for Order Refunds */}
-      {order.payment_status === 'paid' && (
-        <HelpAlert 
-          title={HELP_MESSAGES.orderRefund.title}
-          description={HELP_MESSAGES.orderRefund.description}
-          className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-        />
-      )}
-
-      {/* Show specific help if gift card was used */}
-      {order.notes && (order.notes.includes('Tarjeta Regalo') || order.notes.includes('Gift Card')) && (
-        <HelpAlert 
-          title={HELP_MESSAGES.giftCardRefund.title}
-          description={HELP_MESSAGES.giftCardRefund.description}
-          className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
-        />
-      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
@@ -436,10 +411,7 @@ export default function OrderDetail() {
               </Select>
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label>Estado de Pago</Label>
-                <HelpTooltip content="Al cambiar a 'Reembolsado', el sistema restaurará automáticamente el saldo si el pedido fue pagado con tarjeta de regalo." />
-              </div>
+              <Label>Estado de Pago</Label>
               <Select value={order.payment_status || "pending"} onValueChange={updatePaymentStatus}>
                 <SelectTrigger>
                   <SelectValue />

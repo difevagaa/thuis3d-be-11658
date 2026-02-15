@@ -8,9 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-// Constants
-const DEFAULT_TAX_RATE = 0.21; // 21% - Used when tax settings are not configured
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -21,16 +18,6 @@ import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
 import { logger } from "@/lib/logger";
-import { FieldHelp } from "@/components/admin/FieldHelp";
-import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { useTaxSettings } from "@/hooks/useTaxSettings";
-import { isSchemaGCacheError } from "@/lib/errorHandler";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface InvoiceItem {
   product_id?: string;
@@ -55,10 +42,6 @@ export default function Invoices() {
   const [products, setProducts] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [giftCards, setGiftCards] = useState<any[]>([]);
-  
-  // Get tax settings
-  const { taxSettings } = useTaxSettings();
-  const taxRate = taxSettings?.enabled ? (taxSettings.rate / 100) : DEFAULT_TAX_RATE;
   
   const {
     selectedIds,
@@ -326,14 +309,14 @@ export default function Invoices() {
         return;
       }
 
-      const balance = Number(giftCard.current_balance);
+      const balance = parseFloat(String(giftCard.current_balance));
       setNewInvoice({
         ...newInvoice,
         gift_card_amount: balance.toFixed(2)
       });
 
       toast.success(`Tarjeta regalo aplicada: €${balance.toFixed(2)}`);
-      calculateTotalsWithDiscounts(newInvoice.items, Number(newInvoice.coupon_discount) || 0, balance);
+      calculateTotalsWithDiscounts(newInvoice.items, parseFloat(newInvoice.coupon_discount) || 0, balance);
     } catch (error) {
       toast.error("Error al aplicar tarjeta regalo");
     }
@@ -348,7 +331,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number((subtotal + tax + shipping).toFixed(2));
     
     setNewInvoice(prev => ({
@@ -370,7 +353,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number(Math.max(0, subtotal + tax + shipping - totalDiscount).toFixed(2));
     
     setNewInvoice(prev => ({
@@ -463,63 +446,21 @@ export default function Invoices() {
         }
       }
 
-      // Update gift card balance if used - with optimistic locking and validation
-      if (newInvoice.gift_card_code && Number(newInvoice.gift_card_amount) > 0) {
-        const amountUsed = Number(newInvoice.gift_card_amount);
-        const { data: giftCardData, error: giftCardFetchError } = await supabase
+      // Update gift card balance if used
+      if (newInvoice.gift_card_code && parseFloat(newInvoice.gift_card_amount) > 0) {
+        const amountUsed = parseFloat(newInvoice.gift_card_amount);
+        const { data: giftCardData } = await supabase
           .from("gift_cards")
-          .select("id, current_balance, is_active")
+          .select("current_balance")
           .eq("code", newInvoice.gift_card_code)
-          .eq("is_active", true)
-          .is("deleted_at", null)
           .maybeSingle();
         
-        if (giftCardFetchError || !giftCardData) {
-          logger.error("Error fetching gift card:", giftCardFetchError);
-          // Check for schema cache errors
-          if (isSchemaGCacheError(giftCardFetchError)) {
-            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-          } else {
-            toast.error("Error: Tarjeta de regalo no encontrada o inactiva");
-          }
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", invoiceData.id);
-          return;
-        }
-
-        const currentBalance = Number(giftCardData.current_balance);
-        
-        // Validate sufficient balance
-        if (currentBalance < amountUsed) {
-          toast.error(`Error: Saldo insuficiente en tarjeta de regalo. Disponible: €${currentBalance.toFixed(2)}, Requerido: €${amountUsed.toFixed(2)}`);
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", invoiceData.id);
-          return;
-        }
-        
-        const newBalance = Number((currentBalance - amountUsed).toFixed(2));
-        
-        // Update with optimistic locking
-        const { error: updateError, count } = await supabase
-          .from("gift_cards")
-          .update({ 
-            current_balance: newBalance,
-            updated_at: new Date().toISOString()
-          }, { count: 'exact' })
-          .eq("id", giftCardData.id)
-          .eq("current_balance", currentBalance); // Optimistic lock
-        
-        if (updateError || count === 0) {
-          logger.error("Error updating gift card balance:", updateError);
-          // Check for schema cache errors
-          if (isSchemaGCacheError(updateError)) {
-            toast.error("Error de base de datos: Por favor recarga la página e intenta nuevamente");
-          } else {
-            toast.error("Error: No se pudo actualizar el saldo de la tarjeta (posible cambio concurrente)");
-          }
-          // Rollback: delete created invoice
-          await supabase.from("invoices").delete().eq("id", invoiceData.id);
-          return;
+        if (giftCardData) {
+          const newBalance = parseFloat(String(giftCardData.current_balance)) - amountUsed;
+          await supabase
+            .from("gift_cards")
+            .update({ current_balance: newBalance })
+            .eq("code", newInvoice.gift_card_code);
         }
       }
 
@@ -557,6 +498,8 @@ export default function Invoices() {
   };
 
   const handleDeleteInvoice = async (id: string) => {
+    if (!confirm("¿Mover esta factura a la papelera?")) return;
+    
     try {
       const { error } = await supabase
         .from("invoices")
@@ -574,6 +517,8 @@ export default function Invoices() {
   };
 
   const handleBulkDelete = async () => {
+    if (!confirm(`¿Estás seguro de mover ${selectedIds.size} facturas a la papelera?`)) return;
+    
     try {
       const idsArray = Array.from(selectedIds);
       
@@ -742,7 +687,7 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * taxRate).toFixed(2));
+    const tax = Number((taxableAmount * 0.21).toFixed(2));
     const total = Number(Math.max(0, subtotal + tax + shipping - discount).toFixed(2));
     
     setEditingInvoice((prev: any) => ({
@@ -820,10 +765,7 @@ export default function Invoices() {
               {/* Products/Items Section */}
               <div className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-base font-semibold">Productos / Servicios</Label>
-                    <FieldHelp content="Agrega los productos o servicios que incluye esta factura. El total se calcula automáticamente" />
-                  </div>
+                  <Label className="text-base font-semibold">Productos / Servicios</Label>
                   <Button type="button" variant="outline" size="sm" onClick={addItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Agregar Item
@@ -936,10 +878,7 @@ export default function Invoices() {
               {/* Discounts and Coupons */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm">Descuento Manual (€)</Label>
-                    <FieldHelp content="Aplica un descuento fijo en euros que se restará del subtotal" />
-                  </div>
+                  <Label className="text-sm">Descuento Manual (€)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -954,10 +893,7 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm">Cupón</Label>
-                    <FieldHelp content="Introduce un código de cupón válido para aplicar su descuento. El uso del cupón se registrará" />
-                  </div>
+                  <Label className="text-sm">Cupón</Label>
                   <div className="flex gap-2">
                     <Input
                       value={newInvoice.coupon_code}
@@ -977,10 +913,7 @@ export default function Invoices() {
                 </div>
 
                 <div className="col-span-2 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm">Tarjeta Regalo</Label>
-                    <FieldHelp content="Introduce el código de una tarjeta regalo para aplicar su saldo. El balance se actualizará automáticamente" />
-                  </div>
+                  <Label className="text-sm">Tarjeta Regalo</Label>
                   <div className="flex gap-2">
                     <Input
                       value={newInvoice.gift_card_code}
@@ -1042,10 +975,7 @@ export default function Invoices() {
 
               {/* Shipping Cost */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Costo de Envío (€)</Label>
-                  <FieldHelp content="Costo de envío que se añadirá al total de la factura" />
-                </div>
+                <Label>Costo de Envío (€)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1068,10 +998,7 @@ export default function Invoices() {
               {/* Payment Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Método de Pago</Label>
-                    <FieldHelp content="Selecciona el método de pago que usará el cliente para esta factura" />
-                  </div>
+                  <Label>Método de Pago</Label>
                   <Select
                     value={newInvoice.payment_method}
                     onValueChange={(value) => setNewInvoice({ ...newInvoice, payment_method: value })}
@@ -1090,10 +1017,7 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Estado de Pago</Label>
-                    <FieldHelp content="Estado actual del pago. Si marcas 'Requiere Pago del Cliente', se establecerá como Pendiente" />
-                  </div>
+                  <Label>Estado de Pago</Label>
                   <Select
                     value={newInvoice.payment_status}
                     onValueChange={(value) => setNewInvoice({ ...newInvoice, payment_status: value })}
@@ -1119,10 +1043,7 @@ export default function Invoices() {
               {/* Requires Payment Switch */}
               <div className="flex items-center justify-between border rounded-lg p-4">
                 <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-base">¿Requiere Pago del Cliente?</Label>
-                    <FieldHelp content="Activa esto si el cliente debe pagar esta factura. Se creará un enlace de pago para el cliente" />
-                  </div>
+                  <Label className="text-base">¿Requiere Pago del Cliente?</Label>
                   <p className="text-sm text-muted-foreground">
                     Si activas esto, el cliente verá un botón para pagar esta factura
                   </p>
@@ -1141,10 +1062,7 @@ export default function Invoices() {
 
               {/* Notes */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Notas</Label>
-                  <FieldHelp content="Agrega notas o información adicional sobre esta factura (opcional)" />
-                </div>
+                <Label>Notas</Label>
                 <Textarea
                   value={newInvoice.notes}
                   onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
@@ -1180,27 +1098,12 @@ export default function Invoices() {
                       aria-label="Seleccionar todos"
                     />
                   </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Nº Factura
-                      <FieldHelp content="Número único de identificación de la factura generado automáticamente" />
-                    </div>
-                  </TableHead>
+                  <TableHead>Nº Factura</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Nº Pedido
-                      <FieldHelp content="Número del pedido asociado. Facturas manuales no tienen pedido asociado" />
-                    </div>
-                  </TableHead>
+                  <TableHead>Nº Pedido</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      Estado
-                      <FieldHelp content="Estado del pago: Pagado, Pendiente o Fallido" />
-                    </div>
-                  </TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1244,51 +1147,30 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => navigate(`/admin/facturas/${invoice.id}`)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Ver detalles de la factura</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          
-                          <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditInvoice(invoice)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Editar factura</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          
-                          <DeleteConfirmDialog
-                            title="¿Mover factura a la papelera?"
-                            itemName={invoice.invoice_number}
-                            onConfirm={() => handleDeleteInvoice(invoice.id)}
-                            actionText="Mover a papelera"
-                            trigger={
-                              <Button variant="destructive" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            }
-                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/admin/facturas/${invoice.id}`)}
+                            title="Ver factura"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditInvoice(invoice)}
+                            title="Editar factura"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteInvoice(invoice.id)}
+                            title="Eliminar factura"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1325,10 +1207,7 @@ export default function Invoices() {
               {/* Products/Items Section */}
               <div className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-base font-semibold">Productos / Servicios</Label>
-                    <FieldHelp content="Edita los productos o servicios de esta factura. El total se recalculará automáticamente" />
-                  </div>
+                  <Label className="text-base font-semibold">Productos / Servicios</Label>
                   <Button type="button" variant="outline" size="sm" onClick={addEditingItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Agregar Item
@@ -1481,10 +1360,7 @@ export default function Invoices() {
               {/* Payment Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Método de Pago</Label>
-                    <FieldHelp content="Método de pago utilizado o a utilizar para esta factura" />
-                  </div>
+                  <Label>Método de Pago</Label>
                   <Select
                     value={editingInvoice.payment_method}
                     onValueChange={(value) => setEditingInvoice({ ...editingInvoice, payment_method: value })}
@@ -1503,10 +1379,7 @@ export default function Invoices() {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Estado de Pago</Label>
-                    <FieldHelp content="Actualizar a 'Pagado' actualizará también el estado del pedido asociado si existe" />
-                  </div>
+                  <Label>Estado de Pago</Label>
                   <Select
                     value={editingInvoice.payment_status}
                     onValueChange={(value) => setEditingInvoice({ ...editingInvoice, payment_status: value })}

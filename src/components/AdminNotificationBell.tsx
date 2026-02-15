@@ -41,8 +41,7 @@ export default function AdminNotificationBell() {
         'order', 'order_update', 
         'quote', 'quote_update', 'quote_updated',
         'invoice', 'invoice_update',
-        'message', 'new_message', 'gift_card',
-        'system'
+        'message', 'new_message', 'gift_card'
       ];
       
       const { data, error } = await supabase
