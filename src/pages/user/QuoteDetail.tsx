@@ -281,9 +281,15 @@ export default function UserQuoteDetail() {
           }
         );
 
+        console.log('[QUOTE ACCEPT] Function response:', { data, error: functionError });
+
         if (functionError) {
           console.error('Function error:', functionError);
-          i18nToast.directWarning('Cotización aceptada, pero hubo un error creando el pedido. Contacta con soporte.');
+          i18nToast.directError(`Error creando el pedido: ${functionError.message || 'Error desconocido'}. Contacta con soporte.`);
+        } else if (data?.error) {
+          // Handle error returned in the response body
+          console.error('Function returned error:', data);
+          i18nToast.directError(`Error creando el pedido: ${data.details || data.error}. ${data.invoice_created ? 'La factura se creó correctamente.' : ''}`);
         } else if (data?.success) {
           i18nToast.directSuccess('¡Cambios aceptados! Se ha generado tu pedido y factura.');
           
@@ -294,10 +300,12 @@ export default function UserQuoteDetail() {
             `El cliente ${quote.customer_name} ha aceptado los cambios en su cotización. Pedido y factura generados automáticamente.`,
             `/admin/cotizaciones/${quote.id}`
           );
+        } else {
+          i18nToast.directWarning('Cotización aceptada. Verifica el estado del pedido en tu panel.');
         }
-      } catch (autoError) {
+      } catch (autoError: any) {
         console.error('Automation error:', autoError);
-        i18nToast.directWarning('Cotización aceptada. Un administrador creará tu pedido.');
+        i18nToast.directError(`Error en automatización: ${autoError.message || 'Error desconocido'}`);
       }
 
       // Reload to show updated status

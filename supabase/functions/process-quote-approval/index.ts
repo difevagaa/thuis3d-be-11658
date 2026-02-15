@@ -238,7 +238,13 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const statusId = orderStatus?.id || fallbackStatus?.id || null;
-      const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
+      // Safely construct address from available quote fields
+      const addressParts = [
+        quote.address || null, 
+        quote.city || null, 
+        quote.postal_code || null, 
+        quote.country || null
+      ].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
       const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
 
@@ -249,7 +255,8 @@ const handler = async (req: Request): Promise<Response> => {
         tax,
         shipping: shippingCost,
         total,
-        payment_status: 'pending'
+        payment_status: 'pending',
+        addressParts: addressParts || 'No address provided'
       });
 
       const { data: newOrder, error: orderError } = await supabase
