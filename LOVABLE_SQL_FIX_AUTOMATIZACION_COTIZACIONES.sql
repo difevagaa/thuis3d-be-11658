@@ -2,6 +2,7 @@
 -- Ejecutar en SQL editor de Supabase/Lovable
 
 -- 1) Asegurar que exista al menos un estado de pedido utilizable
+-- IMPORTANTE: mantener sincronizado con DEFAULT_ORDER_STATUS_NAME/COLOR en process-quote-approval.
 INSERT INTO public.order_statuses (name, color)
 SELECT 'Recibido', '#3b82f6'
 WHERE NOT EXISTS (
@@ -28,7 +29,7 @@ BEGIN
   BEGIN
     PERFORM send_order_email_async(NEW.id);
   EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Failed to send order email for order %', NEW.id;
+    RAISE WARNING 'Failed to send order email for order %: %', NEW.id, SQLERRM;
   END;
 
   BEGIN
@@ -42,7 +43,7 @@ BEGIN
       cust_email
     );
   EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Failed to notify admins for order %', NEW.id;
+    RAISE WARNING 'Failed to notify admins for order %: %', NEW.id, SQLERRM;
   END;
 
   IF NEW.user_id IS NOT NULL THEN
@@ -56,7 +57,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Failed to create notification for order %', NEW.id;
+      RAISE WARNING 'Failed to create notification for order %: %', NEW.id, SQLERRM;
     END;
   END IF;
 

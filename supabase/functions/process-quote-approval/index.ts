@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+const DEFAULT_ORDER_STATUS_NAME = 'Recibido';
+const DEFAULT_ORDER_STATUS_COLOR = '#3b82f6';
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
@@ -230,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
         let orderNumber = generatedOrderNumber;
         if (orderNumError || !generatedOrderNumber) {
           console.error('[QUOTE APPROVAL] Error generating order number:', orderNumError);
-          orderNumber = `ORD-${Date.now()}`;
+          orderNumber = `TEMP-ORD-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
           console.warn('[QUOTE APPROVAL] Using fallback order number:', orderNumber);
         }
 
@@ -239,7 +241,7 @@ const handler = async (req: Request): Promise<Response> => {
         const { data: orderStatus } = await supabase
           .from('order_statuses')
           .select('id')
-          .eq('name', 'Recibido')
+          .eq('name', DEFAULT_ORDER_STATUS_NAME)
           .maybeSingle();
 
         let fallbackStatus: { id: string } | null = null;
@@ -257,7 +259,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (!statusId) {
           const { data: createdStatus, error: statusInsertError } = await supabase
             .from('order_statuses')
-            .insert({ name: 'Recibido', color: '#3b82f6' })
+            .insert({ name: DEFAULT_ORDER_STATUS_NAME, color: DEFAULT_ORDER_STATUS_COLOR })
             .select('id')
             .maybeSingle();
 
