@@ -213,7 +213,11 @@ export default function Quotes() {
           );
 
           if (functionError) {
-            toast.warning('Cotización aprobada, pero hubo un error en la automatización. Revisa los detalles.');
+            console.error('Quote approval automation error:', functionError);
+            toast.error(`Error en automación: ${functionError.message || 'Error desconocido'}. Por favor, crea la factura y pedido manualmente.`, { duration: 8000 });
+          } else if (data?.error) {
+            console.error('Quote approval returned error:', data.error);
+            toast.error(`Error: ${data.error}. La cotización fue aprobada pero faltó crear factura/pedido.`, { duration: 8000 });
           } else if (data?.success) {
             const automations = data.automations || {};
             
@@ -233,8 +237,9 @@ export default function Quotes() {
             
             toast.success(message, { duration: 6000 });
           }
-        } catch (autoError) {
-          toast.warning('Cotización aprobada, pero la automatización falló. Crea la factura manualmente.');
+        } catch (autoError: any) {
+          console.error('Exception during quote approval:', autoError);
+          toast.error(`Error crítico en automación: ${autoError.message || 'Error desconocido'}. Revisa los logs y crea factura/pedido manualmente.`, { duration: 10000 });
         }
       } else {
         toast.success("Cotización actualizada");

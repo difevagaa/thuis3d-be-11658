@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import AdminNotificationBell from "./AdminNotificationBell";
+import { HelpCenterSearch } from "./admin/HelpCenterSearch";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
@@ -179,6 +180,11 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
           </div>
           <TooltipProvider delayDuration={300}>
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2 flex-shrink-0">
+              {/* Help Center Search - Hidden on very small screens */}
+              <div className="hidden sm:block">
+                <HelpCenterSearch />
+              </div>
+
               {/* Home - Go to homepage */}
               <Tooltip>
                 <TooltipTrigger asChild>
