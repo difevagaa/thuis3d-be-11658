@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
+import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
 import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Search, Filter, RefreshCw } from "lucide-react";
 
 // Popular carriers with tracking URL templates
@@ -211,12 +211,19 @@ export default function OrdersEnhanced() {
 
       if (error) throw error;
 
-      // If marking as paid, also update the associated invoice
-      if (newPaymentStatus === 'paid' && oldPaymentStatus !== 'paid') {
-        await updateInvoiceStatusOnOrderPaid(editingOrder.id);
+      // Sync invoice payment status with order (bidirectional link)
+      if (newPaymentStatus && newPaymentStatus !== oldPaymentStatus) {
+        await syncInvoiceStatusWithOrder(editingOrder.id, newPaymentStatus);
         
-        // Check and send gift card email if applicable
-        await checkAndSendGiftCardEmail(editingOrder.id);
+        // Check and send gift card email if applicable when marking as paid
+        if (newPaymentStatus === 'paid') {
+          await checkAndSendGiftCardEmail(editingOrder.id);
+        }
+      }
+
+      // If order status is cancelled/rejected, also cancel the invoice
+      if (isRejectedStatus() && selectedStatus !== editingOrder.status_id) {
+        await syncInvoiceStatusWithOrder(editingOrder.id, 'cancelled');
       }
 
       // Get new status name for email
@@ -507,7 +514,8 @@ export default function OrdersEnhanced() {
                         {order.payment_status === 'paid' ? '✅ Pagado' : 
                          order.payment_status === 'pending' ? '⏳ Pendiente' :
                          order.payment_status === 'failed' ? '❌ Fallido' :
-                         order.payment_status === 'refunded' ? '↩️ Reembolsado' : '⏳ Pendiente'}
+                         order.payment_status === 'refunded' ? '↩️ Reembolsado' :
+                         order.payment_status === 'cancelled' ? '🚫 Anulado' : '⏳ Pendiente'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -651,6 +659,7 @@ export default function OrdersEnhanced() {
                       <SelectItem value="paid">✅ Pagado</SelectItem>
                       <SelectItem value="failed">❌ Fallido</SelectItem>
                       <SelectItem value="refunded">↩️ Reembolsado</SelectItem>
+                      <SelectItem value="cancelled">🚫 Anulado</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

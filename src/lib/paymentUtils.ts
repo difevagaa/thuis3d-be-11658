@@ -386,3 +386,57 @@ export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<v
     logger.error('Error updating invoice status:', error);
   }
 };
+
+/**
+ * Syncs payment status from order to its associated invoice.
+ * Keeps orders and invoices always linked: when one changes, the other follows.
+ * Supported statuses: paid, pending, failed, refunded, cancelled.
+ * @param orderId - The order ID
+ * @param paymentStatus - The new payment status
+ */
+export const syncInvoiceStatusWithOrder = async (
+  orderId: string,
+  paymentStatus: string
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from("invoices")
+      .update({ payment_status: paymentStatus })
+      .eq("order_id", orderId);
+
+    if (error) {
+      logger.error('Error syncing invoice status with order:', error);
+    } else {
+      logger.log(`Invoice status synced to '${paymentStatus}' for order:`, orderId);
+    }
+  } catch (error) {
+    logger.error('Error syncing invoice status with order:', error);
+  }
+};
+
+/**
+ * Syncs payment status from invoice to its associated order.
+ * Keeps orders and invoices always linked: when one changes, the other follows.
+ * Supported statuses: paid, pending, failed, refunded, cancelled.
+ * @param invoiceOrderId - The order ID associated with the invoice
+ * @param paymentStatus - The new payment status
+ */
+export const syncOrderStatusWithInvoice = async (
+  invoiceOrderId: string,
+  paymentStatus: string
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: paymentStatus })
+      .eq("id", invoiceOrderId);
+
+    if (error) {
+      logger.error('Error syncing order status with invoice:', error);
+    } else {
+      logger.log(`Order payment status synced to '${paymentStatus}' for order:`, invoiceOrderId);
+    }
+  } catch (error) {
+    logger.error('Error syncing order status with invoice:', error);
+  }
+};

@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
-import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
+import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -171,9 +171,9 @@ export default function OrderDetail() {
 
       if (error) throw error;
       
-      // Actualizar la factura asociada al pedido
-      if (paymentStatus === 'paid' && id) {
-        await updateInvoiceStatusOnOrderPaid(id);
+      // Sync invoice payment status with order (bidirectional link)
+      if (id) {
+        await syncInvoiceStatusWithOrder(id, paymentStatus);
       }
       
       // Si el pago se marca como pagado y hay una tarjeta de regalo, enviar email y notificación
@@ -421,6 +421,7 @@ export default function OrderDetail() {
                   <SelectItem value="paid">Pagado</SelectItem>
                   <SelectItem value="failed">Fallido</SelectItem>
                   <SelectItem value="refunded">Reembolsado</SelectItem>
+                  <SelectItem value="cancelled">Anulado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
