@@ -369,21 +369,33 @@ export const sendGiftCardActivationNotification = async (
 /**
  * Updates invoice status to paid when associated order is paid
  * @param orderId - The order ID
+ * @returns Promise<boolean> - True if update was successful
  */
-export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<void> => {
+export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<boolean> => {
+  if (!orderId) {
+    logger.error('Invalid orderId for invoice update');
+    return false;
+  }
+
   try {
     const { error } = await supabase
       .from("invoices")
-      .update({ payment_status: 'paid' })
+      .update({ 
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      })
       .eq("order_id", orderId);
     
     if (error) {
       logger.error('Error updating invoice status:', error);
-    } else {
-      logger.log('Invoice status updated to paid for order:', orderId);
+      return false;
     }
+    
+    logger.log('Invoice status updated to paid for order:', orderId);
+    return true;
   } catch (error) {
-    logger.error('Error updating invoice status:', error);
+    logger.error('Exception in updateInvoiceStatusOnOrderPaid:', error);
+    return false;
   }
 };
 
@@ -393,24 +405,59 @@ export const updateInvoiceStatusOnOrderPaid = async (orderId: string): Promise<v
  * Supported statuses: paid, pending, failed, refunded, cancelled.
  * @param orderId - The order ID
  * @param paymentStatus - The new payment status
+ * @returns Promise<boolean> - True if sync was successful
  */
 export const syncInvoiceStatusWithOrder = async (
   orderId: string,
   paymentStatus: string
-): Promise<void> => {
+): Promise<boolean> => {
+  if (!orderId || !paymentStatus) {
+    logger.error('Invalid parameters for invoice sync:', { orderId, paymentStatus });
+    return false;
+  }
+
   try {
-    const { error } = await supabase
+    // First check if invoice exists
+    const { data: invoice, error: fetchError } = await supabase
       .from("invoices")
-      .update({ payment_status: paymentStatus })
+      .select("id, payment_status")
+      .eq("order_id", orderId)
+      .maybeSingle();
+
+    if (fetchError) {
+      logger.error('Error fetching invoice for sync:', fetchError);
+      return false;
+    }
+
+    if (!invoice) {
+      logger.warn('No invoice found for order:', orderId);
+      return false;
+    }
+
+    // Only update if status is different
+    if (invoice.payment_status === paymentStatus) {
+      logger.log('Invoice already has the same status:', paymentStatus);
+      return true;
+    }
+
+    const { error: updateError } = await supabase
+      .from("invoices")
+      .update({ 
+        payment_status: paymentStatus,
+        updated_at: new Date().toISOString()
+      })
       .eq("order_id", orderId);
 
-    if (error) {
-      logger.error('Error syncing invoice status with order:', error);
-    } else {
-      logger.log(`Invoice status synced to '${paymentStatus}' for order:`, orderId);
+    if (updateError) {
+      logger.error('Error syncing invoice status with order:', updateError);
+      return false;
     }
+
+    logger.log(`Invoice status synced to '${paymentStatus}' for order:`, orderId);
+    return true;
   } catch (error) {
-    logger.error('Error syncing invoice status with order:', error);
+    logger.error('Exception in syncInvoiceStatusWithOrder:', error);
+    return false;
   }
 };
 
@@ -420,23 +467,58 @@ export const syncInvoiceStatusWithOrder = async (
  * Supported statuses: paid, pending, failed, refunded, cancelled.
  * @param invoiceOrderId - The order ID associated with the invoice
  * @param paymentStatus - The new payment status
+ * @returns Promise<boolean> - True if sync was successful
  */
 export const syncOrderStatusWithInvoice = async (
   invoiceOrderId: string,
   paymentStatus: string
-): Promise<void> => {
+): Promise<boolean> => {
+  if (!invoiceOrderId || !paymentStatus) {
+    logger.error('Invalid parameters for order sync:', { invoiceOrderId, paymentStatus });
+    return false;
+  }
+
   try {
-    const { error } = await supabase
+    // First check if order exists
+    const { data: order, error: fetchError } = await supabase
       .from("orders")
-      .update({ payment_status: paymentStatus })
+      .select("id, payment_status")
+      .eq("id", invoiceOrderId)
+      .maybeSingle();
+
+    if (fetchError) {
+      logger.error('Error fetching order for sync:', fetchError);
+      return false;
+    }
+
+    if (!order) {
+      logger.warn('No order found for invoice:', invoiceOrderId);
+      return false;
+    }
+
+    // Only update if status is different
+    if (order.payment_status === paymentStatus) {
+      logger.log('Order already has the same status:', paymentStatus);
+      return true;
+    }
+
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ 
+        payment_status: paymentStatus,
+        updated_at: new Date().toISOString()
+      })
       .eq("id", invoiceOrderId);
 
-    if (error) {
-      logger.error('Error syncing order status with invoice:', error);
-    } else {
-      logger.log(`Order payment status synced to '${paymentStatus}' for order:`, invoiceOrderId);
+    if (updateError) {
+      logger.error('Error syncing order status with invoice:', updateError);
+      return false;
     }
+
+    logger.log(`Order payment status synced to '${paymentStatus}' for order:`, invoiceOrderId);
+    return true;
   } catch (error) {
-    logger.error('Error syncing order status with invoice:', error);
+    logger.error('Exception in syncOrderStatusWithInvoice:', error);
+    return false;
   }
 };
