@@ -24,6 +24,13 @@ import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { updateOrderPaymentStatus, updateInvoicePaymentStatus } from "@/lib/paymentStatusManager";
+import { 
+  generateTransactionId, 
+  checkTransactionExists, 
+  registerTransaction,
+  updateTransactionStatus
+} from "@/lib/transactionIdempotency";
 
 export default function Payment() {
   const navigate = useNavigate();
@@ -557,17 +564,57 @@ export default function Payment() {
           return;
         }
 
-        // Update invoice payment status and method - TODOS los pagos en pending
-        const { error: updateError } = await supabase
-          .from("invoices")
-          .update({
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
-            payment_method: method
-          })
-          .eq("id", invoiceData.invoiceId)
-          .eq("user_id", user.id);
+        // Generate unique transaction ID for idempotency
+        const transactionId = generateTransactionId();
+        logger.info('[Payment] Generated transaction ID for invoice payment', {
+          transactionId,
+          invoiceId: invoiceData.invoiceId
+        });
 
-        if (updateError) throw updateError;
+        // Check for duplicate transaction
+        const duplicateCheck = await checkTransactionExists(transactionId);
+        if (duplicateCheck.exists) {
+          logger.warn('[Payment] Duplicate transaction detected', {
+            transactionId,
+            existingStatus: duplicateCheck.status
+          });
+          toast.error('Esta transacción ya está siendo procesada. Por favor, espera.');
+          return;
+        }
+
+        // Register transaction
+        await registerTransaction(transactionId, {
+          invoiceId: invoiceData.invoiceId,
+          amount: invoiceData.total,
+          currency: 'EUR',
+          userId: user.id,
+          metadata: { method, type: 'invoice_payment' }
+        });
+
+        // Update invoice payment status - now uses "processing" instead of "pending"
+        const statusUpdate = await updateInvoicePaymentStatus(
+          invoiceData.invoiceId,
+          'processing', // Changed from "pending" to "processing"
+          {
+            transactionId,
+            paymentMethod: method,
+            reason: 'Payment initiated by user'
+          }
+        );
+
+        if (!statusUpdate.success) {
+          logger.error('[Payment] Failed to update invoice status', {
+            invoiceId: invoiceData.invoiceId,
+            error: statusUpdate.error
+          });
+          toast.error('Error al actualizar el estado de la factura');
+          return;
+        }
+
+        logger.info('[Payment] Invoice payment status updated to processing', {
+          invoiceId: invoiceData.invoiceId,
+          transactionId
+        });
 
         // Clear invoice payment data
         sessionStorage.removeItem("invoice_payment");
@@ -802,7 +849,33 @@ export default function Payment() {
         // Preparar notas del pedido
         const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
 
-        // Create order - SIEMPRE con payment_status: "pending"
+        // Generate unique transaction ID for idempotency
+        const transactionId = generateTransactionId();
+        logger.info('[Payment] Generated transaction ID for PayPal order', {
+          transactionId
+        });
+
+        // Check for duplicate transaction
+        const duplicateCheck = await checkTransactionExists(transactionId);
+        if (duplicateCheck.exists) {
+          logger.warn('[Payment] Duplicate transaction detected for PayPal', {
+            transactionId,
+            existingStatus: duplicateCheck.status
+          });
+          toast.error('Esta transacción ya está siendo procesada. Por favor, espera.');
+          setProcessing(false);
+          return;
+        }
+
+        // Register transaction before creating order
+        await registerTransaction(transactionId, {
+          amount: finalTotal,
+          currency: 'EUR',
+          userId: user.id,
+          metadata: { method: 'paypal', cartItems, shippingInfo }
+        });
+
+        // Create order - now uses "processing" instead of "pending"
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -813,15 +886,36 @@ export default function Payment() {
             discount: couponDiscount + giftCardDiscount,
             total: finalTotal,
             payment_method: "paypal",
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
+            payment_status: "processing", // Changed from "pending" to "processing"
             shipping_address: JSON.stringify(shippingInfo),
             billing_address: JSON.stringify(shippingInfo),
-            notes: orderNotes
+            notes: `${orderNotes}\n\nTransaction ID: ${transactionId}`
           })
           .select()
           .single();
 
-        if (orderError) throw orderError;
+        if (orderError) {
+          logger.error('[Payment] Failed to create PayPal order', { orderError });
+          await updateTransactionStatus(transactionId, 'failed', {
+            error: orderError.message
+          });
+          throw orderError;
+        }
+
+        // Update transaction with order ID
+        await registerTransaction(transactionId, {
+          orderId: order.id,
+          amount: finalTotal,
+          currency: 'EUR',
+          userId: user.id,
+          metadata: { method: 'paypal', orderNumber: order.order_number }
+        });
+
+        logger.info('[Payment] PayPal order created with processing status', {
+          orderId: order.id,
+          orderNumber: order.order_number,
+          transactionId
+        });
 
         // Update gift card balance if used
         if (giftCardData && giftCardDiscount > 0) {
@@ -849,7 +943,7 @@ export default function Payment() {
 
         // Create invoice automatically
         try {
-          await supabase.from("invoices").insert({
+          const { data: invoiceData, error: invoiceError } = await supabase.from("invoices").insert({
             invoice_number: order.order_number,
             user_id: user.id,
             order_id: order.id,
@@ -861,11 +955,29 @@ export default function Payment() {
             coupon_code: appliedCoupon?.code || null,
             total: finalTotal,
             payment_method: "paypal",
-            payment_status: "pending", // CRÍTICO: SIEMPRE pending
+            payment_status: "processing", // Changed from "pending" to "processing"
             issue_date: new Date().toISOString(),
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             notes: `Factura generada automáticamente para el pedido ${order.order_number}`
-          });
+          }).select().single();
+
+          if (invoiceData && !invoiceError) {
+            // Update transaction with invoice ID
+            await registerTransaction(transactionId, {
+              orderId: order.id,
+              invoiceId: invoiceData.id,
+              amount: finalTotal,
+              currency: 'EUR',
+              userId: user.id,
+              metadata: { method: 'paypal', hasInvoice: true }
+            });
+
+            logger.info('[Payment] Invoice created for PayPal order', {
+              invoiceId: invoiceData.id,
+              orderId: order.id,
+              transactionId
+            });
+          }
         } catch (invoiceError) {
           logger.error('Error creating invoice:', invoiceError);
         }
