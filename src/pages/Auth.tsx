@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Globe } from "lucide-react";
+import { checkRateLimit, recordAttempt, resetRateLimit, formatBlockedTime } from "@/lib/rateLimiter";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -127,10 +128,27 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check rate limit
+    const rateLimitKey = `login_${formData.email}`;
+    const rateCheck = checkRateLimit(rateLimitKey);
+    
+    if (!rateCheck.allowed) {
+      if (rateCheck.blockedUntil) {
+        toast.error(`Demasiados intentos. Bloqueado por ${formatBlockedTime(rateCheck.blockedUntil)}`);
+      } else {
+        toast.error('Demasiados intentos. Intenta más tarde.');
+      }
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const validated = authSchema.pick({ email: true, password: true }).parse(formData);
+      
+      // Record attempt before trying
+      recordAttempt(rateLimitKey);
       
       const { error } = await supabase.auth.signInWithPassword({
         email: validated.email,
@@ -138,6 +156,9 @@ const Auth = () => {
       });
 
       if (error) throw error;
+      
+      // Success - reset rate limit
+      resetRateLimit(rateLimitKey);
       
       toast.success(t('welcomeBack'));
       navigate("/");
