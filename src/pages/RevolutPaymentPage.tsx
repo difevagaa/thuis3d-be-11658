@@ -14,6 +14,7 @@ import {
   generateOrderNotes,
   updateGiftCardBalance
 } from "@/lib/paymentUtils";
+import { generateTransactionId, checkTransactionExists, registerTransaction } from "@/lib/transactionIdempotency";
 
 export default function RevolutPaymentPage() {
   const navigate = useNavigate();
@@ -138,16 +139,28 @@ export default function RevolutPaymentPage() {
         return;
       }
 
-      // Check if this is an invoice payment
       if (orderData.isInvoicePayment) {
-        // Invoice payment flow - just update the invoice and redirect
         const { invoiceId, invoiceNumber, total } = orderData;
         
-        // Update invoice payment status and method
+        const transactionId = generateTransactionId();
+        const duplicateCheck = await checkTransactionExists(transactionId);
+        if (duplicateCheck.exists) {
+          toast.error('Transacción duplicada');
+          return;
+        }
+        
+        await registerTransaction(transactionId, {
+          invoiceId,
+          amount: total,
+          currency: 'EUR',
+          userId: user.id,
+          metadata: { method: 'revolut', type: 'invoice' }
+        });
+        
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: "pending",
+            payment_status: "processing",
             payment_method: "revolut"
           })
           .eq("id", invoiceId)
@@ -212,10 +225,22 @@ export default function RevolutPaymentPage() {
 
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
 
-      // Generate order notes
-      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
+      const transactionId = generateTransactionId();
+      const duplicateCheck = await checkTransactionExists(transactionId);
+      if (duplicateCheck.exists) {
+        toast.error('Transacción duplicada');
+        return;
+      }
+      
+      await registerTransaction(transactionId, {
+        amount: finalTotal,
+        currency: 'EUR',
+        userId: user.id,
+        metadata: { method: 'revolut', type: 'order' }
+      });
 
-      // Create order with persistent order number
+      const orderNotes = `${generateOrderNotes(cartItems, giftCardData, giftCardDiscount)}\n\nTransaction ID: ${transactionId}`;
+
       const order = await createOrder({
         userId: user.id,
         orderNumber: persistedOrderNumber || null,
@@ -225,7 +250,7 @@ export default function RevolutPaymentPage() {
         discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: "revolut",
-        paymentStatus: "pending",
+        paymentStatus: "processing",
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
         notes: orderNotes
@@ -266,7 +291,7 @@ export default function RevolutPaymentPage() {
           coupon_code: couponData?.code || null,
           total: finalTotal,
           payment_method: "revolut",
-          payment_status: "pending",
+          payment_status: "processing",
           issue_date: new Date().toISOString(),
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           notes: `Factura generada para el pedido ${order.order_number}`

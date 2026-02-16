@@ -14,6 +14,7 @@ import {
   generateOrderNotes,
   updateGiftCardBalance
 } from "@/lib/paymentUtils";
+import { generateTransactionId, checkTransactionExists, registerTransaction } from "@/lib/transactionIdempotency";
 
 export default function CardPaymentPage() {
   const navigate = useNavigate();
@@ -138,16 +139,28 @@ export default function CardPaymentPage() {
         return;
       }
 
-      // Check if this is an invoice payment
       if (orderData.isInvoicePayment) {
-        // Invoice payment flow - just update the invoice and redirect
         const { invoiceId, invoiceNumber, total } = orderData;
         
-        // Update invoice payment status and method
+        const transactionId = generateTransactionId();
+        const duplicateCheck = await checkTransactionExists(transactionId);
+        if (duplicateCheck.exists) {
+          i18nToast.error("error.duplicateTransaction");
+          return;
+        }
+        
+        await registerTransaction(transactionId, {
+          invoiceId,
+          amount: total,
+          currency: 'EUR',
+          userId: user.id,
+          metadata: { method: 'card', type: 'invoice' }
+        });
+        
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: "pending",
+            payment_status: "processing",
             payment_method: "card"
           })
           .eq("id", invoiceId)
@@ -252,7 +265,6 @@ export default function CardPaymentPage() {
         throw new Error(t('payment:messages.errorCreatingOrderItems'));
       }
 
-      // Create invoice
       try {
         await supabase.from("invoices").insert({
           invoice_number: order.order_number,
@@ -266,7 +278,7 @@ export default function CardPaymentPage() {
           coupon_code: couponData?.code || null,
           total: finalTotal,
           payment_method: "card",
-          payment_status: "pending",
+          payment_status: "processing",
           issue_date: new Date().toISOString(),
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           notes: `Factura generada para el pedido ${order.order_number}`

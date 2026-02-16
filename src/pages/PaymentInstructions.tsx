@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, updateGiftCardBalance } from "@/lib/paymentUtils";
+import { generateTransactionId, checkTransactionExists, registerTransaction } from "@/lib/transactionIdempotency";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -81,20 +82,33 @@ export default function PaymentInstructions() {
       }
 
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
-      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
       
-      // Create order using utility function with persistent order number
-      // CRÍTICO: Usar el costo de envío del pendingOrder
+      const transactionId = generateTransactionId();
+      const duplicateCheck = await checkTransactionExists(transactionId);
+      if (duplicateCheck.exists) {
+        toast.error('Transacción duplicada detectada');
+        return;
+      }
+      
+      await registerTransaction(transactionId, {
+        amount: finalTotal,
+        currency: 'EUR',
+        userId: user?.id,
+        metadata: { method, type: 'bank_transfer' }
+      });
+      
+      const orderNotes = `${generateOrderNotes(cartItems, giftCardData, giftCardDiscount)}\n\nTransaction ID: ${transactionId}`;
+      
       const order = await createOrder({
-        userId: user?.id || null, // Permitir user_id = null para invitados
+        userId: user?.id || null,
         orderNumber: persistedOrderNumber || null,
         subtotal: orderSubtotal,
         tax: orderTax,
-        shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
+        shipping: safeShipping,
         discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: method,
-        paymentStatus: "pending",
+        paymentStatus: "processing",
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
         notes: orderNotes
