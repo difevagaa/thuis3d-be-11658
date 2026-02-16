@@ -15,6 +15,9 @@ import { validateCouponCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
 import { saveEncryptedCart, loadEncryptedCart, clearCart } from "@/lib/cartEncryption";
 
+// Constante para límite máximo de cantidad en carrito
+const MAX_CART_QUANTITY = 999;
+
 interface CartItem {
   id: string;
   productId: string;
@@ -113,8 +116,8 @@ const Cart = () => {
   const updateQuantity = (id: string, delta: number) => {
     const newCart = cartItems.map(item => {
       if (item.id === id) {
-        // Validar que la cantidad sea válida (entre 1 y 999)
-        const newQuantity = Math.max(1, Math.min(999, item.quantity + delta));
+        // Validar que la cantidad sea válida (entre 1 y MAX_CART_QUANTITY)
+        const newQuantity = Math.max(1, Math.min(MAX_CART_QUANTITY, item.quantity + delta));
         return { ...item, quantity: newQuantity };
       }
       return item;

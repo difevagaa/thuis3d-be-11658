@@ -67,8 +67,11 @@ const Auth = () => {
     try {
       const validated = authSchema.parse(formData);
       
-      // Sanitizar nombre antes de guardar
-      const sanitizedFullName = formData.fullName.trim().replace(/[<>]/g, '');
+      // Sanitizar nombre antes de guardar - más robusto
+      const sanitizedFullName = formData.fullName
+        .trim()
+        .replace(/[<>'"\\\/]/g, '') // Remover caracteres peligrosos
+        .substring(0, 100); // Limitar longitud
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: validated.email,

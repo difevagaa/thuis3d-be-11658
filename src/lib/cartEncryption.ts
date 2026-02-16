@@ -3,24 +3,49 @@
  * Usa Web Crypto API (AES-GCM) que es seguro y nativo del navegador
  */
 
-// Generar una clave a partir de la sesión del usuario o un identificador único
+// Obtener o crear un salt único por navegador
+function getUserSalt(): Uint8Array {
+  const SALT_KEY = 'thuis3d-cart-salt';
+  let saltBase64 = localStorage.getItem(SALT_KEY);
+  
+  if (!saltBase64) {
+    // Crear un salt aleatorio único para este navegador
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    saltBase64 = btoa(String.fromCharCode(...salt));
+    localStorage.setItem(SALT_KEY, saltBase64);
+  }
+  
+  return Uint8Array.from(atob(saltBase64), c => c.charCodeAt(0));
+}
+
+// Generar una clave a partir de un identificador único del navegador
 async function getEncryptionKey(): Promise<CryptoKey> {
-  // Usar un identificador único por navegador/sesión
+  // Usar un identificador único por navegador más estable
+  // Combinar múltiples fuentes para mejor persistencia
+  const browserFingerprint = [
+    window.navigator.language,
+    window.screen.width,
+    window.screen.height,
+    window.screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    'thuis3d-cart-v2' // Versión del sistema
+  ].join('|');
+  
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(
-      // Combinar datos del navegador para crear una clave única
-      `${window.navigator.userAgent}${window.location.hostname}`
-    ),
+    new TextEncoder().encode(browserFingerprint),
     'PBKDF2',
     false,
     ['deriveBits', 'deriveKey']
   );
 
+  // Usar salt único por usuario
+  const salt = getUserSalt();
+
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: new TextEncoder().encode('thuis3d-cart-salt-v1'),
+      salt: salt,
       iterations: 100000,
       hash: 'SHA-256'
     },
@@ -137,8 +162,12 @@ export async function loadEncryptedCart<T>(): Promise<T | null> {
 
 /**
  * Limpia los datos del carrito
+ * Nota: También limpia el salt, lo que invalidará todos los carritos encriptados
  */
 export function clearCart(): void {
   localStorage.removeItem('cart_encrypted');
   localStorage.removeItem('cart');
+  // Nota: No removemos el salt para permitir desencriptar carritos antiguos
+  // Si se desea un "reset" completo, descomentar la siguiente línea:
+  // localStorage.removeItem('thuis3d-cart-salt');
 }

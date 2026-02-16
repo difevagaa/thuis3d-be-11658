@@ -227,3 +227,83 @@ export const showValidationError = (result: ValidationResult): boolean => {
   }
   return true;
 };
+
+/**
+ * URL validation and sanitization
+ * Protects against XSS, javascript:, data:, and other malicious schemes
+ */
+export const validateURL = (url: string): ValidationResult => {
+  if (!url || !url.trim()) {
+    return { isValid: false, error: "La URL es requerida" };
+  }
+
+  const trimmedUrl = url.trim();
+
+  // Check length
+  if (trimmedUrl.length > 2048) {
+    return { isValid: false, error: "La URL es demasiado larga (máximo 2048 caracteres)" };
+  }
+
+  // Try to parse as URL
+  try {
+    const urlObj = new URL(trimmedUrl);
+    
+    // Only allow safe protocols
+    const allowedProtocols = ['http:', 'https:'];
+    if (!allowedProtocols.includes(urlObj.protocol)) {
+      return { 
+        isValid: false, 
+        error: `Protocolo no permitido. Solo se permiten: ${allowedProtocols.join(', ')}` 
+      };
+    }
+
+    // Check for suspicious patterns
+    const suspiciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /data:/i,
+      /vbscript:/i,
+      /on\w+\s*=/i, // event handlers like onclick=
+    ];
+
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(trimmedUrl)) {
+        return { 
+          isValid: false, 
+          error: "La URL contiene patrones no permitidos por seguridad" 
+        };
+      }
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    return { isValid: false, error: "Por favor ingresa una URL válida (ej: https://ejemplo.com)" };
+  }
+};
+
+/**
+ * Sanitize URL - returns a safe URL or null
+ * Use this before storing/displaying URLs
+ */
+export const sanitizeURL = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  
+  const validation = validateURL(url);
+  if (!validation.isValid) {
+    // Log sin exponer la URL completa por seguridad
+    console.warn('URL blocked for security reasons');
+    return null;
+  }
+
+  return url.trim();
+};
+
+/**
+ * Check if a URL is safe to use as href
+ * Returns true only if the URL passes all security checks
+ */
+export const isSafeURL = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  const validation = validateURL(url);
+  return validation.isValid;
+};
