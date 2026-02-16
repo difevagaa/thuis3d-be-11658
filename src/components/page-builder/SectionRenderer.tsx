@@ -2568,7 +2568,7 @@ function useTranslatedSection(section: SectionData): SectionData {
           content: newContent
         });
       } catch (error) {
-        console.error('Error loading section translations:', error);
+        logger.error('Error loading section translations:', error);
         setTranslatedSection(section);
       }
     };

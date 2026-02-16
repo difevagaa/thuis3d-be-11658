@@ -67,7 +67,7 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
         });
       }
     } catch (error) {
-      console.error('Error loading pages:', error);
+      logger.error('Error loading pages:', error);
     }
 
     // Load categories
@@ -87,7 +87,7 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
         });
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      logger.error('Error loading categories:', error);
     }
 
     // Load products (limit to recent 20 for performance)
@@ -109,7 +109,7 @@ export function URLSelector({ value, onChange, label = "URL", placeholder = "Sel
         });
       }
     } catch (error) {
-      console.error('Error loading products:', error);
+      logger.error('Error loading products:', error);
     }
 
     // Load blog posts if exists

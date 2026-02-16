@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Admin Component: Lithophane Order Card
  * Shows lithophane order details with STL download functionality
  */
@@ -91,7 +92,7 @@ export const LithophaneOrderCard = ({ order }: LithophaneOrderCardProps) => {
       
       toast.success('STL file downloaded successfully!');
     } catch (error) {
-      console.error('Error generating STL:', error);
+      logger.error('Error generating STL:', error);
       toast.error('Failed to generate STL file');
     } finally {
       setIsGenerating(false);

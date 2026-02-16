@@ -1,4 +1,5 @@
 import { Facebook, Instagram, Twitter, Mail, Linkedin } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ export const Footer = () => {
         setFooterLinks(linksData);
       }
     } catch (error) {
-      console.error("Error loading footer data:", error);
+      logger.error("Error loading footer data:", error);
     }
   };
 

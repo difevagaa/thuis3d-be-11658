@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -118,7 +119,7 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
       if (error) throw error;
       setInvoiceItems(data || []);
     } catch (error) {
-      console.error("Error loading invoice items:", error);
+      logger.error("Error loading invoice items:", error);
     }
   }, [invoice?.id]);
 

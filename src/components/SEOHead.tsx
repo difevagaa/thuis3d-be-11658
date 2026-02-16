@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,7 +112,7 @@ export function SEOHead({
         setSiteCustomization(customization);
         setMultilingualKeywords(langKeywords);
       } catch (error) {
-        console.error("Error loading SEO data:", error);
+        logger.error("Error loading SEO data:", error);
       }
     };
 

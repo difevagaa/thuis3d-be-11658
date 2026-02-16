@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Configurable Footer Component - Reads settings from footer_settings table
  */
 
@@ -241,7 +242,7 @@ export const FooterConfigurable = () => {
         setFooterLinks(nextLinks);
       }
     } catch (error) {
-      console.error("Error loading footer data:", error);
+      logger.error("Error loading footer data:", error);
     }
   };
 
@@ -286,7 +287,7 @@ export const FooterConfigurable = () => {
       }
       setEmail("");
     } catch (error: any) {
-      console.error("Error subscribing:", error);
+      logger.error("Error subscribing:", error);
       i18nToast.error("error.general");
     } finally {
       setSubscribing(false);

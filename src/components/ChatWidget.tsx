@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -126,7 +127,7 @@ export const ChatWidget = () => {
         }
       }
     } catch (error: any) {
-      console.error("Error:", error);
+      logger.error("Error:", error);
       toast.error(error.message || "Error al enviar mensaje");
       // Remove the placeholder message
       setMessages((prev) => prev.slice(0, -1));
