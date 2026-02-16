@@ -254,21 +254,21 @@ COMMENT ON TABLE public.role_change_audit IS
 'Audit log for tracking all role changes in the system';
 
 -- ============================================================================
--- 7. VERIFICATION QUERY
+-- 7. VERIFICATION QUERY (COMMENTED OUT - USE SEPARATELY FOR INSPECTION)
 -- ============================================================================
 
--- Query to verify all policies are in place
-SELECT 
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd
-FROM pg_policies
-WHERE schemaname = 'public'
-  AND tablename IN ('user_roles', 'profiles')
-ORDER BY tablename, policyname;
+-- Uncomment this query to verify policies after migration:
+-- SELECT 
+--   schemaname,
+--   tablename,
+--   policyname,
+--   permissive,
+--   roles,
+--   cmd
+-- FROM pg_policies
+-- WHERE schemaname = 'public'
+--   AND tablename IN ('user_roles', 'profiles')
+-- ORDER BY tablename, policyname;
 
 -- ============================================================================
 -- END OF MIGRATION

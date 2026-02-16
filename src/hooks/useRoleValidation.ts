@@ -21,6 +21,9 @@ export const useRoleValidation = (requiredRoles: string[] = ['admin', 'superadmi
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const navigate = useNavigate();
+  
+  // Stringify roles to prevent re-renders on array reference changes
+  const rolesKey = JSON.stringify(requiredRoles);
 
   useEffect(() => {
     const validateRole = async () => {
@@ -63,7 +66,8 @@ export const useRoleValidation = (requiredRoles: string[] = ['admin', 'superadmi
         setUserRole(userRoleObj);
 
         // Check if user has required role
-        const hasRequiredRole = requiredRoles.some(reqRole => {
+        const roles = JSON.parse(rolesKey);
+        const hasRequiredRole = roles.some((reqRole: string) => {
           if (reqRole === 'admin') return userRoleObj.isAdmin;
           if (reqRole === 'superadmin') return userRoleObj.isSuperAdmin;
           if (reqRole === 'moderator') return userRoleObj.isModerator;
@@ -71,7 +75,7 @@ export const useRoleValidation = (requiredRoles: string[] = ['admin', 'superadmi
         });
 
         if (!hasRequiredRole) {
-          logger.warn(`User ${user.id} with role ${role} attempted to access page requiring: ${requiredRoles.join(', ')}`);
+          logger.warn(`User ${user.id} with role ${role} attempted to access page requiring: ${roles.join(', ')}`);
           toast.error("No tienes permisos para acceder a esta página");
           navigate("/");
           return;
@@ -99,7 +103,7 @@ export const useRoleValidation = (requiredRoles: string[] = ['admin', 'superadmi
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, requiredRoles]);
+  }, [navigate, rolesKey]); // Use rolesKey instead of requiredRoles
 
   return { userRole, isValidating, hasAccess };
 };
