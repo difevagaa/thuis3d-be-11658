@@ -314,54 +314,30 @@ export default function Payment() {
   };
 
   const applyGiftCard = async () => {
-    const validation = validateGiftCardCode(giftCardCode);
-    if (!validation.isValid) {
-      toast.error(validation.error);
-      return;
-    }
-    
     setGiftCardLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("gift_cards")
-        .select("*")
-        .eq("code", giftCardCode.toUpperCase())
-        .eq("is_active", true)
-        .is("deleted_at", null)
-        .maybeSingle();
+      // Use the new comprehensive gift card validator
+      const { validateGiftCard } = await import("@/lib/giftCardValidator");
+      const result = await validateGiftCard(giftCardCode);
 
-      if (error) {
-        handleSupabaseError(error, {
-          toastMessage: t('cart:giftCard.invalid'),
-          context: "Validate Gift Card"
-        });
+      if (!result.isValid) {
+        toast.error(result.error || t('cart:giftCard.invalid'));
         return;
       }
 
-      if (!data) {
+      if (!result.giftCard) {
         toast.error(t('cart:giftCard.invalid'));
         return;
       }
 
-      // Check expiration
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        toast.error(t('cart:giftCard.expired'));
-        return;
-      }
-
-      if (data.current_balance <= 0) {
-        toast.error(t('cart:giftCard.noBalance'));
-        return;
-      }
-
-      setAppliedGiftCard(data);
-      sessionStorage.setItem("applied_gift_card", JSON.stringify(data));
+      setAppliedGiftCard(result.giftCard);
+      sessionStorage.setItem("applied_gift_card", JSON.stringify(result.giftCard));
       
       // Send notification about gift card redemption
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
-        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
+        const notificationTitle = `Tarjeta regalo aplicada: €${result.giftCard.current_balance.toFixed(2)}`;
+        const notificationMessage = `Has aplicado una tarjeta regalo por €${result.giftCard.current_balance.toFixed(2)}`;
         
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
@@ -374,7 +350,7 @@ export default function Payment() {
         await triggerNotificationRefresh(user.id);
       }
       
-      toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));
+      toast.success(t('cart:giftCard.applied', { balance: result.giftCard.current_balance.toFixed(2) }));
       setGiftCardCode("");
     } catch (error) {
       handleSupabaseError(error, {
@@ -439,10 +415,19 @@ export default function Payment() {
         throw new Error('Error creating order items');
       }
 
-      await updateGiftCardBalance(
-        appliedGiftCard.id,
-        Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2))
-      );
+      // Update gift card balance if applied
+      if (appliedGiftCard && giftCardAmount > 0) {
+        const { updateGiftCardBalanceSafe } = await import("@/lib/giftCardValidator");
+        const updateResult = await updateGiftCardBalanceSafe(
+          appliedGiftCard.id,
+          giftCardAmount
+        );
+
+        if (!updateResult.success) {
+          logger.error('Failed to update gift card balance:', updateResult.error);
+          // Don't fail the entire payment, just log the error
+        }
+      }
 
       // Actualizar uso del cupón si se aplicó
       if (appliedCoupon) {
@@ -919,10 +904,16 @@ export default function Payment() {
 
         // Update gift card balance if used
         if (giftCardData && giftCardDiscount > 0) {
-          await updateGiftCardBalance(
+          const { updateGiftCardBalanceSafe } = await import("@/lib/giftCardValidator");
+          const updateResult = await updateGiftCardBalanceSafe(
             giftCardData.id,
-            Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+            giftCardDiscount
           );
+
+          if (!updateResult.success) {
+            logger.error('Failed to update gift card balance:', updateResult.error);
+            // Don't fail the entire payment, just log the error
+          }
           sessionStorage.removeItem("applied_gift_card");
         }
 
