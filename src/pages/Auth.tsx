@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Globe } from "lucide-react";
-import { checkRateLimit, recordAttempt, resetRateLimit, formatBlockedTime } from "@/lib/rateLimiter";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -57,8 +56,8 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validar términos y condiciones - verificar explícitamente
-    if (!acceptTerms || acceptTerms === false) {
+    // Validar términos y condiciones
+    if (!acceptTerms) {
       toast.error(t('mustAcceptTerms'));
       return;
     }
@@ -68,18 +67,12 @@ const Auth = () => {
     try {
       const validated = authSchema.parse(formData);
       
-      // Sanitizar nombre antes de guardar - más robusto
-      const sanitizedFullName = formData.fullName
-        .trim()
-        .replace(/[<>'"\\\/]/g, '') // Remover caracteres peligrosos
-        .substring(0, 100); // Limitar longitud
-      
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
           data: {
-            full_name: sanitizedFullName,
+            full_name: formData.fullName,
             subscribed_newsletter: subscribeNewsletter,
             preferred_language: preferredLanguage,
           },
@@ -98,13 +91,9 @@ const Auth = () => {
       
       // Si el usuario quiere suscribirse al newsletter, añadirlo a la tabla
       if (subscribeNewsletter && signUpData.user) {
-        // Validar email antes de insertar
-        const emailSchema = z.string().email();
-        const validatedEmail = emailSchema.parse(validated.email);
-        
         await supabase.from("email_subscribers").insert({
-          email: validatedEmail,
-          name: sanitizedFullName || null,
+          email: validated.email,
+          name: formData.fullName || null,
           user_id: signUpData.user.id,
           status: "subscribed",
           subscribed_at: new Date().toISOString()
@@ -113,13 +102,11 @@ const Auth = () => {
       
       toast.success(t('accountCreated'));
       navigate("/");
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        toast.error((error as { message: string }).message || t('errorCreatingAccount'));
       } else {
-        toast.error(t('errorCreatingAccount'));
+        toast.error(error.message || t('errorCreatingAccount'));
       }
     } finally {
       setLoading(false);
@@ -128,27 +115,10 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check rate limit
-    const rateLimitKey = `login_${formData.email}`;
-    const rateCheck = checkRateLimit(rateLimitKey);
-    
-    if (!rateCheck.allowed) {
-      if (rateCheck.blockedUntil) {
-        toast.error(`Demasiados intentos. Bloqueado por ${formatBlockedTime(rateCheck.blockedUntil)}`);
-      } else {
-        toast.error('Demasiados intentos. Intenta más tarde.');
-      }
-      return;
-    }
-    
     setLoading(true);
 
     try {
       const validated = authSchema.pick({ email: true, password: true }).parse(formData);
-      
-      // Record attempt before trying
-      recordAttempt(rateLimitKey);
       
       const { error } = await supabase.auth.signInWithPassword({
         email: validated.email,
@@ -157,18 +127,13 @@ const Auth = () => {
 
       if (error) throw error;
       
-      // Success - reset rate limit
-      resetRateLimit(rateLimitKey);
-      
       toast.success(t('welcomeBack'));
       navigate("/");
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        toast.error((error as { message: string }).message || t('errorSigningIn'));
       } else {
-        toast.error(t('errorSigningIn'));
+        toast.error(error.message || t('errorSigningIn'));
       }
     } finally {
       setLoading(false);
@@ -185,11 +150,7 @@ const Auth = () => {
         return;
       }
 
-      // Validar formato de email
-      const emailSchema = z.string().email(t('invalidEmail'));
-      const validatedEmail = emailSchema.parse(resetEmail);
-
-      const { error } = await supabase.auth.resetPasswordForEmail(validatedEmail, {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
 
@@ -198,14 +159,8 @@ const Auth = () => {
       toast.success(t('resetEmailSent'));
       setShowResetPassword(false);
       setResetEmail("");
-    } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        toast.error((error as { message: string }).message || t('errorSendingResetEmail'));
-      } else {
-        toast.error(t('errorSendingResetEmail'));
-      }
+    } catch (error: any) {
+      toast.error(error.message || "Error al enviar email de recuperación");
     } finally {
       setLoading(false);
     }
@@ -216,17 +171,13 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Validar contraseña con el mismo esquema que signup (8 caracteres mínimo)
-      const passwordSchema = z.string()
-        .min(8, t('passwordMinLength'))
-        .regex(/[A-Z]/, t('passwordUppercase'))
-        .regex(/[0-9]/, t('passwordNumber'))
-        .regex(/[^A-Za-z0-9]/, t('passwordSpecial'));
-      
-      const validated = passwordSchema.parse(newPassword);
+      if (!newPassword || newPassword.length < 6) {
+        toast.error("La contraseña debe tener al menos 6 caracteres");
+        return;
+      }
 
       const { error } = await supabase.auth.updateUser({
-        password: validated
+        password: newPassword
       });
 
       if (error) throw error;
@@ -235,14 +186,8 @@ const Auth = () => {
       setIsSettingNewPassword(false);
       setNewPassword("");
       navigate("/");
-    } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        toast.error((error as { message: string }).message || t('errorUpdatingPassword'));
-      } else {
-        toast.error(t('errorUpdatingPassword'));
-      }
+    } catch (error: any) {
+      toast.error(error.message || "Error al actualizar contraseña");
     } finally {
       setLoading(false);
     }

@@ -13,9 +13,6 @@ import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateShippingInfo, showValidationError } from "@/lib/validation";
 
-// Checkout session expiry time (24 hours in milliseconds)
-const CHECKOUT_SESSION_EXPIRY_MS = 1000 * 60 * 60 * 24;
-
 export default function ShippingInfo() {
   const navigate = useNavigate();
   const { t } = useTranslation(['shipping', 'common']);
@@ -136,17 +133,6 @@ export default function ShippingInfo() {
         if (profileError) throw profileError;
       }
       
-      // Load cart data to save with checkout session for abandoned cart recovery
-      const savedCart = localStorage.getItem("cart");
-      let cartData: any[] = [];
-      if (savedCart) {
-        try {
-          cartData = JSON.parse(savedCart);
-        } catch (e) {
-          logger.error("Error parsing cart data:", e);
-        }
-      }
-
       // Check if we already have a checkout session to prevent duplicates
       const existingSessionId = sessionStorage.getItem('checkout_session_id');
       if (existingSessionId) {
@@ -155,9 +141,7 @@ export default function ShippingInfo() {
           .from('checkout_sessions')
           .update({
             shipping_info: formData,
-            cart_data: cartData,
-            last_activity: new Date().toISOString(),
-            expires_at: new Date(Date.now() + CHECKOUT_SESSION_EXPIRY_MS).toISOString() // 24 hours for abandoned cart detection
+            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
           })
           .eq('id', existingSessionId);
         
@@ -177,10 +161,7 @@ export default function ShippingInfo() {
         .insert({
           user_id: user ? user.id : null,
           shipping_info: shippingInfo,
-          cart_data: cartData,
-          status: 'active',
-          last_activity: new Date().toISOString(),
-          expires_at: new Date(Date.now() + CHECKOUT_SESSION_EXPIRY_MS).toISOString() // 24 hours for abandoned cart detection
+          expires_at: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString()
         })
         .select()
         .single();

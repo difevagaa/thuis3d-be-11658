@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { logger } from "@/lib/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -115,7 +114,7 @@ export function SendAdminMessage() {
           }
         });
       } catch (emailError) {
-        logger.error('Error sending admin email notification:', emailError);
+        console.error('Error sending admin email notification:', emailError);
       }
 
       toast.success("✉️ Mensaje enviado a los administradores");
@@ -124,7 +123,7 @@ export function SendAdminMessage() {
       setAttachments([]);
       setOpen(false);
     } catch (error: any) {
-      logger.error("Error sending message:", error);
+      console.error("Error sending message:", error);
       toast.error("Error al enviar mensaje: " + (error.message || "Error desconocido"));
     } finally {
       setSending(false);

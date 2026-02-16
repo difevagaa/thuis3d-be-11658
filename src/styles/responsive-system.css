@@ -526,16 +526,12 @@ header .flex {
   width: 100%;
   height: auto;
   object-fit: cover;
-  image-rendering: auto;
-  -ms-interpolation-mode: bicubic;
 }
 
 .responsive-image-contain {
   width: 100%;
   height: auto;
   object-fit: contain;
-  image-rendering: auto;
-  -ms-interpolation-mode: bicubic;
 }
 
 /* Constrain large images on mobile */

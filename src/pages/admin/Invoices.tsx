@@ -18,7 +18,6 @@ import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkDeleteActions } from "@/components/admin/BulkDeleteActions";
 import UserSearchSelector from "@/components/admin/UserSearchSelector";
 import { logger } from "@/lib/logger";
-import { syncOrderStatusWithInvoice } from "@/lib/paymentUtils";
 
 interface InvoiceItem {
   product_id?: string;
@@ -584,9 +583,18 @@ export default function Invoices() {
 
       if (invoiceError) throw invoiceError;
 
-      // Sync order payment status with invoice (bidirectional link)
-      if (newStatus !== previousStatus && editingInvoice.order_id) {
-        await syncOrderStatusWithInvoice(editingInvoice.order_id, newStatus);
+      // If invoice is marked as paid and has an associated order, update the order's payment status
+      if (newStatus === 'paid' && previousStatus !== 'paid' && editingInvoice.order_id) {
+        const { error: orderError } = await supabase
+          .from("orders")
+          .update({ payment_status: 'paid' })
+          .eq("id", editingInvoice.order_id);
+        
+        if (orderError) {
+          logger.error('Error updating order payment status:', orderError);
+        } else {
+          logger.log('Order payment status updated to paid:', editingInvoice.order_id);
+        }
       }
 
       // Delete existing items
@@ -698,10 +706,6 @@ export default function Invoices() {
         return 'bg-yellow-500';
       case 'failed':
         return 'bg-red-500';
-      case 'refunded':
-        return 'bg-blue-500';
-      case 'cancelled':
-        return 'bg-gray-500';
       default:
         return 'bg-gray-500';
     }
@@ -715,10 +719,6 @@ export default function Invoices() {
         return 'Pendiente';
       case 'failed':
         return 'Fallido';
-      case 'refunded':
-        return 'Reembolsado';
-      case 'cancelled':
-        return 'Anulado';
       default:
         return status;
     }
@@ -1030,8 +1030,6 @@ export default function Invoices() {
                       <SelectItem value="pending">Pendiente</SelectItem>
                       <SelectItem value="paid">Pagado</SelectItem>
                       <SelectItem value="failed">Fallido</SelectItem>
-                      <SelectItem value="refunded">Reembolsado</SelectItem>
-                      <SelectItem value="cancelled">Anulado</SelectItem>
                     </SelectContent>
                   </Select>
                   {newInvoice.requires_payment && (
@@ -1393,8 +1391,6 @@ export default function Invoices() {
                       <SelectItem value="pending">Pendiente</SelectItem>
                       <SelectItem value="paid">Pagado</SelectItem>
                       <SelectItem value="failed">Fallido</SelectItem>
-                      <SelectItem value="refunded">Reembolsado</SelectItem>
-                      <SelectItem value="cancelled">Anulado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ScrollRevealSection } from "@/components/ScrollRevealSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -262,12 +261,10 @@ const Products = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
       {/* Header - Compact on mobile */}
-      <ScrollRevealSection variant="fade-up">
-        <div className="flex items-center gap-2 mb-4">
-          <Package className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
-          <h1 className="text-lg md:text-2xl lg:text-3xl font-bold">{t('title')}</h1>
-        </div>
-      </ScrollRevealSection>
+      <div className="flex items-center gap-2 mb-4">
+        <Package className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
+        <h1 className="text-lg md:text-2xl lg:text-3xl font-bold">{t('title')}</h1>
+      </div>
 
       {/* Search by Code - Compact */}
       <Card className="mb-3 bg-primary/5 border-primary/20">
@@ -390,18 +387,16 @@ const Products = () => {
           )}
 
           {/* Products Grid - 2 columns mobile, 3-4 desktop */}
-          <ScrollRevealSection variant="blur-in" delay={100}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-              {filteredProducts.map((product) => {
-                const firstImage = product.product_images?.find((img: any) => img.display_order === 0)?.image_url 
-                  || product.product_images?.[0]?.image_url;
-                
-                return (
-                  <ProductCard key={product.id} product={product} firstImage={firstImage} />
-                );
-              })}
-            </div>
-          </ScrollRevealSection>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            {filteredProducts.map((product) => {
+              const firstImage = product.product_images?.find((img: any) => img.display_order === 0)?.image_url 
+                || product.product_images?.[0]?.image_url;
+              
+              return (
+                <ProductCard key={product.id} product={product} firstImage={firstImage} />
+              );
+            })}
+          </div>
 
           {filteredProducts.length === 0 && (
             <div className="text-center text-muted-foreground py-12">

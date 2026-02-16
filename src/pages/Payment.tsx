@@ -24,13 +24,6 @@ import { useTaxSettings } from "@/hooks/useTaxSettings";
 import { validateGiftCardCode } from "@/lib/validation";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
-import { updateOrderPaymentStatus, updateInvoicePaymentStatus } from "@/lib/paymentStatusManager";
-import { 
-  generateTransactionId, 
-  checkTransactionExists, 
-  registerTransaction,
-  updateTransactionStatus
-} from "@/lib/transactionIdempotency";
 
 export default function Payment() {
   const navigate = useNavigate();
@@ -239,7 +232,6 @@ export default function Payment() {
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
   // CRITICAL: Sin gift card en el cálculo de IVA para evitar dependencia circular
-  // Coupon discount is applied proportionally to the taxable amount before calculating tax
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
     if (subtotal === 0) return 0;
@@ -252,16 +244,9 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
-    if (taxableAmount === 0) return 0;
-
-    // Apply coupon discount proportionally to the taxable amount
-    const couponDisc = calculateCouponDiscount();
-    const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
-    const taxableAfterDiscount = Math.max(0, taxableAmount - (couponDisc * discountRatio));
-
     // Use tax rate from settings
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((taxableAfterDiscount * taxRate).toFixed(2));
+    return Number((taxableAmount * taxRate).toFixed(2));
   };
 
   // Calcular descuento por cupón
@@ -270,14 +255,13 @@ export default function Payment() {
   const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     const subtotal = calculateSubtotal();
-    let discount = 0;
     if (appliedCoupon.discount_type === "percentage") {
-      discount = subtotal * (appliedCoupon.discount_value / 100);
+      return subtotal * (appliedCoupon.discount_value / 100);
     } else if (appliedCoupon.discount_type === "fixed") {
-      discount = Math.min(appliedCoupon.discount_value, subtotal);
+      return appliedCoupon.discount_value;
     }
     // free_shipping: no monetary discount on products
-    return Number(discount.toFixed(2));
+    return 0;
   };
 
   const calculateGiftCardAmount = () => {
@@ -301,43 +285,55 @@ export default function Payment() {
     return Number(Math.max(0, subtotal - couponDiscount + tax + effectiveShipping - giftCardAmount).toFixed(2));
   };
 
-  // Helper to calculate remaining balance after gift card for both orders and invoices
-  const calculateRemainingBalance = () => {
-    if (isInvoicePayment) {
-      const invoiceTotal = Number(shippingInfo.total || 0);
-      if (appliedGiftCard) {
-        return Math.max(0, invoiceTotal - Math.min(appliedGiftCard.current_balance, invoiceTotal));
-      }
-      return invoiceTotal;
-    }
-    return calculateTotal();
-  };
-
   const applyGiftCard = async () => {
+    const validation = validateGiftCardCode(giftCardCode);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+    
     setGiftCardLoading(true);
     try {
-      // Use the new comprehensive gift card validator
-      const { validateGiftCard } = await import("@/lib/giftCardValidator");
-      const result = await validateGiftCard(giftCardCode);
+      const { data, error } = await supabase
+        .from("gift_cards")
+        .select("*")
+        .eq("code", giftCardCode.toUpperCase())
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .maybeSingle();
 
-      if (!result.isValid) {
-        toast.error(result.error || t('cart:giftCard.invalid'));
+      if (error) {
+        handleSupabaseError(error, {
+          toastMessage: t('cart:giftCard.invalid'),
+          context: "Validate Gift Card"
+        });
         return;
       }
 
-      if (!result.giftCard) {
+      if (!data) {
         toast.error(t('cart:giftCard.invalid'));
         return;
       }
 
-      setAppliedGiftCard(result.giftCard);
-      sessionStorage.setItem("applied_gift_card", JSON.stringify(result.giftCard));
+      // Check expiration
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error(t('cart:giftCard.expired'));
+        return;
+      }
+
+      if (data.current_balance <= 0) {
+        toast.error(t('cart:giftCard.noBalance'));
+        return;
+      }
+
+      setAppliedGiftCard(data);
+      sessionStorage.setItem("applied_gift_card", JSON.stringify(data));
       
       // Send notification about gift card redemption
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const notificationTitle = `Tarjeta regalo aplicada: €${result.giftCard.current_balance.toFixed(2)}`;
-        const notificationMessage = `Has aplicado una tarjeta regalo por €${result.giftCard.current_balance.toFixed(2)}`;
+        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
+        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
         
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
@@ -350,7 +346,7 @@ export default function Payment() {
         await triggerNotificationRefresh(user.id);
       }
       
-      toast.success(t('cart:giftCard.applied', { balance: result.giftCard.current_balance.toFixed(2) }));
+      toast.success(t('cart:giftCard.applied', { balance: data.current_balance.toFixed(2) }));
       setGiftCardCode("");
     } catch (error) {
       handleSupabaseError(error, {
@@ -415,19 +411,10 @@ export default function Payment() {
         throw new Error('Error creating order items');
       }
 
-      // Update gift card balance if applied
-      if (appliedGiftCard && giftCardAmount > 0) {
-        const { updateGiftCardBalanceSafe } = await import("@/lib/giftCardValidator");
-        const updateResult = await updateGiftCardBalanceSafe(
-          appliedGiftCard.id,
-          giftCardAmount
-        );
-
-        if (!updateResult.success) {
-          logger.error('Failed to update gift card balance:', updateResult.error);
-          // Don't fail the entire payment, just log the error
-        }
-      }
+      await updateGiftCardBalance(
+        appliedGiftCard.id,
+        appliedGiftCard.current_balance - giftCardAmount
+      );
 
       // Actualizar uso del cupón si se aplicó
       if (appliedCoupon) {
@@ -454,62 +441,6 @@ export default function Payment() {
       navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
     } catch (error) {
       logger.error("Error processing gift card payment:", error);
-      toast.error("Error al procesar el pago con tarjeta de regalo");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const processInvoiceGiftCardPayment = async () => {
-    setProcessing(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error(t('payment:messages.loginRequired'));
-        navigate("/auth");
-        return;
-      }
-
-      const invoiceData = JSON.parse(sessionStorage.getItem("invoice_payment") || "{}");
-      const invoiceTotal = Number(shippingInfo.total || 0);
-      const giftCardAmount = Math.min(appliedGiftCard.current_balance, invoiceTotal);
-      const remainingTotal = Math.max(0, invoiceTotal - giftCardAmount);
-
-      // Update invoice payment status and gift card balance
-      const { error: updateError } = await supabase
-        .from("invoices")
-        .update({
-          payment_status: remainingTotal <= 0 ? "paid" : "pending",
-          payment_method: "gift_card",
-          notes: `Pagado con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
-        })
-        .eq("id", invoiceData.invoiceId)
-        .eq("user_id", user.id);
-
-      if (updateError) throw updateError;
-
-      // Update gift card balance
-      const newBalance = Number(Math.max(0, appliedGiftCard.current_balance - giftCardAmount).toFixed(2));
-      const { error: giftCardError } = await supabase
-        .from("gift_cards")
-        .update({ current_balance: newBalance })
-        .eq("id", appliedGiftCard.id);
-
-      if (giftCardError) throw giftCardError;
-
-      // Clear session data
-      sessionStorage.removeItem("invoice_payment");
-      sessionStorage.removeItem("applied_gift_card");
-
-      if (remainingTotal <= 0) {
-        toast.success(`¡Factura ${invoiceData.invoiceNumber} pagada con tarjeta de regalo!`);
-      } else {
-        toast.success(`Se aplicó €${giftCardAmount.toFixed(2)} de tu tarjeta de regalo. Saldo pendiente: €${remainingTotal.toFixed(2)}`);
-      }
-      
-      navigate("/mi-cuenta?tab=invoices");
-    } catch (error) {
-      logger.error("Error processing invoice gift card payment:", error);
       toast.error("Error al procesar el pago con tarjeta de regalo");
     } finally {
       setProcessing(false);
@@ -549,57 +480,17 @@ export default function Payment() {
           return;
         }
 
-        // Generate unique transaction ID for idempotency
-        const transactionId = generateTransactionId();
-        logger.info('[Payment] Generated transaction ID for invoice payment', {
-          transactionId,
-          invoiceId: invoiceData.invoiceId
-        });
+        // Update invoice payment status and method - TODOS los pagos en pending
+        const { error: updateError } = await supabase
+          .from("invoices")
+          .update({
+            payment_status: "pending", // CRÍTICO: SIEMPRE pending
+            payment_method: method
+          })
+          .eq("id", invoiceData.invoiceId)
+          .eq("user_id", user.id);
 
-        // Check for duplicate transaction
-        const duplicateCheck = await checkTransactionExists(transactionId);
-        if (duplicateCheck.exists) {
-          logger.warn('[Payment] Duplicate transaction detected', {
-            transactionId,
-            existingStatus: duplicateCheck.status
-          });
-          toast.error('Esta transacción ya está siendo procesada. Por favor, espera.');
-          return;
-        }
-
-        // Register transaction
-        await registerTransaction(transactionId, {
-          invoiceId: invoiceData.invoiceId,
-          amount: invoiceData.total,
-          currency: 'EUR',
-          userId: user.id,
-          metadata: { method, type: 'invoice_payment' }
-        });
-
-        // Update invoice payment status - now uses "processing" instead of "pending"
-        const statusUpdate = await updateInvoicePaymentStatus(
-          invoiceData.invoiceId,
-          'processing', // Changed from "pending" to "processing"
-          {
-            transactionId,
-            paymentMethod: method,
-            reason: 'Payment initiated by user'
-          }
-        );
-
-        if (!statusUpdate.success) {
-          logger.error('[Payment] Failed to update invoice status', {
-            invoiceId: invoiceData.invoiceId,
-            error: statusUpdate.error
-          });
-          toast.error('Error al actualizar el estado de la factura');
-          return;
-        }
-
-        logger.info('[Payment] Invoice payment status updated to processing', {
-          invoiceId: invoiceData.invoiceId,
-          transactionId
-        });
+        if (updateError) throw updateError;
 
         // Clear invoice payment data
         sessionStorage.removeItem("invoice_payment");
@@ -825,42 +716,15 @@ export default function Payment() {
         
         if (savedGiftCard) {
           giftCardData = JSON.parse(savedGiftCard);
-          // CRITICAL: Use totalBeforeGiftCard to correctly calculate how much the gift card covers
-          giftCardDiscount = Number(Math.min(giftCardData.current_balance, Math.max(0, totalBeforeGiftCard)).toFixed(2));
+          giftCardDiscount = Number(Math.min(giftCardData.current_balance, total).toFixed(2));
         }
 
-        const finalTotal = Number(Math.max(0, totalBeforeGiftCard - giftCardDiscount).toFixed(2));
+        const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
 
         // Preparar notas del pedido
         const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
 
-        // Generate unique transaction ID for idempotency
-        const transactionId = generateTransactionId();
-        logger.info('[Payment] Generated transaction ID for PayPal order', {
-          transactionId
-        });
-
-        // Check for duplicate transaction
-        const duplicateCheck = await checkTransactionExists(transactionId);
-        if (duplicateCheck.exists) {
-          logger.warn('[Payment] Duplicate transaction detected for PayPal', {
-            transactionId,
-            existingStatus: duplicateCheck.status
-          });
-          toast.error('Esta transacción ya está siendo procesada. Por favor, espera.');
-          setProcessing(false);
-          return;
-        }
-
-        // Register transaction before creating order
-        await registerTransaction(transactionId, {
-          amount: finalTotal,
-          currency: 'EUR',
-          userId: user.id,
-          metadata: { method: 'paypal', cartItems, shippingInfo }
-        });
-
-        // Create order - now uses "processing" instead of "pending"
+        // Create order - SIEMPRE con payment_status: "pending"
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -871,49 +735,22 @@ export default function Payment() {
             discount: couponDiscount + giftCardDiscount,
             total: finalTotal,
             payment_method: "paypal",
-            payment_status: "processing", // Changed from "pending" to "processing"
+            payment_status: "pending", // CRÍTICO: SIEMPRE pending
             shipping_address: JSON.stringify(shippingInfo),
             billing_address: JSON.stringify(shippingInfo),
-            notes: `${orderNotes}\n\nTransaction ID: ${transactionId}`
+            notes: orderNotes
           })
           .select()
           .single();
 
-        if (orderError) {
-          logger.error('[Payment] Failed to create PayPal order', { orderError });
-          await updateTransactionStatus(transactionId, 'failed', {
-            error: orderError.message
-          });
-          throw orderError;
-        }
-
-        // Update transaction with order ID
-        await registerTransaction(transactionId, {
-          orderId: order.id,
-          amount: finalTotal,
-          currency: 'EUR',
-          userId: user.id,
-          metadata: { method: 'paypal', orderNumber: order.order_number }
-        });
-
-        logger.info('[Payment] PayPal order created with processing status', {
-          orderId: order.id,
-          orderNumber: order.order_number,
-          transactionId
-        });
+        if (orderError) throw orderError;
 
         // Update gift card balance if used
         if (giftCardData && giftCardDiscount > 0) {
-          const { updateGiftCardBalanceSafe } = await import("@/lib/giftCardValidator");
-          const updateResult = await updateGiftCardBalanceSafe(
+          await updateGiftCardBalance(
             giftCardData.id,
-            giftCardDiscount
+            giftCardData.current_balance - giftCardDiscount
           );
-
-          if (!updateResult.success) {
-            logger.error('Failed to update gift card balance:', updateResult.error);
-            // Don't fail the entire payment, just log the error
-          }
           sessionStorage.removeItem("applied_gift_card");
         }
 
@@ -934,7 +771,7 @@ export default function Payment() {
 
         // Create invoice automatically
         try {
-          const { data: invoiceData, error: invoiceError } = await supabase.from("invoices").insert({
+          await supabase.from("invoices").insert({
             invoice_number: order.order_number,
             user_id: user.id,
             order_id: order.id,
@@ -946,29 +783,11 @@ export default function Payment() {
             coupon_code: appliedCoupon?.code || null,
             total: finalTotal,
             payment_method: "paypal",
-            payment_status: "processing", // Changed from "pending" to "processing"
+            payment_status: "pending", // CRÍTICO: SIEMPRE pending
             issue_date: new Date().toISOString(),
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             notes: `Factura generada automáticamente para el pedido ${order.order_number}`
-          }).select().single();
-
-          if (invoiceData && !invoiceError) {
-            // Update transaction with invoice ID
-            await registerTransaction(transactionId, {
-              orderId: order.id,
-              invoiceId: invoiceData.id,
-              amount: finalTotal,
-              currency: 'EUR',
-              userId: user.id,
-              metadata: { method: 'paypal', hasInvoice: true }
-            });
-
-            logger.info('[Payment] Invoice created for PayPal order', {
-              invoiceId: invoiceData.id,
-              orderId: order.id,
-              transactionId
-            });
-          }
+          });
         } catch (invoiceError) {
           logger.error('Error creating invoice:', invoiceError);
         }
@@ -1164,15 +983,6 @@ export default function Payment() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
-                    {appliedCoupon && !isFreeShippingCoupon && (
-                      <div className="flex justify-between text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Gift className="h-4 w-4" />
-                          {t('cart:summary.discount')} ({appliedCoupon.code})
-                        </span>
-                        <span className="font-semibold">-€{calculateCouponDiscount().toFixed(2)}</span>
-                      </div>
-                    )}
                     {appliedGiftCard && (
                       <div className="flex justify-between text-blue-600">
                         <span className="flex items-center gap-1">
@@ -1182,17 +992,10 @@ export default function Payment() {
                         <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
                       </div>
                     )}
-                    {isFreeShippingCoupon ? (
-                      <div className="flex justify-between text-green-600">
-                        <span>{t('cart:summary.shipping', 'Envío')} ({appliedCoupon.code})</span>
-                        <span className="font-semibold">{t('cart:freeShipping', 'Envío Gratis')}</span>
-                      </div>
-                    ) : (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Envío</span>
-                        <span>€{shippingCost.toFixed(2)}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Envío</span>
+                      <span>€{shippingCost.toFixed(2)}</span>
+                    </div>
                     {(() => {
                       const tax = calculateTax();
                       const total = calculateTotal();
@@ -1231,77 +1034,76 @@ export default function Payment() {
 
         {/* Payment Methods */}
         <div className="space-y-4">
-          {/* Gift Card Section - Allow for both regular checkout and invoice payments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-5 w-5" />
-                Tarjeta de Regalo
-              </CardTitle>
-              <CardDescription>
-                {isInvoicePayment 
-                  ? "¿Tienes una tarjeta de regalo? Úsala para pagar tu factura"
-                  : "¿Tienes una tarjeta de regalo? Aplícala aquí para usar su saldo"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {appliedGiftCard ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{appliedGiftCard.code}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Saldo: €{appliedGiftCard.current_balance.toFixed(2)}
-                      </p>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={removeGiftCard} className="ml-2">
-                      Quitar
-                    </Button>
-                  </div>
-                  {calculateRemainingBalance() <= 0 && (
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                        ✓ Tu tarjeta de regalo cubre el total {isInvoicePayment ? "de la factura" : "de la compra"}
-                      </p>
-                      <Button
-                        onClick={() => isInvoicePayment ? processInvoiceGiftCardPayment() : processGiftCardOnlyPayment()}
-                        disabled={processing}
-                        className="w-full mt-3"
-                      >
-                        {processing ? "Procesando..." : (isInvoicePayment ? "Pagar Factura" : "Completar Pedido")}
+          {/* Gift Card Section */}
+          {!isInvoicePayment && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  Tarjeta de Regalo
+                </CardTitle>
+                <CardDescription>
+                  ¿Tienes una tarjeta de regalo? Aplícala aquí para usar su saldo
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {appliedGiftCard ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{appliedGiftCard.code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Saldo: €{appliedGiftCard.current_balance.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={removeGiftCard} className="ml-2">
+                        Quitar
                       </Button>
                     </div>
-                  )}
-                  {calculateRemainingBalance() > 0 && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        Saldo restante a pagar: €{calculateRemainingBalance().toFixed(2)}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Selecciona un método de pago para el saldo restante
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label>Código de Tarjeta de Regalo</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ej: GIFT-XXXX-XXXX"
-                      value={giftCardCode}
-                      onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
-                      disabled={giftCardLoading}
-                    />
-                    <Button onClick={applyGiftCard} disabled={giftCardLoading} variant="outline">
-                      {giftCardLoading ? "Validando..." : "Aplicar"}
-                    </Button>
+                    {calculateTotal() <= 0 && (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          ✓ Tu tarjeta de regalo cubre el total de la compra
+                        </p>
+                        <Button
+                          onClick={() => processGiftCardOnlyPayment()}
+                          disabled={processing}
+                          className="w-full mt-3"
+                        >
+                          {processing ? "Procesando..." : "Completar Pedido"}
+                        </Button>
+                      </div>
+                    )}
+                    {calculateTotal() > 0 && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          Saldo restante a pagar: €{calculateTotal().toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Selecciona un método de pago para el saldo restante
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Código de Tarjeta de Regalo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ej: GIFT-XXXX-XXXX"
+                        value={giftCardCode}
+                        onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
+                        disabled={giftCardLoading}
+                      />
+                      <Button onClick={applyGiftCard} disabled={giftCardLoading} variant="outline">
+                        {giftCardLoading ? "Validando..." : "Aplicar"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {paymentConfig.company_info && (
             <Card>
@@ -1314,15 +1116,13 @@ export default function Payment() {
             </Card>
           )}
           
-          {/* Only show payment methods if there's an amount to pay */}
-          {calculateRemainingBalance() > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
-                <CardDescription>{t('payment:paymentMethod')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {paymentConfig.bank_transfer_enabled && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('payment:paymentMethodTitle')}</CardTitle>
+              <CardDescription>{t('payment:paymentMethod')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {paymentConfig.bank_transfer_enabled && (
                 <Button
                   onClick={() => handlePayment("bank_transfer")}
                   disabled={processing}
@@ -1398,7 +1198,6 @@ export default function Payment() {
               </p>
             </CardContent>
           </Card>
-          )}
 
           {/* QR Codes Display */}
           {paymentImages.length > 0 && (

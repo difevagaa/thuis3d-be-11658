@@ -142,12 +142,6 @@ export default function UserQuoteDetail() {
   const handleCustomerAction = async (action: "approve" | "reject" | "comment") => {
     if (!quote || actionLoading) return;
 
-    // Prevent approve/reject if already responded
-    if ((action === "approve" || action === "reject") && hasAlreadyResponded) {
-      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
-      return;
-    }
-
     const trimmedComment = comment.trim();
     if (action === "comment" && !trimmedComment) {
       i18nToast.directWarning("Por favor escribe un comentario antes de enviar.");
@@ -247,139 +241,10 @@ export default function UserQuoteDetail() {
 
   const statusName = quote.quote_statuses?.name?.toLowerCase() || "";
   const statusSlug = quote.quote_statuses?.slug?.toLowerCase() || "";
-  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval", "awaiting_client_response"];
-  
-  // Check if quote has already been approved or rejected by client
-  const isAlreadyApproved = statusSlug === "approved" || statusName === "aprobado" || statusName === "aprobada";
-  const isAlreadyRejected = statusSlug === "rejected" || statusName === "rechazado" || statusName === "rechazada";
-  const hasAlreadyResponded = isAlreadyApproved || isAlreadyRejected;
-  
+  const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval"];
   const isPendingClientApproval =
-    !hasAlreadyResponded && (
-      statusSlug === "awaiting_client_response" ||
-      pendingApprovalSlugs.includes(statusSlug) ||
-      (statusName.includes("aprobación") && statusName.includes("cliente")) ||
-      (statusName.includes("pendiente") && statusName.includes("respuesta"))
-    );
-
-  const handleAcceptChanges = async () => {
-    if (!quote || actionLoading) return;
-
-    // Prevent double approval
-    if (hasAlreadyResponded) {
-      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      
-      // Update quote status to "approved" to trigger order/invoice creation
-      const approvedStatusId = statusIds.approved;
-      if (!approvedStatusId) {
-        i18nToast.directError("No se pudo determinar el estado aprobado.");
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from("quotes")
-        .update({ status_id: approvedStatusId })
-        .eq("id", quote.id);
-
-      if (updateError) throw updateError;
-
-      // Trigger the approval automation
-      try {
-        const { data, error: functionError } = await supabase.functions.invoke(
-          'process-quote-approval',
-          {
-            body: {
-              quote_id: quote.id,
-              status_name: 'Aprobada',
-              status_slug: 'approved'
-            }
-          }
-        );
-
-        console.log('[QUOTE ACCEPT] Function response:', { data, error: functionError });
-
-        if (functionError) {
-          console.error('Function error:', functionError);
-          i18nToast.directError(`Error creando el pedido: ${functionError.message || 'Error desconocido'}. Contacta con soporte.`);
-        } else if (data?.error) {
-          // Handle error returned in the response body
-          console.error('Function returned error:', data);
-          i18nToast.directError(`Error creando el pedido: ${data.details || data.error}. ${data.invoice_created ? 'La factura se creó correctamente.' : ''}`);
-        } else if (data?.success) {
-          i18nToast.directSuccess('¡Cambios aceptados! Se ha generado tu pedido y factura.');
-          
-          // Notify admins
-          await notifyAdminsWithBroadcast(
-            "quote_accepted",
-            "Cliente aceptó cotización",
-            `El cliente ${quote.customer_name} ha aceptado los cambios en su cotización. Pedido y factura generados automáticamente.`,
-            `/admin/cotizaciones/${quote.id}`
-          );
-        } else {
-          i18nToast.directWarning('Cotización aceptada. Verifica el estado del pedido en tu panel.');
-        }
-      } catch (autoError: any) {
-        console.error('Automation error:', autoError);
-        i18nToast.directError(`Error en automatización: ${autoError.message || 'Error desconocido'}`);
-      }
-
-      // Reload to show updated status
-      await loadQuoteDetail();
-    } catch (error) {
-      console.error("Error accepting changes:", error);
-      i18nToast.directError("No se pudieron aceptar los cambios. Inténtalo de nuevo.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRejectChanges = async () => {
-    if (!quote || actionLoading) return;
-
-    // Prevent double rejection
-    if (hasAlreadyResponded) {
-      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      
-      const rejectedStatusId = statusIds.rejected;
-      if (!rejectedStatusId) {
-        i18nToast.directError("No se pudo determinar el estado rechazado.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("quotes")
-        .update({ status_id: rejectedStatusId })
-        .eq("id", quote.id);
-
-      if (error) throw error;
-
-      // Notify admins
-      await notifyAdminsWithBroadcast(
-        "quote_rejected",
-        "Cliente rechazó cotización",
-        `El cliente ${quote.customer_name} ha rechazado los cambios en su cotización.`,
-        `/admin/cotizaciones/${quote.id}`
-      );
-
-      i18nToast.directSuccess('Has rechazado los cambios. El administrador ha sido notificado.');
-      await loadQuoteDetail();
-    } catch (error) {
-      console.error("Error rejecting changes:", error);
-      i18nToast.directError("No se pudieron rechazar los cambios. Inténtalo de nuevo.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
+    pendingApprovalSlugs.includes(statusSlug) ||
+    (statusName.includes("aprobación") && statusName.includes("cliente"));
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -693,103 +558,42 @@ export default function UserQuoteDetail() {
             {isPendingClientApproval && (
               <>
                 <Separator />
-                <div className="space-y-4 bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <h3 className="font-semibold flex items-center gap-2 text-amber-900">
-                    <AlertCircle className="h-5 w-5" />
-                    Cambios pendientes de tu aprobación
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Tu respuesta a la cotización
                   </h3>
-                  <p className="text-sm text-amber-800">
-                    El administrador ha realizado cambios en tu cotización y necesita tu aprobación antes de continuar.
-                    Por favor, revisa los detalles y decide si aceptas o rechazas los cambios.
+                  <p className="text-sm text-muted-foreground">
+                    Revisa los cambios y confirma si apruebas la cotización o envía un comentario.
                   </p>
+                  <Textarea
+                    value={comment}
+                    onChange={(event) => setComment(event.target.value)}
+                    rows={3}
+                    placeholder="Escribe un comentario para el administrador (opcional)"
+                  />
                   <div className="flex flex-wrap gap-2">
                     <Button
-                      onClick={handleAcceptChanges}
+                      onClick={() => handleCustomerAction("approve")}
                       disabled={actionLoading}
-                      className="bg-green-600 hover:bg-green-700"
                     >
-                      {actionLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Procesando...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Aceptar Cambios
-                        </>
-                      )}
+                      Aprobar cambios
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={handleRejectChanges}
+                      onClick={() => handleCustomerAction("reject")}
                       disabled={actionLoading}
                     >
-                      {actionLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Procesando...
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Rechazar Cambios
-                        </>
-                      )}
+                      Rechazar cambios
                     </Button>
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-amber-900">
-                      ¿Necesitas aclarar algo antes de decidir?
-                    </p>
-                    <Textarea
-                      value={comment}
-                      onChange={(event) => setComment(event.target.value)}
-                      rows={3}
-                      placeholder="Escribe un comentario para el administrador (opcional)"
-                      className="bg-white"
-                    />
                     <Button
                       variant="outline"
                       onClick={() => handleCustomerAction("comment")}
                       disabled={actionLoading || !comment.trim()}
-                      className="w-full sm:w-auto"
                     >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Enviar Comentario
+                      Enviar comentario
                     </Button>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* Message when already responded */}
-            {hasAlreadyResponded && (
-              <>
-                <Separator />
-                <div className={`space-y-4 p-4 rounded-lg border ${
-                  isAlreadyApproved 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-red-50 border-red-200'
-                }`}>
-                  <h3 className={`font-semibold flex items-center gap-2 ${
-                    isAlreadyApproved ? 'text-green-900' : 'text-red-900'
-                  }`}>
-                    {isAlreadyApproved ? (
-                      <CheckCircle2 className="h-5 w-5" />
-                    ) : (
-                      <XCircle className="h-5 w-5" />
-                    )}
-                    {isAlreadyApproved ? 'Cotización Aprobada' : 'Cotización Rechazada'}
-                  </h3>
-                  <p className={`text-sm ${
-                    isAlreadyApproved ? 'text-green-800' : 'text-red-800'
-                  }`}>
-                    {isAlreadyApproved 
-                      ? 'Ya has aprobado esta cotización. El administrador está procesando tu pedido.'
-                      : 'Ya has rechazado esta cotización. El administrador ha sido notificado de tu decisión.'}
-                  </p>
                 </div>
               </>
             )}

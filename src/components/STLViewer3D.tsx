@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { logger } from "@/lib/logger";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, Move } from "lucide-react";
@@ -344,7 +343,7 @@ export function STLViewer3D({ stlData, color, className = "" }: STLViewer3DProps
         renderer.dispose();
       };
     } catch (error) {
-      logger.error("Error loading STL:", error);
+      console.error("Error loading STL:", error);
     }
   }, [stlData, color]);
 

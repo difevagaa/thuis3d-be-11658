@@ -118,15 +118,14 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
           return;
         }
 
-        // Handle array fields: features, items, cards, testimonials, benefits, steps, slides
+        // Handle array fields: features, items, cards, testimonials, benefits, steps
         const arrayPatterns = [
           { prefix: 'features_', key: 'features' },
           { prefix: 'items_', key: 'items' },
           { prefix: 'cards_', key: 'cards' },
           { prefix: 'testimonials_', key: 'testimonials' },
           { prefix: 'benefits_', key: 'benefits' },
-          { prefix: 'steps_', key: 'steps' },
-          { prefix: 'slides_', key: 'slides' }
+          { prefix: 'steps_', key: 'steps' }
         ];
 
         for (const pattern of arrayPatterns) {
@@ -183,8 +182,7 @@ export const getSectionTranslatableFields = (sectionType: string, content: any):
     { key: 'features', fields: ['title', 'description', 'text', 'buttonText'] },
     { key: 'testimonials', fields: ['title', 'description', 'text', 'quote', 'author', 'name', 'content'] },
     { key: 'benefits', fields: ['title', 'description', 'text'] },
-    { key: 'steps', fields: ['title', 'description', 'text', 'content'] },
-    { key: 'slides', fields: ['title', 'description', 'text', 'buttonText', 'name', 'content'] }
+    { key: 'steps', fields: ['title', 'description', 'text', 'content'] }
   ];
 
   arrayConfigs.forEach(({ key, fields: itemFields }) => {

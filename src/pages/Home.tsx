@@ -3,10 +3,10 @@ import { SectionRenderer } from "@/components/page-builder/SectionRenderer";
 import { usePageSections } from "@/hooks/usePageSections";
 import { ScrollRevealSection } from "@/components/ScrollRevealSection";
 
-const scrollVariants = ['fade-up', 'blur-in', 'scale', 'fade-up', 'slide-left', 'slide-right', 'parallax', 'blur-in', 'fade-up', 'scale'] as const;
-
 const Home = () => {
   const { t } = useTranslation(["home", "common"]);
+
+  // Load page builder sections for home page
   const { sections: pageBuilderSections, loading } = usePageSections("home");
 
   if (loading) {
@@ -19,12 +19,12 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Render all content from Page Builder Sections with scroll reveal */}
       {pageBuilderSections.length > 0 ? (
         pageBuilderSections.map((section, index) => (
           <ScrollRevealSection
             key={section.id}
-            delay={index === 0 ? 0 : 100}
-            variant={index === 0 ? 'fade-in' : scrollVariants[index % scrollVariants.length]}
+            delay={index === 0 ? 0 : 80}
           >
             <SectionRenderer sections={[section]} />
           </ScrollRevealSection>

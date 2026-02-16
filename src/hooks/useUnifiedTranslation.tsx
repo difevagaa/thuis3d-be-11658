@@ -46,7 +46,7 @@ export function useUnifiedTranslation(options: TranslationOptions = {}): Unified
   const [dynamicContent, setDynamicContent] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   
-  const language = i18n.language || 'en';
+  const language = i18n.language || 'es';
   
   // Generate cache key
   const cacheKey = useMemo(() => {

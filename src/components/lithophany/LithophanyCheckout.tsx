@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,10 +162,10 @@ export const LithophanyCheckout = ({
           body: { orderId: order.id, generateBase: true }
         });
         if (stlError) {
-          logger.error('STL generation error:', stlError);
+          console.error('STL generation error:', stlError);
         }
       } catch (stlErr) {
-        logger.error('Failed to trigger STL generation:', stlErr);
+        console.error('Failed to trigger STL generation:', stlErr);
       }
 
       toast.success(language === 'es' 
@@ -174,7 +173,7 @@ export const LithophanyCheckout = ({
         : 'Order created successfully!');
 
     } catch (error) {
-      logger.error('Error creating order:', error);
+      console.error('Error creating order:', error);
       toast.error(language === 'es' 
         ? 'Error al crear el pedido'
         : 'Error creating order');

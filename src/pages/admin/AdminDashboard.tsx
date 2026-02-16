@@ -9,12 +9,8 @@ import { toast } from "sonner";
 import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { logger } from '@/lib/logger';
-import { useRoleValidation } from "@/hooks/useRoleValidation";
 
 export default function AdminDashboard() {
-  // Validate admin role
-  const { isValidating, hasAccess } = useRoleValidation(['admin', 'superadmin']);
-
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -33,23 +29,6 @@ export default function AdminDashboard() {
     amount: 0,
     date: new Date().toISOString().split('T')[0]
   });
-
-  // Show loading while validating role
-  if (isValidating) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if user doesn't have access
-  if (!hasAccess) {
-    return null;
-  }
 
   const loadVisitorStats = useCallback(async () => {
     try {

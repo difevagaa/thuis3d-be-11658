@@ -421,24 +421,24 @@ BEGIN
       'subtitle', 'Encuentra respuestas a las dudas más comunes',
       'items', jsonb_build_array(
         jsonb_build_object(
-          'title', '¿Qué materiales utilizan para la impresión 3D?',
-          'content', 'Trabajamos con una amplia variedad de materiales: PLA, ABS, PETG, TPU, resinas y materiales especiales. Cada uno tiene propiedades diferentes y te asesoramos sobre cuál es el mejor para tu proyecto.'
+          'question', '¿Qué materiales utilizan para la impresión 3D?',
+          'answer', 'Trabajamos con una amplia variedad de materiales: PLA, ABS, PETG, TPU, resinas y materiales especiales. Cada uno tiene propiedades diferentes y te asesoramos sobre cuál es el mejor para tu proyecto.'
         ),
         jsonb_build_object(
-          'title', '¿Cuánto tarda en completarse un pedido?',
-          'content', 'El tiempo varía según la complejidad y tamaño del proyecto. Proyectos simples pueden estar listos en 2-3 días, mientras que los más complejos pueden tomar 1-2 semanas. Te informamos el plazo exacto al aprobar el diseño.'
+          'question', '¿Cuánto tarda en completarse un pedido?',
+          'answer', 'El tiempo varía según la complejidad y tamaño del proyecto. Proyectos simples pueden estar listos en 2-3 días, mientras que los más complejos pueden tomar 1-2 semanas. Te informamos el plazo exacto al aprobar el diseño.'
         ),
         jsonb_build_object(
-          'title', '¿Pueden imprimir a partir de mis propios diseños?',
-          'content', '¡Por supuesto! Aceptamos archivos STL, OBJ y otros formatos 3D. Si necesitas ayuda para convertir tu idea en un archivo 3D, nuestro equipo de diseño puede ayudarte.'
+          'question', '¿Pueden imprimir a partir de mis propios diseños?',
+          'answer', '¡Por supuesto! Aceptamos archivos STL, OBJ y otros formatos 3D. Si necesitas ayuda para convertir tu idea en un archivo 3D, nuestro equipo de diseño puede ayudarte.'
         ),
         jsonb_build_object(
-          'title', '¿Qué tamaños pueden imprimir?',
-          'content', 'Nuestras impresoras pueden crear piezas desde unos pocos centímetros hasta 30x30x40 cm. Para proyectos más grandes, podemos dividir el diseño en partes que se ensamblan después.'
+          'question', '¿Qué tamaños pueden imprimir?',
+          'answer', 'Nuestras impresoras pueden crear piezas desde unos pocos centímetros hasta 30x30x40 cm. Para proyectos más grandes, podemos dividir el diseño en partes que se ensamblan después.'
         ),
         jsonb_build_object(
-          'title', '¿Ofrecen servicios de diseño 3D?',
-          'content', 'Sí, contamos con un equipo de diseñadores 3D experimentados que pueden crear tu modelo desde cero o adaptar diseños existentes. Solicita una cotización para tu proyecto de diseño.'
+          'question', '¿Ofrecen servicios de diseño 3D?',
+          'answer', 'Sí, contamos con un equipo de diseñadores 3D experimentados que pueden crear tu modelo desde cero o adaptar diseños existentes. Solicita una cotización para tu proyecto de diseño.'
         )
       )
     ),

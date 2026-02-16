@@ -14,7 +14,6 @@ import {
   generateOrderNotes,
   updateGiftCardBalance
 } from "@/lib/paymentUtils";
-import { generateTransactionId, checkTransactionExists, registerTransaction } from "@/lib/transactionIdempotency";
 
 export default function RevolutPaymentPage() {
   const navigate = useNavigate();
@@ -139,28 +138,16 @@ export default function RevolutPaymentPage() {
         return;
       }
 
+      // Check if this is an invoice payment
       if (orderData.isInvoicePayment) {
+        // Invoice payment flow - just update the invoice and redirect
         const { invoiceId, invoiceNumber, total } = orderData;
         
-        const transactionId = generateTransactionId();
-        const duplicateCheck = await checkTransactionExists(transactionId);
-        if (duplicateCheck.exists) {
-          toast.error('Transacción duplicada');
-          return;
-        }
-        
-        await registerTransaction(transactionId, {
-          invoiceId,
-          amount: total,
-          currency: 'EUR',
-          userId: user.id,
-          metadata: { method: 'revolut', type: 'invoice' }
-        });
-        
+        // Update invoice payment status and method
         const { error: updateError } = await supabase
           .from("invoices")
           .update({
-            payment_status: "processing",
+            payment_status: "pending",
             payment_method: "revolut"
           })
           .eq("id", invoiceId)
@@ -214,10 +201,9 @@ export default function RevolutPaymentPage() {
           if (couponData.discount_type === "percentage") {
             couponDiscount = subtotal * (couponData.discount_value / 100);
           } else if (couponData.discount_type === "fixed") {
-            couponDiscount = Math.min(couponData.discount_value, subtotal);
+            couponDiscount = couponData.discount_value;
           }
           // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
-          couponDiscount = Number(couponDiscount.toFixed(2));
         } catch (e) {
           logger.error("Error parsing coupon:", e);
         }
@@ -225,22 +211,10 @@ export default function RevolutPaymentPage() {
 
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
 
-      const transactionId = generateTransactionId();
-      const duplicateCheck = await checkTransactionExists(transactionId);
-      if (duplicateCheck.exists) {
-        toast.error('Transacción duplicada');
-        return;
-      }
-      
-      await registerTransaction(transactionId, {
-        amount: finalTotal,
-        currency: 'EUR',
-        userId: user.id,
-        metadata: { method: 'revolut', type: 'order' }
-      });
+      // Generate order notes
+      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
 
-      const orderNotes = `${generateOrderNotes(cartItems, giftCardData, giftCardDiscount)}\n\nTransaction ID: ${transactionId}`;
-
+      // Create order with persistent order number
       const order = await createOrder({
         userId: user.id,
         orderNumber: persistedOrderNumber || null,
@@ -250,7 +224,7 @@ export default function RevolutPaymentPage() {
         discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: "revolut",
-        paymentStatus: "processing",
+        paymentStatus: "pending",
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
         notes: orderNotes
@@ -264,7 +238,7 @@ export default function RevolutPaymentPage() {
       if (giftCardData && giftCardDiscount > 0) {
         await updateGiftCardBalance(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardData.current_balance - giftCardDiscount
         );
         sessionStorage.removeItem("applied_gift_card");
       }
@@ -291,7 +265,7 @@ export default function RevolutPaymentPage() {
           coupon_code: couponData?.code || null,
           total: finalTotal,
           payment_method: "revolut",
-          payment_status: "processing",
+          payment_status: "pending",
           issue_date: new Date().toISOString(),
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           notes: `Factura generada para el pedido ${order.order_number}`

@@ -4,56 +4,6 @@ import { calculateSupportRisk, type SupportRiskFactors } from './supportRiskAnal
 import { SUPPORT_CONSTANTS } from './calibrationConstants';
 import { logger } from '@/lib/logger';
 
-// ============================================================
-// 🧠 CONSTANTES DE IA PARA ANÁLISIS INTELIGENTE
-// ============================================================
-
-/**
- * Configuración de la impresora (Bambu Lab X1C como referencia)
- */
-const PRINTER_CONFIG = {
-  BED_SIZE_MM: 256,                    // Tamaño de cama en mm
-  BED_VOLUME_CM3: (256 * 256 * 256) / 1000,  // ~16.7L
-  PACKING_EFFICIENCY_FACTOR: 0.70,     // 70% eficiencia de empaquetamiento
-  SETUP_TIME_MINUTES: 5,               // Tiempo de preparación por trabajo
-} as const;
-
-/**
- * Factores de eficiencia de batch según tamaño de pieza
- */
-const BATCH_EFFICIENCY_FACTORS = {
-  VERY_SMALL: { threshold: 20, discount: 0.85 },  // 15% ahorro
-  SMALL: { threshold: 10, discount: 0.88 },       // 12% ahorro
-  MEDIUM: { threshold: 4, discount: 0.90 },       // 10% ahorro
-  LARGE: { threshold: 2, discount: 0.93 },        // 7% ahorro
-  VERY_LARGE: { threshold: 0, discount: 0.95 },   // 5% ahorro
-  SUPPORT_PENALTY: 0.03,                          // +3% si requiere soportes
-} as const;
-
-/**
- * Configuración para detección de islas flotantes
- */
-const ISLAND_DETECTION_CONFIG = {
-  LAYER_TOLERANCE_MM: 0.2,             // Tolerancia para agrupar capas (altura de capa típica)
-  SEARCH_RADIUS_MM: 2,                 // Radio de búsqueda de soporte debajo (±2mm)
-  MIN_ISLAND_COUNT_THRESHOLD: 5,       // Umbral para agregar volumen de islas
-  SUPPORT_HEIGHT_FACTOR: 0.5,          // 50% de altura para soportes de islas
-} as const;
-
-/**
- * Umbrales de ángulo para clasificación de voladizos
- */
-const OVERHANG_SEVERITY = {
-  SEVERE_ANGLE: 60,     // >60° = crítico, necesita soportes pesados
-  STANDARD_ANGLE: 45,   // >45° = estándar, necesita soportes
-  MILD_ANGLE: 35,       // >35° = leve, posiblemente necesita
-  
-  // Ponderaciones para cálculo de área
-  SEVERE_WEIGHT: 1.5,   // Voladizos severos pesan 1.5x
-  STANDARD_WEIGHT: 1.0, // Voladizos estándar pesan 1.0x
-  MILD_WEIGHT: 0.5,     // Voladizos leves pesan 0.5x
-} as const;
-
 export interface AnalysisResult {
   volume: number;      // cm³
   weight: number;      // gramos
@@ -833,78 +783,37 @@ export const analyzeSTLFile = async (
       const machineCostPerUnit = estimatedTime * machineCostPerHour;
       
       // ============================================================
-      // 💰 SISTEMA DE PRECIOS MEJORADO CON IA PARA MÚLTIPLES PIEZAS
+      // 💰 NUEVO SISTEMA DE PRECIOS CON MÚLTIPLES PIEZAS
       // ============================================================
       
       // 5. COSTOS FIJOS (se cobran una sola vez, no importa la cantidad)
-      // MEJORA: Agregar tiempo de setup proporcional al trabajo
-      const setupTimeHours = PRINTER_CONFIG.SETUP_TIME_MINUTES / 60;
-      const setupCost = setupTimeHours * machineCostPerHour + setupTimeHours * powerConsumptionKw * electricityCostPerKwh;
-      const fixedCostsPerJob = electricityCostFixed + setupCost;
+      const fixedCostsPerJob = electricityCostFixed; // Solo calentamiento inicial
       
       // 6. COSTOS VARIABLES POR PIEZA
       const variableCostPerUnit = materialCost + electricityCostPerUnit + machineCostPerUnit;
       
-      // 7. APLICAR ECONOMÍAS DE ESCALA INTELIGENTES PARA MÚLTIPLES PIEZAS
-      // MEJORA: Usar algoritmo de eficiencia de empaquetamiento basado en IA
-      // - Material: 100% lineal (cada pieza usa su material completo)
-      // - Tiempo: Reducción inteligente basada en análisis de empaquetamiento
-      // - Setup: Compartido entre todas las piezas
+      // 7. APLICAR ECONOMÍAS DE ESCALA PARA MÚLTIPLES PIEZAS
+      // Si imprimimos múltiples piezas en el mismo trabajo, compartimos algunos costos:
+      // - Material: lineal (cada pieza usa su material)
+      // - Tiempo: reducción ~10% por pieza adicional (setup compartido, batch printing)
+      // - Electricidad: reducción significativa (no repetimos calentamiento)
       
       let totalVariableCost = 0;
-      let batchEfficiencyFactor = 1.0;
       
       if (quantity === 1) {
         totalVariableCost = variableCostPerUnit;
       } else {
-        // MEJORA IA: Calcular factor de eficiencia de batch basado en:
-        // 1. Volumen de pieza vs volumen de cama
-        // 2. Densidad de empaquetamiento estimada
-        // 3. Complejidad geométrica
-        
-        const bedVolumeCm3 = PRINTER_CONFIG.BED_VOLUME_CM3;
-        const pieceVolume = volumeCm3;
-        const volumeRatioPerPiece = pieceVolume / bedVolumeCm3;
-        
-        // Calcular cuántas piezas caben teóricamente
-        const theoreticalFitCount = Math.floor(PRINTER_CONFIG.PACKING_EFFICIENCY_FACTOR / Math.max(0.01, volumeRatioPerPiece));
-        
-        // Factor de eficiencia basado en empaquetamiento
-        // Si caben muchas piezas: alta eficiencia (descuento mayor)
-        // Si caben pocas piezas: baja eficiencia (descuento menor)
-        if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.VERY_SMALL.threshold) {
-          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.VERY_SMALL.discount;
-        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.SMALL.threshold) {
-          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.SMALL.discount;
-        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.MEDIUM.threshold) {
-          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.MEDIUM.discount;
-        } else if (theoreticalFitCount >= BATCH_EFFICIENCY_FACTORS.LARGE.threshold) {
-          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.LARGE.discount;
-        } else {
-          batchEfficiencyFactor = BATCH_EFFICIENCY_FACTORS.VERY_LARGE.discount;
-        }
-        
-        // Ajuste adicional si la pieza requiere soportes (reduce eficiencia)
-        if (supportsRequired) {
-          batchEfficiencyFactor += BATCH_EFFICIENCY_FACTORS.SUPPORT_PENALTY;
-          batchEfficiencyFactor = Math.min(1.0, batchEfficiencyFactor);
-        }
-        
         // Primera pieza: costo completo
         totalVariableCost = variableCostPerUnit;
         
-        // Piezas adicionales: economía de escala inteligente
-        const additionalUnitCost = variableCostPerUnit * batchEfficiencyFactor;
+        // Piezas adicionales: economía de escala del 10%
+        const scaleEconomyFactor = 0.90; // 10% de descuento por batch printing
+        const additionalUnitCost = variableCostPerUnit * scaleEconomyFactor;
         totalVariableCost += additionalUnitCost * (quantity - 1);
         
-        logger.log('🧠 IA: Economía de escala inteligente aplicada:', {
+        logger.log('📦 Economía de escala aplicada:', {
           primeraUnidad: variableCostPerUnit.toFixed(2) + '€',
-          factorEficiencia: (batchEfficiencyFactor * 100).toFixed(1) + '%',
-          ahorroPorPieza: ((1 - batchEfficiencyFactor) * 100).toFixed(1) + '%',
-          piezasQueCaben: theoreticalFitCount + ' teóricas',
-          ratioVolumen: (volumeRatioPerPiece * 100).toFixed(2) + '%',
-          conSoportes: supportsRequired ? 'Sí (reduce eficiencia)' : 'No',
-          unidadesAdicionales: `${quantity - 1} × ${additionalUnitCost.toFixed(2)}€`,
+          unidadesAdicionales: `${quantity - 1} × ${additionalUnitCost.toFixed(2)}€ (90% del costo)`,
           totalVariable: totalVariableCost.toFixed(2) + '€',
           ahorroPorEscala: ((variableCostPerUnit * quantity - totalVariableCost)).toFixed(2) + '€'
         });
@@ -1635,7 +1544,7 @@ export async function detectSupportsNeeded(
 }
 
 /**
- * MEJORADO CON IA: Analiza voladizos con algoritmo multi-capa inteligente
+ * Analiza voladizos para estimar necesidad de soportes
  */
 function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   hasOverhangs: boolean;
@@ -1654,24 +1563,11 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   let minZ = Infinity;
   let maxZ = -Infinity;
   
-  // MEJORA IA: Sistema de umbrales adaptativos basados en geometría tensorial
-  // Ángulos críticos múltiples para mejor detección
-  const criticalAngles = {
-    severe: Math.cos(OVERHANG_SEVERITY.SEVERE_ANGLE * Math.PI / 180),
-    standard: Math.cos(OVERHANG_SEVERITY.STANDARD_ANGLE * Math.PI / 180),
-    mild: Math.cos(OVERHANG_SEVERITY.MILD_ANGLE * Math.PI / 180),
-  };
+  // Umbral de ángulo: desde constantes (estándar de industria)
+  // Piezas con voladizos mayores a este ángulo desde horizontal necesitan soportes
+  const overhangThreshold = Math.cos(SUPPORT_CONSTANTS.MAX_OVERHANG_ANGLE * Math.PI / 180);
   
-  // Contadores por severidad para análisis inteligente
-  let severeOverhangArea = 0;
-  let standardOverhangArea = 0;
-  let mildOverhangArea = 0;
-  
-  // MEJORA: Detección de islas (regiones sin soporte debajo)
-  const layerMap = new Map<number, Set<string>>();
-  const layerTolerance = ISLAND_DETECTION_CONFIG.LAYER_TOLERANCE_MM;
-  
-  // Analizar ÁREA con ponderación por severidad
+  // Analizar ÁREA (no volumen) de caras con voladizo
   for (let i = 0; i < position.count; i += 3) {
     const p1 = new THREE.Vector3().fromBufferAttribute(position, i);
     const p2 = new THREE.Vector3().fromBufferAttribute(position, i + 1);
@@ -1684,16 +1580,6 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
     const triangleArea = cross.length() / 2;
     totalAreaMm2 += triangleArea;
     
-    // Registrar presencia en capa para detección de islas
-    const avgZ = (p1.z + p2.z + p3.z) / 3;
-    const layerKey = Math.round(avgZ / layerTolerance);
-    if (!layerMap.has(layerKey)) {
-      layerMap.set(layerKey, new Set());
-    }
-    const centerX = (p1.x + p2.x + p3.x) / 3;
-    const centerY = (p1.y + p2.y + p3.y) / 3;
-    layerMap.get(layerKey)!.add(`${Math.round(centerX)},${Math.round(centerY)}`);
-    
     // Actualizar bounds
     minZ = Math.min(minZ, p1.z, p2.z, p3.z);
     maxZ = Math.max(maxZ, p1.z, p2.z, p3.z);
@@ -1701,55 +1587,12 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
     // Obtener normal del triángulo
     const n = cross.normalize();
     
-    // MEJORA IA: Clasificación por severidad de voladizo
-    // n.z < threshold significa ángulo crítico respecto a horizontal
+    // Verificar si es un voladizo (normal apunta abajo o en ángulo crítico)
+    // n.z < 0.707 significa ángulo > 45° respecto a horizontal
     // n.z > -0.1 evita contar caras del fondo
-    if (n.z > -0.1) {
-      if (n.z < criticalAngles.severe) {
-        // Voladizo severo: peso máximo
-        severeOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.SEVERE_WEIGHT;
-      } else if (n.z < criticalAngles.standard) {
-        // Voladizo estándar: peso normal
-        standardOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.STANDARD_WEIGHT;
-      } else if (n.z < criticalAngles.mild) {
-        // Voladizo leve: peso reducido
-        mildOverhangArea += triangleArea;
-        overhangAreaMm2 += triangleArea * OVERHANG_SEVERITY.MILD_WEIGHT;
-      }
+    if (n.z < overhangThreshold && n.z > -0.1) {
+      overhangAreaMm2 += triangleArea;
     }
-  }
-  
-  // MEJORA IA: Detección de islas flotantes
-  // Comparar cada capa con la anterior para encontrar regiones sin soporte
-  const sortedLayers = Array.from(layerMap.keys()).sort((a, b) => a - b);
-  let islandCount = 0;
-  let islandArea = 0;
-  
-  for (let i = 1; i < sortedLayers.length; i++) {
-    const currentLayer = layerMap.get(sortedLayers[i])!;
-    const previousLayer = layerMap.get(sortedLayers[i - 1])!;
-    
-    // Buscar puntos en capa actual que no tienen soporte en capa anterior
-    currentLayer.forEach(point => {
-      const [x, y] = point.split(',').map(Number);
-      let hasSupport = false;
-      const searchRadius = ISLAND_DETECTION_CONFIG.SEARCH_RADIUS_MM;
-      
-      for (let dx = -searchRadius; dx <= searchRadius && !hasSupport; dx++) {
-        for (let dy = -searchRadius; dy <= searchRadius && !hasSupport; dy++) {
-          if (previousLayer.has(`${x + dx},${y + dy}`)) {
-            hasSupport = true;
-          }
-        }
-      }
-      
-      if (!hasSupport) {
-        islandCount++;
-        islandArea += 1; // Área aproximada por punto
-      }
-    });
   }
   
   // Calcular altura promedio de soportes
@@ -1757,58 +1600,26 @@ function analyzeOverhangs(geometry: THREE.BufferGeometry): {
   const bbox = geometry.boundingBox!;
   const pieceHeight = bbox.max.z - bbox.min.z;
   
-  // MEJORA IA: Altura de soporte adaptativa basada en análisis de capas
-  // Soportes más altos para piezas con voladizos en la parte superior
-  const layerCount = sortedLayers.length;
-  const avgOverhangLayer = layerCount > 0 ? 
-    sortedLayers.reduce((sum, key) => sum + key, 0) / layerCount : 0;
-  const overhangHeightRatio = layerCount > 0 ? avgOverhangLayer / sortedLayers[sortedLayers.length - 1] : 0.4;
+  // Altura promedio de soporte: configurado en constantes
+  // (los soportes no van desde el suelo, sino desde la base hasta el voladizo)
+  const averageSupportHeight = pieceHeight * SUPPORT_CONSTANTS.AVERAGE_SUPPORT_HEIGHT_RATIO;
   
-  // Altura promedio de soporte: ajustada por posición de voladizos
-  const baseHeightRatio = SUPPORT_CONSTANTS.AVERAGE_SUPPORT_HEIGHT_RATIO;
-  const adaptiveHeightRatio = baseHeightRatio + (overhangHeightRatio * 0.2); // +0-20% basado en altura
-  const averageSupportHeight = pieceHeight * adaptiveHeightRatio;
-  
-  // MEJORA IA: Densidad de soporte variable según severidad
-  // Voladizos severos necesitan soportes más densos
-  const baseDensity = SUPPORT_CONSTANTS.SUPPORT_DENSITY;
-  const severeAreaRatio = totalAreaMm2 > 0 ? severeOverhangArea / totalAreaMm2 : 0;
-  const adaptiveDensity = baseDensity * (1.0 + severeAreaRatio * 0.5); // +0-50% densidad
-  
-  // Volumen de soporte = área ponderada × altura adaptativa × densidad variable
-  let estimatedSupportVolume = (overhangAreaMm2 * averageSupportHeight * adaptiveDensity) / 1000;
-  
-  // Agregar volumen adicional para islas flotantes
-  if (islandCount > ISLAND_DETECTION_CONFIG.MIN_ISLAND_COUNT_THRESHOLD) {
-    const islandVolume = (islandArea * pieceHeight * ISLAND_DETECTION_CONFIG.SUPPORT_HEIGHT_FACTOR * baseDensity) / 1000;
-    estimatedSupportVolume += islandVolume;
-    logger.log('🏝️ Islas flotantes detectadas:', {
-      cantidad: islandCount,
-      volumenAdicional: islandVolume.toFixed(2) + 'cm³'
-    });
-  }
+  // Volumen de soporte = área con voladizo × altura promedio × densidad de estructura
+  // Densidad configurada en constantes (típico para estructuras ligeras grid o tree)
+  const estimatedSupportVolume = (overhangAreaMm2 * averageSupportHeight * SUPPORT_CONSTANTS.SUPPORT_DENSITY) / 1000; // Convertir mm³ a cm³
   
   const overhangPercentage = totalAreaMm2 > 0 ? (overhangAreaMm2 / totalAreaMm2) * 100 : 0;
   const hasOverhangs = overhangPercentage > 5; // Umbral: 5% del área
   
-  logger.log('🧠 IA: ANÁLISIS DE SOPORTES MEJORADO:', {
+  logger.log('🛠️ ANÁLISIS DE SOPORTES DETALLADO:', {
     areaTotal: totalAreaMm2.toFixed(0) + 'mm²',
-    '=== SEVERIDAD ===': '',
-    voladizosSeveros: severeOverhangArea.toFixed(0) + 'mm² (>60°)',
-    voladizosEstándar: standardOverhangArea.toFixed(0) + 'mm² (45-60°)',
-    voladizosLeves: mildOverhangArea.toFixed(0) + 'mm² (35-45°)',
-    '=== TOTALES ===': '',
-    areaPonderada: overhangAreaMm2.toFixed(0) + 'mm² (con ponderación)',
+    areaVoladizo: overhangAreaMm2.toFixed(0) + 'mm²',
     porcentajeVoladizo: overhangPercentage.toFixed(1) + '%',
-    '=== GEOMETRÍA ===': '',
     alturaPieza: pieceHeight.toFixed(1) + 'mm',
-    ratioAlturaVoladizos: (overhangHeightRatio * 100).toFixed(0) + '%',
-    alturaAdaptativaSoportes: averageSupportHeight.toFixed(1) + 'mm',
-    densidadAdaptativa: (adaptiveDensity * 100).toFixed(1) + '%',
-    '=== RESULTADO ===': '',
+    alturaPromedioSoportes: averageSupportHeight.toFixed(1) + 'mm',
     volumenSoportes: estimatedSupportVolume.toFixed(2) + 'cm³',
-    islasDetectadas: islandCount > 5 ? islandCount + ' islas' : 'Ninguna',
-    método: '🧠 IA Multi-capa con análisis tensorial'
+    metodo: `área × altura(${(SUPPORT_CONSTANTS.AVERAGE_SUPPORT_HEIGHT_RATIO * 100).toFixed(0)}%) × densidad(${(SUPPORT_CONSTANTS.SUPPORT_DENSITY * 100).toFixed(0)}%)`,
+    umbralAngulo: SUPPORT_CONSTANTS.MAX_OVERHANG_ANGLE + '°'
   });
   
   return {

@@ -15,7 +15,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logger } from '@/lib/logger';
 import { allPermissions, getGroupedPermissions, buildAdminPageOptions } from "@/constants/adminMenu";
-import { useRoleValidation } from "@/hooks/useRoleValidation";
 
 // All admin pages from central definition
 const allAdminPages = buildAdminPageOptions();
@@ -30,31 +29,11 @@ const groupedPages = (() => {
 })();
 
 export default function RolesPermissions() {
-  // Validate admin role - only superadmin and admin can manage roles
-  const { isValidating, hasAccess } = useRoleValidation(['admin', 'superadmin']);
-
   const [customRoles, setCustomRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [roleUsers, setRoleUsers] = useState<{ [key: string]: number }>({});
-
-  // Show loading while validating role
-  if (isValidating) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if user doesn't have access
-  if (!hasAccess) {
-    return null;
-  }
 
   const [newRole, setNewRole] = useState({
     name: "",

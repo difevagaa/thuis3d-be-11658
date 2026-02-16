@@ -97,17 +97,5 @@
   "preview3D": "3D Preview",
   "shippingNotIncluded": "Enter your address to see shipping cost.",
   "back": "Back",
-  "next": "Next",
-  "awaitingClientResponse": "Awaiting Client Response",
-  "adminChangesTitle": "Changes to Your Quote",
-  "adminChangesMessage": "The administrator has made changes to your quote and is waiting for your response.",
-  "reviewChanges": "Review changes",
-  "acceptChanges": "Accept changes",
-  "rejectChanges": "Reject changes",
-  "acceptingChanges": "Accepting...",
-  "rejectingChanges": "Rejecting...",
-  "changesAccepted": "Changes accepted. Your order and invoice have been generated.",
-  "changesRejected": "Changes rejected. The administrator has been notified.",
-  "errorProcessingResponse": "Error processing your response",
-  "pendingYourResponse": "Pending your response"
+  "next": "Next"
 }

@@ -9,12 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CreditCard, Banknote, Upload, X, Building2 } from "lucide-react";
-import { useRoleValidation } from "@/hooks/useRoleValidation";
 
 export default function PaymentConfig() {
-  // Validate admin role
-  const { isValidating, hasAccess } = useRoleValidation(['admin', 'superadmin']);
-  
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [config, setConfig] = useState({
@@ -32,23 +28,6 @@ export default function PaymentConfig() {
     company_info: "",
   });
   const [paymentImages, setPaymentImages] = useState<string[]>([]);
-
-  // Show loading while validating role
-  if (isValidating) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if user doesn't have access
-  if (!hasAccess) {
-    return null;
-  }
 
   useEffect(() => {
     loadConfig();

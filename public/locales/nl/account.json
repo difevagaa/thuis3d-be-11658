@@ -27,7 +27,6 @@
     "city": "Stad",
     "postalCode": "Postcode",
     "country": "Land",
-    "preferredLanguage": "Voorkeurstaal",
     "saveChanges": "Wijzigingen Opslaan",
     "updated": "Profiel succesvol bijgewerkt",
     "error": "Fout bij het bijwerken van profiel"

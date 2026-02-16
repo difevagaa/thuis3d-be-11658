@@ -11,7 +11,6 @@ import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { PageWithSections } from "./components/PageWithSections";
 
 // Public pages - optimized lazy loading
 import Home from "./pages/Home";
@@ -62,9 +61,7 @@ const OrdersEnhanced = lazy(() => import("./pages/admin/OrdersEnhanced"));
 const AdminQuotes = lazy(() => import("./pages/admin/Quotes"));
 const QuoteDetail = lazy(() => import("./pages/admin/QuoteDetail"));
 const CreateQuote = lazy(() => import("./pages/admin/CreateQuote"));
-const AbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const AdminOrderDetail = lazy(() => import("./pages/admin/OrderDetail"));
-const OrderLabelPrint = lazy(() => import("./pages/admin/OrderLabelPrint"));
 const CreateOrder = lazy(() => import("./pages/admin/CreateOrder"));
 const Users = lazy(() => import("./pages/admin/Users"));
 const Materials = lazy(() => import("./pages/admin/Materials"));
@@ -142,14 +139,14 @@ const App = () => {
             {/* Public routes with Layout */}
             <Route path="/" element={<Layout><Home /></Layout>} />
             <Route path="/auth" element={<Layout><Auth /></Layout>} />
-            <Route path="/productos" element={<Layout><PageWithSections pageKey="products"><Products /></PageWithSections></Layout>} />
+            <Route path="/productos" element={<Layout><Products /></Layout>} />
             <Route path="/producto/:id" element={<Layout><ProductDetail /></Layout>} />
             <Route path="/carrito" element={<Layout><Cart /></Layout>} />
-            <Route path="/cotizaciones" element={<Layout><PageWithSections pageKey="quotes"><PublicQuotes /></PageWithSections></Layout>} />
-            <Route path="/blog" element={<Layout><PageWithSections pageKey="blog"><Blog /></PageWithSections></Layout>} />
+            <Route path="/cotizaciones" element={<Layout><PublicQuotes /></Layout>} />
+            <Route path="/blog" element={<Layout><Blog /></Layout>} />
             <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
-            <Route path="/tarjetas-regalo" element={<Layout><PageWithSections pageKey="gift-cards"><GiftCard /></PageWithSections></Layout>} />
-            <Route path="/galeria" element={<Layout><PageWithSections pageKey="gallery"><Gallery /></PageWithSections></Layout>} />
+            <Route path="/tarjetas-regalo" element={<Layout><GiftCard /></Layout>} />
+            <Route path="/galeria" element={<Layout><Gallery /></Layout>} />
             <Route path="/pago-instrucciones" element={<Layout><PaymentInstructions /></Layout>} />
             <Route path="/pago-tarjeta" element={<Layout><CardPaymentPage /></Layout>} />
             <Route path="/pago-revolut" element={<Layout><RevolutPaymentPage /></Layout>} />
@@ -177,9 +174,7 @@ const App = () => {
             <Route path="/admin/pages" element={<AdminLayout><Pages /></AdminLayout>} />
             <Route path="/admin/pedidos" element={<AdminLayout><OrdersEnhanced /></AdminLayout>} />
             <Route path="/admin/pedidos/:id" element={<AdminLayout><AdminOrderDetail /></AdminLayout>} />
-            <Route path="/admin/pedidos/:id/imprimir" element={<OrderLabelPrint />} />
             <Route path="/admin/pedidos/crear" element={<AdminLayout><CreateOrder /></AdminLayout>} />
-            <Route path="/admin/carritos-abandonados" element={<AdminLayout><AbandonedCarts /></AdminLayout>} />
             <Route path="/admin/cotizaciones" element={<AdminLayout><AdminQuotes /></AdminLayout>} />
             <Route path="/admin/cotizaciones/crear" element={<AdminLayout><CreateQuote /></AdminLayout>} />
             <Route path="/admin/cotizaciones/:id" element={<AdminLayout><QuoteDetail /></AdminLayout>} />

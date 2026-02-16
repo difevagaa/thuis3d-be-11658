@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { createOrder, createOrderItems, convertCartToOrderItems, generateOrderNotes, updateGiftCardBalance } from "@/lib/paymentUtils";
-import { generateTransactionId, checkTransactionExists, registerTransaction } from "@/lib/transactionIdempotency";
 
 export default function PaymentInstructions() {
   const location = useLocation();
@@ -72,43 +71,29 @@ export default function PaymentInstructions() {
           if (couponData.discount_type === "percentage") {
             couponDiscount = orderSubtotal * (couponData.discount_value / 100);
           } else if (couponData.discount_type === "fixed") {
-            couponDiscount = Math.min(couponData.discount_value, orderSubtotal);
+            couponDiscount = couponData.discount_value;
           }
           // free_shipping: couponDiscount stays 0, shipping already adjusted in Payment.tsx
-          couponDiscount = Number(couponDiscount.toFixed(2));
         } catch (e) {
           logger.error("Error parsing coupon:", e);
         }
       }
 
       const finalTotal = Number(Math.max(0, total - giftCardDiscount).toFixed(2));
+      const orderNotes = generateOrderNotes(cartItems, giftCardData, giftCardDiscount);
       
-      const transactionId = generateTransactionId();
-      const duplicateCheck = await checkTransactionExists(transactionId);
-      if (duplicateCheck.exists) {
-        toast.error('Transacción duplicada detectada');
-        return;
-      }
-      
-      await registerTransaction(transactionId, {
-        amount: finalTotal,
-        currency: 'EUR',
-        userId: user?.id,
-        metadata: { method, type: 'bank_transfer' }
-      });
-      
-      const orderNotes = `${generateOrderNotes(cartItems, giftCardData, giftCardDiscount)}\n\nTransaction ID: ${transactionId}`;
-      
+      // Create order using utility function with persistent order number
+      // CRÍTICO: Usar el costo de envío del pendingOrder
       const order = await createOrder({
-        userId: user?.id || null,
+        userId: user?.id || null, // Permitir user_id = null para invitados
         orderNumber: persistedOrderNumber || null,
         subtotal: orderSubtotal,
         tax: orderTax,
-        shipping: safeShipping,
+        shipping: safeShipping, // CRÍTICO: Usar shipping del pending_order
         discount: couponDiscount + giftCardDiscount,
         total: finalTotal,
         paymentMethod: method,
-        paymentStatus: "processing",
+        paymentStatus: "pending",
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
         notes: orderNotes
@@ -132,7 +117,7 @@ export default function PaymentInstructions() {
       if (giftCardData && giftCardDiscount > 0) {
         await updateGiftCardBalance(
           giftCardData.id,
-          Number(Math.max(0, giftCardData.current_balance - giftCardDiscount).toFixed(2))
+          giftCardData.current_balance - giftCardDiscount
         );
         sessionStorage.removeItem("applied_gift_card");
       }

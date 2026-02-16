@@ -6,40 +6,10 @@ Sitemap: https://thuis3d.be/sitemap.xml
 
 # Disallow admin areas
 Disallow: /admin/
-Disallow: /admin/*
 Disallow: /auth/
-Disallow: /auth/*
-
-# Disallow private/internal paths
-Disallow: /api/
-Disallow: /private/
-Disallow: /*.json
-Disallow: /*?*session=*
-Disallow: /*?*token=*
 
 # Allow all public pages
 Allow: /productos
-Allow: /productos/*
 Allow: /blog
-Allow: /blog/*
 Allow: /cotizaciones
 Allow: /tarjetas-regalo
-Allow: /gallery
-Allow: /gallery/*
-Allow: /carrito
-
-# Crawl-delay for polite crawling (optional, good for smaller servers)
-Crawl-delay: 1
-
-# Specific rules for major search engines
-User-agent: Googlebot
-Allow: /
-Disallow: /admin/
-Disallow: /auth/
-Crawl-delay: 0
-
-User-agent: Bingbot
-Allow: /
-Disallow: /admin/
-Disallow: /auth/
-Crawl-delay: 1

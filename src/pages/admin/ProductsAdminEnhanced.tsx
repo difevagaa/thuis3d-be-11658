@@ -294,31 +294,6 @@ export default function ProductsAdminEnhanced() {
   const handleSubmit = async () => {
     try {
       logger.log('[ProductsAdmin] === INICIO DE GUARDADO ===');
-      
-      // Validar precio
-      if (formData.price === null || formData.price === undefined || isNaN(formData.price) || formData.price < 0) {
-        toast.error("El precio debe ser un número válido mayor o igual a 0");
-        return;
-      }
-      
-      // Validar sale_price si existe
-      if (formData.sale_price !== null && (isNaN(formData.sale_price) || formData.sale_price < 0)) {
-        toast.error("El precio de oferta debe ser un número válido mayor o igual a 0");
-        return;
-      }
-      
-      // Validar custom_shipping_cost si existe
-      if (formData.custom_shipping_cost !== null && (isNaN(formData.custom_shipping_cost) || formData.custom_shipping_cost < 0)) {
-        toast.error("El costo de envío personalizado debe ser un número válido mayor o igual a 0");
-        return;
-      }
-      
-      // Validar stock
-      if (formData.stock === null || formData.stock === undefined || isNaN(formData.stock) || formData.stock < 0) {
-        toast.error("El stock debe ser un número válido mayor o igual a 0");
-        return;
-      }
-      
       if (formData.product_code && formData.product_code.trim() !== '') {
         const isValid = await validateProductCode(formData.product_code);
         if (!isValid) return;

@@ -272,24 +272,6 @@ export async function calculateSupportRisk(
     modeAdjustment = -15; // Más agresivo: menos soportes
   }
 
-  // ========== PASO 7 (NUEVO IA): Análisis de Complejidad Geométrica ==========
-  const geometryComplexity = calculateGeometryComplexity(geometry);
-  let complexityAdjustment = 0;
-  
-  // Geometrías complejas tienden a tener más voladizos difíciles de predecir
-  if (geometryComplexity > 80) {
-    complexityAdjustment = +10; // Muy complejo: ser más conservador
-  } else if (geometryComplexity > 60) {
-    complexityAdjustment = +5; // Moderadamente complejo
-  } else if (geometryComplexity < 20) {
-    complexityAdjustment = -5; // Muy simple: menos preocupación
-  }
-  
-  logger.log('🧠 IA: Análisis de complejidad geométrica:', {
-    complejidad: geometryComplexity.toFixed(1) + '/100',
-    ajuste: complexityAdjustment > 0 ? `+${complexityAdjustment}` : complexityAdjustment
-  });
-
   // ========== CÁLCULO FINAL ==========
   const finalScore = Math.max(0, Math.min(100, 
     baseRiskScore + 
@@ -297,8 +279,7 @@ export async function calculateSupportRisk(
     lengthAdjustment + 
     bridgingBonus + 
     layerHeightAdjustment + 
-    modeAdjustment + 
-    complexityAdjustment
+    modeAdjustment
   ));
 
   // ========== DETERMINAR DECISIÓN ==========
@@ -353,38 +334,20 @@ export async function calculateSupportRisk(
     recommendations.push('PLA tiene excelente capacidad de voladizo');
   } else if (factors.material.toLowerCase().includes('petg')) {
     recommendations.push('PETG puede requerir más ventilación para voladizos');
-  } else if (factors.material.toLowerCase().includes('abs')) {
-    recommendations.push('ABS necesita cama caliente y control de temperatura para voladizos');
   }
 
   if (factors.layerHeight > 0.2) {
     recommendations.push('Considera reducir la altura de capa para mejores voladizos');
   }
-  
-  // NUEVO IA: Recomendaciones basadas en complejidad
-  if (geometryComplexity > 70) {
-    recommendations.push('🧠 IA: Geometría compleja detectada - considera hacer prueba de impresión pequeña');
-    recommendations.push('🧠 IA: Revisa el modelo en tu slicer antes de imprimir');
-  }
-  
-  // NUEVO IA: Sugerencias de orientación inteligente
-  if (needsSupports && factors.overhangPercentage > 20) {
-    recommendations.push('💡 IA: Intenta rotar la pieza 180° para minimizar voladizos');
-    if (factors.pieceHeight > factors.maxOverhangLength * 2) {
-      recommendations.push('💡 IA: Pieza alta detectada - considera imprimir de lado');
-    }
-  }
 
   // Log detallado
-  logger.log('📊 Análisis de Riesgo Completo con IA:', {
+  logger.log('📊 Análisis de Riesgo Completo:', {
     baseScore: baseRiskScore,
     materialAdj: materialAdjustment.toFixed(1),
     lengthAdj: lengthAdjustment,
     bridgingBonus: bridgingBonus,
     layerHeightAdj: layerHeightAdjustment.toFixed(1),
     modeAdj: modeAdjustment,
-    complexityAdj: complexityAdjustment,
-    geometryComplexity: geometryComplexity.toFixed(1),
     finalScore: finalScore.toFixed(1),
     decision: needsSupports ? '✅ SOPORTES NECESARIOS' : '❌ NO NECESITA SOPORTES',
     confidence: confidence.toUpperCase(),

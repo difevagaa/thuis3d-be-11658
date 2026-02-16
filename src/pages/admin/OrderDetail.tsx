@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, Download, Image as ImageIcon, Printer } from "lucide-react";
+import { ArrowLeft, Trash2, Download, Image as ImageIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { logger } from '@/lib/logger';
-import { sendGiftCardActivationNotification, syncInvoiceStatusWithOrder } from '@/lib/paymentUtils';
+import { sendGiftCardActivationNotification, updateInvoiceStatusOnOrderPaid } from '@/lib/paymentUtils';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -171,9 +171,9 @@ export default function OrderDetail() {
 
       if (error) throw error;
       
-      // Sync invoice payment status with order (bidirectional link)
-      if (id) {
-        await syncInvoiceStatusWithOrder(id, paymentStatus);
+      // Actualizar la factura asociada al pedido
+      if (paymentStatus === 'paid' && id) {
+        await updateInvoiceStatusOnOrderPaid(id);
       }
       
       // Si el pago se marca como pagado y hay una tarjeta de regalo, enviar email y notificación
@@ -295,18 +295,13 @@ export default function OrderDetail() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/pedidos/${id}/imprimir`)}>
-            <Printer className="h-4 w-4 mr-2" />
-            Imprimir Etiqueta
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Pedido
-              </Button>
-            </AlertDialogTrigger>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar Pedido
+            </Button>
+          </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
@@ -320,7 +315,6 @@ export default function OrderDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -427,7 +421,6 @@ export default function OrderDetail() {
                   <SelectItem value="paid">Pagado</SelectItem>
                   <SelectItem value="failed">Fallido</SelectItem>
                   <SelectItem value="refunded">Reembolsado</SelectItem>
-                  <SelectItem value="cancelled">Anulado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

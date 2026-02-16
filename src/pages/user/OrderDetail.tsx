@@ -13,21 +13,13 @@ import { logger } from '@/lib/logger';
 import { i18nToast } from "@/lib/i18nToast";
 
 export default function OrderDetail() {
-  const { t, i18n } = useTranslation(['common']);
+  const { t } = useTranslation(['common']);
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  // Helper: get locale string for date formatting based on current language
-  const getDateLocale = () => {
-    const lang = i18n.language?.split('-')[0];
-    if (lang === 'nl') return 'nl-BE';
-    if (lang === 'es') return 'es-ES';
-    return 'en-GB';
-  };
 
   // Helper: normalize customization selections (array or JSON string, or mistakenly stored in custom_text)
   const getSelections = (item: any) => {
@@ -207,7 +199,7 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">{t('common:orderDetail.loadingOrder')}</div>
+        <div className="text-center">Cargando detalles del pedido...</div>
       </div>
     );
   }
@@ -215,7 +207,7 @@ export default function OrderDetail() {
   if (!order) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">{t('common:orderDetail.orderNotFound')}</div>
+        <div className="text-center">No se encontró el pedido</div>
       </div>
     );
   }
@@ -225,13 +217,13 @@ export default function OrderDetail() {
       <div className="mb-6 flex items-center justify-between print:hidden">
         <Button variant="ghost" onClick={() => navigate("/mi-cuenta")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('common:orderDetail.backToAccount')}
+          Volver a Mi Cuenta
         </Button>
         <div className="flex gap-2">
           {invoice && order.payment_status === "paid" && (
             <Button variant="outline" onClick={printInvoice}>
               <Printer className="h-4 w-4 mr-2" />
-              {t('common:orderDetail.print')}
+              Imprimir
             </Button>
           )}
         </div>
@@ -243,13 +235,13 @@ export default function OrderDetail() {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle className="text-2xl">{t('common:orderDetail.orderNumber', { number: order.order_number })}</CardTitle>
+                <CardTitle className="text-2xl">Pedido #{order.order_number}</CardTitle>
                 <CardDescription>
-                  {t('common:orderDetail.placedOn', { date: new Date(order.created_at).toLocaleDateString(getDateLocale(), {
+                  Realizado el {new Date(order.created_at).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric'
-                  }) })}
+                  })}
                 </CardDescription>
               </div>
               <div className="flex flex-col gap-2">
@@ -257,7 +249,7 @@ export default function OrderDetail() {
                   variant={order.payment_status === "paid" ? "default" : "secondary"}
                   className="w-fit"
                 >
-                  {order.payment_status === "paid" ? t('common:orderDetail.paid') : t('common:orderDetail.pendingPayment')}
+                  {order.payment_status === "paid" ? "Pagado" : "Pendiente de pago"}
                 </Badge>
                 {order.status && (
                   <Badge 
@@ -278,33 +270,33 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Package className="h-5 w-5" />
-                {t('common:orderDetail.orderDetails')}
+                Detalles del Pedido
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between items-center text-sm gap-2">
-                <span className="text-muted-foreground flex-shrink-0">{t('common:subtotal')}:</span>
+                <span className="text-muted-foreground flex-shrink-0">Subtotal:</span>
                 <span className="font-medium text-right whitespace-nowrap">€{Number(order.subtotal).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-sm gap-2">
-                <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.shippingLabel')}:</span>
+                <span className="text-muted-foreground flex-shrink-0">Envío:</span>
                 <span className="font-medium text-right whitespace-nowrap">€{Number(order.shipping || 0).toFixed(2)}</span>
               </div>
               {Number(order.tax || 0) > 0 && (
                 <div className="flex justify-between items-center text-sm gap-2">
-                  <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.vat')}:</span>
+                  <span className="text-muted-foreground flex-shrink-0">IVA (21%):</span>
                   <span className="font-medium text-right whitespace-nowrap">€{Number(order.tax || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.discount > 0 && (
                 <div className="flex justify-between items-center text-sm gap-2">
-                  <span className="text-muted-foreground flex-shrink-0">{t('common:orderDetail.discountLabel')}:</span>
+                  <span className="text-muted-foreground flex-shrink-0">Descuento:</span>
                   <span className="font-medium text-success text-right whitespace-nowrap">-€{Number(order.discount).toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between items-center font-bold gap-2">
-                  <span className="flex-shrink-0">{t('common:total')}:</span>
+                  <span className="flex-shrink-0">Total:</span>
                   <span className="text-right whitespace-nowrap">€{Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
@@ -315,18 +307,18 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CreditCard className="h-5 w-5" />
-                {t('common:orderDetail.paymentInfo')}
+                Información de Pago
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-sm">
-                <span className="text-muted-foreground block mb-1">{t('common:orderDetail.paymentMethod')}:</span>
-                <span className="font-medium capitalize">{order.payment_method || t('common:orderDetail.notSpecified')}</span>
+                <span className="text-muted-foreground block mb-1">Método de pago:</span>
+                <span className="font-medium capitalize">{order.payment_method || "No especificado"}</span>
               </div>
               <div className="text-sm">
-                <span className="text-muted-foreground block mb-1">{t('common:orderDetail.status')}:</span>
+                <span className="text-muted-foreground block mb-1">Estado:</span>
                 <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
-                  {order.payment_status === "paid" ? t('common:orderDetail.paid') : t('common:orderDetail.pending')}
+                  {order.payment_status === "paid" ? "Pagado" : "Pendiente"}
                 </Badge>
               </div>
             </CardContent>
@@ -336,7 +328,7 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Truck className="h-5 w-5" />
-                {t('common:orderDetail.shippingTracking')}
+                Envío y Seguimiento
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -344,22 +336,22 @@ export default function OrderDetail() {
               {order.tracking_number && (
                 <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg space-y-3">
                   <h4 className="font-semibold text-green-800 dark:text-green-200 flex items-center gap-2">
-                    📦 {t('common:orderDetail.trackingInfo')}
+                    📦 Información de Seguimiento
                   </h4>
                   {order.carrier_name && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">{t('common:orderDetail.carrier')}:</span>
+                      <span className="text-muted-foreground">Transportista:</span>
                       <span className="font-medium ml-2">{order.carrier_name}</span>
                     </div>
                   )}
                   <div className="text-sm">
-                    <span className="text-muted-foreground">{t('common:orderDetail.trackingNumber')}:</span>
+                    <span className="text-muted-foreground">Número de seguimiento:</span>
                     <code className="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded ml-2">{order.tracking_number}</code>
                   </div>
                   {order.estimated_delivery_date && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">{t('common:orderDetail.estimatedDelivery')}:</span>
-                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString(getDateLocale())}</span>
+                      <span className="text-muted-foreground">Entrega estimada:</span>
+                      <span className="font-medium ml-2">{new Date(order.estimated_delivery_date).toLocaleDateString('es-ES')}</span>
                     </div>
                   )}
                   {order.tracking_url && (
@@ -369,7 +361,7 @@ export default function OrderDetail() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                     >
-                      🔗 {t('common:orderDetail.trackOrder')}
+                      🔗 Rastrear Pedido
                     </a>
                   )}
                 </div>
@@ -377,11 +369,11 @@ export default function OrderDetail() {
               
               {/* Shipping Address */}
               <div>
-                <span className="text-muted-foreground text-sm block mb-1">{t('common:orderDetail.shippingAddress')}:</span>
+                <span className="text-muted-foreground text-sm block mb-1">Dirección de envío:</span>
                 <p className="text-sm whitespace-pre-line">
                   {(() => {
                     try {
-                      if (!order.shipping_address) return t('common:orderDetail.addressNotSpecified');
+                      if (!order.shipping_address) return "No especificada";
                       const addr = typeof order.shipping_address === 'string' && order.shipping_address.startsWith('{')
                         ? JSON.parse(order.shipping_address)
                         : order.shipping_address;
@@ -396,7 +388,7 @@ export default function OrderDetail() {
                       return addr;
                     } catch (error) {
                       logger.error('Error parsing address:', error);
-                      return order.shipping_address || t('common:orderDetail.addressNotSpecified');
+                      return order.shipping_address || "No especificada";
                     }
                   })()}
                 </p>
@@ -408,17 +400,17 @@ export default function OrderDetail() {
         {/* Order Items */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('common:orderDetail.orderItems')}</CardTitle>
+            <CardTitle>Artículos del Pedido</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('common:orderDetail.product')}</TableHead>
-                    <TableHead className="text-center">{t('common:orderDetail.qty')}</TableHead>
-                    <TableHead className="text-right">{t('common:orderDetail.unitPrice')}</TableHead>
-                    <TableHead className="text-right">{t('common:orderDetail.itemTotal')}</TableHead>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead className="text-right">Precio Unit.</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -435,7 +427,7 @@ export default function OrderDetail() {
                           <div>
                             <p className="font-medium leading-tight">{item.product_name}</p>
                             {item.material?.name && (
-                              <p className="text-xs text-muted-foreground">{t('common:orderDetail.material')}: {item.material.name}</p>
+                              <p className="text-xs text-muted-foreground">Material: {item.material.name}</p>
                             )}
                             {item.color?.name && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
@@ -443,15 +435,15 @@ export default function OrderDetail() {
                                   className="w-3 h-3 rounded-full border"
                                   style={{ backgroundColor: item.color.hex_code }}
                                 />
-                                <span>{t('common:orderDetail.color')}: {item.color.name}</span>
+                                <span>Color: {item.color.name}</span>
                               </div>
                             )}
                             {item.custom_text && !isCustomTextJson(item) && (
-                              <p className="text-xs text-muted-foreground">{t('common:orderDetail.text')}: {item.custom_text}</p>
+                              <p className="text-xs text-muted-foreground">Texto: {item.custom_text}</p>
                             )}
                             {getSelections(item).length > 0 && (
                               <div className="mt-2 space-y-1">
-                                <p className="text-xs font-semibold text-muted-foreground">{t('common:orderDetail.customization')}:</p>
+                                <p className="text-xs font-semibold text-muted-foreground">Personalización:</p>
                                 {getSelections(item).map((sel: any, idx: number) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs">
                                     <span className="font-medium">{sel.section_name}:</span>
@@ -499,7 +491,7 @@ export default function OrderDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                {t('common:orderDetail.orderNotes')}
+                Notas del Pedido
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -514,29 +506,29 @@ export default function OrderDetail() {
         {invoice && order.payment_status === "paid" && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('common:orderDetail.invoiceInfo')}</CardTitle>
-              <CardDescription>{t('common:orderDetail.invoiceNumber', { number: invoice.invoice_number })}</CardDescription>
+              <CardTitle>Información de Factura</CardTitle>
+              <CardDescription>Factura #{invoice.invoice_number}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.issueDate')}:</p>
+                  <p className="text-sm text-muted-foreground mb-1">Fecha de emisión:</p>
                   <p className="font-medium">
-                    {new Date(invoice.issue_date).toLocaleDateString(getDateLocale())}
+                    {new Date(invoice.issue_date).toLocaleDateString('es-ES')}
                   </p>
                 </div>
                 {invoice.due_date && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.dueDate')}:</p>
+                    <p className="text-sm text-muted-foreground mb-1">Fecha de vencimiento:</p>
                     <p className="font-medium">
-                      {new Date(invoice.due_date).toLocaleDateString(getDateLocale())}
+                      {new Date(invoice.due_date).toLocaleDateString('es-ES')}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">{t('common:orderDetail.paymentStatus')}:</p>
+                  <p className="text-sm text-muted-foreground mb-1">Estado de pago:</p>
                   <Badge variant={invoice.payment_status === "paid" ? "default" : "secondary"}>
-                    {invoice.payment_status === "paid" ? t('common:orderDetail.invoicePaid') : t('common:orderDetail.invoicePending')}
+                    {invoice.payment_status === "paid" ? "Pagada" : "Pendiente"}
                   </Badge>
                 </div>
               </div>

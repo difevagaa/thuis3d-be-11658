@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Package, MessageSquare, Gift, Award, FileText, Download, Paperclip, X, Image as ImageIcon } from "lucide-react";
@@ -155,7 +154,7 @@ export default function MyAccount() {
         supabase.from("gift_cards").select("*").eq("recipient_email", profileData?.email || "").is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, order:orders!invoices_order_id_fkey(order_number)").eq("user_id", userId).is("deleted_at", null).order("created_at", { ascending: false }),
         supabase.from("loyalty_rewards").select("*").eq("is_active", true).is("deleted_at", null).order("points_required"),
-        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name)").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("loyalty_redemptions").select("*, loyalty_rewards:reward_id(name), coupons:coupon_code(code, discount_type, discount_value, min_purchase, is_active, times_used, max_uses)").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("coupons").select("*, product:products(name)").eq("is_loyalty_reward", true).eq("is_active", true).is("deleted_at", null).not("points_required", "is", null).order("points_required")
       ]);
 
@@ -175,8 +174,8 @@ export default function MyAccount() {
       const userCoupons = redemptionsRes.data?.map(redemption => ({
         id: redemption.id,
         code: redemption.coupon_code,
-        discount_type: 'percentage' as string,
-        discount_value: 0,
+        discount_type: 'percentage', // Default, idealmente obtenerlo del cupón original
+        discount_value: 10, // Default
         created_at: redemption.created_at,
         status: redemption.status,
         reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
@@ -198,20 +197,11 @@ export default function MyAccount() {
           address: profile.address,
           city: profile.city,
           postal_code: profile.postal_code,
-          country: profile.country,
-          preferred_language: profile.preferred_language || 'en'
+          country: profile.country
         })
         .eq("id", profile.id);
 
       if (error) throw error;
-
-      // Apply language change immediately
-      const lang = profile.preferred_language || 'en';
-      if (['es', 'en', 'nl'].includes(lang)) {
-        await i18n.changeLanguage(lang);
-        localStorage.setItem('i18nextLng', lang);
-      }
-
       i18nToast.success("success.profileUpdated");
     } catch (error) {
       i18nToast.error("error.profileUpdateFailed");
@@ -487,22 +477,6 @@ export default function MyAccount() {
                   onChange={(e) => setProfile({ ...profile, country: e.target.value })}
                   placeholder="Bélgica"
                 />
-              </div>
-              <div>
-                <Label>{t('account:profile.preferredLanguage')}</Label>
-                <Select
-                  value={profile?.preferred_language || 'en'}
-                  onValueChange={(value) => setProfile({ ...profile, preferred_language: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">🇬🇧 English</SelectItem>
-                    <SelectItem value="nl">🇳🇱 Nederlands</SelectItem>
-                    <SelectItem value="es">🇪🇸 Español</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <Button onClick={updateProfile}>{t('account:profile.saveChanges')}</Button>
             </CardContent>

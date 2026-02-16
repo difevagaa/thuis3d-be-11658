@@ -162,33 +162,8 @@ async function processTranslationQueue(supabaseAdmin: any) {
               console.warn(`Array field not found: ${arrayName}[${index}].${fieldName}`, { content: JSON.stringify(content).substring(0, 200) });
             }
           } else {
-            // Check if it's a plans field (plans_0_name, plans_0_features_1)
-            const planFeatureMatch = task.field_name.match(/^plans_(\d+)_features_(\d+)$/);
-            if (planFeatureMatch) {
-              const planIndex = parseInt(planFeatureMatch[1]);
-              const featureIndex = parseInt(planFeatureMatch[2]);
-              const plans = content.plans;
-              if (Array.isArray(plans) && plans[planIndex] && Array.isArray(plans[planIndex]?.features) && plans[planIndex]?.features?.[featureIndex]) {
-                originalText = plans[planIndex].features[featureIndex];
-              } else {
-                console.warn(`Plan feature not found: plans[${planIndex}].features[${featureIndex}]`);
-              }
-            } else {
-              const planFieldMatch = task.field_name.match(/^plans_(\d+)_(\w+)$/);
-              if (planFieldMatch) {
-                const planIndex = parseInt(planFieldMatch[1]);
-                const fieldName = planFieldMatch[2];
-                const plans = content.plans;
-                if (Array.isArray(plans) && plans?.[planIndex]?.[fieldName]) {
-                  originalText = plans[planIndex][fieldName];
-                } else {
-                  console.warn(`Plan field not found: plans[${planIndex}].${fieldName}`);
-                }
-              } else {
-                // Regular field in content JSONB (title, subtitle, description, buttonText, text)
-                originalText = content[task.field_name];
-              }
-            }
+            // Regular field in content JSONB (title, subtitle, description, buttonText, text)
+            originalText = content[task.field_name];
           }
         }
       } else {

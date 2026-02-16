@@ -256,19 +256,6 @@ const ProductDetail = () => {
   const addToCart = async () => {
     if (!product) return;
 
-    // Validar stock antes de agregar
-    if (product.stock !== null && product.stock !== undefined) {
-      if (product.stock <= 0) {
-        toast.error(t('outOfStock') || 'Producto sin stock');
-        return;
-      }
-      
-      if (quantity > product.stock) {
-        toast.error(`Stock insuficiente. Disponible: ${product.stock}`);
-        return;
-      }
-    }
-
     // Verificar autenticación primero
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

@@ -27,7 +27,6 @@
     "city": "City",
     "postalCode": "Postal Code",
     "country": "Country",
-    "preferredLanguage": "Preferred Language",
     "saveChanges": "Save Changes",
     "updated": "Profile updated successfully",
     "error": "Error updating profile"

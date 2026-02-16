@@ -13,12 +13,8 @@ import { toast } from "sonner";
 import { UserPlus, Pencil, Trash2, Lock, Unlock, Key, Eye, Clock, MapPin, Activity } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { useRoleValidation } from "@/hooks/useRoleValidation";
 
 export default function Users() {
-  // Validate admin role before rendering
-  const { isValidating, hasAccess } = useRoleValidation(['admin', 'superadmin']);
-  
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,23 +35,6 @@ export default function Users() {
     postal_code: "",
     country: "Bélgica"
   });
-
-  // Show loading while validating role
-  if (isValidating) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if user doesn't have access
-  if (!hasAccess) {
-    return null;
-  }
 
   useEffect(() => {
     loadData();

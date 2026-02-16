@@ -76,31 +76,7 @@ export default function ProductImageUploader({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
-    // Validar que sean imágenes
-    const validFiles = files.filter((file) => {
-      // Verificar MIME type
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} no es una imagen válida`);
-        return false;
-      }
-      
-      // Verificar tamaño (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} es demasiado grande (máx 5MB)`);
-        return false;
-      }
-      
-      // Verificar extensión permitida
-      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (!ext || !allowedExtensions.includes(ext)) {
-        toast.error(`${file.name} tiene una extensión no permitida`);
-        return false;
-      }
-      
-      return true;
-    });
+    const validFiles = files.filter((file) => file.type.startsWith("image/"));
     
     if (validFiles.length + existingImages.length > 7) {
       toast.error("Máximo 7 imágenes permitidas");

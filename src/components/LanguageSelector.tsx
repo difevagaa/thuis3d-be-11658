@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { logger } from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -33,17 +32,17 @@ export function LanguageSelector() {
           .eq('id', user.id);
         
         if (error) {
-          logger.error('Error saving language preference:', error);
+          console.error('Error saving language preference:', error);
         }
       }
     } catch (error) {
-      logger.error('Error saving language preference:', error);
+      console.error('Error saving language preference:', error);
     }
   };
 
   // Get current language, defaulting to first language if undefined
-  const currentLang = i18n.language?.split('-')[0] || 'en';
-  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[1]; // Default to English
+  const currentLang = i18n.language?.split('-')[0] || 'nl';
+  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[2]; // Default to Dutch
 
   return (
     <DropdownMenu>
