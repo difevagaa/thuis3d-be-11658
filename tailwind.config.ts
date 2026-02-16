@@ -24,6 +24,7 @@ export default {
         md: "768px",
         lg: "1024px",
         xl: "1280px",
+        "2xl": "1536px",
       },
     },
     screens: {
@@ -36,8 +37,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'sans-serif'],
-        display: ['DM Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'sans-serif'],
+        body: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",

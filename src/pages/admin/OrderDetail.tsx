@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, Download, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -44,52 +44,6 @@ export default function OrderDetail() {
     if (typeof item.custom_text !== 'string') return false;
     const s = item.custom_text.trim();
     return s.startsWith('[') && s.endsWith(']');
-  };
-
-  const handleDownloadImage = async (imageUrl: string, imageName: string) => {
-    try {
-      // Extract storage path from public URL to download original quality
-      const bucketName = 'product-customization-images';
-      const bucketMarker = `/object/public/${bucketName}/`;
-      const markerIndex = imageUrl.indexOf(bucketMarker);
-
-      if (markerIndex !== -1) {
-        // Download directly from Supabase storage for original quality
-        const storagePath = decodeURIComponent(imageUrl.substring(markerIndex + bucketMarker.length));
-        const { data, error } = await supabase.storage
-          .from(bucketName)
-          .download(storagePath);
-
-        if (error) throw error;
-
-        const url = URL.createObjectURL(data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = imageName || `imagen-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else {
-        // Fallback: fetch from public URL
-        const response = await fetch(imageUrl);
-        if (!response.ok) throw new Error('Error al descargar');
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = imageName || `imagen-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-
-      toast.success("Imagen descargada");
-    } catch (error: any) {
-      logger.error("Error downloading image:", error);
-      toast.error("Error al descargar imagen");
-    }
   };
 
   const loadStatuses = useCallback(async () => {
@@ -454,16 +408,7 @@ export default function OrderDetail() {
                       {(() => {
                         const sel = getSelections(item).find((s: any) => s.selection_type === 'image');
                         return sel ? (
-                          <div className="relative group flex-shrink-0">
-                            <img src={sel.image_url} alt={sel.image_name} className="w-10 h-10 object-cover rounded border" />
-                            <button
-                              onClick={() => handleDownloadImage(sel.image_url, sel.image_name)}
-                              className="absolute inset-0 bg-black/50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Descargar imagen"
-                            >
-                              <Download className="h-4 w-4 text-white" />
-                            </button>
-                          </div>
+                          <img src={sel.image_url} alt={sel.image_name} className="w-10 h-10 object-cover rounded border" />
                         ) : null;
                       })()}
                       <div>
@@ -498,7 +443,7 @@ export default function OrderDetail() {
                                     />
                                     {sel.color_name}
                                   </Badge>
-                                ) : sel.image_url ? (
+                                ) : (
                                   <div className="inline-flex items-center gap-2 mt-1">
                                     <img 
                                       src={sel.image_url} 
@@ -506,18 +451,7 @@ export default function OrderDetail() {
                                       className="w-8 h-8 object-cover rounded border"
                                     />
                                     <span className="text-xs">{sel.image_name}</span>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0"
-                                      onClick={() => handleDownloadImage(sel.image_url, sel.image_name)}
-                                      title="Descargar imagen en calidad original"
-                                    >
-                                      <Download className="h-3 w-3" />
-                                    </Button>
                                   </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">{sel.image_name}</span>
                                 )}
                               </div>
                             ))}

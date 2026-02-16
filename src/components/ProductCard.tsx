@@ -24,49 +24,49 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
 
   return (
     <Link to={`/producto/${product.id}`} className="block group">
-      <Card className="h-full overflow-hidden border-0 bg-card hover:shadow-strong transition-all duration-300 rounded-2xl">
+      <Card className="h-full overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200 bg-card">
         <CardContent className="p-0">
           {/* Image Container - Square aspect ratio */}
-          <div className="aspect-square overflow-hidden relative rounded-t-2xl bg-muted/30 product-media-frame">
+          <div className="aspect-square overflow-hidden relative product-media-frame">
             {firstImage ? (
               <img 
                 src={firstImage} 
                 alt={content.name} 
-                className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out" 
+                className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
-                <Printer className="h-10 w-10 md:h-16 md:w-16 text-muted-foreground/30" />
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                <Printer className="h-10 w-10 md:h-16 md:w-16 text-muted-foreground/40" />
               </div>
             )}
             
-            {/* Free Shipping Badge */}
+            {/* Free Shipping Badge - Amazon style */}
             {product.shipping_type === 'free' && (
-              <div className="absolute top-2 left-2 md:top-3 md:left-3 bg-success text-success-foreground text-[9px] md:text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider z-10">
+              <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-green-600 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide z-10">
                 {t('freeShipping')}
               </div>
             )}
           </div>
           
-          {/* Product Info */}
-          <div className="p-3 md:p-4 space-y-1.5 min-w-0">
-            {/* Product Name */}
-            <h3 className="font-medium text-xs md:text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
+          {/* Product Info - Amazon style */}
+          <div className="p-2 md:p-3 space-y-1 min-w-0">
+            {/* Product Name - 2 lines max (no fixed min-height; prevents clipping on mobile) */}
+            <h3 className="font-medium text-[11px] md:text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
               {content.name}
             </h3>
 
-            {/* Product Code */}
+            {/* Product Code - Small, mono */}
             {product.product_code && (
-              <p className="text-[9px] md:text-[11px] text-muted-foreground font-mono tracking-wide truncate">
+              <p className="text-[8px] md:text-[10px] text-muted-foreground font-mono tracking-wide truncate">
                 #{product.product_code}
               </p>
             )}
 
-            {/* Price */}
-            <div className="flex items-baseline gap-0.5 pt-1 min-w-0">
-              <span className="text-[11px] md:text-xs text-muted-foreground">€</span>
-              <span className="text-primary font-bold text-lg md:text-xl leading-none tracking-tight truncate">
+            {/* Price - Amazon style */}
+            <div className="flex items-baseline gap-1 pt-0.5 min-w-0">
+              <span className="text-[10px] md:text-xs text-muted-foreground">€</span>
+              <span className="text-primary font-bold text-base md:text-lg leading-none truncate">
                 {product.price}
               </span>
             </div>

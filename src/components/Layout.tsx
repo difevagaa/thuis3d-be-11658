@@ -1,5 +1,4 @@
 import { ReactNode, useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift } from "lucide-react";
@@ -105,81 +104,81 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header - Apple-style frosted glass navbar */}
+      {/* Header - Full width background, pinned to top with no gap */}
       <header 
-        className="sticky top-0 z-50 w-full border-b border-border/20 backdrop-blur-2xl backdrop-saturate-[1.8]"
+        className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
         style={{ 
-          backgroundColor: 'var(--home-menu-bg, var(--header-bg, rgba(255,255,255,0.78)))',
+          backgroundColor: 'var(--home-menu-bg, var(--header-bg, hsl(var(--background))))',
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
         {/* Centered container for header content */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header row */}
-          <div className="flex flex-row flex-nowrap h-14 items-center justify-between gap-2 sm:gap-4">
-            {/* Left side: Menu + Logo */}
-            <div className="flex flex-row flex-nowrap items-center gap-2.5 flex-shrink-0 min-w-0">
-              {/* Mobile Menu Button */}
+          {/* Compact header row - consistent height */}
+          <div className="flex flex-row flex-nowrap h-14 items-center justify-between gap-2 sm:gap-3">
+            {/* Left side: Menu + Logo - Compact */}
+            <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0 min-w-0">
+              {/* Mobile Menu Button - Smaller on mobile */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 rounded-xl hover:bg-accent/60 transition-colors">
-                    <Menu className="h-[18px] w-[18px]" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 rounded-md">
+                    <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] p-0 rounded-r-3xl border-r-0 shadow-strong">
-                  <SheetHeader className="p-5 border-b border-border/30">
+                <SheetContent side="left" className="w-[280px] p-0">
+                  <SheetHeader className="p-4 border-b">
                     <div className="flex items-center justify-between">
-                      <SheetTitle className="flex items-center gap-3 text-left">
-                        <div className="w-10 h-10 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-md">
-                          <Package className="h-5 w-5 text-white" />
+                      <SheetTitle className="flex items-center gap-2 text-left">
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                          <Package className="h-4 w-4 text-primary-foreground" />
                         </div>
-                        <span className="text-base font-bold text-foreground tracking-tight">Thuis3D.be</span>
+                        <span className="text-base font-bold text-primary">Thuis3D.be</span>
                       </SheetTitle>
                     </div>
                   </SheetHeader>
-                  <nav className="flex flex-col p-3 gap-0.5">
+                  <nav className="flex flex-col p-3 gap-1">
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/")}
                     >
-                      <Home className="mr-3 h-4 w-4 opacity-70" />
+                      <Home className="mr-2 h-4 w-4" />
                       {t('home')}
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/productos")}
                     >
-                      <Package className="mr-3 h-4 w-4 opacity-70" />
+                      <Package className="mr-2 h-4 w-4" />
                       {t('products')}
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/cotizaciones")}
                     >
-                      <Search className="mr-3 h-4 w-4 opacity-70" />
+                      <Search className="mr-2 h-4 w-4" />
                       {t('quotes')}
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/tarjetas-regalo")}
                     >
-                      <Gift className="mr-3 h-4 w-4 opacity-70" />
+                      <Gift className="mr-2 h-4 w-4" />
                       {t('giftCards')}
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/blog")}
                     >
                       {t('blog')}
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-sm h-12 rounded-xl font-medium"
+                      className="justify-start text-sm h-11 rounded-lg"
                       onClick={() => handleNavigate("/galeria")}
                     >
                       {t('gallery')}
@@ -187,34 +186,34 @@ export const Layout = ({ children }: LayoutProps) => {
                     
                     {user && (
                       <>
-                        <div className="my-2 border-t border-border/30"></div>
+                        <div className="my-2 border-t border-border"></div>
                         <Button
                           variant="ghost"
-                          className="justify-start text-sm h-12 rounded-xl font-medium"
+                          className="justify-start text-sm h-11 rounded-lg"
                           onClick={() => handleNavigate("/mi-cuenta")}
                         >
-                          <UserCircle className="mr-3 h-4 w-4 opacity-70" />
+                          <UserCircle className="mr-2 h-4 w-4" />
                           {t('myAccount')}
                         </Button>
                         {isAdmin && (
                           <Button
                             variant="ghost"
-                            className="justify-start text-sm h-12 rounded-xl font-medium"
+                            className="justify-start text-sm h-11 rounded-lg"
                             onClick={() => handleNavigate("/admin/dashboard")}
                           >
-                            <Settings className="mr-3 h-4 w-4 opacity-70" />
+                            <Settings className="mr-2 h-4 w-4" />
                             {t('adminPanel')}
                           </Button>
                         )}
                         <Button
                           variant="ghost"
-                          className="justify-start text-sm h-12 rounded-xl font-medium text-destructive hover:text-destructive"
+                          className="justify-start text-sm h-11 rounded-lg text-destructive hover:text-destructive"
                           onClick={() => {
                             handleLogout();
                             setMobileMenuOpen(false);
                           }}
                         >
-                          <LogOut className="mr-3 h-4 w-4 opacity-70" />
+                          <LogOut className="mr-2 h-4 w-4" />
                           {t('logout')}
                         </Button>
                       </>
@@ -222,13 +221,13 @@ export const Layout = ({ children }: LayoutProps) => {
                     
                     {!user && (
                       <>
-                        <div className="my-2 border-t border-border/30"></div>
+                        <div className="my-2 border-t border-border"></div>
                         <Button
                           variant="default"
-                          className="justify-start text-sm h-12 rounded-xl font-medium"
+                          className="justify-start text-sm h-11 rounded-lg"
                           onClick={() => handleNavigate("/auth")}
                         >
-                          <User className="mr-3 h-4 w-4" />
+                          <User className="mr-2 h-4 w-4" />
                           {t('login')}
                         </Button>
                       </>
@@ -237,55 +236,52 @@ export const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              {/* Logo */}
-              <Link to="/" className="flex items-center gap-2.5 notranslate flex-shrink-0 min-w-0 group">
-                <div className="w-9 h-9 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-                  <Package className="h-4 w-4 text-white" />
+              {/* Logo - Consistent sizing */}
+              <Link to="/" className="flex items-center gap-1.5 notranslate flex-shrink-0 min-w-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Package className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="text-sm sm:text-base font-bold text-foreground truncate max-w-[100px] sm:max-w-none tracking-tight">
+                <span className="text-sm sm:text-base font-bold text-primary truncate max-w-[100px] sm:max-w-none">
                   Thuis3D.be
                 </span>
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-0.5">
-              {[
-                { to: "/", label: t('home') },
-                { to: "/productos", label: t('products') },
-                { to: "/cotizaciones", label: t('quotes') },
-                { to: "/tarjetas-regalo", label: t('giftCards') },
-                { to: "/blog", label: t('blog') },
-                { to: "/galeria", label: t('gallery') },
-              ].map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className={cn(
-                    "text-[13px] font-medium px-3.5 py-2 rounded-xl transition-all duration-200 whitespace-nowrap",
-                    isActive(to)
-                      ? "text-primary bg-primary/8 font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  )}
-                >
-                  {label}
-                </Link>
-              ))}
+            <nav className="hidden md:flex items-center gap-3 lg:gap-6">
+              <Link to="/" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('home')}
+              </Link>
+              <Link to="/productos" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('products')}
+              </Link>
+              <Link to="/cotizaciones" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('quotes')}
+              </Link>
+              <Link to="/tarjetas-regalo" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('giftCards')}
+              </Link>
+              <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('blog')}
+              </Link>
+              <Link to="/galeria" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
+                {t('gallery')}
+              </Link>
             </nav>
 
-            {/* Right side: Actions */}
-            <div className="flex flex-row flex-nowrap items-center gap-0.5 flex-shrink-0">
+            {/* Right side: Actions - Standardized 24px icons with consistent button sizes */}
+            <div className="flex flex-row flex-nowrap items-center gap-1 flex-shrink-0">
               <LanguageSelector />
               
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-9 w-9 rounded-xl hover:bg-accent/60 transition-colors" 
+                className="relative h-9 w-9 rounded-lg hover:bg-accent" 
                 onClick={() => navigate("/carrito")}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-[18px] w-[18px] flex items-center justify-center font-bold shadow-sm">
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
                     {cartCount > 9 ? '9+' : cartCount}
                   </span>
                 )}
@@ -296,51 +292,51 @@ export const Layout = ({ children }: LayoutProps) => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-accent/60 transition-colors">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-accent">
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-strong border-border/30">
-                    <DropdownMenuLabel className="text-xs font-semibold px-2 text-muted-foreground">{t('myAccount')}</DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-border/30" />
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")} className="text-sm h-10 rounded-xl">
-                      <UserCircle className="mr-2.5 h-4 w-4 opacity-70" />
+                  <DropdownMenuContent align="end" className="w-52 rounded-xl p-1.5">
+                    <DropdownMenuLabel className="text-xs font-semibold px-2">{t('myAccount')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=profile")} className="text-sm h-10 rounded-lg">
+                      <UserCircle className="mr-2 h-4 w-4" />
                       {t('myProfile')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")} className="text-sm h-10 rounded-xl">
-                      <ShoppingBag className="mr-2.5 h-4 w-4 opacity-70" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")} className="text-sm h-10 rounded-lg">
+                      <ShoppingBag className="mr-2 h-4 w-4" />
                       {t('myOrders')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")} className="text-sm h-10 rounded-xl">
-                      <MessageSquare className="mr-2.5 h-4 w-4 opacity-70" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")} className="text-sm h-10 rounded-lg">
+                      <MessageSquare className="mr-2 h-4 w-4" />
                       {t('myMessages')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=invoices")} className="text-sm h-10 rounded-xl">
-                      <Package className="mr-2.5 h-4 w-4 opacity-70" />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=invoices")} className="text-sm h-10 rounded-lg">
+                      <Package className="mr-2 h-4 w-4" />
                       {t('myInvoices')}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-border/30" />
-                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta")} className="font-semibold text-sm h-10 rounded-xl">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta")} className="font-semibold text-sm h-10 rounded-lg">
                       {t('viewAll')}
                     </DropdownMenuItem>
                     {isAdmin && (
                       <>
-                        <DropdownMenuSeparator className="bg-border/30" />
-                        <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="text-sm h-10 rounded-xl">
-                          <Settings className="mr-2.5 h-4 w-4 opacity-70" />
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="text-sm h-10 rounded-lg">
+                          <Settings className="mr-2 h-4 w-4" />
                           {t('adminPanel')}
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuSeparator className="bg-border/30" />
-                    <DropdownMenuItem onClick={handleLogout} className="text-sm h-10 rounded-xl text-destructive">
-                      <LogOut className="mr-2.5 h-4 w-4 opacity-70" />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-sm h-10 rounded-lg text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
                       {t('logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-accent/60 transition-colors" onClick={() => navigate("/auth")}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-accent" onClick={() => navigate("/auth")}>
                   <User className="h-5 w-5" />
                 </Button>
               )}
@@ -349,44 +345,42 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Centered container with max-width */}
       <main className={`flex-1 w-full ${isMobile || isTablet ? 'pb-20' : 'pb-0'}`}>
         {children}
       </main>
 
-      {/* Mobile Bottom Navigation - Apple-style tab bar */}
+      {/* Mobile Bottom Navigation - AliExpress style */}
       {(isMobile || isTablet) && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-2xl backdrop-saturate-[1.8] border-t border-border/20 safe-area-bottom"
-          style={{ backgroundColor: 'var(--home-menu-bg, rgba(255,255,255,0.78))' }}
-        >
-          <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t safe-area-bottom shadow-lg">
+          <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
             <button 
               onClick={() => navigate("/")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <Home className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">{t('home')}</span>
+              <span className="text-[10px] font-medium">{t('home')}</span>
             </button>
             
             <button 
               onClick={() => navigate("/productos")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 ${isActive('/producto') ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/producto') ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <Package className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">{t('products')}</span>
+              <span className="text-[10px] font-medium">{t('products')}</span>
             </button>
             
             <button 
               onClick={() => navigate("/cotizaciones")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 ${isActive('/cotizaciones') ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/cotizaciones') ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <Search className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">{t('quotes')}</span>
+              <span className="text-[10px] font-medium">{t('quotes')}</span>
             </button>
             
             <button 
               onClick={() => navigate("/carrito")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 relative ${isActive('/carrito') ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative ${isActive('/carrito') ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -396,21 +390,21 @@ export const Layout = ({ children }: LayoutProps) => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-semibold">{t('cart', 'Carrito')}</span>
+              <span className="text-[10px] font-medium">{t('cart', 'Carrito')}</span>
             </button>
             
             <button 
               onClick={() => navigate(user ? "/mi-cuenta" : "/auth")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 ${isActive('/mi-cuenta') || isActive('/auth') ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/mi-cuenta') || isActive('/auth') ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <User className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">{user ? t('account', 'Cuenta') : t('login')}</span>
+              <span className="text-[10px] font-medium">{user ? t('account', 'Cuenta') : t('login')}</span>
             </button>
           </div>
         </nav>
       )}
 
-      {/* Footer */}
+      {/* Footer - Hidden on mobile for cleaner look */}
       {!isMobile && !isTablet && <FooterConfigurable />}
     </div>
   );

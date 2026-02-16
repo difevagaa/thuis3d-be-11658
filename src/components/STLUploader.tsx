@@ -141,6 +141,13 @@ export const STLUploader = ({ materialId, colorId, onAnalysisComplete, onSupport
        onAnalysisComplete({
          ...analysis,
          file: selectedFile,
+         analysisParams: {
+           quantity,
+           materialId: analyseMaterialId,
+           colorId: colorId || '',
+           supportsRequired,
+           layerHeight
+         }
        });
 
       URL.revokeObjectURL(fileURL);

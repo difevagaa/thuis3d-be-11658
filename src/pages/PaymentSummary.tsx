@@ -172,11 +172,8 @@ export default function PaymentSummary() {
     } else if (appliedCoupon.discount_type === "fixed") {
       return appliedCoupon.discount_value;
     }
-    // free_shipping type: no monetary discount on products, shipping is set to 0 separately
     return 0;
   };
-
-  const isFreeShippingCoupon = appliedCoupon?.discount_type === "free_shipping";
 
   // CRITICAL: Calculate tax first without gift card to avoid circular dependency
   const calculateTotalTax = () => {
@@ -205,9 +202,8 @@ export default function PaymentSummary() {
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
     const tax = calculateTotalTax();
-    const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
     // Gift card covers: subtotal - discount + tax + shipping
-    const totalBeforeGiftCard = subtotal - discount + tax + effectiveShipping;
+    const totalBeforeGiftCard = subtotal - discount + tax + shippingCost;
     
     return Math.min(appliedGiftCard.current_balance, Math.max(0, totalBeforeGiftCard));
   };
@@ -217,9 +213,8 @@ export default function PaymentSummary() {
     const discount = calculateDiscount();
     const tax = calculateTotalTax();
     const giftCardAmount = calculateGiftCardAmount();
-    const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
     
-    return Math.max(0, subtotal - discount + tax + effectiveShipping - giftCardAmount);
+    return Math.max(0, subtotal - discount + tax + shippingCost - giftCardAmount);
   };
 
   const [processing, setProcessing] = useState(false);
@@ -249,7 +244,6 @@ export default function PaymentSummary() {
         const discount = calculateDiscount();
         const giftCardAmount = calculateGiftCardAmount();
         const tax = calculateTotalTax();
-        const effectiveShipping = isFreeShippingCoupon ? 0 : shippingCost;
         
         // Preparar notas del pedido
         const orderNotes = [];
@@ -258,11 +252,7 @@ export default function PaymentSummary() {
             `Tarjeta de regalo aplicada: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
           );
         }
-        if (appliedCoupon && isFreeShippingCoupon) {
-          orderNotes.push(
-            `Cupón envío gratis aplicado: ${appliedCoupon.code}`
-          );
-        } else if (appliedCoupon && discount > 0) {
+        if (appliedCoupon && discount > 0) {
           orderNotes.push(
             `Cupón aplicado: ${appliedCoupon.code} (-€${discount.toFixed(2)})`
           );
@@ -275,7 +265,7 @@ export default function PaymentSummary() {
             user_id: user.id,
             subtotal,
             tax,
-            shipping: effectiveShipping,
+            shipping: shippingCost,
             discount: discount + giftCardAmount,
             total: 0, // Total pagado es 0 porque la tarjeta lo cubre todo
             payment_method: "gift_card",
@@ -335,10 +325,8 @@ export default function PaymentSummary() {
             order_id: order.id,
             subtotal: subtotal,
             tax: tax,
-            shipping: effectiveShipping,
+            shipping: shippingCost,
             discount: discount + giftCardAmount,
-            coupon_discount: isFreeShippingCoupon ? 0 : discount,
-            coupon_code: appliedCoupon?.code || null,
             total: 0,
             payment_method: "gift_card",
             payment_status: "paid", // CRITICAL: Invoice also marked as PAID
@@ -367,7 +355,7 @@ export default function PaymentSummary() {
                 order_number: order.order_number,
                 subtotal: subtotal,
                 tax: tax,
-                shipping: effectiveShipping,
+                shipping: shippingCost,
                 discount: discount + giftCardAmount,
                 total: 0,
                 items: cartItems.map(item => ({
@@ -550,7 +538,7 @@ export default function PaymentSummary() {
               <span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span>
             </div>
             
-            {appliedCoupon && !isFreeShippingCoupon && (
+            {appliedCoupon && (
               <div className="flex justify-between text-green-600">
                 <span className="flex items-center gap-1">
                   <Tag className="h-4 w-4" />
@@ -570,25 +558,19 @@ export default function PaymentSummary() {
               </div>
             )}
             
-            {isFreeShippingCoupon ? (
-              <div className="flex justify-between text-green-600">
-                <span className="flex items-center gap-1">
-                  <Tag className="h-4 w-4" />
-                  {t('cart:summary.shipping')} ({appliedCoupon.code})
-                </span>
-                <span className="font-semibold">{t('cart:freeShipping')}</span>
-              </div>
-            ) : shippingCost > 0 ? (
+            {shippingCost > 0 && (
               <div className="flex justify-between">
                 <span>{t('cart:summary.shipping')} ({shippingInfo?.country_name || shippingInfo?.country}):</span>
                 <span className="font-semibold">€{shippingCost.toFixed(2)}</span>
               </div>
-            ) : calculateSubtotal() > 0 ? (
+            )}
+
+            {shippingCost === 0 && calculateSubtotal() > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>{t('cart:summary.shipping')}:</span>
                 <span className="font-semibold">{t('cart:freeShipping')}</span>
               </div>
-            ) : null}
+            )}
 
             {taxSettings.enabled && calculateTotalTax() > 0 && (
               <div className="flex justify-between">

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Autoplay from "embla-carousel-autoplay";
-import { useScrollProgress } from "@/hooks/useScrollAnimation";
+import { useParallax } from "@/hooks/useParallax";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
 
 // Helper function to calculate responsive font size based on banner height
@@ -21,7 +21,7 @@ export default function HeroBanner() {
   const [banners, setBanners] = useState<any[]>([]);
   const [heroBgColor, setHeroBgColor] = useState<string>('');
   const navigate = useNavigate();
-  const { ref: scrollRef, progress } = useScrollProgress();
+  const parallaxRef = useParallax({ speed: 0.2, direction: 'down' });
 
   useEffect(() => {
     loadBanners();
@@ -135,120 +135,103 @@ export default function HeroBanner() {
     }
   };
 
-  // Scroll-driven animation values
-  const scrollOpacity = Math.max(0, 1 - progress * 1.8);
-  const scrollScale = 1 + progress * 0.08;
-  const scrollTranslateY = progress * 60;
-
   return (
-    <div ref={scrollRef}>
-      <Carousel
-        opts={{ loop: true }}
-        plugins={[
-          Autoplay({
-            delay: 5000,
-          }),
-        ]}
-        className="w-full"
-      >
-        <CarouselContent>
-          {carouselItems.map((item, index) => {
-            const bannerHeight = item.banner.height || '400px';
-            
-            return (
-              <CarouselItem key={`${item.banner.id}-${index}`}>
+    <Carousel
+      opts={{ loop: true }}
+      plugins={[
+        Autoplay({
+          delay: 5000,
+        }),
+      ]}
+      className="w-full"
+    >
+      <CarouselContent>
+        {carouselItems.map((item, index) => {
+          const bannerHeight = item.banner.height || '400px';
+          
+          return (
+            <CarouselItem key={`${item.banner.id}-${index}`}>
+              <div 
+                className="relative overflow-hidden"
+                style={{ 
+                  height: bannerHeight,
+                  width: item.banner.width || '100%'
+                }}
+              >
                 <div 
-                  className="relative overflow-hidden"
-                  style={{ 
-                    height: bannerHeight,
-                    width: item.banner.width || '100%'
+                  ref={parallaxRef}
+                  className="absolute inset-0 bg-center will-change-transform"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url(${item.imageUrl})`,
+                    backgroundColor: heroBgColor || 'transparent',
+                    backgroundSize: getBackgroundSize(item.banner.size_mode || 'cover'),
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    transform: 'translate3d(0, 0, 0)'
                   }}
-                >
-                  {/* Background with scroll-driven scale */}
+                />
+                <div className="absolute inset-0 container mx-auto px-4 sm:px-6 h-full flex items-center justify-center">
                   <div 
-                    className="absolute inset-0 bg-center will-change-transform"
+                    className="w-full max-w-3xl text-white z-10 text-center px-2 sm:px-4"
                     style={{
-                      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 100%), url(${item.imageUrl})`,
-                      backgroundColor: heroBgColor || 'transparent',
-                      backgroundSize: getBackgroundSize(item.banner.size_mode || 'cover'),
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'center',
-                      transform: `scale(${scrollScale})`,
-                    }}
-                  />
-                  {/* Content with scroll-driven fade & translate */}
-                  <div 
-                    className="absolute inset-0 container mx-auto px-4 sm:px-6 h-full flex items-center justify-center"
-                    style={{
-                      opacity: scrollOpacity,
-                      transform: `translateY(${scrollTranslateY}px)`,
+                      maxHeight: '85%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}
                   >
-                    <div 
-                      className="w-full max-w-3xl text-white z-10 text-center px-2 sm:px-4"
-                      style={{
-                        maxHeight: '85%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: '0.75rem'
+                    <h1 
+                      className="font-bold animate-fade-in leading-tight w-full"
+                      style={{ 
+                        color: item.banner.title_color || '#ffffff',
+                        fontSize: getResponsiveFontSize(bannerHeight, 12, '1.25rem', '3.5rem'),
+                        lineHeight: '1.15',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
                       }}
                     >
-                      <h1 
-                        className="font-bold animate-fade-in leading-none w-full"
+                      {item.banner.title}
+                    </h1>
+                    {item.banner.description && (
+                      <div 
+                        className="w-full max-w-2xl overflow-hidden"
                         style={{ 
-                          color: item.banner.title_color || '#ffffff',
-                          // Ratio 10: bannerHeight/ratio yields a large cinematic display font
-                          fontSize: getResponsiveFontSize(bannerHeight, 10, '1.5rem', '4rem'),
-                          lineHeight: '1.08',
-                          letterSpacing: '-0.04em',
-                          textShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word'
+                          color: item.banner.text_color || 'rgba(255,255,255,0.95)',
+                          fontSize: getResponsiveFontSize(bannerHeight, 25, '0.875rem', '1.25rem'),
+                          lineHeight: '1.5',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                          maxHeight: '40%'
                         }}
                       >
-                        {item.banner.title}
-                      </h1>
-                      {item.banner.description && (
-                        <div 
-                          className="w-full max-w-2xl overflow-hidden"
-                          style={{ 
-                            color: item.banner.text_color || 'rgba(255,255,255,0.9)',
-                            fontSize: getResponsiveFontSize(bannerHeight, 25, '0.875rem', '1.25rem'),
-                            lineHeight: '1.6',
-                            letterSpacing: '-0.01em',
-                            textShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                            maxHeight: '40%'
-                          }}
-                        >
-                          <RichTextDisplay content={item.banner.description} className="line-clamp-4" />
-                        </div>
-                      )}
-                      {item.banner.link_url && (
-                        <Button 
-                          variant="secondary"
-                          onClick={() => handleBannerClick(item.banner.link_url)}
-                          className="mt-3 sm:mt-5 shadow-lg hover:shadow-xl transition-all duration-300 rounded-full font-semibold"
-                          style={{
-                            fontSize: getResponsiveFontSize(bannerHeight, 35, '0.75rem', '1rem'),
-                            padding: `${getResponsiveFontSize(bannerHeight, 60, '0.5rem', '0.875rem')} ${getResponsiveFontSize(bannerHeight, 20, '1.25rem', '2rem')}`
-                          }}
-                        >
-                          {t('hero.viewMore')}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                        <RichTextDisplay content={item.banner.description} className="line-clamp-4" />
+                      </div>
+                    )}
+                    {item.banner.link_url && (
+                      <Button 
+                        variant="secondary"
+                        onClick={() => handleBannerClick(item.banner.link_url)}
+                        className="mt-2 sm:mt-4 shadow-lg hover:shadow-xl transition-all"
+                        style={{
+                          fontSize: getResponsiveFontSize(bannerHeight, 35, '0.75rem', '1rem'),
+                          padding: `${getResponsiveFontSize(bannerHeight, 60, '0.5rem', '0.875rem')} ${getResponsiveFontSize(bannerHeight, 25, '1rem', '1.75rem')}`
+                        }}
+                      >
+                        {t('hero.viewMore')}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        <CarouselPrevious className="left-3 sm:left-5 h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border-white/20 text-white hover:bg-white/30" />
-        <CarouselNext className="right-3 sm:right-5 h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border-white/20 text-white hover:bg-white/30" />
-      </Carousel>
-    </div>
+              </div>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      <CarouselPrevious className="left-2 sm:left-4 h-8 w-8 sm:h-10 sm:w-10" />
+      <CarouselNext className="right-2 sm:right-4 h-8 w-8 sm:h-10 sm:w-10" />
+    </Carousel>
   );
 }

@@ -270,25 +270,25 @@ export const calculateOrderTotals = (
   giftCardDiscount: number = 0,
   couponDiscount: number = 0
 ) => {
-  const subtotal = Number(cartItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.price * item.quantity),
     0
-  ).toFixed(2));
+  );
 
-  const taxableAmount = Number(cartItems
+  const taxableAmount = cartItems
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
-    .reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
+    .reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const tax = Number((taxableAmount * taxRate).toFixed(2));
   const shipping = 0; // Always 0 as per business logic
-  const discount = Number((giftCardDiscount + couponDiscount).toFixed(2));
+  const discount = giftCardDiscount + couponDiscount;
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {
-    subtotal,
+    subtotal: Number(subtotal.toFixed(2)),
     tax,
     shipping,
-    discount,
+    discount: Number(discount.toFixed(2)),
     total: Number(total.toFixed(2))
   };
 };

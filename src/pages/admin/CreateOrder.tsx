@@ -185,8 +185,8 @@ export default function CreateOrder() {
       }
     });
     
-    const tax = Number((taxableAmount * 0.21).toFixed(2)); // 21% IVA solo sobre productos con impuestos
-    const total = Number(Math.max(0, subtotal - discount + shipping + tax).toFixed(2));
+    const tax = (taxableAmount - discount) * 0.21; // 21% IVA solo sobre productos con impuestos
+    const total = subtotal - discount + shipping + tax;
     
     return { subtotal, discount, shipping, tax, total };
   };

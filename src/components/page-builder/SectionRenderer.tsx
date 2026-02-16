@@ -164,7 +164,7 @@ const safeNavigate = (url: string) => {
   // Only allow http, https, and relative URLs starting with /
   if (sanitizedUrl.startsWith('/')) {
     // Validate it's a clean relative URL
-    if (/^\/[a-zA-Z0-9\-_/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
+    if (/^\/[a-zA-Z0-9\-_\/]*(\?[a-zA-Z0-9=&\-_]*)?$/.test(sanitizedUrl)) {
       window.location.href = sanitizedUrl;
     }
     return;
@@ -2155,7 +2155,7 @@ function useTranslatedSection(section: SectionData): SectionData {
         }
         
         // Apply translations to content
-        const newContent = { ...(section.content || {}) };
+        let newContent = { ...(section.content || {}) };
         let newSectionName = section.section_name;
         
         // Helper function to handle array translations

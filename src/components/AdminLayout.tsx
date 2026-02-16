@@ -35,19 +35,17 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mouseLeaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-hide sidebar after 30 seconds of inactivity
+  // Auto-hide sidebar after 5 seconds of inactivity
   useEffect(() => {
-    let lastMouseMoveTime = 0;
-
     const resetAutoHideTimer = () => {
       if (autoHideTimerRef.current) {
         clearTimeout(autoHideTimerRef.current);
       }
       
-      // Set timer to auto-hide after 30 seconds
+      // Set timer to auto-hide after 5 seconds
       autoHideTimerRef.current = setTimeout(() => {
         setOpen(false);
-      }, 30000);
+      }, 5000);
     };
 
     // Reset timer on any user interaction
@@ -57,23 +55,13 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       }
     };
 
-    // Throttled mousemove handler to avoid excessive timer resets
-    const handleMouseMove = () => {
-      const now = Date.now();
-      if (now - lastMouseMoveTime > 500) {
-        lastMouseMoveTime = now;
-        handleUserActivity();
-      }
-    };
-
     // Start the timer
     resetAutoHideTimer();
 
-    // Listen for user interactions
+    // Listen for user interactions (avoid mousemove here to reduce event spam)
     window.addEventListener('click', handleUserActivity);
     window.addEventListener('keydown', handleUserActivity);
     window.addEventListener('scroll', handleUserActivity);
-    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       if (autoHideTimerRef.current) {
@@ -82,7 +70,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       window.removeEventListener('click', handleUserActivity);
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('scroll', handleUserActivity);
-      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, [open, setOpen]);
 

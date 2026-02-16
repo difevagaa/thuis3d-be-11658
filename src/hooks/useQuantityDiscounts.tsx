@@ -73,12 +73,12 @@ export const useQuantityDiscounts = () => {
 
     if (applicableTier.discount_type === 'percentage') {
       // Descuento porcentual
-      discountAmount = Number(((originalPrice * applicableTier.discount_value) / 100).toFixed(2));
-      finalPrice = Number((originalPrice - discountAmount).toFixed(2));
+      discountAmount = (originalPrice * applicableTier.discount_value) / 100;
+      finalPrice = originalPrice - discountAmount;
     } else {
       // Descuento de monto fijo
-      discountAmount = Number(applicableTier.discount_value.toFixed(2));
-      finalPrice = Number(Math.max(0, originalPrice - discountAmount).toFixed(2));
+      discountAmount = applicableTier.discount_value;
+      finalPrice = Math.max(0, originalPrice - discountAmount);
     }
 
     const tierDescription = applicableTier.discount_type === 'percentage'

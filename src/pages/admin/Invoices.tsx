@@ -331,8 +331,8 @@ export default function Invoices() {
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * 0.21).toFixed(2));
-    const total = Number((subtotal + tax + shipping).toFixed(2));
+    const tax = taxableAmount * 0.21;
+    const total = subtotal + tax + shipping;
     
     setNewInvoice(prev => ({
       ...prev,
@@ -346,20 +346,21 @@ export default function Invoices() {
     const subtotal = items.reduce((sum, item) => sum + item.total_price, 0);
     const manualDiscount = parseFloat(newInvoice.discount) || 0;
     const shipping = parseFloat(newInvoice.shipping) || 0;
-    const totalDiscount = manualDiscount + couponDiscount + giftCardAmount;
     
-    // Calculate tax on taxable items (before discounts - tax applies to the original taxable amount)
+    const subtotalAfterDiscounts = Math.max(0, subtotal - manualDiscount - couponDiscount - giftCardAmount);
+    
+    // Calculate tax on amount after discounts
     const taxableAmount = items
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * 0.21).toFixed(2));
-    const total = Number(Math.max(0, subtotal + tax + shipping - totalDiscount).toFixed(2));
+    const taxAfterDiscounts = Math.max(0, taxableAmount - manualDiscount - couponDiscount - giftCardAmount) * 0.21;
+    const total = subtotalAfterDiscounts + taxAfterDiscounts + shipping;
     
     setNewInvoice(prev => ({
       ...prev,
       subtotal: subtotal.toFixed(2),
-      tax: tax.toFixed(2),
+      tax: taxAfterDiscounts.toFixed(2),
       total: total.toFixed(2)
     }));
   };
@@ -682,13 +683,13 @@ export default function Invoices() {
     const shipping = parseFloat(editingInvoice.shipping) || 0;
     const discount = parseFloat(editingInvoice.discount) || 0;
     
-    // Calculate tax only for items with tax enabled (on full taxable amount, not reduced by discount)
+    // Calculate tax only for items with tax enabled
     const taxableAmount = items
       .filter(item => item.tax_enabled)
       .reduce((sum, item) => sum + item.total_price, 0);
     
-    const tax = Number((taxableAmount * 0.21).toFixed(2));
-    const total = Number(Math.max(0, subtotal + tax + shipping - discount).toFixed(2));
+    const tax = (taxableAmount - discount) * 0.21;
+    const total = Math.max(0, subtotal + tax + shipping - discount);
     
     setEditingInvoice((prev: any) => ({
       ...prev,

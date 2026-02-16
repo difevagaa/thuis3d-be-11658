@@ -153,20 +153,15 @@ export default function Loyalty() {
       return;
     }
 
-    if (newReward.reward_type !== "free_shipping" && newReward.reward_value <= 0) {
+    if (newReward.reward_value <= 0) {
       toast.error("El valor de la recompensa debe ser mayor a 0");
       return;
     }
 
     try {
-      const rewardData = {
-        ...newReward,
-        reward_value: newReward.reward_type === "free_shipping" ? 0 : newReward.reward_value
-      };
-
       const { error } = await supabase
         .from("loyalty_rewards")
-        .insert([rewardData]);
+        .insert([newReward]);
 
       if (error) throw error;
       toast.success("Recompensa creada exitosamente");
@@ -474,7 +469,6 @@ export default function Loyalty() {
                         placeholder="Ej: 100"
                       />
                     </div>
-                    {newReward.reward_type !== "free_shipping" && (
                     <div>
                       <Label>Valor de Recompensa</Label>
                       <Input
@@ -484,7 +478,6 @@ export default function Loyalty() {
                         placeholder="Ej: 10"
                       />
                     </div>
-                    )}
                     <div>
                       <Label>Tipo</Label>
                       <Select

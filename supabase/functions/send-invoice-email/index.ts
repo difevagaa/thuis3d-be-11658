@@ -119,8 +119,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { to, invoice_number, total, due_date, order_number, customer_name, quote_type, language, user_id }: InvoiceEmailRequest = await req.json();
     
-    const safeTotal = Number(total) || 0;
-    
     console.log('📧 Processing invoice email:', { to, invoice_number, quote_type, language });
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -223,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <div class="amount-box">
                   <p style="margin: 0 0 10px 0; font-size: 14px; color: #92400e;">${t.totalAmount}</p>
-                  <div class="amount">€${safeTotal.toFixed(2)}</div>
+                  <div class="amount">€${total.toFixed(2)}</div>
                   <p style="margin: 10px 0 0 0; font-size: 12px; color: #92400e;">${t.vatIncluded}</p>
                 </div>
                 
@@ -300,7 +298,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="amount-box">
                   <div style="text-align: center;">
                     <p style="margin: 0; color: #666; font-size: 14px;">${t.totalToPay}</p>
-                    <div class="amount">€${safeTotal.toFixed(2)}</div>
+                    <div class="amount">€${total.toFixed(2)}</div>
                     ${formattedDueDate ? `<p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">${t.dueDate}: ${formattedDueDate}</p>` : ''}
                   </div>
                 </div>

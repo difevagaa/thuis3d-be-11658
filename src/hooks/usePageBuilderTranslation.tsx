@@ -44,7 +44,7 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
       if (error) throw error;
 
       // Apply translations to content
-      const newContent = JSON.parse(JSON.stringify(originalContent || {}));
+      let newContent = JSON.parse(JSON.stringify(originalContent || {}));
       let newName = originalName;
 
       const ensureArrayItem = (key: string, index: number) => {

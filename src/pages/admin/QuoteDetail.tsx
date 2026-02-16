@@ -151,7 +151,7 @@ export default function QuoteDetail() {
     }
   };
 
-  const extractAndDownloadImages = async (htmlContent: string, prefix: string = 'image') => {
+  const extractAndDownloadImages = (htmlContent: string, prefix: string = 'image') => {
     // Crear un elemento temporal para parsear el HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
@@ -165,10 +165,9 @@ export default function QuoteDetail() {
     }
     
     // Descargar cada imagen
-    for (let index = 0; index < images.length; index++) {
-      const img = images[index];
+    images.forEach((img, index) => {
       const src = img.getAttribute('src');
-      if (!src) continue;
+      if (!src) return;
       
       // Si es data URI (base64)
       if (src.startsWith('data:')) {
@@ -198,28 +197,10 @@ export default function QuoteDetail() {
           URL.revokeObjectURL(url);
         }
       } else if (src.startsWith('http')) {
-        // Descargar la imagen en calidad original via fetch
-        try {
-          const response = await fetch(src);
-          if (!response.ok) throw new Error('Error al descargar');
-          const blob = await response.blob();
-          const mimeExt = blob.type.split('/').pop()?.split('+')[0] || 'png';
-          const ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(mimeExt) ? mimeExt : 'png';
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${prefix}_${index + 1}.${ext}`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          logger.error('Error downloading image from URL:', err);
-          // Fallback: abrir en nueva pestaña
-          window.open(src, '_blank');
-        }
+        // Si es URL externa, abrir en nueva pestaña
+        window.open(src, '_blank');
       }
-    }
+    });
     
     toast.success(`${images.length} imagen(es) descargada(s)`);
   };
