@@ -142,6 +142,12 @@ export default function UserQuoteDetail() {
   const handleCustomerAction = async (action: "approve" | "reject" | "comment") => {
     if (!quote || actionLoading) return;
 
+    // Prevent approve/reject if already responded
+    if ((action === "approve" || action === "reject") && hasAlreadyResponded) {
+      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
+      return;
+    }
+
     const trimmedComment = comment.trim();
     if (action === "comment" && !trimmedComment) {
       i18nToast.directWarning("Por favor escribe un comentario antes de enviar.");
@@ -242,14 +248,28 @@ export default function UserQuoteDetail() {
   const statusName = quote.quote_statuses?.name?.toLowerCase() || "";
   const statusSlug = quote.quote_statuses?.slug?.toLowerCase() || "";
   const pendingApprovalSlugs = ["pending_customer_approval", "pending_client_approval", "awaiting_client_response"];
+  
+  // Check if quote has already been approved or rejected by client
+  const isAlreadyApproved = statusSlug === "approved" || statusName === "aprobado" || statusName === "aprobada";
+  const isAlreadyRejected = statusSlug === "rejected" || statusName === "rechazado" || statusName === "rechazada";
+  const hasAlreadyResponded = isAlreadyApproved || isAlreadyRejected;
+  
   const isPendingClientApproval =
-    statusSlug === "awaiting_client_response" ||
-    pendingApprovalSlugs.includes(statusSlug) ||
-    (statusName.includes("aprobación") && statusName.includes("cliente")) ||
-    (statusName.includes("pendiente") && statusName.includes("respuesta"));
+    !hasAlreadyResponded && (
+      statusSlug === "awaiting_client_response" ||
+      pendingApprovalSlugs.includes(statusSlug) ||
+      (statusName.includes("aprobación") && statusName.includes("cliente")) ||
+      (statusName.includes("pendiente") && statusName.includes("respuesta"))
+    );
 
   const handleAcceptChanges = async () => {
     if (!quote || actionLoading) return;
+
+    // Prevent double approval
+    if (hasAlreadyResponded) {
+      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
+      return;
+    }
 
     try {
       setActionLoading(true);
@@ -320,6 +340,12 @@ export default function UserQuoteDetail() {
 
   const handleRejectChanges = async () => {
     if (!quote || actionLoading) return;
+
+    // Prevent double rejection
+    if (hasAlreadyResponded) {
+      i18nToast.directWarning("Esta cotización ya ha sido respondida.");
+      return;
+    }
 
     try {
       setActionLoading(true);
@@ -734,6 +760,36 @@ export default function UserQuoteDetail() {
                       Enviar Comentario
                     </Button>
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* Message when already responded */}
+            {hasAlreadyResponded && (
+              <>
+                <Separator />
+                <div className={`space-y-4 p-4 rounded-lg border ${
+                  isAlreadyApproved 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <h3 className={`font-semibold flex items-center gap-2 ${
+                    isAlreadyApproved ? 'text-green-900' : 'text-red-900'
+                  }`}>
+                    {isAlreadyApproved ? (
+                      <CheckCircle2 className="h-5 w-5" />
+                    ) : (
+                      <XCircle className="h-5 w-5" />
+                    )}
+                    {isAlreadyApproved ? 'Cotización Aprobada' : 'Cotización Rechazada'}
+                  </h3>
+                  <p className={`text-sm ${
+                    isAlreadyApproved ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {isAlreadyApproved 
+                      ? 'Ya has aprobado esta cotización. El administrador está procesando tu pedido.'
+                      : 'Ya has rechazado esta cotización. El administrador ha sido notificado de tu decisión.'}
+                  </p>
                 </div>
               </>
             )}

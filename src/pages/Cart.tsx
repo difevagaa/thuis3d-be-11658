@@ -13,6 +13,10 @@ import { logger } from "@/lib/logger";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { validateCouponCode } from "@/lib/validation";
 import { triggerNotificationRefresh } from "@/lib/notificationUtils";
+import { saveEncryptedCart, loadEncryptedCart, clearCart } from "@/lib/cartEncryption";
+
+// Constante para límite máximo de cantidad en carrito
+const MAX_CART_QUANTITY = 999;
 
 interface CartItem {
   id: string;
@@ -51,11 +55,32 @@ const Cart = () => {
   const { calculateTax } = useTaxSettings();
 
   useEffect(() => {
-    // Load cart from localStorage
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
+    // Load cart from encrypted localStorage
+    const loadCart = async () => {
+      try {
+        const savedCart = await loadEncryptedCart<CartItem[]>();
+        if (savedCart && Array.isArray(savedCart)) {
+          // Validar que todos los items tengan los campos requeridos
+          const validatedCart = savedCart.filter(item => 
+            item && 
+            typeof item === 'object' &&
+            item.id && 
+            item.productId && 
+            item.name && 
+            typeof item.price === 'number' &&
+            typeof item.quantity === 'number' &&
+            item.quantity > 0
+          );
+          setCartItems(validatedCart);
+        }
+      } catch (error) {
+        logger.error("Error loading encrypted cart:", error);
+        // Si falla, empezar con carrito vacío
+        setCartItems([]);
+      }
+    };
+
+    loadCart();
 
     // Load applied coupon from sessionStorage
     const savedCoupon = sessionStorage.getItem("applied_coupon");
@@ -78,15 +103,21 @@ const Cart = () => {
     }
   }, []);
 
-  const updateCart = (newCart: CartItem[]) => {
+  const updateCart = async (newCart: CartItem[]) => {
     setCartItems(newCart);
-    localStorage.setItem("cart", JSON.stringify(newCart));
+    try {
+      await saveEncryptedCart(newCart);
+    } catch (error) {
+      logger.error("Error saving encrypted cart:", error);
+      toast.error(t('cart:errorSavingCart'));
+    }
   };
 
   const updateQuantity = (id: string, delta: number) => {
     const newCart = cartItems.map(item => {
       if (item.id === id) {
-        const newQuantity = Math.max(1, item.quantity + delta);
+        // Validar que la cantidad sea válida (entre 1 y MAX_CART_QUANTITY)
+        const newQuantity = Math.max(1, Math.min(MAX_CART_QUANTITY, item.quantity + delta));
         return { ...item, quantity: newQuantity };
       }
       return item;

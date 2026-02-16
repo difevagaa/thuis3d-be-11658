@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -524,7 +525,7 @@ export const LithophanyPreview3D = ({
       const shapeName = lampTemplate.shape_type.replace(/[^a-zA-Z0-9]/g, '_');
       downloadSTL(stlBuffer, `lithophane_${shapeName}_${dimensions.width}x${dimensions.height}mm.stl`);
     } catch (err) {
-      console.error('STL generation error:', err);
+      logger.error('STL generation error:', err);
     } finally {
       setIsGeneratingSTL(false);
     }

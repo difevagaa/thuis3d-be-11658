@@ -18,6 +18,7 @@ import { useContextualHelp } from "@/hooks/useContextualHelp";
 import { SmartStatusDialog } from "@/components/admin/SmartStatusDialog";
 import { HelpSidebar } from "@/components/admin/HelpSidebar";
 import { ContextualHelpButton } from "@/components/admin/ContextualHelpButton";
+import { validateURL, sanitizeURL, isSafeURL } from "@/lib/validation";
 
 // Popular carriers with tracking URL templates
 const CARRIERS = [
@@ -247,7 +248,20 @@ export default function OrdersEnhanced() {
       // Add tracking info if shipping
       if (isShippedStatus()) {
         updates.tracking_number = trackingNumber || null;
-        updates.tracking_url = trackingUrl || null;
+        
+        // Validar y sanitizar tracking URL antes de guardar
+        if (trackingUrl) {
+          const sanitizedUrl = sanitizeURL(trackingUrl);
+          if (!sanitizedUrl) {
+            toast.error("La URL de seguimiento contiene patrones no seguros y fue rechazada");
+            setLoading(false);
+            return;
+          }
+          updates.tracking_url = sanitizedUrl;
+        } else {
+          updates.tracking_url = null;
+        }
+        
         updates.carrier_name = carrierName || null;
         updates.estimated_delivery_date = estimatedDeliveryDate || null;
         updates.package_count = packageCount || 1;
@@ -882,11 +896,16 @@ export default function OrdersEnhanced() {
                         onChange={(e) => setTrackingUrl(e.target.value)}
                         placeholder="https://track.carrier.com/..."
                       />
-                      {trackingUrl && (
+                      {trackingUrl && isSafeURL(trackingUrl) && (
                         <Button variant="outline" size="icon" asChild>
                           <a href={trackingUrl} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4" />
                           </a>
+                        </Button>
+                      )}
+                      {trackingUrl && !isSafeURL(trackingUrl) && (
+                        <Button variant="outline" size="icon" disabled title="URL no segura">
+                          <AlertCircle className="h-4 w-4 text-red-500" />
                         </Button>
                       )}
                     </div>

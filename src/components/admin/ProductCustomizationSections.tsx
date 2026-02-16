@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +97,7 @@ export default function ProductCustomizationSections({
         onSectionsChangeRef.current?.(sectionsWithColors);
       }
     } catch (error) {
-      console.error('Error loading sections:', error);
+      logger.error('Error loading sections:', error);
       toast.error('Error al cargar secciones de personalización');
     } finally {
       setLoading(false);
@@ -184,7 +185,7 @@ export default function ProductCustomizationSections({
 
     try {
       setLoading(true);
-      console.log('💾 [ProductCustomization] Guardando secciones para producto:', productId);
+      logger.log('💾 [ProductCustomization] Guardando secciones para producto:', productId);
 
       // 1. Eliminar secciones existentes del producto
       const { error: deleteError } = await (supabase as any)
@@ -193,11 +194,11 @@ export default function ProductCustomizationSections({
         .eq('product_id', productId);
 
       if (deleteError) {
-        console.error('❌ [ProductCustomization] Error eliminando secciones existentes:', deleteError);
+        logger.error('❌ [ProductCustomization] Error eliminando secciones existentes:', deleteError);
         throw deleteError;
       }
 
-      console.log('🗑️ [ProductCustomization] Secciones anteriores eliminadas');
+      logger.log('🗑️ [ProductCustomization] Secciones anteriores eliminadas');
 
       // 2. Insertar nuevas secciones de forma transaccional
       let insertedCount = 0;
@@ -207,7 +208,7 @@ export default function ProductCustomizationSections({
           continue;
         }
 
-        console.log(`📝 [ProductCustomization] Insertando sección: "${section.section_name}" (tipo: ${section.section_type})`);
+        logger.log(`📝 [ProductCustomization] Insertando sección: "${section.section_name}" (tipo: ${section.section_type})`);
 
         const { data: insertedSection, error: sectionError } = await (supabase as any)
           .from('product_customization_sections')
@@ -222,17 +223,17 @@ export default function ProductCustomizationSections({
           .single();
 
         if (sectionError) {
-          console.error('❌ [ProductCustomization] Error insertando sección:', sectionError);
+          logger.error('❌ [ProductCustomization] Error insertando sección:', sectionError);
           throw sectionError;
         }
 
-        console.log(`✅ [ProductCustomization] Sección creada con ID: ${insertedSection.id}`);
+        logger.log(`✅ [ProductCustomization] Sección creada con ID: ${insertedSection.id}`);
 
         // 3. Insertar colores o imágenes según el tipo de sección
         if (section.section_type === 'color') {
           // Guardar colores disponibles
           if (section.selectedColors.length > 0 && insertedSection) {
-            console.log(`🎨 [ProductCustomization] Insertando ${section.selectedColors.length} colores para sección ${insertedSection.id}`);
+            logger.log(`🎨 [ProductCustomization] Insertando ${section.selectedColors.length} colores para sección ${insertedSection.id}`);
             
             const sectionColors = section.selectedColors.map((colorId: string) => ({
               section_id: insertedSection.id,
@@ -244,16 +245,16 @@ export default function ProductCustomizationSections({
               .insert(sectionColors);
 
             if (colorsError) {
-              console.error('❌ [ProductCustomization] Error insertando colores:', colorsError);
+              logger.error('❌ [ProductCustomization] Error insertando colores:', colorsError);
               throw colorsError;
             }
 
-            console.log(`✅ [ProductCustomization] Colores insertados correctamente`);
+            logger.log(`✅ [ProductCustomization] Colores insertados correctamente`);
           }
           
           // Guardar imagen de referencia si existe (para mostrar al cliente)
           if (section.selectedImages.length > 0 && insertedSection) {
-            console.log(`🖼️ [ProductCustomization] Subiendo imagen de referencia para sección ${insertedSection.id}`);
+            logger.log(`🖼️ [ProductCustomization] Subiendo imagen de referencia para sección ${insertedSection.id}`);
             
             const image = section.selectedImages[0]; // Solo la primera imagen como referencia
             let imageUrl = image.image_url;
@@ -268,7 +269,7 @@ export default function ProductCustomizationSections({
                 .upload(fileName, image.file, { upsert: true });
 
               if (uploadError) {
-                console.error('❌ Error subiendo imagen de referencia:', uploadError);
+                logger.error('❌ Error subiendo imagen de referencia:', uploadError);
                 throw uploadError;
               }
 
@@ -289,14 +290,14 @@ export default function ProductCustomizationSections({
               });
 
             if (imageError) {
-              console.error('❌ Error guardando referencia de imagen:', imageError);
+              logger.error('❌ Error guardando referencia de imagen:', imageError);
               throw imageError;
             }
             
-            console.log(`✅ [ProductCustomization] Imagen de referencia guardada`);
+            logger.log(`✅ [ProductCustomization] Imagen de referencia guardada`);
           }
         } else if (section.section_type === 'image' && section.selectedImages.length > 0 && insertedSection) {
-          console.log(`🖼️ [ProductCustomization] Subiendo ${section.selectedImages.length} imágenes para sección ${insertedSection.id}`);
+          logger.log(`🖼️ [ProductCustomization] Subiendo ${section.selectedImages.length} imágenes para sección ${insertedSection.id}`);
           
           for (const image of section.selectedImages) {
             let imageUrl = image.image_url;
@@ -311,7 +312,7 @@ export default function ProductCustomizationSections({
                 .upload(fileName, image.file);
 
               if (uploadError) {
-                console.error('❌ Error subiendo imagen:', uploadError);
+                logger.error('❌ Error subiendo imagen:', uploadError);
                 throw uploadError;
               }
 
@@ -332,22 +333,22 @@ export default function ProductCustomizationSections({
               });
 
             if (imageError) {
-              console.error('❌ Error guardando referencia de imagen:', imageError);
+              logger.error('❌ Error guardando referencia de imagen:', imageError);
               throw imageError;
             }
           }
 
-          console.log(`✅ [ProductCustomization] Imágenes insertadas correctamente`);
+          logger.log(`✅ [ProductCustomization] Imágenes insertadas correctamente`);
         }
 
         insertedCount++;
       }
 
-      console.log(`✨ [ProductCustomization] Proceso completado: ${insertedCount} secciones guardadas`);
+      logger.log(`✨ [ProductCustomization] Proceso completado: ${insertedCount} secciones guardadas`);
       toast.success(`✓ ${insertedCount} sección(es) de personalización guardada(s) correctamente`);
       await loadSections();
     } catch (error: any) {
-      console.error('❌ [ProductCustomization] Error crítico:', error);
+      logger.error('❌ [ProductCustomization] Error crítico:', error);
       toast.error(`Error al guardar: ${error.message || 'Error desconocido'}`);
     } finally {
       setLoading(false);

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { logger } from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -32,11 +33,11 @@ export function LanguageSelector() {
           .eq('id', user.id);
         
         if (error) {
-          console.error('Error saving language preference:', error);
+          logger.error('Error saving language preference:', error);
         }
       }
     } catch (error) {
-      console.error('Error saving language preference:', error);
+      logger.error('Error saving language preference:', error);
     }
   };
 
