@@ -2,25 +2,20 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calculator, HelpCircle, Check, Minus, Plus } from "lucide-react";
+import { Calculator, HelpCircle, Check } from "lucide-react";
 import type { LampTemplate } from "@/pages/Lithophany";
 
 interface LithophanyPricingProps {
   selectedLamp: LampTemplate | null;
   dimensions: { width: number; height: number };
   showDetails?: boolean;
-  quantity?: number;
-  onQuantityChange?: (quantity: number) => void;
 }
 
 export const LithophanyPricing = ({
   selectedLamp,
   dimensions,
-  showDetails = false,
-  quantity = 1,
-  onQuantityChange
+  showDetails = false
 }: LithophanyPricingProps) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
@@ -43,7 +38,7 @@ export const LithophanyPricing = ({
     // Base cost (depends on lamp complexity)
     const baseCost = selectedLamp.requires_custom_base ? 8 : 5;
     
-    // Subtotal per unit
+    // Subtotal
     const subtotal = basePrice + areaPrice + baseCost;
     
     // Apply size multiplier
@@ -52,11 +47,8 @@ export const LithophanyPricing = ({
     // Tax (21% IVA)
     const tax = adjustedSubtotal * 0.21;
     
-    // Unit total
-    const unitTotal = adjustedSubtotal + tax;
-
-    // Grand total with quantity
-    const total = unitTotal * quantity;
+    // Total
+    const total = adjustedSubtotal + tax;
 
     return {
       basePrice,
@@ -66,11 +58,9 @@ export const LithophanyPricing = ({
       sizeMultiplier,
       subtotal: adjustedSubtotal,
       tax,
-      unitTotal,
-      total,
-      quantity
+      total
     };
-  }, [selectedLamp, dimensions, quantity]);
+  }, [selectedLamp, dimensions]);
 
   if (!selectedLamp || !pricing) {
     return (
@@ -113,43 +103,6 @@ export const LithophanyPricing = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Quantity Selector */}
-        {onQuantityChange && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">
-              {language === 'es' ? 'Cantidad' : 'Quantity'}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
-              <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onQuantityChange(Math.min(50, quantity + 1))}
-                disabled={quantity >= 50}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Unit price when quantity > 1 */}
-        {quantity > 1 && (
-          <div className="text-center text-sm text-muted-foreground">
-            {language === 'es' ? 'Precio unitario' : 'Unit price'}: €{pricing.unitTotal.toFixed(2)}
-          </div>
-        )}
-
         {/* Total Price - PROMINENTLY DISPLAYED */}
         <div className="text-center py-4 bg-primary/5 rounded-lg">
           <span className="text-4xl font-bold text-primary">
@@ -157,9 +110,6 @@ export const LithophanyPricing = ({
           </span>
           <p className="text-sm text-muted-foreground mt-1">
             {language === 'es' ? 'IVA incluido' : 'VAT included'}
-            {quantity > 1 && (
-              <span> ({quantity} {language === 'es' ? 'unidades' : 'units'})</span>
-            )}
           </p>
         </div>
 

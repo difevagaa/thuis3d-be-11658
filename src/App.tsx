@@ -32,6 +32,7 @@ const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
 const PaymentSummary = lazy(() => import("./pages/PaymentSummary"));
 const Payment = lazy(() => import("./pages/Payment"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
+const Lithophany = lazy(() => import("./pages/Lithophany"));
 
 // Components loaded immediately
 import CookieConsent from "./components/CookieConsent";
@@ -95,6 +96,7 @@ const TranslationManagement = lazy(() => import("./pages/admin/TranslationManage
 const PageBuilder = lazy(() => import("./pages/admin/PageBuilder"));
 const EmailManagement = lazy(() => import("./pages/admin/EmailManagement"));
 const DatabaseAdmin = lazy(() => import("./pages/admin/DatabaseAdmin"));
+const LithophanyAdmin = lazy(() => import("./pages/admin/LithophanyAdmin"));
 
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
@@ -155,6 +157,7 @@ const App = () => {
             <Route path="/resumen-pago" element={<Layout><PaymentSummary /></Layout>} />
             <Route path="/pago" element={<Layout><Payment /></Layout>} />
             <Route path="/page/:slug" element={<Layout><StaticPage /></Layout>} />
+            <Route path="/litofanias" element={<Layout><Lithophany /></Layout>} />
             <Route path="/legal/:type" element={<Layout><LegalPage /></Layout>} />
             <Route path="/mi-cuenta" element={<Layout><MyAccount /></Layout>} />
             <Route path="/pedido/:id" element={<Layout><OrderDetail /></Layout>} />
@@ -211,6 +214,7 @@ const App = () => {
             <Route path="/admin/page-builder" element={<AdminLayout><PageBuilder /></AdminLayout>} />
             <Route path="/admin/emails" element={<AdminLayout><EmailManagement /></AdminLayout>} />
             <Route path="/admin/database" element={<AdminLayout><DatabaseAdmin /></AdminLayout>} />
+            <Route path="/admin/litofanias" element={<AdminLayout><LithophanyAdmin /></AdminLayout>} />
             
             {/* 404 route */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />

@@ -23,7 +23,7 @@ interface CustomizationSection {
   section_name: string;
   display_order: number;
   is_required: boolean;
-  section_type: 'color' | 'image' | 'file_upload';
+  section_type: 'color' | 'image';
   selectedColors: string[];
   selectedImages: SectionImage[];
 }
@@ -365,7 +365,7 @@ export default function ProductCustomizationSections({
           </Button>
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Define secciones donde el cliente puede seleccionar colores, imágenes o subir archivos para personalizar el producto
+          Define secciones donde el cliente puede seleccionar colores para diferentes partes del producto
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -417,10 +417,6 @@ export default function ProductCustomizationSections({
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="image" id={`image-${index}`} />
                             <Label htmlFor={`image-${index}`}>Imágenes</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="file_upload" id={`file_upload-${index}`} />
-                            <Label htmlFor={`file_upload-${index}`}>Carga de Archivo (Cliente)</Label>
                           </div>
                         </RadioGroup>
                       </div>
@@ -493,24 +489,6 @@ export default function ProductCustomizationSections({
                                 </p>
                               )}
                             </div>
-                          </div>
-                        </div>
-                      ) : section.section_type === 'file_upload' ? (
-                        <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200">
-                          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                            <Upload className="h-5 w-5" />
-                            <span className="font-medium text-sm">Carga de Archivo por el Cliente</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Al activar esta opción, el cliente deberá subir un archivo de imagen al momento de comprar. 
-                            Usa el campo "Nombre de la Sección" para indicar las instrucciones al cliente 
-                            (ej: "Sube tu foto para la litofanía - La imagen debe ser clara y de alta resolución").
-                          </p>
-                          <div className="p-2 bg-white dark:bg-background rounded border">
-                            <p className="text-xs font-medium mb-1">Vista previa del mensaje al cliente:</p>
-                            <p className="text-sm italic text-muted-foreground">
-                              "{section.section_name || 'Sube tu imagen aquí...'}"
-                            </p>
                           </div>
                         </div>
                       ) : (

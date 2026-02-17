@@ -46,8 +46,6 @@ interface LithophanyLampSelectorProps {
   dimensions: { width: number; height: number };
   onDimensionsChange: (width: number, height: number) => void;
   isLoading: boolean;
-  customText?: string;
-  onCustomTextChange?: (text: string) => void;
 }
 
 // Image mapping for lamp shapes
@@ -93,9 +91,7 @@ export const LithophanyLampSelector = ({
   onSelect,
   dimensions,
   onDimensionsChange,
-  isLoading,
-  customText,
-  onCustomTextChange
+  isLoading
 }: LithophanyLampSelectorProps) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
@@ -122,21 +118,19 @@ export const LithophanyLampSelector = ({
     return template.description;
   };
 
-  // Bambu Lab A1 max build plate: 256 x 256 mm (X and Y axes)
-  const BAMBU_A1_MAX = 256;
   // Enforce minimum 10mm dimensions
   const ABSOLUTE_MIN = 10;
 
   const handleWidthChange = (value: number) => {
     const minWidth = Math.max(selectedLamp?.min_width_mm || 50, ABSOLUTE_MIN);
-    const maxWidth = Math.min(selectedLamp?.max_width_mm || 300, BAMBU_A1_MAX);
+    const maxWidth = selectedLamp?.max_width_mm || 300;
     const clampedValue = Math.max(minWidth, Math.min(maxWidth, value));
     onDimensionsChange(clampedValue, dimensions.height);
   };
 
   const handleHeightChange = (value: number) => {
     const minHeight = Math.max(selectedLamp?.min_height_mm || 50, ABSOLUTE_MIN);
-    const maxHeight = Math.min(selectedLamp?.max_height_mm || 300, BAMBU_A1_MAX);
+    const maxHeight = selectedLamp?.max_height_mm || 300;
     const clampedValue = Math.max(minHeight, Math.min(maxHeight, value));
     onDimensionsChange(dimensions.width, clampedValue);
   };
@@ -267,8 +261,8 @@ export const LithophanyLampSelector = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{language === 'es' 
-                    ? 'Ajusta el tamaño de tu lámpara en milímetros. Máximo 256mm (Bambu Lab A1).'
-                    : 'Adjust your lamp size in millimeters. Max 256mm (Bambu Lab A1).'}</p>
+                    ? 'Ajusta el tamaño de tu lámpara en milímetros. El precio varía según el tamaño.'
+                    : 'Adjust your lamp size in millimeters. Price varies by size.'}</p>
                 </TooltipContent>
               </Tooltip>
             </h4>
@@ -285,7 +279,7 @@ export const LithophanyLampSelector = ({
                       onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
                       className="w-20 h-8 text-center"
                       min={selectedLamp.min_width_mm || 50}
-                      max={Math.min(selectedLamp.max_width_mm || 300, BAMBU_A1_MAX)}
+                      max={selectedLamp.max_width_mm || 300}
                     />
                     <span className="text-sm text-muted-foreground">mm</span>
                   </div>
@@ -293,13 +287,13 @@ export const LithophanyLampSelector = ({
                 <Slider
                   value={[dimensions.width]}
                   min={selectedLamp.min_width_mm || 50}
-                  max={Math.min(selectedLamp.max_width_mm || 300, BAMBU_A1_MAX)}
+                  max={selectedLamp.max_width_mm || 300}
                   step={1}
                   onValueChange={([v]) => handleWidthChange(v)}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{selectedLamp.min_width_mm || 50}mm</span>
-                  <span>{Math.min(selectedLamp.max_width_mm || 300, BAMBU_A1_MAX)}mm</span>
+                  <span>{selectedLamp.max_width_mm || 300}mm</span>
                 </div>
               </div>
 
@@ -314,7 +308,7 @@ export const LithophanyLampSelector = ({
                       onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
                       className="w-20 h-8 text-center"
                       min={selectedLamp.min_height_mm || 50}
-                      max={Math.min(selectedLamp.max_height_mm || 300, BAMBU_A1_MAX)}
+                      max={selectedLamp.max_height_mm || 300}
                     />
                     <span className="text-sm text-muted-foreground">mm</span>
                   </div>
@@ -322,13 +316,13 @@ export const LithophanyLampSelector = ({
                 <Slider
                   value={[dimensions.height]}
                   min={selectedLamp.min_height_mm || 50}
-                  max={Math.min(selectedLamp.max_height_mm || 300, BAMBU_A1_MAX)}
+                  max={selectedLamp.max_height_mm || 300}
                   step={1}
                   onValueChange={([v]) => handleHeightChange(v)}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{selectedLamp.min_height_mm || 50}mm</span>
-                  <span>{Math.min(selectedLamp.max_height_mm || 300, BAMBU_A1_MAX)}mm</span>
+                  <span>{selectedLamp.max_height_mm || 300}mm</span>
                 </div>
               </div>
             </div>
@@ -343,36 +337,7 @@ export const LithophanyLampSelector = ({
                   {((dimensions.width * dimensions.height) / 100).toFixed(1)} cm²
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {language === 'es'
-                  ? 'Tamaño máximo de impresión: 256×256mm (Bambu Lab A1)'
-                  : 'Max print size: 256×256mm (Bambu Lab A1)'}
-              </p>
             </div>
-          </Card>
-        )}
-
-        {/* Custom Text */}
-        {selectedLamp && (
-          <Card className="p-4 bg-muted/50">
-            <h4 className="font-medium mb-3">
-              {language === 'es' ? 'Texto personalizado (opcional)' : 'Custom text (optional)'}
-            </h4>
-            <Input
-              type="text"
-              value={customText || ''}
-              onChange={(e) => onCustomTextChange?.(e.target.value)}
-              placeholder={language === 'es' 
-                ? 'Ej: Te quiero, Feliz cumpleaños...' 
-                : 'E.g.: I love you, Happy birthday...'}
-              maxLength={60}
-              className="mb-2"
-            />
-            <p className="text-xs text-muted-foreground">
-              {language === 'es'
-                ? 'Este texto se grabará en la parte inferior de la lámpara'
-                : 'This text will be engraved on the bottom of the lamp'}
-            </p>
           </Card>
         )}
       </CardContent>

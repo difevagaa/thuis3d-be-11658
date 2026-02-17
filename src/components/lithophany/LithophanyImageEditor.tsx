@@ -710,10 +710,10 @@ export const LithophanyImageEditor = ({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                {language === 'es' ? 'Ajustes de Imagen' : 'Image Adjustments'}
+                {language === 'es' ? 'Opciones de Edición' : 'Editing Options'}
               </CardTitle>
               <Badge variant="secondary">
-                {language === 'es' ? 'Básico' : 'Basic'}
+                {EDITING_OPTIONS.length} {language === 'es' ? 'opciones' : 'options'}
               </Badge>
             </div>
             

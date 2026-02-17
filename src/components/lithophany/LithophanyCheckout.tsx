@@ -29,8 +29,6 @@ interface LithophanyCheckoutProps {
   lampTemplate: LampTemplate;
   dimensions: { width: number; height: number };
   editorSettings: Record<string, number | boolean | string>;
-  customText?: string;
-  quantity?: number;
 }
 
 export const LithophanyCheckout = ({
@@ -38,9 +36,7 @@ export const LithophanyCheckout = ({
   originalImage,
   lampTemplate,
   dimensions,
-  editorSettings,
-  customText = '',
-  quantity = 1
+  editorSettings
 }: LithophanyCheckoutProps) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
@@ -69,7 +65,7 @@ export const LithophanyCheckout = ({
     const baseCost = lampTemplate.requires_custom_base ? 8 : 5;
     const subtotal = (basePrice + areaPrice + baseCost) * sizeMultiplier;
     const tax = subtotal * 0.21;
-    return (subtotal + tax) * quantity;
+    return subtotal + tax;
   };
 
   const handleSubmitOrder = async () => {
@@ -134,9 +130,7 @@ export const LithophanyCheckout = ({
           image_settings: editorSettings,
           lamp_custom_settings: {
             template_id: lampTemplate.id,
-            template_name: lampTemplate.name,
-            custom_text: customText,
-            quantity: quantity
+            template_name: lampTemplate.name
           },
           base_type: lampTemplate.base_type || 'standard',
           base_width_mm: dimensions.width * 1.2,
@@ -145,8 +139,8 @@ export const LithophanyCheckout = ({
           light_hole_diameter_mm: 16,
           light_hole_depth_mm: 10,
           calculated_price: calculatePrice(),
-          notes: notes + (customText ? `\nTexto personalizado: ${customText}` : '') + `\nCantidad: ${quantity}`,
-          status: 'processing'
+          notes: notes,
+          status: 'pending'
         })
         .select()
         .single();
@@ -202,8 +196,8 @@ export const LithophanyCheckout = ({
             </h2>
             <p className="text-muted-foreground">
               {language === 'es' 
-                ? 'Tu litofanía está en proceso de generación. Procede al pago para completar tu pedido.'
-                : 'Your lithophane is being generated. Proceed to payment to complete your order.'}
+                ? 'Tu litofanía ha sido guardada. Procede al pago para completar tu pedido.'
+                : 'Your lithophane has been saved. Proceed to payment to complete your order.'}
             </p>
           </div>
 
@@ -264,22 +258,6 @@ export const LithophanyCheckout = ({
                   </Label>
                   <p className="font-medium">{dimensions.width} × {dimensions.height} mm</p>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    {language === 'es' ? 'Cantidad' : 'Quantity'}
-                  </Label>
-                  <p className="font-medium">{quantity}</p>
-                </div>
-
-                {customText && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground">
-                      {language === 'es' ? 'Texto personalizado' : 'Custom text'}
-                    </Label>
-                    <p className="font-medium">"{customText}"</p>
-                  </div>
-                )}
                 
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">

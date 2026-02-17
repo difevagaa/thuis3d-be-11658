@@ -329,6 +329,7 @@ export const adminMenuItems: AdminMenuSection[] = [
     color: "from-orange-500 to-orange-600",
     items: [
       { icon: null, label: "Pedidos", url: "/admin/pedidos", color: "text-orange-700", bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300" },
+      { icon: null, label: "Litofanías", url: "/admin/litofanias", color: "text-purple-700", bgColor: "bg-purple-100 hover:bg-purple-200 border-purple-300" },
       { icon: null, label: "Cotizaciones", url: "/admin/cotizaciones", color: "text-amber-700", bgColor: "bg-amber-100 hover:bg-amber-200 border-amber-300" },
       { icon: null, label: "Facturas", url: "/admin/facturas", color: "text-yellow-700", bgColor: "bg-yellow-100 hover:bg-yellow-200 border-yellow-300" },
       { icon: null, label: "Estados", url: "/admin/estados", color: "text-lime-700", bgColor: "bg-lime-100 hover:bg-lime-200 border-lime-300" },
