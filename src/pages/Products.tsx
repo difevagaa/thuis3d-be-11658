@@ -54,20 +54,8 @@ const Products = () => {
       }, loadData)
       .subscribe();
 
-    const rolesChannel = supabase
-      .channel('products-roles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_roles'
-      }, () => {
-        loadData();
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(productsChannel);
-      supabase.removeChannel(rolesChannel);
     };
   }, []);
 
@@ -77,20 +65,6 @@ const Products = () => {
 
   const loadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      let userRoles: string[] = [];
-      if (user) {
-        const { data: rolesData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id);
-        
-        userRoles = (rolesData || [])
-          .map(r => String(r.role || '').trim().toLowerCase())
-          .filter(role => role.length > 0);
-      }
-
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
@@ -98,33 +72,12 @@ const Products = () => {
       
       if (productsError) throw productsError;
 
-      const visibleProducts = (productsData || []).filter((product: any) => {
-        const productRolesList = product.product_roles || [];
-        const productRolesNormalized = productRolesList
-          .map((pr: any) => String(pr?.role || '').trim().toLowerCase())
-          .filter((role: string) => role.length > 0);
-        
-        if (productRolesNormalized.length === 0) {
-          return true;
-        }
-        
-        if (!user || userRoles.length === 0) {
-          return false;
-        }
-        
-        const hasMatchingRole = productRolesNormalized.some((productRole: string) => 
-          userRoles.includes(productRole)
-        );
-        
-        return hasMatchingRole;
-      });
-
       const [categoriesRes, materialsRes] = await Promise.all([
         supabase.from("categories").select("*").is("deleted_at", null),
         supabase.from("materials").select("*").is("deleted_at", null)
       ]);
       
-      setProducts(visibleProducts);
+      setProducts(productsData || []);
       setCategories(categoriesRes.data || []);
       setMaterials(materialsRes.data || []);
     } catch (error) {
@@ -173,6 +126,10 @@ const Products = () => {
 
     if (selectedCategory !== "all") {
       filtered = filtered.filter(p => p.category_id === selectedCategory);
+    }
+
+    if (selectedMaterial !== "all") {
+      filtered = filtered.filter(p => p.material_id === selectedMaterial);
     }
 
     filtered = filtered.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
