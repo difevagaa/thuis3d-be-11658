@@ -34,13 +34,15 @@ export function SendAdminMessage() {
 
       if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: signedData, error: signError } = await supabase.storage
         .from('message-attachments')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 86400);
+
+      if (signError) throw signError;
 
       uploadedUrls.push({
         name: file.name,
-        url: publicUrl,
+        url: signedData.signedUrl,
         size: file.size,
         type: file.type
       });

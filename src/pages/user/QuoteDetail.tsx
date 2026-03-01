@@ -22,6 +22,7 @@ export default function UserQuoteDetail() {
   const [comment, setComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [statusIds, setStatusIds] = useState<{ approved?: string; rejected?: string }>({});
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
 
   const loadStatusIds = useCallback(async () => {
     try {
@@ -46,6 +47,17 @@ export default function UserQuoteDetail() {
     } catch {
       // Ignore status lookup errors
     }
+  }, []);
+
+  const loadFileUrls = useCallback(async (filePaths: string[]) => {
+    const urls: Record<string, string> = {};
+    for (const filePath of filePaths) {
+      const { data, error } = await supabase.storage
+        .from('quote-files')
+        .createSignedUrl(filePath, 3600);
+      if (!error && data) urls[filePath] = data.signedUrl;
+    }
+    setFileUrls(urls);
   }, []);
 
   const loadQuoteDetail = useCallback(async () => {
@@ -80,6 +92,11 @@ export default function UserQuoteDetail() {
       }
 
       setQuote(data);
+      // Load signed URLs for file attachments
+      if (data?.file_storage_path) {
+        const paths = String(data.file_storage_path).split(',').map((p: string) => p.trim()).filter(Boolean);
+        if (paths.length > 0) loadFileUrls(paths);
+      }
     } catch (error: any) {
       console.error("Error loading quote detail:", error);
       i18nToast.error("error.loadingQuoteFailed");
@@ -87,7 +104,7 @@ export default function UserQuoteDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]); // Depends on id and navigate
+  }, [id, navigate, loadFileUrls]); // Depends on id and navigate
 
   useEffect(() => {
     loadStatusIds();
@@ -127,11 +144,11 @@ export default function UserQuoteDetail() {
     }
   };
 
+
+
+
   const getFilePreviewUrl = (filePath: string) => {
-    const { data } = supabase.storage
-      .from('quote-files')
-      .getPublicUrl(filePath);
-    return data.publicUrl;
+    return fileUrls[filePath] || '';
   };
 
   const isImageFile = (fileName: string) => {
