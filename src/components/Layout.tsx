@@ -1,12 +1,14 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift } from "lucide-react";
+import { ShoppingCart, User, Package, LogOut, UserCircle, ShoppingBag, MessageSquare, Settings, Menu, Home, Search, Gift, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { FooterConfigurable } from "./FooterConfigurable";
 import { LanguageSelector } from "./LanguageSelector";
+import { GlobalSearchBar } from "./GlobalSearchBar";
+import { FirstPurchaseDiscount } from "./FirstPurchaseDiscount";
 import { logger } from "@/lib/logger";
 import { useResponsiveSafe } from "@/contexts/ResponsiveContext";
 import {
@@ -104,7 +106,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header - Full width background, pinned to top with no gap */}
+      {/* Header */}
       <header 
         className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
         style={{ 
@@ -112,13 +114,10 @@ export const Layout = ({ children }: LayoutProps) => {
           color: 'var(--home-menu-text, var(--header-text, inherit))'
         }}
       >
-        {/* Centered container for header content */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Compact header row - consistent height */}
           <div className="flex flex-row flex-nowrap h-14 items-center justify-between gap-2 sm:gap-3">
-            {/* Left side: Menu + Logo - Compact */}
+            {/* Left: Menu + Logo */}
             <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0 min-w-0">
-              {/* Mobile Menu Button - Smaller on mobile */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
                   <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 rounded-md">
@@ -195,6 +194,14 @@ export const Layout = ({ children }: LayoutProps) => {
                           <UserCircle className="mr-2 h-4 w-4" />
                           {t('myAccount')}
                         </Button>
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-sm h-11 rounded-lg"
+                          onClick={() => handleNavigate("/mi-cuenta?tab=wishlist")}
+                        >
+                          <Heart className="mr-2 h-4 w-4" />
+                          {t('wishlist')}
+                        </Button>
                         {isAdmin && (
                           <Button
                             variant="ghost"
@@ -247,6 +254,11 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </div>
 
+            {/* Center: Search Bar (desktop) */}
+            <div className="hidden lg:block flex-1 max-w-md mx-4">
+              <GlobalSearchBar />
+            </div>
+
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1 lg:gap-2">
               {[
@@ -271,9 +283,20 @@ export const Layout = ({ children }: LayoutProps) => {
               ))}
             </nav>
 
-            {/* Right side: Actions - Standardized 24px icons with consistent button sizes */}
+            {/* Right: Actions */}
             <div className="flex flex-row flex-nowrap items-center gap-1 flex-shrink-0">
               <LanguageSelector />
+              
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-lg hover:bg-accent hidden sm:flex" 
+                  onClick={() => navigate("/mi-cuenta?tab=wishlist")}
+                >
+                  <Heart className="h-5 w-5" />
+                </Button>
+              )}
               
               <Button 
                 variant="ghost" 
@@ -308,6 +331,10 @@ export const Layout = ({ children }: LayoutProps) => {
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=orders")} className="text-sm h-10 rounded-lg">
                       <ShoppingBag className="mr-2 h-4 w-4" />
                       {t('myOrders')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=wishlist")} className="text-sm h-10 rounded-lg">
+                      <Heart className="mr-2 h-4 w-4" />
+                      {t('wishlist')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/mi-cuenta?tab=messages")} className="text-sm h-10 rounded-lg">
                       <MessageSquare className="mr-2 h-4 w-4" />
@@ -344,13 +371,21 @@ export const Layout = ({ children }: LayoutProps) => {
               )}
             </div>
           </div>
+          
+          {/* Mobile Search Bar */}
+          <div className="lg:hidden pb-2">
+            <GlobalSearchBar />
+          </div>
         </div>
       </header>
 
-      {/* Main Content - Centered container with max-width */}
+      {/* Main Content */}
       <main className={`flex-1 w-full ${isMobile || isTablet ? 'pb-20' : 'pb-0'}`}>
         {children}
       </main>
+
+      {/* First Purchase Discount Banner */}
+      <FirstPurchaseDiscount />
 
       {/* Mobile Bottom Navigation - AliExpress style */}
       {(isMobile || isTablet) && (

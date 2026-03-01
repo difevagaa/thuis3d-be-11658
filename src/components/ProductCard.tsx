@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Printer, TruckIcon } from "lucide-react";
 import { useTranslatedContent } from "@/hooks/useTranslatedContent";
+import { WishlistButton } from "@/components/WishlistButton";
+import { SaleCountdown } from "@/components/SaleCountdown";
 import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -47,6 +49,18 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
                 <TruckIcon className="h-2.5 w-2.5 md:h-3 md:w-3" />
                 <span className="hidden sm:inline">{t('freeShipping')}</span>
                 <span className="sm:hidden">FREE</span>
+              </div>
+            )}
+
+            {/* Wishlist Button */}
+            <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 z-10">
+              <WishlistButton productId={product.id} size="icon" className="h-7 w-7 md:h-8 md:w-8 bg-background/80 backdrop-blur-sm hover:bg-background shadow-sm" />
+            </div>
+
+            {/* Sale Countdown */}
+            {(product as any).is_on_sale && (product as any).sale_end_date && (
+              <div className="absolute bottom-1.5 left-1.5 md:bottom-2 md:left-2 z-10">
+                <SaleCountdown saleEndDate={(product as any).sale_end_date} compact />
               </div>
             )}
 
