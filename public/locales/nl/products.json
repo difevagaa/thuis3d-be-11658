@@ -99,5 +99,11 @@
     "waitlistNote": "We laten u weten wanneer er voorraad is",
     "reservationNote": "Voorraad wordt 30 minuten gereserveerd bij toevoegen aan winkelwagen"
   },
-  "viewAllProducts": "Bekijk alle producten"
+  "viewAllProducts": "Bekijk alle producten",
+  "errors": {
+    "loadData": "Fout bij het laden van gegevens",
+    "enterCode": "Voer een productcode in",
+    "notFoundByCode": "Geen product gevonden met die code",
+    "searchError": "Fout bij het zoeken naar product"
+  }
 }
