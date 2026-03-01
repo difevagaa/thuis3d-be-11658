@@ -363,8 +363,8 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
           </div>
           
-          {/* Mobile / Tablet Search Bar */}
-          <div className="xl:hidden pb-2">
+          {/* Mobile / Tablet Search Bar - below header row to avoid overlap */}
+          <div className="xl:hidden pb-2 pt-1">
             <GlobalSearchBar />
           </div>
         </div>
