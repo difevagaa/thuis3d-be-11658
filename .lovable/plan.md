@@ -1,117 +1,106 @@
 
 
-# Auditoria Completa del Sistema de Pagos
+# Auditoria General y Rediseno del Sitio Web
 
-## 1. Error de Build (Critico - Bloquea todo)
+## Problema Critico #1: Productos no cargan (BLOQUEA TODO)
 
-**Archivo:** `src/components/STLUploader.tsx` linea 144
+**Causa raiz identificada:** La politica RLS `Roles_Admin_Manage` en la tabla `user_roles` hace un subquery a `user_roles` dentro de su propia politica, causando **recursion infinita**. Esto bloquea TODAS las queries que involucren roles de usuario, incluyendo la carga de productos.
 
-**Problema:** La propiedad `analysisParams` se pasa en el resultado pero el tipo `AnalysisResult & { file: File }` no la incluye.
+```text
+user_roles -> Policy "Roles_Admin_Manage" -> SELECT FROM user_roles -> Policy triggers again -> INFINITE LOOP
+```
 
-**Solucion:** Actualizar el tipo del callback `onAnalysisComplete` para incluir `analysisParams` opcional, o expandir la interfaz.
+**Error en consola:** `"infinite recursion detected in policy for relation "user_roles""`
 
----
+**Solucion:** Reemplazar la politica `Roles_Admin_Manage` con una que use la funcion `is_admin_or_superadmin()` (que es `SECURITY DEFINER` y bypassa RLS):
 
-## 2. Hallazgos de la Auditoria Global del Sistema de Pagos
+```sql
+DROP POLICY "Roles_Admin_Manage" ON user_roles;
+CREATE POLICY "Roles_Admin_Manage" ON user_roles
+  FOR ALL TO authenticated
+  USING (is_admin_or_superadmin(auth.uid()))
+  WITH CHECK (is_admin_or_superadmin(auth.uid()));
+```
 
-### 2.1 Flujo de Productos (Carrito -> Envio -> Resumen -> Pago)
-
-| Componente | Estado | Notas |
-|---|---|---|
-| Cart (`/carrito`) | OK | Calculo de subtotal, cupones, tarjetas regalo funcional |
-| ShippingInfo (`/informacion-envio`) | OK | Validacion, sesion de checkout, perfil autofill |
-| PaymentSummary (`/resumen-pago`) | Revisar | Necesita verificacion de calculo de envio y IVA |
-| Payment (`/pago`) | OK | 4 metodos, gift card, flujo invoice |
-| CardPaymentPage (`/pago-tarjeta`) | OK | Overlay 4s, pestaña nueva, pedido pending |
-| RevolutPaymentPage (`/pago-revolut`) | OK | Mismo flujo que tarjeta |
-| PaymentInstructions (`/pago-instrucciones`) | OK | Transferencia bancaria |
-| PaymentProcessing (`/pago-en-proceso`) | OK | Pagina de confirmacion |
-
-### 2.2 Problemas Identificados
-
-**A. `paymentUtils.ts` linea 283: `shipping: 0` hardcoded**
-- En `calculateOrderTotals()`, el shipping siempre es 0. Esta funcion se usa en algunos flujos pero NO en el flujo principal de Payment.tsx (que calcula shipping dinámicamente). Riesgo bajo pero debe corregirse para consistencia.
-
-**B. `PaymentSummary.tsx` - Verificar sincronizacion de calculos**
-- El resumen de pago calcula subtotal, IVA y envio independientemente. Debe coincidir con Payment.tsx.
-
-**C. Textos hardcoded en español**
-- `paymentUtils.ts` linea 309: `"Tarjeta de regalo aplicada:..."` - No traducido
-- `paymentUtils.ts` linea 317: Notas de tarjeta regalo en español
-- `PaymentInstructions.tsx` linea 31: `"No se encontró información del pedido"` - No traducido
-- `Payment.tsx` linea 396-397: Toast de gift card en español hardcoded
-
-**D. `STLUploader.tsx` - Error de tipos (BUILD ERROR)**
-- Linea 144: `analysisParams` no existe en el tipo de retorno
-
-### 2.3 Flujo de Cotizaciones (`/cotizaciones`)
-
-- Calculo de envio por codigo postal: funcional (usa `calculateShippingByPostalCode`)
-- Contexto separado `'quotes'` vs `'products'`: correctamente implementado
-- Umbral de envio gratis para cotizaciones: configurado
-
-### 2.4 Flujo de Facturas (Invoice Payment)
-
-- Pago desde "Mi Cuenta" -> Payment.tsx: funcional
-- Soporta bank_transfer, card, paypal, revolut: correcto
-- Status siempre "pending" hasta verificacion admin: correcto
-
-### 2.5 Sistema de Envio (`useShippingCalculator`)
-
-- 7 pasos de prioridad: producto free/disabled/custom -> global enable -> umbral gratis -> codigo postal especial -> zonas por peso -> tarifa pais -> default
-- Contexto productos vs cotizaciones: correcto
-- Calculo por peso: funcional
-
-### 2.6 Sistema de Impuestos (`useTaxSettings`)
-
-- Lee `tax_enabled` y `tax_rate` de `site_settings`
-- Solo aplica IVA a productos con `tax_enabled !== false`
-- Tarjetas regalo excluidas de IVA: correcto
+Tambien la politica `Roles_Self_View` se mantiene para que usuarios vean sus propios roles.
 
 ---
 
-## 3. Plan de Correccion
+## Problema #2: Textos hardcoded en espanol en Products.tsx
 
-### Tarea 1: Corregir error de build en STLUploader.tsx
-- Actualizar la interfaz del callback para aceptar `analysisParams`
-
-### Tarea 2: Corregir shipping hardcoded en paymentUtils
-- Eliminar `shipping: 0` hardcoded en `calculateOrderTotals` y usar parametro dinamico
-
-### Tarea 3: Internacionalizar textos hardcoded en español
-- Traducir mensajes en `paymentUtils.ts`, `Payment.tsx`, `PaymentInstructions.tsx`
-
-### Tarea 4: Verificar consistencia de calculos PaymentSummary vs Payment
-- Asegurar que ambos usan la misma formula: `subtotal + IVA + envio - cupones - gift cards = total`
-
-### Tarea 5: Test end-to-end de cada flujo de pago
-- Productos: carrito -> envio -> resumen -> pago (4 metodos)
-- Cotizaciones: archivo 3D -> personalizar -> envio -> revision
-- Facturas: mi cuenta -> pagar factura -> metodo de pago
+Lineas 84, 92, 105, 111, 121 tienen toasts en espanol sin usar `t()`. Se reemplazaran con claves de traduccion.
 
 ---
 
-## Detalles Tecnicos
+## Plan de Rediseno Estetico Completo
 
-### Archivos a modificar:
-1. `src/components/STLUploader.tsx` - Fix tipo AnalysisResult (build error)
-2. `src/lib/paymentUtils.ts` - Fix shipping hardcoded, internacionalizar notas
-3. `src/pages/Payment.tsx` - Internacionalizar textos hardcoded
-4. `src/pages/PaymentInstructions.tsx` - Internacionalizar textos hardcoded
-5. `src/pages/PaymentSummary.tsx` - Verificar calculos
+### Fase 1: Correccion de datos (Migracion DB)
+1. Fix RLS recursion en `user_roles` - una sola migracion SQL
+2. Verificar que productos cargan correctamente despues del fix
 
-### Checklist de Verificacion Final:
-- [ ] Build sin errores
-- [ ] Subtotal calculado correctamente (suma de precio x cantidad)
-- [ ] IVA aplicado solo a productos con tax_enabled (no gift cards)
-- [ ] Envio calculado segun configuracion (zonas, codigos postales, umbrales)
-- [ ] Total = subtotal + IVA + envio - descuentos
-- [ ] Transferencia bancaria: redirige a instrucciones
-- [ ] Tarjeta: overlay 4s + nueva pestaña + /pago-en-proceso
-- [ ] Revolut: overlay 4s + nueva pestaña + /pago-en-proceso
-- [ ] PayPal: crea pedido + redirige a PayPal
-- [ ] Gift card cubre total: procesa pago automaticamente
-- [ ] Factura: actualiza status a pending + redirige segun metodo
-- [ ] Cotizacion: envio calculado con contexto 'quotes'
-- [ ] Todos los textos traducidos en ES/EN/NL
+### Fase 2: Rediseno de paginas publicas
+
+**Home (SectionRenderer):**
+- Mejorar el fallback cuando no hay productos (mejor UI con ilustracion)
+- Mejorar espaciado y tipografia del carousel de productos
+
+**Products (/productos):**
+- Modernizar grid de productos con hover effects mejorados
+- Mejorar filtros con mejor UX (badges activos, contadores)
+- Internacionalizar toasts hardcoded en espanol
+
+**ProductCard:**
+- Mejorar transiciones hover
+- Mejor layout de precio y nombre
+
+**ProductDetail:**
+- Revisar layout responsive
+
+**Layout (Header/Footer):**
+- Mejorar transiciones de navegacion activa (indicador visual)
+- Mejorar bottom nav mobile con indicador activo animado
+
+### Fase 3: Rediseno de paginas admin
+
+**AdminSidebar:**
+- Verificar que todas las rutas funcionan
+- Mejorar indicadores activos
+
+**AdminDashboard:**
+- Verificar que las estadisticas cargan correctamente
+
+### Fase 4: Mejoras globales de UX
+- Verificar que las paginas de usuario (Mi Cuenta, Pedidos, Mensajes, Facturas, Cotizaciones) funcionan
+- Verificar flujo de pago completo
+- Verificar blog y galeria
+
+---
+
+## Archivos a modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| **Migracion SQL** | Fix RLS `user_roles` (recursion infinita) |
+| `src/pages/Products.tsx` | Internacionalizar toasts, mejorar UI grid |
+| `src/components/ProductCard.tsx` | Mejorar hover effects y layout |
+| `src/components/Layout.tsx` | Mejorar indicadores de navegacion activa |
+| `src/components/FeaturedProductsCarousel.tsx` | Mejorar fallback vacio |
+| `src/components/page-builder/SectionRenderer.tsx` | Simplificar query de roles (usar has_role function) |
+| `public/locales/[es|en|nl]/products.json` | Agregar claves faltantes para toasts |
+| `src/index.css` | Ajustes finos de variables CSS para consistencia |
+
+## Checklist de verificacion
+
+- [ ] Productos cargan en Home (carousel)
+- [ ] Productos cargan en /productos
+- [ ] ProductDetail funciona al hacer click
+- [ ] Filtros de productos funcionan (categoria, material, precio)
+- [ ] Admin puede ver user_roles sin error
+- [ ] Header responsive funciona en mobile/tablet/desktop
+- [ ] Bottom navigation mobile funciona
+- [ ] Paginas de usuario (Mi Cuenta) cargan correctamente
+- [ ] Blog y Galeria cargan
+- [ ] Carrito funciona
+- [ ] Toasts aparecen en el idioma correcto
+- [ ] Estilos consistentes en todas las paginas
 
