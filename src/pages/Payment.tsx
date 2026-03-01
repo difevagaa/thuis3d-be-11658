@@ -303,8 +303,8 @@ export default function Payment() {
       // Send notification about gift card redemption
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const notificationTitle = `Tarjeta regalo aplicada: €${data.current_balance.toFixed(2)}`;
-        const notificationMessage = `Has aplicado una tarjeta regalo por €${data.current_balance.toFixed(2)}`;
+        const notificationTitle = `Gift card applied: €${data.current_balance.toFixed(2)}`;
+        const notificationMessage = `You applied a gift card for €${data.current_balance.toFixed(2)}`;
         
         await supabase.rpc('send_notification', {
           p_user_id: user.id,
@@ -366,7 +366,7 @@ export default function Payment() {
           discount: giftCardAmount,
           total: total,
           shipping_info: shippingInfo,
-          notes: `Pedido pagado completamente con tarjeta de regalo: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
+          notes: `Order fully paid with gift card: ${appliedGiftCard.code} (-€${giftCardAmount.toFixed(2)})`
         }])
         .select()
         .single();
@@ -854,7 +854,7 @@ export default function Payment() {
         {/* Order Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>{isInvoicePayment ? 'Resumen de Factura' : 'Resumen del Pedido'}</CardTitle>
+            <CardTitle>{isInvoicePayment ? t('payment:invoiceSummary') : t('payment:orderSummary')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -863,25 +863,25 @@ export default function Payment() {
                 <>
                   <div className="flex justify-between items-center py-2">
                     <div>
-                      <p className="font-medium">Factura {shippingInfo.invoiceNumber}</p>
-                      <p className="text-sm text-muted-foreground">Pago de factura</p>
+                      <p className="font-medium">{t('payment:invoice')} {shippingInfo.invoiceNumber}</p>
+                      <p className="text-sm text-muted-foreground">{t('payment:invoiceInfo')}</p>
                     </div>
                   </div>
                   
                   <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t('common:subtotal')}</span>
                       <span>€{Number(shippingInfo.subtotal || 0).toFixed(2)}</span>
                     </div>
                     {shippingInfo.shipping > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Envío</span>
+                        <span className="text-muted-foreground">{t('payment:shipping')}</span>
                         <span>€{Number(shippingInfo.shipping).toFixed(2)}</span>
                       </div>
                     )}
                     {shippingInfo.tax > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">IVA (21%)</span>
+                        <span className="text-muted-foreground">{t('payment:vat')} (21%)</span>
                         <span>€{Number(shippingInfo.tax).toFixed(2)}</span>
                       </div>
                     )}
@@ -905,7 +905,7 @@ export default function Payment() {
                       <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Cantidad: {item.quantity} x €{Number(item.price).toFixed(2)}
+                          {t('cart:item.quantity', 'Qty')}: {item.quantity} x €{Number(item.price).toFixed(2)}
                         </p>
                       </div>
                       <p className="font-medium">€{(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
@@ -914,20 +914,20 @@ export default function Payment() {
                   
                    <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t('common:subtotal')}</span>
                       <span>€{calculateSubtotal().toFixed(2)}</span>
                     </div>
                     {appliedGiftCard && (
                       <div className="flex justify-between text-blue-600">
                         <span className="flex items-center gap-1">
                           <Gift className="h-4 w-4" />
-                          Tarjeta de Regalo
+                          {t('cart:summary.giftCard')}
                         </span>
                         <span className="font-semibold">-€{calculateGiftCardAmount().toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Envío</span>
+                      <span className="text-muted-foreground">{t('payment:shipping')}</span>
                       <span>€{shippingCost.toFixed(2)}</span>
                     </div>
                     {(() => {
@@ -943,7 +943,7 @@ export default function Payment() {
                             </div>
                           )}
                           <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                            <span>Total</span>
+                            <span>{t('common:total')}</span>
                             <span>€{total.toFixed(2)}</span>
                           </div>
                         </>

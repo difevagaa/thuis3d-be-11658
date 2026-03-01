@@ -47,6 +47,9 @@
   "addedToCart": "Product toegevoegd aan winkelwagen",
   "quoteRequested": "Offerte aangevraagd. We nemen binnenkort contact met u op.",
   "mustLogin": "U moet inloggen om",
+  "mustSelectSections": "U moet selecteren: {{sections}}",
+  "product": "Product",
+  "noImage": "Geen afbeelding",
   "mustLoginQuote": "U moet inloggen om offertes aan te vragen",
   "customization": {
     "title": "Aanpassing",

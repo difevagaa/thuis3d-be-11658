@@ -47,6 +47,9 @@
   "addedToCart": "Product added to cart",
   "quoteRequested": "Quote requested. We'll contact you soon.",
   "mustLogin": "You must log in to",
+  "mustSelectSections": "You must select: {{sections}}",
+  "product": "Product",
+  "noImage": "No image",
   "mustLoginQuote": "You must log in to request quotes",
   "customization": {
     "title": "Customization",

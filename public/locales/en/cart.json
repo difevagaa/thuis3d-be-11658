@@ -11,7 +11,8 @@
     "text": "Text",
     "subtotal": "Subtotal",
     "remove": "Remove",
-    "customization": "Customization"
+    "customization": "Customization",
+    "quantity": "Qty"
   },
   "summary": {
     "title": "Order Summary",
@@ -19,7 +20,8 @@
     "discount": "Discount",
     "giftCard": "Gift Card",
     "tax": "VAT (21%)",
-    "total": "Total"
+    "total": "Total",
+    "shipping": "Shipping"
   },
   "coupon": {
     "title": "Coupon Code",

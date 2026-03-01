@@ -11,7 +11,8 @@
     "text": "Tekst",
     "subtotal": "Subtotaal",
     "remove": "Verwijderen",
-    "customization": "Personalisatie"
+    "customization": "Personalisatie",
+    "quantity": "Aantal"
   },
   "summary": {
     "title": "Besteloverzicht",
@@ -19,7 +20,8 @@
     "discount": "Korting",
     "giftCard": "Cadeaukaart",
     "tax": "BTW (21%)",
-    "total": "Totaal"
+    "total": "Totaal",
+    "shipping": "Verzending"
   },
   "coupon": {
     "title": "Kortingscode",

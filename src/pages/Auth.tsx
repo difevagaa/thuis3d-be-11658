@@ -160,7 +160,7 @@ const Auth = () => {
       setShowResetPassword(false);
       setResetEmail("");
     } catch (error: any) {
-      toast.error(error.message || "Error al enviar email de recuperación");
+      toast.error(error.message || t('errorResetEmail'));
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,7 @@ const Auth = () => {
 
     try {
       if (!newPassword || newPassword.length < 6) {
-        toast.error("La contraseña debe tener al menos 6 caracteres");
+        toast.error(t('passwordMinLength'));
         return;
       }
 
@@ -187,7 +187,7 @@ const Auth = () => {
       setNewPassword("");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Error al actualizar contraseña");
+      toast.error(error.message || t('errorUpdatingPassword'));
     } finally {
       setLoading(false);
     }
