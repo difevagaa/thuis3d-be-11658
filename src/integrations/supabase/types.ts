@@ -4010,6 +4010,7 @@ export type Database = {
           postal_code: string | null
           product_id: string | null
           quantity: number | null
+          quote_number: string | null
           quote_type: string
           service_attachments: Json | null
           shipping_cost: number | null
@@ -4049,6 +4050,7 @@ export type Database = {
           postal_code?: string | null
           product_id?: string | null
           quantity?: number | null
+          quote_number?: string | null
           quote_type: string
           service_attachments?: Json | null
           shipping_cost?: number | null
@@ -4088,6 +4090,7 @@ export type Database = {
           postal_code?: string | null
           product_id?: string | null
           quantity?: number | null
+          quote_number?: string | null
           quote_type?: string
           service_attachments?: Json | null
           shipping_cost?: number | null
@@ -5425,6 +5428,7 @@ export type Database = {
       generate_product_code: { Args: never; Returns: string }
       generate_product_keywords: { Args: never; Returns: undefined }
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
+      generate_reference_code: { Args: never; Returns: string }
       get_applicable_transition_rules: {
         Args: {
           p_entity_type: string

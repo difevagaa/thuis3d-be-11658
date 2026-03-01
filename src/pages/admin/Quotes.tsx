@@ -301,6 +301,7 @@ export default function Quotes() {
                       aria-label="Seleccionar todos"
                     />
                   </TableHead>
+                  <TableHead>Ref.</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Material</TableHead>
@@ -316,7 +317,7 @@ export default function Quotes() {
               <TableBody>
                 {quotes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
                       No hay cotizaciones registradas
                     </TableCell>
                   </TableRow>
@@ -334,6 +335,7 @@ export default function Quotes() {
                           aria-label={`Seleccionar ${quote.customer_name}`}
                         />
                       </TableCell>
+                      <TableCell className="font-mono text-xs">{quote.quote_number || '-'}</TableCell>
                       <TableCell className="font-medium">{quote.customer_name}</TableCell>
                       <TableCell>{quote.customer_email}</TableCell>
                       <TableCell>{quote.materials?.name || '-'}</TableCell>

@@ -203,18 +203,27 @@ const handler = async (req: Request): Promise<Response> => {
         } catch { /* keep default */ }
       }
 
+      // Use quote_number as shared reference for order and invoice
+      const sharedRef = quote.quote_number;
+
+      const orderInsert: Record<string, unknown> = {
+        user_id: quote.user_id,
+        status_id: statusId,
+        subtotal, tax, discount: 0, shipping: shippingCost, total,
+        notes: `Pedido generado automáticamente desde cotización`,
+        admin_notes: quoteMarker,
+        shipping_address: addressParts || null,
+        billing_address: addressParts || null,
+        payment_status: 'pending'
+      };
+      // Override order_number with the quote's reference code
+      if (sharedRef) {
+        orderInsert.order_number = sharedRef;
+      }
+
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: quote.user_id,
-          status_id: statusId,
-          subtotal, tax, discount: 0, shipping: shippingCost, total,
-          notes: `Pedido generado automáticamente desde cotización`,
-          admin_notes: quoteMarker,
-          shipping_address: addressParts || null,
-          billing_address: addressParts || null,
-          payment_status: 'pending'
-        })
+        .insert(orderInsert)
         .select('id, order_number')
         .single();
 
@@ -238,10 +247,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Create invoice (linked to order) - invoice_number MUST match order_number
     if (!existingInvoice) {
-      // Use order_number as invoice_number for consistency
-      invoiceNumber = orderData?.order_number || null;
+      // Use quote_number as the shared reference for invoice_number
+      invoiceNumber = quote.quote_number || orderData?.order_number || null;
       
-      // Fallback: generate a number only if no order was created
+      // Fallback: generate a number only if no shared ref exists
       if (!invoiceNumber) {
         const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
           .rpc('generate_next_invoice_number');
