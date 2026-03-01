@@ -334,8 +334,8 @@ export function getEmailTemplate<T extends Record<SupportedLanguage, any>>(
   templates: T,
   language: string | null | undefined
 ): T[SupportedLanguage] {
-  const lang = (language?.split('-')[0]?.toLowerCase() || 'nl') as SupportedLanguage;
-  return templates[lang] || templates['nl'];
+  const lang = (language?.split('-')[0]?.toLowerCase() || 'en') as SupportedLanguage;
+  return templates[lang] || templates['en'];
 }
 
 // Status translations
@@ -389,13 +389,13 @@ export const quoteTypeTranslations: Record<SupportedLanguage, Record<string, str
 };
 
 export function translateQuoteType(quoteType: string, language: string): string {
-  const lang = (language?.split('-')[0]?.toLowerCase() || 'nl') as SupportedLanguage;
-  const translations = quoteTypeTranslations[lang] || quoteTypeTranslations['nl'];
+  const lang = (language?.split('-')[0]?.toLowerCase() || 'en') as SupportedLanguage;
+  const translations = quoteTypeTranslations[lang] || quoteTypeTranslations['en'];
   return translations[quoteType] || translations['default'];
 }
 
 export function translateStatus(status: string, language: string): string {
-  const lang = (language?.split('-')[0]?.toLowerCase() || 'nl') as SupportedLanguage;
-  const translations = statusTranslations[lang] || statusTranslations['nl'];
+  const lang = (language?.split('-')[0]?.toLowerCase() || 'en') as SupportedLanguage;
+  const translations = statusTranslations[lang] || statusTranslations['en'];
   return translations[status.toLowerCase()] || status;
 }

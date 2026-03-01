@@ -27,6 +27,10 @@
     "city": "City",
     "postalCode": "Postal Code",
     "country": "Country",
+    "preferredLanguage": "Preferred Language",
+    "languageHint": "This language will be used for all communications, notifications, and emails.",
+    "languageSaved": "Language updated successfully",
+    "languageError": "Error updating language",
     "saveChanges": "Save Changes",
     "updated": "Profile updated successfully",
     "error": "Error updating profile"

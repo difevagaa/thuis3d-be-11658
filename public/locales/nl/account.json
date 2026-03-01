@@ -27,6 +27,10 @@
     "city": "Stad",
     "postalCode": "Postcode",
     "country": "Land",
+    "preferredLanguage": "Voorkeurstaal",
+    "languageHint": "Deze taal wordt gebruikt voor alle communicatie, meldingen en e-mails.",
+    "languageSaved": "Taal succesvol bijgewerkt",
+    "languageError": "Fout bij het bijwerken van de taal",
     "saveChanges": "Wijzigingen Opslaan",
     "updated": "Profiel succesvol bijgewerkt",
     "error": "Fout bij het bijwerken van profiel"
