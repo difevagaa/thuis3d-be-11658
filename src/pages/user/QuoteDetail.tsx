@@ -227,10 +227,8 @@ export default function UserQuoteDetail() {
             if (data.invoice) msg += ` Factura ${data.invoice.invoice_number} generada (€${data.invoice.total.toFixed(2)}).`;
             i18nToast.directSuccess(msg);
 
-            // Redirect to invoice if available
-            if (data.invoice?.id) {
-              setTimeout(() => navigate(`/mis-facturas/${data.invoice.id}`), 2000);
-            }
+            // Redirect to invoices tab
+            setTimeout(() => navigate("/mi-cuenta?tab=invoices"), 2000);
           }
         } catch (autoErr) {
           console.error('Automation error:', autoErr);
