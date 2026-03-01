@@ -41,15 +41,17 @@ export default function MyAccount() {
   const [showCouponNotification, setShowCouponNotification] = useState(false);
   const [newCouponNotification, setNewCouponNotification] = useState<any>(null);
 
+  // Sync tab from URL on every location change
   useEffect(() => {
-    checkAuth();
-
-    // Check for tab parameter in URL
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
     }
+  }, [location.search]);
+
+  useEffect(() => {
+    checkAuth();
 
     // Realtime subscription para tarjetas de regalo
     const giftCardsChannel = supabase
