@@ -22,5 +22,8 @@
   "error": "Fout bij verzenden beoordeling",
   "loading": "Beoordelingen laden...",
   "user": "Gebruiker",
-  "verifiedPurchase": "Geverifieerde aankoop"
+  "verifiedPurchase": "Geverifieerde aankoop",
+  "photos": "Foto's (optioneel)",
+  "photosHint": "Maximaal 3 foto's, 5MB per stuk",
+  "photoTooLarge": "Afbeelding is te groot (max 5MB)"
 }

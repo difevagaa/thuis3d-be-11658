@@ -414,8 +414,100 @@ const Cart = () => {
           </Card>
         </div>
       </div>
+
+      {/* Upsell / You May Also Like */}
+      <UpsellSection cartItems={cartItems} />
     </div>
   );
 };
+
+function UpsellSection({ cartItems }: { cartItems: CartItem[] }) {
+  const { t } = useTranslation(['cart', 'products']);
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadUpsell();
+  }, [cartItems]);
+
+  const loadUpsell = async () => {
+    const productIds = cartItems.map(i => i.productId);
+    if (productIds.length === 0) return;
+
+    // Get upsell_product_ids from cart products
+    const { data } = await supabase
+      .from("products")
+      .select("upsell_product_ids")
+      .in("id", productIds);
+
+    const upsellIds = new Set<string>();
+    (data || []).forEach((p: any) => {
+      if (p.upsell_product_ids && Array.isArray(p.upsell_product_ids)) {
+        p.upsell_product_ids.forEach((id: string) => {
+          if (!productIds.includes(id)) upsellIds.add(id);
+        });
+      }
+    });
+
+    if (upsellIds.size === 0) return;
+
+    const { data: upsellProducts } = await supabase
+      .from("products")
+      .select("id, name, price, is_on_sale, sale_price")
+      .in("id", Array.from(upsellIds))
+      .is("deleted_at", null)
+      .limit(4);
+
+    if (upsellProducts && upsellProducts.length > 0) {
+      // Fetch images
+      const withImages = await Promise.all(
+        upsellProducts.map(async (p) => {
+          const { data: img } = await supabase
+            .from("product_images")
+            .select("image_url")
+            .eq("product_id", p.id)
+            .order("display_order")
+            .limit(1)
+            .maybeSingle();
+          return { ...p, image_url: img?.image_url };
+        })
+      );
+      setProducts(withImages);
+    }
+  };
+
+  if (products.length === 0) return null;
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-xl font-bold mb-4">{t('cart:upsell.title')}</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/producto/${p.id}`)}
+          >
+            <div className="aspect-square bg-muted">
+              {p.image_url ? (
+                <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                  {t('products:noImage')}
+                </div>
+              )}
+            </div>
+            <div className="p-2">
+              <h4 className="text-sm font-medium truncate">{p.name}</h4>
+              <p className="text-sm font-bold text-primary">
+                €{(p.is_on_sale && p.sale_price ? p.sale_price : p.price).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default Cart;

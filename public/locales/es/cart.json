@@ -49,5 +49,8 @@
   "checkout": "Proceder al Pago",
   "continueShopping": "Continuar comprando",
   "itemRemoved": "Producto eliminado del carrito",
-  "loginRequired": "Debes iniciar sesión para continuar con la compra"
+  "loginRequired": "Debes iniciar sesión para continuar con la compra",
+  "upsell": {
+    "title": "También te puede interesar"
+  }
 }

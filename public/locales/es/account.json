@@ -15,7 +15,9 @@
     "points": "Puntos",
     "pointsShort": "Puntos",
     "giftcards": "Tarjetas",
-    "giftcardsShort": "Tarjetas"
+    "giftcardsShort": "Tarjetas",
+    "wishlist": "Favoritos",
+    "wishlistShort": "Favoritos"
   },
   "profile": {
     "title": "Información Personal",
@@ -159,5 +161,12 @@
       "used": "Usada",
       "expired": "Expirada"
     }
+  },
+  "wishlist": {
+    "title": "Mis Favoritos",
+    "description": "Productos que has guardado como favoritos",
+    "empty": "No tienes productos favoritos aún",
+    "removed": "Producto eliminado de favoritos",
+    "unknownProduct": "Producto no disponible"
   }
 }

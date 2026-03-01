@@ -49,5 +49,8 @@
   "checkout": "Doorgaan naar Betalen",
   "continueShopping": "Verder winkelen",
   "itemRemoved": "Product verwijderd uit winkelwagen",
-  "loginRequired": "U moet inloggen om verder te gaan met de aankoop"
+  "loginRequired": "U moet inloggen om verder te gaan met de aankoop",
+  "upsell": {
+    "title": "Misschien vindt u dit ook leuk"
+  }
 }

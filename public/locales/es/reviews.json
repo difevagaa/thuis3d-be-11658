@@ -22,5 +22,8 @@
   "error": "Error al enviar la reseña",
   "loading": "Cargando reseñas...",
   "user": "Usuario",
-  "verifiedPurchase": "Compra verificada"
+  "verifiedPurchase": "Compra verificada",
+  "photos": "Fotos (opcional)",
+  "photosHint": "Máximo 3 fotos, 5MB cada una",
+  "photoTooLarge": "La imagen es demasiado grande (máx. 5MB)"
 }

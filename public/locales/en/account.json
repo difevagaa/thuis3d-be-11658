@@ -15,7 +15,9 @@
     "points": "Points",
     "pointsShort": "Points",
     "giftcards": "Cards",
-    "giftcardsShort": "Cards"
+    "giftcardsShort": "Cards",
+    "wishlist": "Wishlist",
+    "wishlistShort": "Wishlist"
   },
   "profile": {
     "title": "Personal Information",
@@ -164,5 +166,12 @@
       "used": "Used",
       "expired": "Expired"
     }
+  },
+  "wishlist": {
+    "title": "My Wishlist",
+    "description": "Products you've saved as favorites",
+    "empty": "You have no favorite products yet",
+    "removed": "Product removed from wishlist",
+    "unknownProduct": "Product unavailable"
   }
 }

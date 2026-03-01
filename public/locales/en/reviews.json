@@ -22,5 +22,8 @@
   "error": "Error submitting review",
   "loading": "Loading reviews...",
   "user": "User",
-  "verifiedPurchase": "Verified purchase"
+  "verifiedPurchase": "Verified purchase",
+  "photos": "Photos (optional)",
+  "photosHint": "Maximum 3 photos, 5MB each",
+  "photoTooLarge": "Image is too large (max 5MB)"
 }
