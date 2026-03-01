@@ -46,5 +46,13 @@
   "benefit4": "Personalizable con tu mensaje",
   "availableBalance": "Saldo Disponible",
   "balanceSuccess": "Saldo consultado exitosamente",
-  "errorCheckingBalance": "Error al consultar saldo"
+  "errorCheckingBalance": "Error al consultar saldo",
+  "cardCreatedRedirecting": "Tarjeta creada. Redirigiendo al pago...",
+  "invalidAmount": "Por favor ingresa un monto válido",
+  "fillRequiredFields": "Por favor completa todos los campos obligatorios",
+  "errorProcessing": "Error al procesar la solicitud",
+  "selectedAmount": "Monto seleccionado",
+  "cardDesign": "Diseño",
+  "cardColor": "Color de la tarjeta",
+  "cardIcon": "Ícono de la tarjeta"
 }

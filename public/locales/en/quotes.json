@@ -97,5 +97,8 @@
   "preview3D": "3D Preview",
   "shippingNotIncluded": "Enter your address to see shipping cost.",
   "back": "Back",
-  "next": "Next"
+  "next": "Next",
+  "unit": "unit",
+  "units": "units",
+  "errorLoading": "Error loading gallery"
 }

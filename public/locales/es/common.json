@@ -89,5 +89,25 @@
     "wheelToZoom": "Rueda para zoom",
     "changeModel": "Cambiar modelo",
     "customer": "Cliente"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "new": "Nuevo",
+    "deleteRead": "Eliminar leídas",
+    "empty": "No tienes notificaciones",
+    "errorMarking": "Error al marcar notificación",
+    "allMarkedRead": "Todas las notificaciones marcadas como leídas",
+    "deleted": "Notificación eliminada",
+    "errorDeleting": "Error al eliminar notificación",
+    "readDeleted": "Notificaciones leídas eliminadas"
+  },
+  "chat": {
+    "title": "Asistente Virtual",
+    "welcome": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+    "placeholder": "Escribe tu mensaje...",
+    "errorResponse": "Error al obtener respuesta",
+    "noResponse": "No se recibió respuesta",
+    "errorSending": "Error al enviar mensaje"
   }
 }

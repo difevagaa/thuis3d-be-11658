@@ -46,5 +46,13 @@
   "benefit4": "Personaliseerbaar met uw bericht",
   "availableBalance": "Beschikbaar Saldo",
   "balanceSuccess": "Saldo succesvol gecontroleerd",
-  "errorCheckingBalance": "Fout bij het controleren van saldo"
+  "errorCheckingBalance": "Fout bij het controleren van saldo",
+  "cardCreatedRedirecting": "Kaart aangemaakt. Doorsturen naar betaling...",
+  "invalidAmount": "Voer een geldig bedrag in",
+  "fillRequiredFields": "Vul alle verplichte velden in",
+  "errorProcessing": "Fout bij verwerken van aanvraag",
+  "selectedAmount": "Geselecteerd bedrag",
+  "cardDesign": "Ontwerp",
+  "cardColor": "Kaartkleur",
+  "cardIcon": "Kaartpictogram"
 }

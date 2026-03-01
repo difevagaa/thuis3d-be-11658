@@ -105,9 +105,9 @@ export default function GiftCard() {
 
   const getStepLabel = (step: Step) => {
     switch (step) {
-      case 'amount': return t('step1Title', { defaultValue: 'Monto' });
-      case 'personalize': return t('step2Title', { defaultValue: 'Personalizar' });
-      case 'preview': return t('preview', { defaultValue: 'Vista previa' });
+      case 'amount': return t('step1Title');
+      case 'personalize': return t('step2Title');
+      case 'preview': return t('preview');
     }
   };
 
@@ -173,7 +173,7 @@ export default function GiftCard() {
         full_name: buyForm.senderName,
         email: buyForm.recipientEmail,
         phone: "",
-        address: "N/A - Tarjeta Digital",
+        address: "N/A - Digital Card",
         city: "N/A",
         postal_code: "00000",
         country: "Digital"
@@ -219,11 +219,11 @@ export default function GiftCard() {
         }
       }
 
-      toast.success("Tarjeta creada. Redirigiendo al pago...");
+      toast.success(t('cardCreatedRedirecting'));
       navigate("/pago");
       
     } catch (error) {
-      toast.error(t('errorProcessing', { defaultValue: 'Error al procesar la solicitud' }));
+      toast.error(t('errorProcessing'));
     }
   };
 
@@ -248,9 +248,9 @@ export default function GiftCard() {
       }
 
       setBalance(data.current_balance);
-      toast.success(t('balanceSuccess', { defaultValue: 'Saldo consultado exitosamente' }));
+      toast.success(t('balanceSuccess'));
     } catch (error) {
-      toast.error(t('errorCheckingBalance', { defaultValue: 'Error al consultar saldo' }));
+      toast.error(t('errorCheckingBalance'));
       setBalance(null);
     }
   };
@@ -261,7 +261,7 @@ export default function GiftCard() {
       <div className="mb-6 text-center">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          {t('heroSubtitle', { defaultValue: 'El regalo perfecto para cualquier ocasión' })}
+          {t('heroSubtitle')}
         </p>
       </div>
 
@@ -271,7 +271,7 @@ export default function GiftCard() {
             <TabsTrigger value="buy" className="text-xs md:text-sm gap-2">
               <Gift className="h-4 w-4" />
               <span className="hidden sm:inline">{t('buyCard')}</span>
-              <span className="sm:hidden">{t('step1Title', { defaultValue: 'Comprar' })}</span>
+              <span className="sm:hidden">{t('step1Title')}</span>
             </TabsTrigger>
             <TabsTrigger value="check" className="text-xs md:text-sm gap-2">
               <Search className="h-4 w-4" />
@@ -327,9 +327,9 @@ export default function GiftCard() {
                 <CardHeader className="text-center pb-2">
                   <CardTitle className="flex items-center justify-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
-                    {t('step1Title', { defaultValue: 'Elige el monto' })}
+                    {t('step1Title')}
                   </CardTitle>
-                  <CardDescription>{t('step1Description', { defaultValue: 'Selecciona un monto predefinido o personalizado' })}</CardDescription>
+                  <CardDescription>{t('step1Description')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -360,7 +360,7 @@ export default function GiftCard() {
                         : 'bg-card hover:bg-muted border-border hover:border-primary/50'
                     )}
                   >
-                    {t('customAmount', { defaultValue: 'Monto personalizado' })}
+                    {t('customAmount')}
                   </button>
                   
                   {showCustomAmount && (
@@ -368,7 +368,7 @@ export default function GiftCard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">€</span>
                       <Input
                         type="number"
-                        placeholder={t('customAmountPlaceholder', { defaultValue: 'Ingresa el monto' })}
+                        placeholder={t('customAmountPlaceholder')}
                         value={buyForm.customAmount}
                         onChange={(e) => setBuyForm({ ...buyForm, customAmount: e.target.value })}
                         className="pl-8 text-lg font-semibold h-12"
@@ -379,7 +379,7 @@ export default function GiftCard() {
 
                   {displayAmount > 0 && (
                     <div className="bg-primary/10 rounded-lg p-4 text-center">
-                      <p className="text-sm text-muted-foreground">{t('selectedAmount', { defaultValue: 'Monto seleccionado' })}</p>
+                      <p className="text-sm text-muted-foreground">{t('selectedAmount')}</p>
                       <p className="text-2xl font-bold text-primary">€{displayAmount.toFixed(2)}</p>
                     </div>
                   )}
@@ -394,7 +394,7 @@ export default function GiftCard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Mail className="h-5 w-5" />
-                      {t('step2Title', { defaultValue: 'Personaliza' })}
+                      {t('step2Title')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -434,12 +434,12 @@ export default function GiftCard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Palette className="h-5 w-5" />
-                      {t('cardDesign', { defaultValue: 'Diseño' })}
+                      {t('cardDesign')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-sm">{t('cardColor', { defaultValue: 'Color de la tarjeta' })}</Label>
+                      <Label className="text-sm">{t('cardColor')}</Label>
                       <div className="grid grid-cols-4 gap-2">
                         {GIFT_CARD_THEMES.map((theme) => (
                           <button
@@ -466,7 +466,7 @@ export default function GiftCard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-sm">{t('cardIcon', { defaultValue: 'Ícono' })}</Label>
+                      <Label className="text-sm">{t('cardIcon')}</Label>
                       <div className="grid grid-cols-5 gap-2">
                         {GIFT_CARD_ICONS.map((icon) => (
                           <button
@@ -498,7 +498,7 @@ export default function GiftCard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
-                      {t('preview', { defaultValue: 'Vista previa' })}
+                      {t('preview')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -507,7 +507,7 @@ export default function GiftCard() {
                       <GiftCardPrintable
                         code="XXXX-XXXX-XXXX-XXXX"
                         amount={displayAmount}
-                        message={buyForm.message || t('defaultMessage', { defaultValue: '¡Felicidades! Este regalo es para ti.' })}
+                        message={buyForm.message || t('defaultMessage')}
                         senderName={buyForm.senderName || t('yourNamePlaceholder')}
                         recipientEmail={buyForm.recipientEmail || t('recipientEmailPlaceholder')}
                         themeId={buyForm.themeId}
@@ -518,15 +518,15 @@ export default function GiftCard() {
                     {/* Summary */}
                     <div className="bg-background/80 rounded-lg p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>{t('recipient', { defaultValue: 'Destinatario' })}</span>
+                        <span>{t('recipientEmail')}</span>
                         <span className="font-medium">{buyForm.recipientEmail}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>{t('from', { defaultValue: 'De' })}</span>
+                        <span>{t('yourName')}</span>
                         <span className="font-medium">{buyForm.senderName}</span>
                       </div>
                       <div className="border-t pt-2 flex justify-between">
-                        <span className="font-bold">{t('total', { defaultValue: 'Total' })}</span>
+                        <span className="font-bold">{t('amount')}</span>
                         <span className="text-xl font-bold text-primary">€{displayAmount.toFixed(2)}</span>
                       </div>
                     </div>
@@ -535,11 +535,11 @@ export default function GiftCard() {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span>{t('benefit1', { defaultValue: 'Entrega instantánea' })}</span>
+                        <span>{t('benefit1')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span>{t('benefit3', { defaultValue: 'Sin caducidad' })}</span>
+                        <span>{t('benefit3')}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -565,7 +565,7 @@ export default function GiftCard() {
                 disabled={currentStep === 'amount'}
                 className="gap-2"
               >
-                {t('back', { defaultValue: 'Anterior' })}
+                {t('back', { ns: 'common' })}
               </Button>
               
               {currentStep !== 'preview' && (
@@ -575,7 +575,7 @@ export default function GiftCard() {
                   disabled={!canProceedToStep(STEPS[STEPS.indexOf(currentStep) + 1] as Step)}
                   className="gap-2"
                 >
-                  {t('next', { defaultValue: 'Siguiente' })}
+                  {t('next', { ns: 'common' })}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
@@ -615,7 +615,7 @@ export default function GiftCard() {
                   <div className="p-6 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="text-center">
                       <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">{t('availableBalance', { defaultValue: 'Saldo Disponible' })}</p>
+                      <p className="text-sm text-muted-foreground">{t('availableBalance')}</p>
                       <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                         €{balance.toFixed(2)}
                       </p>
