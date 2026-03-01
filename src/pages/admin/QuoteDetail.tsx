@@ -20,6 +20,18 @@ export default function QuoteDetail() {
   const [loading, setLoading] = useState(true);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [updatingTax, setUpdatingTax] = useState(false);
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+
+  const loadFileUrls = useCallback(async (filePaths: string[]) => {
+    const urls: Record<string, string> = {};
+    for (const filePath of filePaths) {
+      const { data, error } = await supabase.storage
+        .from('quote-files')
+        .createSignedUrl(filePath, 3600);
+      if (!error && data) urls[filePath] = data.signedUrl;
+    }
+    setFileUrls(urls);
+  }, []);
 
   const loadQuoteDetail = useCallback(async () => {
     try {
@@ -71,13 +83,18 @@ export default function QuoteDetail() {
       logger.log('Quote data loaded:', data);
       setQuote(data);
       setTaxEnabled((data as any).tax_enabled ?? true);
+      // Load signed URLs for file attachments
+      if (data?.file_storage_path) {
+        const paths = String(data.file_storage_path).split(',').map((p: string) => p.trim()).filter(Boolean);
+        if (paths.length > 0) loadFileUrls(paths);
+      }
     } catch (error: any) {
       logger.error("Error loading quote detail:", error);
       toast.error("Error al cargar detalles de la cotización");
     } finally {
       setLoading(false);
     }
-  }, [id]); // Depends on id from useParams
+  }, [id, loadFileUrls]); // Depends on id from useParams
 
   useEffect(() => {
     if (id) {
@@ -116,11 +133,10 @@ export default function QuoteDetail() {
     }
   };
 
+
+
   const getFilePreviewUrl = (filePath: string) => {
-    const { data } = supabase.storage
-      .from('quote-files')
-      .getPublicUrl(filePath);
-    return data.publicUrl;
+    return fileUrls[filePath] || '';
   };
 
   const isImageFile = (fileName: string) => {
