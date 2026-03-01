@@ -393,11 +393,11 @@ export default function Payment() {
         sessionStorage.removeItem("checkout_session_id");
       }
 
-      toast.success("¡Pedido completado! Pagado con tarjeta de regalo.");
+      toast.success(t('payment:messages.giftCardOrderCreated', { orderNumber: order.order_number }));
       navigate("/mi-cuenta", { state: { activeTab: 'orders' } });
     } catch (error) {
       logger.error("Error processing gift card payment:", error);
-      toast.error("Error al procesar el pago con tarjeta de regalo");
+      toast.error(t('payment:messages.error'));
     } finally {
       setProcessing(false);
     }

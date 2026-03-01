@@ -27,7 +27,7 @@ export default function PaymentInstructions() {
       
       const pendingOrderStr = sessionStorage.getItem("pending_order");
       if (!pendingOrderStr) {
-        toast.error("No se encontró información del pedido");
+        toast.error(t('payment:instructions.noOrderInfo'));
         navigate("/");
         return;
       }
@@ -236,7 +236,7 @@ export default function PaymentInstructions() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    toast.success(t('payment:instructions.copied'));
   };
 
   if (!orderNumber) {
@@ -248,7 +248,7 @@ export default function PaymentInstructions() {
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-lg">Creando tu pedido...</p>
+            <p className="text-lg">{t('payment:instructions.creatingOrder')}</p>
           </CardContent>
         </Card>
       </div>
@@ -263,10 +263,10 @@ export default function PaymentInstructions() {
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
           </div>
           <CardTitle className="text-xl md:text-2xl">
-            ¡Recibido!
+            {t('payment:instructions.received')}
           </CardTitle>
           <CardDescription className="text-sm md:text-base">
-            Tu número de referencia es: <strong className="break-all">{realOrderNumber}</strong>
+            {t('payment:instructions.referenceIs')} <strong className="break-all">{realOrderNumber}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -274,44 +274,44 @@ export default function PaymentInstructions() {
             <div className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-900 dark:text-blue-100">
-                  <CreditCard className="h-5 w-5" />
-                  Instrucciones para Transferencia Bancaria
-                </h3>
+                   <CreditCard className="h-5 w-5" />
+                   {t('payment:instructions.bankTransferTitle')}
+                 </h3>
                 
                 {/* MONTO A TRANSFERIR - DESTACADO */}
                 {total && (
                   <div className="bg-white dark:bg-slate-900 border-2 border-primary rounded-lg p-4 mb-4">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Monto a Transferir:</p>
-                    <p className="text-3xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">IVA incluido</p>
+                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{t('payment:instructions.amountToTransfer')}</p>
+                     <p className="text-3xl font-bold text-primary">€{Number(total).toFixed(2)}</p>
+                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('payment:vatIncluded')}</p>
                   </div>
                 )}
                 
                 <div className="space-y-3 text-sm">
                   {paymentConfig.company_info && (
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Información de la Empresa:</p>
+                     <div>
+                       <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.companyInfoLabel')}</p>
                       <p className="whitespace-pre-line text-blue-900 dark:text-blue-50">{paymentConfig.company_info}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_name && (
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Banco:</p>
+                     <div>
+                       <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.bankLabel')}</p>
                       <p className="text-blue-900 dark:text-blue-50">{paymentConfig.bank_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_name && (
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Titular de la Cuenta:</p>
+                     <div>
+                       <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.accountHolder')}</p>
                       <p className="text-blue-900 dark:text-blue-50">{paymentConfig.bank_account_name}</p>
                     </div>
                   )}
                   
                   {paymentConfig.bank_account_number && (
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">IBAN:</p>
+                     <div>
+                       <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.ibanLabel')}</p>
                       <div className="flex items-center gap-2">
                         <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
                           {paymentConfig.bank_account_number}
@@ -327,8 +327,8 @@ export default function PaymentInstructions() {
                     </div>
                   )}
 
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">Concepto de la Transferencia:</p>
+                   <div>
+                     <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.transferConcept')}</p>
                     <div className="flex items-center gap-2">
                       <code className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 flex-1 font-mono">
                         {realOrderNumber}
@@ -343,9 +343,9 @@ export default function PaymentInstructions() {
                     </div>
                   </div>
 
-                  {paymentConfig.bank_instructions && (
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Instrucciones Adicionales:</p>
+                   {paymentConfig.bank_instructions && (
+                     <div>
+                       <p className="font-medium text-blue-900 dark:text-blue-100">{t('payment:instructions.additionalInstructions')}</p>
                       <p className="whitespace-pre-line text-blue-900 dark:text-blue-50">
                         {paymentConfig.bank_instructions}
                       </p>
@@ -355,11 +355,11 @@ export default function PaymentInstructions() {
               </div>
 
               {paymentImages.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-foreground">Códigos QR y Referencias de Pago</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Escanea cualquiera de estos códigos QR para realizar el pago
-                  </p>
+               <div className="space-y-3">
+                   <h4 className="font-semibold text-foreground">{t('payment:instructions.qrTitle')}</h4>
+                   <p className="text-sm text-muted-foreground">
+                     {t('payment:instructions.qrDescription')}
+                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paymentImages.map((img, index) => (
                       <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
@@ -368,17 +368,17 @@ export default function PaymentInstructions() {
                           alt={`Código QR ${index + 1}`}
                           className="w-full h-56 object-contain rounded"
                         />
-                        <div className="text-center space-y-1">
-                          <p className="font-medium text-sm text-foreground">
-                            {index === 0 ? "QR Transferencia Bancaria" : 
-                             index === 1 ? "QR Revolut" : 
-                             `Código QR ${index + 1}`}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {index === 0 ? "Escanea para transferencia directa" : 
-                             index === 1 ? "Pago rápido con Revolut" : 
-                             "Método de pago alternativo"}
-                          </p>
+                         <div className="text-center space-y-1">
+                           <p className="font-medium text-sm text-foreground">
+                             {index === 0 ? t('payment:instructions.qrBankTransfer') : 
+                              index === 1 ? t('payment:instructions.qrRevolut') : 
+                              `${t('payment:instructions.qrAlternative')} ${index + 1}`}
+                           </p>
+                           <p className="text-xs text-muted-foreground">
+                             {index === 0 ? t('payment:instructions.qrBankTransferDesc') : 
+                              index === 1 ? t('payment:instructions.qrRevolutDesc') : 
+                              t('payment:instructions.qrAlternativeDesc')}
+                           </p>
                         </div>
                       </div>
                     ))}
@@ -386,24 +386,23 @@ export default function PaymentInstructions() {
                 </div>
               )}
 
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Estará en estado pendiente hasta que recibamos tu transferencia.
-                </p>
-                <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
-                  Por favor, incluye el número de referencia <strong>{realOrderNumber}</strong> en el concepto de la transferencia.
-                </p>
+               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                   ⚠️ {t('payment:instructions.pendingWarning')}
+                 </p>
+                 <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                   {t('payment:instructions.includeReference', { ref: realOrderNumber })}
+                 </p>
               </div>
             </div>
           )}
 
           {method === "card" && (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <p className="text-sm text-green-900 dark:text-green-100">
-                ✅ La transacción con tarjeta ha sido procesada exitosamente.
-                Recibirás una confirmación por correo electrónico en breve.
-              </p>
-            </div>
+             <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+               <p className="text-sm text-green-900 dark:text-green-100">
+                 ✅ {t('payment:instructions.cardSuccess')}
+               </p>
+             </div>
           )}
 
           {method === "paypal" && (
@@ -413,19 +412,18 @@ export default function PaymentInstructions() {
                   <CreditCard className="h-5 w-5" />
                   PayPal
                 </h3>
-                <p className="text-sm mb-3 text-blue-900 dark:text-blue-50">
-                  Está siendo procesado. Si completaste el proceso en PayPal, 
-                  recibirás una confirmación pronto.
-                </p>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Número de referencia: <strong>{orderNumber}</strong>
-                </p>
+                 <p className="text-sm mb-3 text-blue-900 dark:text-blue-50">
+                   {t('payment:instructions.paypalProcessing')}
+                 </p>
+                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                   {t('payment:referenceNumber')}: <strong>{orderNumber}</strong>
+                 </p>
               </div>
               
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Estará en estado pendiente hasta que confirmemos la transacción.
-                </p>
+               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                   ⚠️ {t('payment:instructions.pendingTransaction')}
+                 </p>
               </div>
             </div>
           )}
@@ -437,29 +435,28 @@ export default function PaymentInstructions() {
                   <CreditCard className="h-5 w-5" />
                   Revolut
                 </h3>
-                <p className="text-sm mb-3 text-purple-900 dark:text-purple-50">
-                  Está siendo procesado. Si completaste el proceso en Revolut, 
-                  recibirás una confirmación pronto.
-                </p>
-                <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                  Número de referencia: <strong>{orderNumber}</strong>
-                </p>
+                 <p className="text-sm mb-3 text-purple-900 dark:text-purple-50">
+                   {t('payment:instructions.revolutProcessing')}
+                 </p>
+                 <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                   {t('payment:referenceNumber')}: <strong>{orderNumber}</strong>
+                 </p>
               </div>
               
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                  ⚠️ Estará en estado pendiente hasta que confirmemos la transacción.
-                </p>
-              </div>
+               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+                 <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                   ⚠️ {t('payment:instructions.pendingTransaction')}
+                 </p>
+               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-6">
-            <Button onClick={() => navigate("/")} className="flex-1">
-              Volver al Inicio
-            </Button>
-            <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1">
-              Ver Mi Cuenta
+             <Button onClick={() => navigate("/")} className="flex-1">
+               {t('payment:instructions.backHome')}
+             </Button>
+             <Button onClick={() => navigate("/mi-cuenta")} variant="outline" className="flex-1">
+               {t('payment:instructions.viewAccount')}
             </Button>
           </div>
         </CardContent>
