@@ -67,8 +67,15 @@ function CompanyInfo() {
 }
 
 export default function InvoiceDisplay({ invoice, showActions = false }: InvoiceDisplayProps) {
-  const { t } = useTranslation('invoice');
+  const { t, i18n } = useTranslation('invoice');
   const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
+
+  const getLocale = () => {
+    const lang = i18n.language;
+    if (lang?.startsWith('nl')) return 'nl-BE';
+    if (lang?.startsWith('en')) return 'en-GB';
+    return 'es-ES';
+  };
 
   // Helper: normalizar selecciones de personalización
   const getSelections = (item: any) => {
@@ -144,13 +151,13 @@ export default function InvoiceDisplay({ invoice, showActions = false }: Invoice
             <div className="mt-2 text-xs md:text-sm print:text-xs">
               <p className="text-muted-foreground leading-tight">{t('dates.issueDate')}</p>
               <p className="font-medium leading-tight">
-                {new Date(invoice.issue_date || invoice.created_at).toLocaleDateString('es-ES')}
+                {new Date(invoice.issue_date || invoice.created_at).toLocaleDateString(getLocale())}
               </p>
               {invoice.due_date && (
                 <>
                   <p className="text-muted-foreground mt-1 leading-tight">{t('dates.dueDate')}</p>
                   <p className="font-medium leading-tight">
-                    {new Date(invoice.due_date).toLocaleDateString('es-ES')}
+                    {new Date(invoice.due_date).toLocaleDateString(getLocale())}
                   </p>
                 </>
               )}

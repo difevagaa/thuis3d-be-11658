@@ -9,7 +9,7 @@ import { Layout } from "@/components/Layout";
 import { i18nToast } from "@/lib/i18nToast";
 
 export default function UserInvoiceView() {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['invoice', 'common']);
   const { id } = useParams();
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState<any>(null);
@@ -66,7 +66,7 @@ export default function UserInvoiceView() {
     return (
       <Layout>
         <div className="container mx-auto p-6">
-          <div className="text-center">Cargando factura...</div>
+          <div className="text-center">{t('loading')}</div>
         </div>
       </Layout>
     );
@@ -76,14 +76,13 @@ export default function UserInvoiceView() {
     return (
       <Layout>
         <div className="container mx-auto p-6">
-          <div className="text-center">No se encontró la factura</div>
+          <div className="text-center">{t('notFound')}</div>
         </div>
       </Layout>
     );
   }
 
   const handlePayNow = () => {
-    // Guardar información de la factura en sessionStorage para el flujo de pago
     sessionStorage.setItem("invoice_payment", JSON.stringify({
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoice_number,
@@ -94,7 +93,6 @@ export default function UserInvoiceView() {
       discount: invoice.discount || 0
     }));
     
-    // Navegar a la página de pago
     navigate("/pago");
   };
 
@@ -104,17 +102,17 @@ export default function UserInvoiceView() {
         <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
           <Button variant="ghost" onClick={() => navigate("/mi-cuenta")} size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Mi Cuenta
+            {t('actions.back')}
           </Button>
           <div className="flex gap-2">
             {invoice.payment_status === 'pending' && (
               <Button onClick={handlePayNow} size="sm">
-                💳 Pagar Ahora
+                💳 {t('common:payNow', { defaultValue: 'Pay Now' })}
               </Button>
             )}
             <Button variant="outline" onClick={handlePrint} size="sm">
               <Printer className="h-4 w-4 mr-2" />
-              Imprimir
+              {t('actions.print')}
             </Button>
           </div>
         </div>
