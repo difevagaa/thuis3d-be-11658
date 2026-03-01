@@ -93,12 +93,13 @@ export function GlobalSearchBar({ className }: { className?: string }) {
   return (
     <div ref={containerRef} className={cn("relative", className)}>
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search.placeholder')}
-          className="pl-9 pr-8 h-9 text-sm"
+          className="pl-9 pr-8 h-9 text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
+          style={{ color: 'hsl(var(--foreground))', backgroundColor: 'hsl(var(--background))' }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
         />
         {query && (
