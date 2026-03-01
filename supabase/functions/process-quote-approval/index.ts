@@ -187,7 +187,21 @@ const handler = async (req: Request): Promise<Response> => {
       const statusId = orderStatus?.id || fallbackStatus?.id || null;
       const addressParts = [quote.address, quote.city, quote.postal_code, quote.country].filter(Boolean).join(', ');
       const quantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
-      const unitPrice = quantity > 0 ? subtotal / quantity : subtotal;
+      const unitPrice = quantity > 0 ? Math.round((subtotal / quantity) * 100) / 100 : subtotal;
+
+      // Extract filename from file_url for product name
+      let productName = `Cotización ${quote.quote_type}`;
+      if (quote.file_url) {
+        try {
+          const urlPath = decodeURIComponent(quote.file_url.split('/').pop() || '');
+          if (urlPath) productName = urlPath;
+        } catch { /* keep default */ }
+      } else if (quote.file_storage_path) {
+        try {
+          const pathName = quote.file_storage_path.split('/').pop() || '';
+          if (pathName) productName = pathName;
+        } catch { /* keep default */ }
+      }
 
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -211,7 +225,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         await supabase.from('order_items').insert({
           order_id: newOrder.id,
-          product_name: `Cotización ${quote.quote_type}`,
+          product_name: productName,
           quantity,
           unit_price: unitPrice,
           total_price: subtotal,
@@ -256,12 +270,29 @@ const handler = async (req: Request): Promise<Response> => {
       if (invoiceError || !newInvoice) throw new Error('Failed to create invoice');
       invoiceId = newInvoice.id;
 
+      // Use same product name and quantity as order_items
+      const invoiceQuantity = quote.quantity && quote.quantity > 0 ? quote.quantity : 1;
+      const invoiceUnitPrice = invoiceQuantity > 0 ? Math.round((subtotal / invoiceQuantity) * 100) / 100 : subtotal;
+
+      let invoiceProductName = `Cotización ${quote.quote_type}`;
+      if (quote.file_url) {
+        try {
+          const urlPath = decodeURIComponent(quote.file_url.split('/').pop() || '');
+          if (urlPath) invoiceProductName = urlPath;
+        } catch { /* keep default */ }
+      } else if (quote.file_storage_path) {
+        try {
+          const pathName = quote.file_storage_path.split('/').pop() || '';
+          if (pathName) invoiceProductName = pathName;
+        } catch { /* keep default */ }
+      }
+
       await supabase.from('invoice_items').insert({
         invoice_id: newInvoice.id,
-        product_name: `Cotización ${quote.quote_type}`,
+        product_name: invoiceProductName,
         description: quote.description || 'Servicio de impresión 3D',
-        quantity: 1,
-        unit_price: subtotal,
+        quantity: invoiceQuantity,
+        unit_price: invoiceUnitPrice,
         total_price: subtotal,
         tax_enabled: shouldApplyTax
       });
