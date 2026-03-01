@@ -30,6 +30,7 @@ export const allPermissions: PermissionOption[] = [
   { value: "page:/admin/categorias", label: "Categorías", category: "Páginas - Catálogo", description: "Gestión de categorías" },
   { value: "page:/admin/materiales", label: "Materiales", category: "Páginas - Catálogo", description: "Gestión de materiales" },
   { value: "page:/admin/colores", label: "Colores", category: "Páginas - Catálogo", description: "Gestión de colores" },
+  { value: "page:/admin/inventario", label: "Inventario", category: "Páginas - Catálogo", description: "Gestión de inventario" },
   { value: "page:/admin/pedidos", label: "Pedidos", category: "Páginas - Ventas", description: "Lista de pedidos" },
   { value: "page:/admin/cotizaciones", label: "Cotizaciones", category: "Páginas - Ventas", description: "Cotizaciones recibidas" },
   { value: "page:/admin/facturas", label: "Facturas", category: "Páginas - Ventas", description: "Gestión de facturas" },
@@ -321,6 +322,7 @@ export const adminMenuItems: AdminMenuSection[] = [
       { icon: null, label: "Categorías", url: "/admin/categorias", color: "text-teal-700", bgColor: "bg-teal-100 hover:bg-teal-200 border-teal-300" },
       { icon: null, label: "Materiales", url: "/admin/materiales", color: "text-cyan-700", bgColor: "bg-cyan-100 hover:bg-cyan-200 border-cyan-300" },
       { icon: null, label: "Colores", url: "/admin/colores", color: "text-pink-700", bgColor: "bg-pink-100 hover:bg-pink-200 border-pink-300" },
+      { icon: null, label: "Inventario", url: "/admin/inventario", color: "text-lime-700", bgColor: "bg-lime-100 hover:bg-lime-200 border-lime-300" },
     ],
   },
   {
