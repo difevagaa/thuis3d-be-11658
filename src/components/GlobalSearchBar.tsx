@@ -91,19 +91,21 @@ export function GlobalSearchBar({ className }: { className?: string }) {
   };
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
-      <div className="relative">
+    <div ref={containerRef} className={cn("relative w-full min-w-0", className)}>
+      <div className="relative w-full">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search.placeholder')}
-          className="pl-9 pr-8 h-9 text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
+          className="pl-9 pr-8 h-9 w-full text-sm bg-background text-foreground placeholder:text-muted-foreground border-input caret-primary"
           style={{ color: 'hsl(var(--foreground))', backgroundColor: 'hsl(var(--background))' }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
+          autoComplete="off"
         />
         {query && (
           <button
+            type="button"
             onClick={() => { setQuery(""); setIsOpen(false); }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2"
           >
@@ -113,7 +115,7 @@ export function GlobalSearchBar({ className }: { className?: string }) {
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1 z-50 w-full min-w-[18rem] max-w-[calc(100vw-2rem)] bg-popover border border-border rounded-lg shadow-lg max-h-80 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">{t('search.searching')}</div>
           ) : results.length === 0 ? (

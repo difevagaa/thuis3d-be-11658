@@ -255,7 +255,7 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
 
             {/* Center: Search Bar (desktop) */}
-            <div className="hidden lg:block flex-1 max-w-md mx-4">
+            <div className="hidden xl:block flex-none w-[320px] mx-3">
               <GlobalSearchBar />
             </div>
 
@@ -372,8 +372,8 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
           </div>
           
-          {/* Mobile Search Bar */}
-          <div className="lg:hidden pb-2">
+          {/* Mobile / Tablet Search Bar */}
+          <div className="xl:hidden pb-2">
             <GlobalSearchBar />
           </div>
         </div>
