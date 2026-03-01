@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Euro, ShoppingCart, FileText, Users, TrendingUp, TrendingDown, Package, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { logger } from '@/lib/logger';
 
@@ -20,7 +20,9 @@ export default function AdminDashboard() {
     onlineUsers: 0,
     visitorsToday: 0,
     lastOrderDate: null as string | null,
-    recentOrders: [] as any[]
+    recentOrders: [] as any[],
+    inventoryValue: 0,
+    lowStockCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
@@ -66,17 +68,21 @@ export default function AdminDashboard() {
 
   const loadDashboardData = useCallback(async () => {
     try {
-      const [ordersData, quotesData, customersData, expensesData, recentOrdersData] = await Promise.all([
+      const [ordersData, quotesData, customersData, expensesData, recentOrdersData, inventoryData] = await Promise.all([
         supabase.from("orders").select("total, created_at, payment_status").eq("payment_status", "paid").order("created_at", { ascending: false }),
         supabase.from("quotes").select("id").is("deleted_at", null),
         supabase.from("profiles").select("id"),
         supabase.from("expenses").select("amount"),
-        supabase.from("orders").select("*, profiles(full_name)").eq("payment_status", "paid").order("created_at", { ascending: false }).limit(10)
+        supabase.from("orders").select("*, profiles(full_name)").eq("payment_status", "paid").order("created_at", { ascending: false }).limit(10),
+        supabase.from("inventory_items").select("quantity_in_stock, cost_per_unit, min_stock_alert, is_active"),
       ]);
 
       const totalRevenue = ordersData.data?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
       const totalExpenses = expensesData.data?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
       const lastOrderDate = ordersData.data?.[0]?.created_at || null;
+      const invItems = (inventoryData.data || []) as any[];
+      const inventoryValue = invItems.reduce((s: number, i: any) => s + ((i.quantity_in_stock || 0) * (i.cost_per_unit || 0)), 0);
+      const lowStockCount = invItems.filter((i: any) => i.is_active && (i.quantity_in_stock || 0) <= (i.min_stock_alert || 0)).length;
 
       setStats(prev => ({
         ...prev,
@@ -86,7 +92,9 @@ export default function AdminDashboard() {
         totalCustomers: customersData.data?.length || 0,
         totalExpenses,
         lastOrderDate,
-        recentOrders: recentOrdersData.data || []
+        recentOrders: recentOrdersData.data || [],
+        inventoryValue,
+        lowStockCount,
       }));
 
       // Cargar estadísticas de visitantes
@@ -338,6 +346,33 @@ export default function AdminDashboard() {
                   <span className="text-[10px] font-bold text-white">{stats.onlineUsers}</span>
                 </div>
               )}
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {/* Inventory Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+        <Card className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-lime-100 to-lime-50 border-lime-300" onClick={() => window.location.href = '/admin/inventario'}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 md:p-6">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1 truncate">Valor Inventario</CardTitle>
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-lime-700 truncate">€{stats.inventoryValue.toFixed(2)}</div>
+            </div>
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-lime-200 flex items-center justify-center flex-shrink-0 ml-2">
+              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-lime-700" />
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Card className={`cursor-pointer hover:shadow-lg transition-all hover:scale-105 ${stats.lowStockCount > 0 ? 'bg-gradient-to-br from-amber-100 to-amber-50 border-amber-300' : 'bg-gradient-to-br from-emerald-100 to-emerald-50 border-emerald-300'}`} onClick={() => window.location.href = '/admin/inventario'}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 md:p-6">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1 truncate">Alertas Stock</CardTitle>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${stats.lowStockCount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>{stats.lowStockCount}</div>
+            </div>
+            <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center flex-shrink-0 ml-2 ${stats.lowStockCount > 0 ? 'bg-amber-200' : 'bg-emerald-200'}`}>
+              <AlertTriangle className={`h-5 w-5 sm:h-6 sm:w-6 ${stats.lowStockCount > 0 ? 'text-amber-700' : 'text-emerald-700'}`} />
             </div>
           </CardHeader>
         </Card>

@@ -1783,6 +1783,243 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_items: {
+        Row: {
+          bed_temp_max: number | null
+          bed_temp_min: number | null
+          brand: string | null
+          category: string | null
+          color_id: string | null
+          cost_per_unit: number | null
+          created_at: string
+          diameter: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          location: string | null
+          material_id: string | null
+          min_stock_alert: number | null
+          name: string
+          notes: string | null
+          print_temp_max: number | null
+          print_temp_min: number | null
+          quantity_in_stock: number
+          sku: string | null
+          supplier: string | null
+          type: string
+          unit: string
+          updated_at: string
+          weight_per_spool: number | null
+        }
+        Insert: {
+          bed_temp_max?: number | null
+          bed_temp_min?: number | null
+          brand?: string | null
+          category?: string | null
+          color_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          diameter?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          material_id?: string | null
+          min_stock_alert?: number | null
+          name: string
+          notes?: string | null
+          print_temp_max?: number | null
+          print_temp_min?: number | null
+          quantity_in_stock?: number
+          sku?: string | null
+          supplier?: string | null
+          type?: string
+          unit?: string
+          updated_at?: string
+          weight_per_spool?: number | null
+        }
+        Update: {
+          bed_temp_max?: number | null
+          bed_temp_min?: number | null
+          brand?: string | null
+          category?: string | null
+          color_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          diameter?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          material_id?: string | null
+          min_stock_alert?: number | null
+          name?: string
+          notes?: string | null
+          print_temp_max?: number | null
+          print_temp_min?: number | null
+          quantity_in_stock?: number
+          sku?: string | null
+          supplier?: string | null
+          type?: string
+          unit?: string
+          updated_at?: string
+          weight_per_spool?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          cost_per_unit: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_item_id: string
+          movement_type: string
+          new_stock: number
+          notes: string | null
+          order_id: string | null
+          previous_stock: number
+          quantity: number
+          total_cost: number | null
+        }
+        Insert: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id: string
+          movement_type?: string
+          new_stock?: number
+          notes?: string | null
+          order_id?: string | null
+          previous_stock?: number
+          quantity?: number
+          total_cost?: number | null
+        }
+        Update: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string
+          movement_type?: string
+          new_stock?: number
+          notes?: string | null
+          order_id?: string | null
+          previous_stock?: number
+          quantity?: number
+          total_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_production_logs: {
+        Row: {
+          auto_calculated: boolean | null
+          created_at: string
+          created_by: string | null
+          energy_cost: number | null
+          filament_used_g: number | null
+          id: string
+          inventory_item_id: string | null
+          labor_cost: number | null
+          manually_adjusted: boolean | null
+          notes: string | null
+          order_id: string | null
+          order_item_id: string | null
+          other_costs: number | null
+          print_time_minutes: number | null
+          profit: number | null
+          profit_margin_pct: number | null
+          sale_price: number | null
+          total_cost: number | null
+        }
+        Insert: {
+          auto_calculated?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          energy_cost?: number | null
+          filament_used_g?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          labor_cost?: number | null
+          manually_adjusted?: boolean | null
+          notes?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          other_costs?: number | null
+          print_time_minutes?: number | null
+          profit?: number | null
+          profit_margin_pct?: number | null
+          sale_price?: number | null
+          total_cost?: number | null
+        }
+        Update: {
+          auto_calculated?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          energy_cost?: number | null
+          filament_used_g?: number | null
+          id?: string
+          inventory_item_id?: string | null
+          labor_cost?: number | null
+          manually_adjusted?: boolean | null
+          notes?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          other_costs?: number | null
+          print_time_minutes?: number | null
+          profit?: number | null
+          profit_margin_pct?: number | null
+          sale_price?: number | null
+          total_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_production_logs_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_production_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string | null
