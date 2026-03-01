@@ -99,36 +99,28 @@ export default function Quotes() {
       if (!editingQuote) return;
 
       const originalQuote = quotes.find(quote => quote.id === editingQuote.id);
-      // Get status name to check if it's being approved
       const selectedStatus = statuses.find(s => s.id === editingQuote.status_id);
       const statusSlug = selectedStatus?.slug?.toLowerCase();
       const normalizedStatusName = selectedStatus?.name?.toLowerCase();
       const isApproving = statusSlug === 'approved' || normalizedStatusName === 'aprobado' || normalizedStatusName === 'aprobada';
-      const statusChanged = originalQuote?.status_id !== editingQuote.status_id;
       const priceChanged = Number(originalQuote?.estimated_price || 0) !== Number(editingQuote.estimated_price || 0);
       const nameChanged = originalQuote?.customer_name !== editingQuote.customer_name;
       const emailChanged = originalQuote?.customer_email !== editingQuote.customer_email;
       const descriptionChanged = originalQuote?.description !== editingQuote.description;
       const materialChanged = originalQuote?.material_id !== editingQuote.material_id;
       const colorChanged = originalQuote?.color_id !== editingQuote.color_id;
-      const priceWasUnset = !originalQuote?.estimated_price || Number(originalQuote?.estimated_price) === 0;
-      const priceNowSet = Number(editingQuote.estimated_price || 0) > 0;
-      const isInitialPriceSetting = priceWasUnset && priceNowSet;
-      const shouldNotifyCustomer = Boolean(
-        originalQuote &&
-        !isInitialPriceSetting &&
-        (statusChanged ||
-          nameChanged ||
-          emailChanged ||
-          descriptionChanged ||
-          materialChanged ||
-          colorChanged ||
-          priceChanged)
-      );
-      const pendingApprovalByClient = Boolean(
-        normalizedStatusName?.includes('aprobación') &&
-        normalizedStatusName?.includes('cliente')
-      );
+
+      // AUTO: If admin changes price (and not approving), auto-set status to "Pendiente Aprobación Cliente"
+      let finalStatusId = editingQuote.status_id;
+      if (priceChanged && !isApproving) {
+        const pendingClientStatus = statuses.find(s => s.slug === 'pending_client_approval');
+        if (pendingClientStatus) {
+          finalStatusId = pendingClientStatus.id;
+        }
+      }
+
+      const hasChanges = priceChanged || nameChanged || emailChanged || descriptionChanged || materialChanged || colorChanged;
+      const shouldNotifyCustomer = Boolean(originalQuote && hasChanges && !isApproving);
 
       const { error } = await supabase
         .from("quotes")
@@ -137,7 +129,7 @@ export default function Quotes() {
           customer_email: editingQuote.customer_email,
           description: editingQuote.description,
           estimated_price: editingQuote.estimated_price,
-          status_id: editingQuote.status_id,
+          status_id: finalStatusId,
           material_id: editingQuote.material_id || null,
           color_id: editingQuote.color_id || null
         })
@@ -146,9 +138,9 @@ export default function Quotes() {
       if (error) throw error;
 
       if (shouldNotifyCustomer) {
-        const notificationMessage = pendingApprovalByClient
-          ? "¡Ey! Hay cambios en tu cotización y necesitamos tu aprobación."
-          : "¡Ey! Hay cambios en tu cotización. Revisa los detalles.";
+        const notificationMessage = priceChanged
+          ? "Hay cambios en el precio de tu cotización. Necesitamos tu aprobación."
+          : "Hay cambios en tu cotización. Revisa los detalles.";
 
         if (editingQuote.user_id) {
           await sendNotificationWithBroadcast(
@@ -168,7 +160,8 @@ export default function Quotes() {
                 customer_name: editingQuote.customer_name,
                 quote_type: editingQuote.quote_type,
                 estimated_price: Number(editingQuote.estimated_price || 0),
-                description: editingQuote.description || undefined
+                description: editingQuote.description || undefined,
+                price_changed: priceChanged
               }
             });
           } catch {
@@ -179,7 +172,7 @@ export default function Quotes() {
 
       // If quote is being approved, trigger automation
       if (isApproving) {
-        toast.info('Procesando aprobación y generando factura...');
+        toast.info('Procesando aprobación y generando pedido + factura...');
 
         try {
           const { data: profile } = await supabase
@@ -201,7 +194,7 @@ export default function Quotes() {
           );
 
           if (functionError) {
-            toast.warning('Cotización aprobada, pero hubo un error en la automatización. Revisa los detalles.');
+            toast.warning('Cotización aprobada, pero hubo un error en la automatización.');
           } else if (data?.success) {
             const automations = data.automations || {};
             
@@ -222,8 +215,10 @@ export default function Quotes() {
             toast.success(message, { duration: 6000 });
           }
         } catch (autoError) {
-          toast.warning('Cotización aprobada, pero la automatización falló. Crea la factura manualmente.');
+          toast.warning('Cotización aprobada, pero la automatización falló.');
         }
+      } else if (priceChanged && !isApproving) {
+        toast.success("Cotización actualizada. El cliente debe aprobar los cambios de precio.");
       } else {
         toast.success("Cotización actualizada");
       }

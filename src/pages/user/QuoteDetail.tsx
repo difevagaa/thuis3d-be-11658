@@ -183,6 +183,49 @@ export default function UserQuoteDetail() {
 
       if (error) throw error;
 
+      // If client APPROVES -> invoke process-quote-approval to auto-generate order + invoice
+      if (action === "approve") {
+        i18nToast.directSuccess("¡Cotización aprobada! Generando pedido y factura...");
+
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke(
+            'process-quote-approval',
+            {
+              body: {
+                quote_id: quote.id,
+                status_name: 'Aprobada',
+                status_slug: 'approved',
+                admin_name: quote.customer_name,
+                invoked_by_customer: true
+              }
+            }
+          );
+
+          if (fnError) {
+            console.error('Error in process-quote-approval:', fnError);
+            i18nToast.directWarning("Cotización aprobada, pero hubo un error generando el pedido. Contacta soporte.");
+          } else if (data?.success) {
+            let msg = "✅ Cotización aprobada.";
+            if (data.order) msg += ` Pedido ${data.order.order_number} creado.`;
+            if (data.invoice) msg += ` Factura ${data.invoice.invoice_number} generada (€${data.invoice.total.toFixed(2)}).`;
+            i18nToast.directSuccess(msg);
+
+            // Redirect to invoice if available
+            if (data.invoice?.id) {
+              setTimeout(() => navigate(`/mis-facturas/${data.invoice.id}`), 2000);
+            }
+          }
+        } catch (autoErr) {
+          console.error('Automation error:', autoErr);
+          i18nToast.directWarning("Cotización aprobada, pero la generación automática falló.");
+        }
+      } else if (action === "reject") {
+        i18nToast.directSuccess("Cotización rechazada. Se ha cancelado el proceso.");
+      } else {
+        i18nToast.directSuccess("Tu comentario se ha enviado correctamente.");
+      }
+
+      // Notify admins
       const adminMessages: Record<typeof action, string> = {
         approve: `El cliente ${quote.customer_name} aprobó la cotización.`,
         reject: `El cliente ${quote.customer_name} rechazó la cotización.`,
@@ -212,7 +255,6 @@ export default function UserQuoteDetail() {
         // Non-blocking email errors
       }
 
-      i18nToast.directSuccess("Tu respuesta se ha enviado correctamente.");
       setComment("");
       await loadQuoteDetail();
     } catch (error) {
