@@ -231,10 +231,9 @@ export function AdminSidebar() {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
   
   const handleNavigate = () => {
+    // Only close sidebar on mobile; keep it open on desktop
     if (isMobile) {
       setOpenMobile(false);
-    } else {
-      setOpen(false);
     }
   };
   

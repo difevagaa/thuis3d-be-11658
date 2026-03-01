@@ -35,60 +35,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mouseLeaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-hide sidebar after 5 seconds of inactivity
-  useEffect(() => {
-    const resetAutoHideTimer = () => {
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-      }
-      
-      // Set timer to auto-hide after 5 seconds
-      autoHideTimerRef.current = setTimeout(() => {
-        setOpen(false);
-      }, 5000);
-    };
-
-    // Reset timer on any user interaction
-    const handleUserActivity = () => {
-      if (open) {
-        resetAutoHideTimer();
-      }
-    };
-
-    // Start the timer
-    resetAutoHideTimer();
-
-    // Listen for user interactions (avoid mousemove here to reduce event spam)
-    window.addEventListener('click', handleUserActivity);
-    window.addEventListener('keydown', handleUserActivity);
-    window.addEventListener('scroll', handleUserActivity);
-
-    return () => {
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-      }
-      window.removeEventListener('click', handleUserActivity);
-      window.removeEventListener('keydown', handleUserActivity);
-      window.removeEventListener('scroll', handleUserActivity);
-    };
-  }, [open, setOpen]);
-
-  // Show sidebar when mouse is near left edge
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      // If mouse is within 20px of left edge
-      if (e.clientX < 20 && !open) {
-        setOpen(true);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [open, setOpen]);
-
 
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
