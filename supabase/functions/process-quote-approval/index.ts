@@ -222,13 +222,18 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Create invoice (linked to order)
+    // Create invoice (linked to order) - invoice_number MUST match order_number
     if (!existingInvoice) {
-      const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
-        .rpc('generate_next_invoice_number');
-
-      if (invoiceNumError) throw new Error('Failed to generate invoice number');
-      invoiceNumber = nextInvoiceNumber;
+      // Use order_number as invoice_number for consistency
+      invoiceNumber = orderData?.order_number || null;
+      
+      // Fallback: generate a number only if no order was created
+      if (!invoiceNumber) {
+        const { data: nextInvoiceNumber, error: invoiceNumError } = await supabase
+          .rpc('generate_next_invoice_number');
+        if (invoiceNumError) throw new Error('Failed to generate invoice number');
+        invoiceNumber = nextInvoiceNumber;
+      }
 
       const { data: newInvoice, error: invoiceError } = await supabase
         .from('invoices')
