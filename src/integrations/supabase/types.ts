@@ -4408,8 +4408,37 @@ export type Database = {
           home_menu_text_color: string | null
           id: string
           legal_email: string | null
+          logo_animation: string | null
+          logo_bg_color: string | null
+          logo_bg_enabled: boolean | null
+          logo_border_color: string | null
+          logo_border_radius: string | null
+          logo_border_width: number | null
+          logo_custom_text: string | null
           logo_dark_url: string | null
+          logo_gap: number | null
+          logo_height: number | null
+          logo_hide_on_mobile: boolean | null
+          logo_hide_on_scroll: boolean | null
+          logo_hover_effect: string | null
+          logo_invert_on_dark: boolean | null
+          logo_max_height: number | null
+          logo_max_width: number | null
+          logo_mobile_height: number | null
+          logo_mobile_width: number | null
+          logo_object_fit: string | null
+          logo_opacity: number | null
+          logo_padding: number | null
+          logo_position: string | null
+          logo_shadow: string | null
+          logo_show_image: boolean | null
+          logo_show_text: boolean | null
+          logo_text_color: string | null
+          logo_text_font: string | null
+          logo_text_size: number | null
+          logo_text_weight: string | null
           logo_url: string | null
+          logo_width: number | null
           navbar_color: string
           og_image: string | null
           primary_color: string
@@ -4460,8 +4489,37 @@ export type Database = {
           home_menu_text_color?: string | null
           id?: string
           legal_email?: string | null
+          logo_animation?: string | null
+          logo_bg_color?: string | null
+          logo_bg_enabled?: boolean | null
+          logo_border_color?: string | null
+          logo_border_radius?: string | null
+          logo_border_width?: number | null
+          logo_custom_text?: string | null
           logo_dark_url?: string | null
+          logo_gap?: number | null
+          logo_height?: number | null
+          logo_hide_on_mobile?: boolean | null
+          logo_hide_on_scroll?: boolean | null
+          logo_hover_effect?: string | null
+          logo_invert_on_dark?: boolean | null
+          logo_max_height?: number | null
+          logo_max_width?: number | null
+          logo_mobile_height?: number | null
+          logo_mobile_width?: number | null
+          logo_object_fit?: string | null
+          logo_opacity?: number | null
+          logo_padding?: number | null
+          logo_position?: string | null
+          logo_shadow?: string | null
+          logo_show_image?: boolean | null
+          logo_show_text?: boolean | null
+          logo_text_color?: string | null
+          logo_text_font?: string | null
+          logo_text_size?: number | null
+          logo_text_weight?: string | null
           logo_url?: string | null
+          logo_width?: number | null
           navbar_color?: string
           og_image?: string | null
           primary_color?: string
@@ -4512,8 +4570,37 @@ export type Database = {
           home_menu_text_color?: string | null
           id?: string
           legal_email?: string | null
+          logo_animation?: string | null
+          logo_bg_color?: string | null
+          logo_bg_enabled?: boolean | null
+          logo_border_color?: string | null
+          logo_border_radius?: string | null
+          logo_border_width?: number | null
+          logo_custom_text?: string | null
           logo_dark_url?: string | null
+          logo_gap?: number | null
+          logo_height?: number | null
+          logo_hide_on_mobile?: boolean | null
+          logo_hide_on_scroll?: boolean | null
+          logo_hover_effect?: string | null
+          logo_invert_on_dark?: boolean | null
+          logo_max_height?: number | null
+          logo_max_width?: number | null
+          logo_mobile_height?: number | null
+          logo_mobile_width?: number | null
+          logo_object_fit?: string | null
+          logo_opacity?: number | null
+          logo_padding?: number | null
+          logo_position?: string | null
+          logo_shadow?: string | null
+          logo_show_image?: boolean | null
+          logo_show_text?: boolean | null
+          logo_text_color?: string | null
+          logo_text_font?: string | null
+          logo_text_size?: number | null
+          logo_text_weight?: string | null
           logo_url?: string | null
+          logo_width?: number | null
           navbar_color?: string
           og_image?: string | null
           primary_color?: string
