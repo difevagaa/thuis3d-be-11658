@@ -169,7 +169,7 @@ const ProductDetail = () => {
       
       setProductImages(imagesData?.map(img => img.image_url) || []);
     } catch (error: unknown) {
-      toast.error("Error al cargar el producto");
+      toast.error(t('errors.loadProduct', { ns: 'errors', defaultValue: 'Error loading product' }));
       navigate("/productos");
     } finally {
       setLoading(false);
@@ -254,7 +254,7 @@ const ProductDetail = () => {
         return !sectionImageSelections[section.id];
       });
       if (missingSections.length > 0) {
-        toast.error(`Debe seleccionar: ${missingSections.map(s => s.section_name).join(', ')}`);
+        toast.error(t('mustSelectSections', { sections: missingSections.map(s => s.section_name).join(', ') }));
         return;
       }
     } else {
@@ -323,11 +323,11 @@ const ProductDetail = () => {
     try {
       const materialName = selectedMaterial ? materials.find(m => m.id === selectedMaterial)?.name : "";
       const colorName = selectedColor ? availableColors.find(c => c.id === selectedColor)?.name : "";
-      let description = `Producto: ${product.name}`;
-      if (materialName) description += `\nMaterial: ${materialName}`;
-      if (colorName) description += `\nColor: ${colorName}`;
-      if (customText) description += `\nTexto personalizado: ${customText}`;
-      description += `\nCantidad: ${quantity}`;
+      let description = `${t('product')}: ${product.name}`;
+      if (materialName) description += `\n${t('material')}: ${materialName}`;
+      if (colorName) description += `\n${t('color')}: ${colorName}`;
+      if (customText) description += `\n${t('customText')}: ${customText}`;
+      description += `\n${t('quantity')}: ${quantity}`;
 
       const { error } = await supabase.from("quotes").insert({
         user_id: user?.id, customer_name: user?.email || "", customer_email: user?.email || "",
@@ -339,7 +339,7 @@ const ProductDetail = () => {
       if (user?.email) {
         try { await supabase.functions.invoke('send-quote-email', { body: { to: user.email, customer_name: user.email, quote_type: 'producto', description } }); } catch {}
       }
-      try { await supabase.functions.invoke('send-admin-notification', { body: { type: 'quote', title: 'Nueva Cotización de Producto', message: `Nueva cotización para ${product.name}`, link: '/admin/quotes' } }); } catch {}
+      try { await supabase.functions.invoke('send-admin-notification', { body: { type: 'quote', title: `New Product Quote`, message: `New quote for ${product.name}`, link: '/admin/quotes' } }); } catch {}
 
       toast.success(t('quoteRequested'));
       navigate("/");
@@ -373,7 +373,7 @@ const ProductDetail = () => {
               <img src={productImages[currentImageIndex]} alt={product.name} className="w-full h-full object-contain" style={{ display: 'block' }} />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <p className="text-muted-foreground text-sm">Sin imagen</p>
+                <p className="text-muted-foreground text-sm">{t('noImage', 'No image')}</p>
               </div>
             )}
           </div>
@@ -595,7 +595,7 @@ const ProductDetail = () => {
 
               {customizationSections.length > 0 ? (
                 <div className="space-y-3 md:space-y-4 border-t pt-3 md:pt-4">
-                  <h3 className="font-semibold text-sm md:text-base">Personalización</h3>
+                  <h3 className="font-semibold text-sm md:text-base">{t('customization', 'Customization')}</h3>
                   {customizationSections.map((section) => (
                     <div key={section.id} className="space-y-1 md:space-y-2">
                       <Label className="text-xs md:text-sm">{section.section_name} {section.is_required && '*'}</Label>
@@ -604,7 +604,7 @@ const ProductDetail = () => {
                       )}
                       {section.section_type === 'color' ? (
                         <Select value={sectionColorSelections[section.id] || ""} onValueChange={(value) => setSectionColorSelections({ ...sectionColorSelections, [section.id]: value })}>
-                          <SelectTrigger className="h-8 md:h-10 text-xs md:text-sm"><SelectValue placeholder="Selecciona color" /></SelectTrigger>
+                          <SelectTrigger className="h-8 md:h-10 text-xs md:text-sm"><SelectValue placeholder={t('selectColor')} /></SelectTrigger>
                           <SelectContent>
                             {section.availableColors.map((color) => (
                               <SelectItem key={color.id} value={color.id} className="text-xs md:text-sm">

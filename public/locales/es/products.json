@@ -47,6 +47,9 @@
   "addedToCart": "Producto agregado al carrito",
   "quoteRequested": "Cotización solicitada. Te contactaremos pronto.",
   "mustLogin": "Debes iniciar sesión para",
+  "mustSelectSections": "Debe seleccionar: {{sections}}",
+  "product": "Producto",
+  "noImage": "Sin imagen",
   "mustLoginQuote": "Debes iniciar sesión para solicitar cotizaciones",
   "customization": {
     "title": "Personalización",

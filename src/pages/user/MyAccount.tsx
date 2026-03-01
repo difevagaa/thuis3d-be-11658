@@ -181,7 +181,7 @@ export default function MyAccount() {
         discount_value: 10, // Default
         created_at: redemption.created_at,
         status: redemption.status,
-        reward_name: redemption.loyalty_rewards?.name || 'Cupón de Lealtad'
+        reward_name: redemption.loyalty_rewards?.name || t('account:loyalty.coupon')
       })) || [];
       
       setMyCoupons(userCoupons);

@@ -28,8 +28,13 @@ export default function ShippingInfo() {
     city: "",
     postal_code: "",
     country: "BE",
-    country_name: "Bélgica"
+    country_name: ""
   });
+
+  const getCountryName = (code: string) => {
+    const country = availableCountries.find(c => c.country_code === code);
+    return country?.country_name || code;
+  };
 
   const loadAvailableCountries = useCallback(async () => {
     const countries = await getAvailableCountries();
@@ -64,7 +69,7 @@ export default function ShippingInfo() {
             city: profile.city || "",
             postal_code: profile.postal_code || "",
             country: profile.country || "BE",
-            country_name: "Bélgica"
+            country_name: ""
           });
         }
       }
@@ -297,7 +302,7 @@ export default function ShippingInfo() {
                 {submitting ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    {t('common:processing') || 'Procesando...'}
+                    {t('common:processing')}
                   </span>
                 ) : (
                   t('shipping:buttons.continue')

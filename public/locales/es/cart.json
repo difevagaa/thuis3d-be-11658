@@ -11,7 +11,8 @@
     "text": "Texto",
     "subtotal": "Subtotal",
     "remove": "Eliminar",
-    "customization": "Personalización"
+    "customization": "Personalización",
+    "quantity": "Cant."
   },
   "summary": {
     "title": "Resumen del Pedido",
@@ -19,7 +20,8 @@
     "discount": "Descuento",
     "giftCard": "Tarjeta Regalo",
     "tax": "IVA (21%)",
-    "total": "Total"
+    "total": "Total",
+    "shipping": "Envío"
   },
   "coupon": {
     "title": "Código de Cupón",

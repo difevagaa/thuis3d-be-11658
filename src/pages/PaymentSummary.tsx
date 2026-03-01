@@ -45,7 +45,7 @@ export default function PaymentSummary() {
     try {
       const sessionId = sessionStorage.getItem("checkout_session_id");
       if (!sessionId) {
-        toast.error("No hay sesión de checkout");
+        toast.error(t('payment:messages.mustCompleteShipping'));
         navigate("/carrito");
         return;
       }
@@ -82,14 +82,14 @@ export default function PaymentSummary() {
       // Cargar items del carrito desde localStorage
       const savedCart = localStorage.getItem("cart");
       if (!savedCart) {
-        toast.error("El carrito está vacío");
+        toast.error(t('cart:empty.title'));
         navigate("/carrito");
         return;
       }
 
       const parsedCart: CartItem[] = JSON.parse(savedCart);
       if (parsedCart.length === 0) {
-        toast.error("El carrito está vacío");
+        toast.error(t('cart:empty.title'));
         navigate("/carrito");
         return;
       }
@@ -234,7 +234,7 @@ export default function PaymentSummary() {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          toast.error("Debes iniciar sesión para continuar");
+          toast.error(t('payment:messages.loginRequired'));
           navigate("/auth");
           setProcessing(false);
           return;
@@ -446,7 +446,7 @@ export default function PaymentSummary() {
         });
       } catch (error) {
         logger.error("Error processing gift card order:", error);
-        toast.error("Error al procesar el pedido. Por favor intenta de nuevo.");
+        toast.error(t('payment:messages.errorProcessingOrder'));
         setProcessing(false);
       }
     } else {
@@ -503,19 +503,19 @@ export default function PaymentSummary() {
                     <div className="flex-1">
                       <p className="font-medium">{item.name}</p>
                       {item.materialName && (
-                        <p className="text-sm text-muted-foreground">Material: {item.materialName}</p>
+                      <p className="text-sm text-muted-foreground">{t('cart:item.material')}: {item.materialName}</p>
                       )}
                       {item.colorName && (
-                        <p className="text-sm text-muted-foreground">Color: {item.colorName}</p>
+                        <p className="text-sm text-muted-foreground">{t('cart:item.color')}: {item.colorName}</p>
                       )}
                       {item.customText && (
-                        <p className="text-sm text-muted-foreground">Texto: {item.customText}</p>
+                        <p className="text-sm text-muted-foreground">{t('cart:item.text')}: {item.customText}</p>
                       )}
                       {item.isGiftCard && (
-                        <Badge variant="secondary" className="mt-1">Tarjeta Regalo</Badge>
+                        <Badge variant="secondary" className="mt-1">{t('cart:summary.giftCard')}</Badge>
                       )}
                       <p className="text-sm text-muted-foreground mt-1">
-                        Cantidad: {item.quantity} × €{Number(item.price).toFixed(2)}
+                        {t('cart:item.quantity', 'Qty')}: {item.quantity} × €{Number(item.price).toFixed(2)}
                       </p>
                     </div>
                     <p className="font-medium">
