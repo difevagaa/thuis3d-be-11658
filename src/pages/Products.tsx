@@ -81,7 +81,7 @@ const Products = () => {
       setCategories(categoriesRes.data || []);
       setMaterials(materialsRes.data || []);
     } catch (error) {
-      toast.error("Error al cargar datos");
+      toast.error(t('errors.loadData', 'Error loading data'));
     }
   };
 
@@ -89,7 +89,7 @@ const Products = () => {
     const code = productCodeSearch.trim().toUpperCase();
     
     if (!code) {
-      toast.error("Por favor ingresa un código de producto");
+      toast.error(t('errors.enterCode', 'Please enter a product code'));
       return;
     }
 
@@ -102,15 +102,15 @@ const Products = () => {
         .single();
 
       if (error || !productData) {
-        toast.error("No se encontró ningún producto con ese código");
+        toast.error(t('errors.notFoundByCode', 'No product found with that code'));
         return;
       }
       
       setProducts([productData]);
       setSearchedByCode(true);
-      toast.success(`Producto encontrado: ${productData.name}`);
+      toast.success(t('searchByCode.found', 'Product found: {{name}}', { name: productData.name }));
     } catch (error) {
-      toast.error("Error al buscar el producto");
+      toast.error(t('errors.searchError', 'Error searching for product'));
     }
   };
 
@@ -118,7 +118,7 @@ const Products = () => {
     setProductCodeSearch("");
     setSearchedByCode(false);
     loadData();
-    toast.info("Búsqueda por código eliminada");
+    toast.info(t('searchByCode.cleared', 'Code search cleared'));
   };
 
   const filterAndSortProducts = () => {

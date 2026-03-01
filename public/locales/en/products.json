@@ -99,5 +99,11 @@
     "waitlistNote": "We'll notify you when stock is available",
     "reservationNote": "Stock is reserved for 30 minutes when added to cart"
   },
-  "viewAllProducts": "View all products"
+  "viewAllProducts": "View all products",
+  "errors": {
+    "loadData": "Error loading data",
+    "enterCode": "Please enter a product code",
+    "notFoundByCode": "No product found with that code",
+    "searchError": "Error searching for product"
+  }
 }

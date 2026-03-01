@@ -248,25 +248,27 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-3 lg:gap-6">
-              <Link to="/" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('home')}
-              </Link>
-              <Link to="/productos" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('products')}
-              </Link>
-              <Link to="/cotizaciones" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('quotes')}
-              </Link>
-              <Link to="/tarjetas-regalo" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('giftCards')}
-              </Link>
-              <Link to="/blog" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('blog')}
-              </Link>
-              <Link to="/galeria" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap">
-                {t('gallery')}
-              </Link>
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+              {[
+                { path: '/', label: t('home') },
+                { path: '/productos', label: t('products') },
+                { path: '/cotizaciones', label: t('quotes') },
+                { path: '/tarjetas-regalo', label: t('giftCards') },
+                { path: '/blog', label: t('blog') },
+                { path: '/galeria', label: t('gallery') },
+              ].map(({ path, label }) => (
+                <Link 
+                  key={path} 
+                  to={path} 
+                  className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-200 whitespace-nowrap ${
+                    isActive(path) 
+                      ? 'text-primary bg-primary/10 font-semibold' 
+                      : 'hover:text-primary hover:bg-accent/50'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
             </nav>
 
             {/* Right side: Actions - Standardized 24px icons with consistent button sizes */}
@@ -354,52 +356,35 @@ export const Layout = ({ children }: LayoutProps) => {
       {(isMobile || isTablet) && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t safe-area-bottom shadow-lg">
           <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
-            <button 
-              onClick={() => navigate("/")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              <Home className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{t('home')}</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/productos")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/producto') ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              <Package className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{t('products')}</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/cotizaciones")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/cotizaciones') ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              <Search className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{t('quotes')}</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/carrito")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative ${isActive('/carrito') ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              <div className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full h-3.5 w-3.5 flex items-center justify-center font-bold">
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] font-medium">{t('cart', 'Carrito')}</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate(user ? "/mi-cuenta" : "/auth")}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${isActive('/mi-cuenta') || isActive('/auth') ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              <User className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{user ? t('account', 'Cuenta') : t('login')}</span>
-            </button>
+            {[
+              { path: '/', icon: Home, label: t('home'), matchPath: '/' },
+              { path: '/productos', icon: Package, label: t('products'), matchPath: '/producto' },
+              { path: '/cotizaciones', icon: Search, label: t('quotes'), matchPath: '/cotizaciones' },
+              { path: '/carrito', icon: ShoppingCart, label: t('cart', 'Cart'), matchPath: '/carrito', badge: cartCount },
+              { path: user ? '/mi-cuenta' : '/auth', icon: User, label: user ? t('myAccount') : t('login'), matchPath: user ? '/mi-cuenta' : '/auth' },
+            ].map(({ path, icon: Icon, label, matchPath, badge }) => {
+              const active = isActive(matchPath);
+              return (
+                <button 
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 relative ${active ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  {active && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
+                  )}
+                  <div className="relative">
+                    <Icon className={`h-5 w-5 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
+                    {badge != null && badge > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full h-3.5 w-3.5 flex items-center justify-center font-bold">
+                        {badge > 9 ? '9+' : badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
