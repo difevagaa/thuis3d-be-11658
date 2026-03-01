@@ -1,0 +1,62 @@
+{
+  "title": "Offertedetails",
+  "notFound": "Offerte niet gevonden",
+  "download": "Downloaden",
+  "information": "Informatie",
+  "name": "Naam",
+  "email": "E-mail",
+  "type": "Type",
+  "types": {
+    "file_upload": "3D-bestand",
+    "service": "Dienst"
+  },
+  "projectDetails": "Projectdetails",
+  "description": "Beschrijving",
+  "attachments": "Bijlagen",
+  "material": "Materiaal",
+  "color": "Kleur",
+  "printConfig": "Printconfiguratie",
+  "supports": "Supports",
+  "teamDecision": "Teambeslissing",
+  "supportsYes": "Vereist",
+  "supportsNo": "Niet vereist",
+  "layerHeight": "Laaghoogte",
+  "fileAnalysis": "Bestandsanalyse",
+  "volume": "Volume",
+  "dimensions": "Afmetingen",
+  "preview3d": "3D-voorbeeld",
+  "estimatedPrice": "Geschatte Prijs",
+  "yourResponse": "Uw reactie op de offerte",
+  "responseDescription": "Bekijk de wijzigingen en bevestig of u de offerte goedkeurt of stuur een opmerking.",
+  "commentPlaceholder": "Schrijf een opmerking voor de beheerder (optioneel)",
+  "approve": "Wijzigingen goedkeuren",
+  "reject": "Wijzigingen afwijzen",
+  "sendComment": "Opmerking verzenden",
+  "additionalNotes": "Aanvullende Notities",
+  "serviceDescription": "Dienstbeschrijving",
+  "messages": {
+    "emptyComment": "Schrijf een opmerking voordat u verzendt.",
+    "statusError": "Kon de offertestatus niet bepalen.",
+    "approved": "Offerte goedgekeurd! Bestelling en factuur worden gegenereerd...",
+    "approvedError": "Offerte goedgekeurd, maar er was een fout bij het genereren van de bestelling. Neem contact op met support.",
+    "approvedSuccess": "✅ Offerte goedgekeurd.",
+    "orderCreated": "Bestelling {{number}} aangemaakt.",
+    "invoiceCreated": "Factuur {{number}} gegenereerd (€{{total}}).",
+    "approvedAutoFailed": "Offerte goedgekeurd, maar automatische generatie is mislukt.",
+    "rejected": "Offerte afgewezen. Het proces is geannuleerd.",
+    "commentSent": "Uw opmerking is succesvol verzonden.",
+    "actionFailed": "Kon uw reactie niet verzenden. Probeer het opnieuw."
+  },
+  "adminNotify": {
+    "approved": "Klant {{name}} heeft de offerte goedgekeurd.",
+    "rejected": "Klant {{name}} heeft de offerte afgewezen.",
+    "commented": "Klant {{name}} heeft een opmerking gestuurd bij hun offerte.",
+    "subject": "Klantreactie op offerte"
+  },
+  "actionLabels": {
+    "approve": "Goedkeuring klant",
+    "reject": "Afwijzing klant",
+    "comment": "Opmerking klant"
+  },
+  "pending": "In behandeling"
+}

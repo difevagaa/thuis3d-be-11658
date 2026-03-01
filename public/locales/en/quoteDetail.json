@@ -1,0 +1,62 @@
+{
+  "title": "Quote Details",
+  "notFound": "Quote not found",
+  "download": "Download",
+  "information": "Information",
+  "name": "Name",
+  "email": "Email",
+  "type": "Type",
+  "types": {
+    "file_upload": "3D File",
+    "service": "Service"
+  },
+  "projectDetails": "Project Details",
+  "description": "Description",
+  "attachments": "Attachments",
+  "material": "Material",
+  "color": "Color",
+  "printConfig": "Print Configuration",
+  "supports": "Supports",
+  "teamDecision": "Team Decision",
+  "supportsYes": "Required",
+  "supportsNo": "Not required",
+  "layerHeight": "Layer Height",
+  "fileAnalysis": "File Analysis",
+  "volume": "Volume",
+  "dimensions": "Dimensions",
+  "preview3d": "3D Preview",
+  "estimatedPrice": "Estimated Price",
+  "yourResponse": "Your response to the quote",
+  "responseDescription": "Review the changes and confirm if you approve the quote or send a comment.",
+  "commentPlaceholder": "Write a comment for the administrator (optional)",
+  "approve": "Approve changes",
+  "reject": "Reject changes",
+  "sendComment": "Send comment",
+  "additionalNotes": "Additional Notes",
+  "serviceDescription": "Service Description",
+  "messages": {
+    "emptyComment": "Please write a comment before sending.",
+    "statusError": "Could not determine quote status.",
+    "approved": "Quote approved! Generating order and invoice...",
+    "approvedError": "Quote approved, but there was an error generating the order. Contact support.",
+    "approvedSuccess": "✅ Quote approved.",
+    "orderCreated": "Order {{number}} created.",
+    "invoiceCreated": "Invoice {{number}} generated (€{{total}}).",
+    "approvedAutoFailed": "Quote approved, but automatic generation failed.",
+    "rejected": "Quote rejected. The process has been cancelled.",
+    "commentSent": "Your comment was sent successfully.",
+    "actionFailed": "Could not send your response. Please try again."
+  },
+  "adminNotify": {
+    "approved": "Customer {{name}} approved the quote.",
+    "rejected": "Customer {{name}} rejected the quote.",
+    "commented": "Customer {{name}} sent a comment on their quote.",
+    "subject": "Customer response on quote"
+  },
+  "actionLabels": {
+    "approve": "Customer approval",
+    "reject": "Customer rejection",
+    "comment": "Customer comment"
+  },
+  "pending": "Pending"
+}

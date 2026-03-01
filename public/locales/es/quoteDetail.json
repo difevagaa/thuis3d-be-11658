@@ -1,0 +1,62 @@
+{
+  "title": "Detalles de Cotización",
+  "notFound": "Cotización no encontrada",
+  "download": "Descargar",
+  "information": "Información",
+  "name": "Nombre",
+  "email": "Email",
+  "type": "Tipo",
+  "types": {
+    "file_upload": "Archivo 3D",
+    "service": "Servicio"
+  },
+  "projectDetails": "Detalles del Proyecto",
+  "description": "Descripción",
+  "attachments": "Archivos Adjuntos",
+  "material": "Material",
+  "color": "Color",
+  "printConfig": "Configuración de Impresión",
+  "supports": "Soportes",
+  "teamDecision": "Decisión del Equipo",
+  "supportsYes": "Sí requiere",
+  "supportsNo": "No requiere",
+  "layerHeight": "Altura de Capa",
+  "fileAnalysis": "Análisis del Archivo",
+  "volume": "Volumen",
+  "dimensions": "Dimensiones",
+  "preview3d": "Vista Previa 3D",
+  "estimatedPrice": "Precio Estimado",
+  "yourResponse": "Tu respuesta a la cotización",
+  "responseDescription": "Revisa los cambios y confirma si apruebas la cotización o envía un comentario.",
+  "commentPlaceholder": "Escribe un comentario para el administrador (opcional)",
+  "approve": "Aprobar cambios",
+  "reject": "Rechazar cambios",
+  "sendComment": "Enviar comentario",
+  "additionalNotes": "Notas Adicionales",
+  "serviceDescription": "Descripción del Servicio",
+  "messages": {
+    "emptyComment": "Por favor escribe un comentario antes de enviar.",
+    "statusError": "No se pudo determinar el estado de la cotización.",
+    "approved": "¡Cotización aprobada! Generando pedido y factura...",
+    "approvedError": "Cotización aprobada, pero hubo un error generando el pedido. Contacta soporte.",
+    "approvedSuccess": "✅ Cotización aprobada.",
+    "orderCreated": "Pedido {{number}} creado.",
+    "invoiceCreated": "Factura {{number}} generada (€{{total}}).",
+    "approvedAutoFailed": "Cotización aprobada, pero la generación automática falló.",
+    "rejected": "Cotización rechazada. Se ha cancelado el proceso.",
+    "commentSent": "Tu comentario se ha enviado correctamente.",
+    "actionFailed": "No se pudo enviar tu respuesta. Inténtalo de nuevo."
+  },
+  "adminNotify": {
+    "approved": "El cliente {{name}} aprobó la cotización.",
+    "rejected": "El cliente {{name}} rechazó la cotización.",
+    "commented": "El cliente {{name}} envió un comentario en su cotización.",
+    "subject": "Respuesta del cliente en cotización"
+  },
+  "actionLabels": {
+    "approve": "Aprobación del cliente",
+    "reject": "Rechazo del cliente",
+    "comment": "Comentario del cliente"
+  },
+  "pending": "Pendiente"
+}

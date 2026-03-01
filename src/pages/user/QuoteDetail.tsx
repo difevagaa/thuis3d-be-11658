@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { notifyAdminsWithBroadcast } from "@/lib/notificationUtils";
 
 export default function UserQuoteDetail() {
-  const { t } = useTranslation(['common', 'account']);
+  const { t, i18n } = useTranslation(['quoteDetail', 'common', 'account']);
   const { id } = useParams();
   const navigate = useNavigate();
   const [quote, setQuote] = useState<any>(null);
@@ -23,6 +23,13 @@ export default function UserQuoteDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [statusIds, setStatusIds] = useState<{ approved?: string; rejected?: string }>({});
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+
+  const getLocale = () => {
+    const lang = i18n.language;
+    if (lang?.startsWith('nl')) return 'nl-BE';
+    if (lang?.startsWith('en')) return 'en-GB';
+    return 'es-ES';
+  };
 
   const loadStatusIds = useCallback(async () => {
     try {
@@ -92,7 +99,6 @@ export default function UserQuoteDetail() {
       }
 
       setQuote(data);
-      // Load signed URLs for file attachments
       if (data?.file_storage_path) {
         const paths = String(data.file_storage_path).split(',').map((p: string) => p.trim()).filter(Boolean);
         if (paths.length > 0) loadFileUrls(paths);
@@ -104,14 +110,14 @@ export default function UserQuoteDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, loadFileUrls]); // Depends on id and navigate
+  }, [id, navigate, loadFileUrls]);
 
   useEffect(() => {
     loadStatusIds();
     if (id) {
       loadQuoteDetail();
     }
-  }, [id, loadQuoteDetail, loadStatusIds]); // Now includes loadQuoteDetail
+  }, [id, loadQuoteDetail, loadStatusIds]);
 
   const handleDownloadFile = async (filePath?: string) => {
     const pathToDownload = filePath || quote?.file_storage_path;
@@ -131,7 +137,7 @@ export default function UserQuoteDetail() {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = pathToDownload.split('_').slice(1).join('_') || 'archivo';
+      a.download = pathToDownload.split('_').slice(1).join('_') || 'file';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -143,9 +149,6 @@ export default function UserQuoteDetail() {
       i18nToast.error("error.downloadFailed");
     }
   };
-
-
-
 
   const getFilePreviewUrl = (filePath: string) => {
     return fileUrls[filePath] || '';
@@ -161,7 +164,7 @@ export default function UserQuoteDetail() {
 
     const trimmedComment = comment.trim();
     if (action === "comment" && !trimmedComment) {
-      i18nToast.directWarning("Por favor escribe un comentario antes de enviar.");
+      i18nToast.directWarning(t('messages.emptyComment'));
       return;
     }
 
@@ -172,19 +175,14 @@ export default function UserQuoteDetail() {
       statusId = statusIds.rejected;
     }
     if ((action === "approve" || action === "reject") && !statusId) {
-      i18nToast.directError("No se pudo determinar el estado de la cotización.");
+      i18nToast.directError(t('messages.statusError'));
       return;
     }
 
     try {
       setActionLoading(true);
-      const timestamp = new Date().toLocaleString("es-ES");
-      const actionLabels: Record<typeof action, string> = {
-        approve: "Aprobación del cliente",
-        reject: "Rechazo del cliente",
-        comment: "Comentario del cliente"
-      };
-      const actionLabel = actionLabels[action];
+      const timestamp = new Date().toLocaleString(getLocale());
+      const actionLabel = t(`actionLabels.${action}`);
       const entry = `${timestamp} - ${actionLabel}${trimmedComment ? `: ${trimmedComment}` : ""}`;
       const updatedCustomText = quote.custom_text ? `${quote.custom_text}\n${entry}` : entry;
 
@@ -200,9 +198,8 @@ export default function UserQuoteDetail() {
 
       if (error) throw error;
 
-      // If client APPROVES -> invoke process-quote-approval to auto-generate order + invoice
       if (action === "approve") {
-        i18nToast.directSuccess("¡Cotización aprobada! Generando pedido y factura...");
+        i18nToast.directSuccess(t('messages.approved'));
 
         try {
           const { data, error: fnError } = await supabase.functions.invoke(
@@ -220,37 +217,36 @@ export default function UserQuoteDetail() {
 
           if (fnError) {
             console.error('Error in process-quote-approval:', fnError);
-            i18nToast.directWarning("Cotización aprobada, pero hubo un error generando el pedido. Contacta soporte.");
+            i18nToast.directWarning(t('messages.approvedError'));
           } else if (data?.success) {
-            let msg = "✅ Cotización aprobada.";
-            if (data.order) msg += ` Pedido ${data.order.order_number} creado.`;
-            if (data.invoice) msg += ` Factura ${data.invoice.invoice_number} generada (€${data.invoice.total.toFixed(2)}).`;
+            let msg = t('messages.approvedSuccess');
+            if (data.order) msg += ` ${t('messages.orderCreated', { number: data.order.order_number })}`;
+            if (data.invoice) msg += ` ${t('messages.invoiceCreated', { number: data.invoice.invoice_number, total: data.invoice.total.toFixed(2) })}`;
             i18nToast.directSuccess(msg);
 
-            // Redirect to invoices tab
             setTimeout(() => navigate("/mi-cuenta?tab=invoices"), 2000);
           }
         } catch (autoErr) {
           console.error('Automation error:', autoErr);
-          i18nToast.directWarning("Cotización aprobada, pero la generación automática falló.");
+          i18nToast.directWarning(t('messages.approvedAutoFailed'));
         }
       } else if (action === "reject") {
-        i18nToast.directSuccess("Cotización rechazada. Se ha cancelado el proceso.");
+        i18nToast.directSuccess(t('messages.rejected'));
       } else {
-        i18nToast.directSuccess("Tu comentario se ha enviado correctamente.");
+        i18nToast.directSuccess(t('messages.commentSent'));
       }
 
-      // Notify admins
+      // Notify admins (admin-facing messages stay in Spanish as admin language)
       const adminMessages: Record<typeof action, string> = {
-        approve: `El cliente ${quote.customer_name} aprobó la cotización.`,
-        reject: `El cliente ${quote.customer_name} rechazó la cotización.`,
-        comment: `El cliente ${quote.customer_name} envió un comentario en su cotización.`
+        approve: t('adminNotify.approved', { name: quote.customer_name }),
+        reject: t('adminNotify.rejected', { name: quote.customer_name }),
+        comment: t('adminNotify.commented', { name: quote.customer_name })
       };
       const adminMessage = adminMessages[action];
 
       await notifyAdminsWithBroadcast(
         "quote_update",
-        "Respuesta del cliente en cotización",
+        t('adminNotify.subject'),
         `${adminMessage}${trimmedComment ? ` Comentario: "${trimmedComment}"` : ""}`,
         `/admin/cotizaciones/${quote.id}`
       );
@@ -259,7 +255,7 @@ export default function UserQuoteDetail() {
         await supabase.functions.invoke("send-admin-notification", {
           body: {
             type: "quote",
-            subject: "Respuesta del cliente en cotización",
+            subject: t('adminNotify.subject'),
             message: `${adminMessage}${trimmedComment ? ` Comentario: "${trimmedComment}"` : ""}`,
             customer_name: quote.customer_name,
             customer_email: quote.customer_email,
@@ -274,7 +270,7 @@ export default function UserQuoteDetail() {
       await loadQuoteDetail();
     } catch (error) {
       console.error("Error updating quote:", error);
-      i18nToast.directError("No se pudo enviar tu respuesta. Inténtalo de nuevo.");
+      i18nToast.directError(t('messages.actionFailed'));
     } finally {
       setActionLoading(false);
     }
@@ -291,7 +287,7 @@ export default function UserQuoteDetail() {
   if (!quote) {
     return (
       <div className="container mx-auto p-6">
-        <p>Cotización no encontrada</p>
+        <p>{t('notFound')}</p>
       </div>
     );
   }
@@ -312,9 +308,9 @@ export default function UserQuoteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Detalles de Cotización</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('title')}</h1>
             <p className="text-muted-foreground">
-              {new Date(quote.created_at).toLocaleDateString('es-ES', { 
+              {new Date(quote.created_at).toLocaleDateString(getLocale(), { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric',
@@ -331,31 +327,31 @@ export default function UserQuoteDetail() {
               color: 'white'
             }}
           >
-            {quote.quote_statuses?.name || 'Pendiente'}
+            {quote.quote_statuses?.name || t('pending')}
           </Badge>
           {quote.file_storage_path && (
             <Button onClick={() => handleDownloadFile()} size="sm">
               <Download className="h-4 w-4 mr-2" />
-              Descargar
+              {t('download')}
             </Button>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información Básica */}
+        {/* Info */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Información
+              {t('information')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>Nombre</span>
+                <span>{t('name')}</span>
               </div>
               <p className="font-medium">{quote.customer_name}</p>
             </div>
@@ -365,7 +361,7 @@ export default function UserQuoteDetail() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>Email</span>
+                <span>{t('email')}</span>
               </div>
               <p className="font-medium break-all">{quote.customer_email}</p>
             </div>
@@ -375,48 +371,46 @@ export default function UserQuoteDetail() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4" />
-                <span>Tipo</span>
+                <span>{t('type')}</span>
               </div>
               <Badge variant="outline">
-                {quote.quote_type === 'file_upload' ? 'Archivo 3D' : 
-                 quote.quote_type === 'service' ? 'Servicio' : 
+                {quote.quote_type === 'file_upload' ? t('types.file_upload') : 
+                 quote.quote_type === 'service' ? t('types.service') : 
                  quote.quote_type}
               </Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* Detalles del Proyecto */}
+        {/* Project Details */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Detalles del Proyecto
+              {t('projectDetails')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Descripción */}
             {quote.description && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Descripción</h3>
+                <h3 className="font-semibold text-sm">{t('description')}</h3>
                 <div className="text-sm text-muted-foreground">
                   <RichTextDisplay content={quote.description} />
                 </div>
               </div>
             )}
 
-            {/* Archivos Adjuntos del Servicio */}
             {quote.service_attachments && quote.service_attachments.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Archivos Adjuntos ({quote.service_attachments.length})
+                    {t('attachments')} ({quote.service_attachments.length})
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {quote.service_attachments.map((filePath: string, idx: number) => {
-                      const fileName = filePath.split('_').slice(2).join('_') || `archivo-${idx + 1}`;
+                      const fileName = filePath.split('_').slice(2).join('_') || `file-${idx + 1}`;
                       const isImage = isImageFile(fileName);
                       
                       return (
@@ -437,11 +431,7 @@ export default function UserQuoteDetail() {
                                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                                     <span className="truncate max-w-[150px]" title={fileName}>{fileName}</span>
                                   </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => handleDownloadFile(filePath)}
-                                  >
+                                  <Button size="sm" variant="ghost" onClick={() => handleDownloadFile(filePath)}>
                                     <Download className="h-4 w-4" />
                                   </Button>
                                 </div>
@@ -452,11 +442,7 @@ export default function UserQuoteDetail() {
                                   <File className="h-5 w-5 text-muted-foreground" />
                                   <span className="text-sm truncate max-w-[200px]" title={fileName}>{fileName}</span>
                                 </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  onClick={() => handleDownloadFile(filePath)}
-                                >
+                                <Button size="sm" variant="ghost" onClick={() => handleDownloadFile(filePath)}>
                                   <Download className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -472,14 +458,13 @@ export default function UserQuoteDetail() {
 
             {(quote.materials || quote.colors) && <Separator />}
 
-            {/* Material y Color */}
             {(quote.materials || quote.colors) && (
               <div className="grid grid-cols-2 gap-4">
                 {quote.materials && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Package className="h-4 w-4" />
-                      <span>Material</span>
+                      <span>{t('material')}</span>
                     </div>
                     <p className="font-medium">{quote.materials.name}</p>
                   </div>
@@ -489,7 +474,7 @@ export default function UserQuoteDetail() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Palette className="h-4 w-4" />
-                      <span>Color</span>
+                      <span>{t('color')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div 
@@ -505,45 +490,42 @@ export default function UserQuoteDetail() {
 
             {(quote.supports_required !== null || quote.layer_height) && <Separator />}
 
-            {/* Configuración de Impresión */}
             {(quote.supports_required !== null || quote.layer_height || quote.let_team_decide_supports || quote.let_team_decide_layer) && (
               <div className="space-y-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Settings className="h-4 w-4" />
-                  Configuración de Impresión
+                  {t('printConfig')}
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Soportes */}
                   <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                    <p className="text-xs text-muted-foreground">Soportes</p>
+                    <p className="text-xs text-muted-foreground">{t('supports')}</p>
                     {quote.let_team_decide_supports ? (
                       <Badge variant="secondary" className="text-xs">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Decisión del Equipo
+                        {t('teamDecision')}
                       </Badge>
                     ) : quote.supports_required !== null ? (
                       <Badge variant={quote.supports_required ? "default" : "outline"} className="text-xs">
                         {quote.supports_required ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
-                        {quote.supports_required ? 'Sí requiere' : 'No requiere'}
+                        {quote.supports_required ? t('supportsYes') : t('supportsNo')}
                       </Badge>
                     ) : (
-                      <span className="text-sm">No especificado</span>
+                      <span className="text-sm">{t('common:notSpecified', { defaultValue: 'Not specified' })}</span>
                     )}
                   </div>
 
-                  {/* Altura de Capa */}
                   <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                    <p className="text-xs text-muted-foreground">Altura de Capa</p>
+                    <p className="text-xs text-muted-foreground">{t('layerHeight')}</p>
                     {quote.let_team_decide_layer ? (
                       <Badge variant="secondary" className="text-xs">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Decisión del Equipo
+                        {t('teamDecision')}
                       </Badge>
                     ) : quote.layer_height ? (
                       <p className="font-mono font-semibold">{quote.layer_height} mm</p>
                     ) : (
-                      <span className="text-sm">No especificado</span>
+                      <span className="text-sm">{t('common:notSpecified', { defaultValue: 'Not specified' })}</span>
                     )}
                   </div>
                 </div>
@@ -552,16 +534,15 @@ export default function UserQuoteDetail() {
 
             {(quote.calculated_volume || quote.calculation_details?.dimensions) && <Separator />}
 
-            {/* Datos Calculados */}
             {(quote.calculated_volume || quote.calculation_details?.dimensions) && (
               <div className="space-y-4">
-                <h3 className="font-semibold">Análisis del Archivo</h3>
+                <h3 className="font-semibold">{t('fileAnalysis')}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {quote.calculated_volume && (
                     <div className="p-3 bg-primary/5 rounded-lg">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Ruler className="h-3 w-3" />
-                        Volumen
+                        {t('volume')}
                       </div>
                       <p className="font-semibold font-mono">{quote.calculated_volume.toFixed(2)} cm³</p>
                     </div>
@@ -571,7 +552,7 @@ export default function UserQuoteDetail() {
                     <div className="p-3 bg-primary/5 rounded-lg">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Layers className="h-3 w-3" />
-                        Dimensiones
+                        {t('dimensions')}
                       </div>
                       <p className="font-semibold font-mono text-xs">
                         {quote.calculation_details.dimensions.x.toFixed(1)}×
@@ -586,14 +567,13 @@ export default function UserQuoteDetail() {
 
             {quote.calculation_details?.preview && <Separator />}
 
-            {/* Vista Previa 3D */}
             {quote.calculation_details?.preview && (
               <div className="space-y-4">
-                <h3 className="font-semibold">Vista Previa 3D</h3>
+                <h3 className="font-semibold">{t('preview3d')}</h3>
                 <div className="rounded-lg overflow-hidden border bg-muted/30 max-w-md mx-auto">
                   <img 
                     src={quote.calculation_details.preview} 
-                    alt="Vista previa 3D" 
+                    alt={t('preview3d')} 
                     className="w-full h-auto"
                   />
                 </div>
@@ -602,10 +582,9 @@ export default function UserQuoteDetail() {
 
             {quote.estimated_price && <Separator />}
 
-            {/* Precios */}
             {quote.estimated_price && (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Precio Estimado</p>
+                <p className="text-sm text-muted-foreground">{t('estimatedPrice')}</p>
                 <p className="text-2xl font-bold text-primary">
                   €{parseFloat(quote.estimated_price).toFixed(2)}
                 </p>
@@ -618,51 +597,50 @@ export default function UserQuoteDetail() {
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
-                    Tu respuesta a la cotización
+                    {t('yourResponse')}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Revisa los cambios y confirma si apruebas la cotización o envía un comentario.
+                    {t('responseDescription')}
                   </p>
                   <Textarea
                     value={comment}
                     onChange={(event) => setComment(event.target.value)}
                     rows={3}
-                    placeholder="Escribe un comentario para el administrador (opcional)"
+                    placeholder={t('commentPlaceholder')}
                   />
                   <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={() => handleCustomerAction("approve")}
                       disabled={actionLoading}
                     >
-                      Aprobar cambios
+                      {t('approve')}
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => handleCustomerAction("reject")}
                       disabled={actionLoading}
                     >
-                      Rechazar cambios
+                      {t('reject')}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => handleCustomerAction("comment")}
                       disabled={actionLoading || !comment.trim()}
                     >
-                      Enviar comentario
+                      {t('sendComment')}
                     </Button>
                   </div>
                 </div>
               </>
             )}
 
-            {/* Notas Adicionales */}
             {quote.additional_notes && (
               <>
                 <Separator />
                 <div className="space-y-2">
                   <h3 className="font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Notas Adicionales
+                    {t('additionalNotes')}
                   </h3>
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <RichTextDisplay content={quote.additional_notes} />
@@ -671,14 +649,13 @@ export default function UserQuoteDetail() {
               </>
             )}
 
-            {/* Descripción del Servicio */}
             {quote.service_description && (
               <>
                 <Separator />
                 <div className="space-y-2">
                   <h3 className="font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Descripción del Servicio
+                    {t('serviceDescription')}
                   </h3>
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <RichTextDisplay content={quote.service_description} />
