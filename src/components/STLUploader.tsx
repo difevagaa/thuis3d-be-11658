@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 interface STLUploaderProps {
   materialId: string;
   colorId?: string;
-  onAnalysisComplete: (result: AnalysisResult & { file: File }) => void;
+  onAnalysisComplete: (result: AnalysisResult & { file: File; analysisParams?: { quantity: number; materialId: string; colorId: string; supportsRequired: boolean; layerHeight?: number } }) => void;
   onSupportsDetected?: (needsSupports: boolean, reason: string) => void;
   supportsRequired?: boolean;
   layerHeight?: number;

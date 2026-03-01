@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_action_prompts: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          created_by: string | null
+          entity_type: string
+          id: string
+          is_active: boolean | null
+          message_es: string
+          options: Json | null
+          prompt_style: string
+          requires_reason: boolean | null
+          title_es: string
+          trigger_moment: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          created_by?: string | null
+          entity_type: string
+          id?: string
+          is_active?: boolean | null
+          message_es: string
+          options?: Json | null
+          prompt_style?: string
+          requires_reason?: boolean | null
+          title_es: string
+          trigger_moment?: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          entity_type?: string
+          id?: string
+          is_active?: boolean | null
+          message_es?: string
+          options?: Json | null
+          prompt_style?: string
+          requires_reason?: boolean | null
+          title_es?: string
+          trigger_moment?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       api_rate_limits: {
         Row: {
           endpoint: string
@@ -646,6 +694,87 @@ export type Database = {
           hex_code?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      contextual_help_messages: {
+        Row: {
+          auto_show: boolean | null
+          color: string | null
+          content_en: string | null
+          content_es: string
+          content_nl: string | null
+          context: string
+          created_at: string | null
+          created_by: string | null
+          dismissible: boolean | null
+          help_type: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          position: string | null
+          priority: number | null
+          related_docs_url: string | null
+          related_video_url: string | null
+          requires_role: string | null
+          section: string
+          title_en: string | null
+          title_es: string
+          title_nl: string | null
+          trigger_on: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_show?: boolean | null
+          color?: string | null
+          content_en?: string | null
+          content_es: string
+          content_nl?: string | null
+          context: string
+          created_at?: string | null
+          created_by?: string | null
+          dismissible?: boolean | null
+          help_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: string | null
+          priority?: number | null
+          related_docs_url?: string | null
+          related_video_url?: string | null
+          requires_role?: string | null
+          section: string
+          title_en?: string | null
+          title_es: string
+          title_nl?: string | null
+          trigger_on?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_show?: boolean | null
+          color?: string | null
+          content_en?: string | null
+          content_es?: string
+          content_nl?: string | null
+          context?: string
+          created_at?: string | null
+          created_by?: string | null
+          dismissible?: boolean | null
+          help_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: string | null
+          priority?: number | null
+          related_docs_url?: string | null
+          related_video_url?: string | null
+          requires_role?: string | null
+          section?: string
+          title_en?: string | null
+          title_es?: string
+          title_nl?: string | null
+          trigger_on?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1373,6 +1502,8 @@ export type Database = {
       }
       gift_cards: {
         Row: {
+          buyer_email: string | null
+          buyer_id: string | null
           code: string
           created_at: string | null
           current_balance: number
@@ -1387,6 +1518,8 @@ export type Database = {
           tax_enabled: boolean | null
         }
         Insert: {
+          buyer_email?: string | null
+          buyer_id?: string | null
           code: string
           created_at?: string | null
           current_balance: number
@@ -1401,6 +1534,8 @@ export type Database = {
           tax_enabled?: boolean | null
         }
         Update: {
+          buyer_email?: string | null
+          buyer_id?: string | null
           code?: string
           created_at?: string | null
           current_balance?: number
@@ -1415,6 +1550,58 @@ export type Database = {
           tax_enabled?: boolean | null
         }
         Relationships: []
+      }
+      help_message_analytics: {
+        Row: {
+          action_prompt_id: string | null
+          created_at: string | null
+          event_type: string
+          help_message_id: string | null
+          id: string
+          transition_rule_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_prompt_id?: string | null
+          created_at?: string | null
+          event_type: string
+          help_message_id?: string | null
+          id?: string
+          transition_rule_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_prompt_id?: string | null
+          created_at?: string | null
+          event_type?: string
+          help_message_id?: string | null
+          id?: string
+          transition_rule_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_message_analytics_action_prompt_id_fkey"
+            columns: ["action_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "admin_action_prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "help_message_analytics_help_message_id_fkey"
+            columns: ["help_message_id"]
+            isOneToOne: false
+            referencedRelation: "contextual_help_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "help_message_analytics_transition_rule_id_fkey"
+            columns: ["transition_rule_id"]
+            isOneToOne: false
+            referencedRelation: "status_transition_rules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       homepage_banners: {
         Row: {
@@ -2393,6 +2580,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           name: string
+          slug: string | null
         }
         Insert: {
           color?: string | null
@@ -2400,6 +2588,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name: string
+          slug?: string | null
         }
         Update: {
           color?: string | null
@@ -2407,6 +2596,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name?: string
+          slug?: string | null
         }
         Relationships: []
       }
@@ -2751,6 +2941,123 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payment_audit_logs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          new_status: string
+          old_status: string
+          order_id: string | null
+          payment_method: string | null
+          reason: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          new_status: string
+          old_status: string
+          order_id?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          new_status?: string
+          old_status?: string
+          order_id?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_audit_logs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_audit_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          order_id: string | null
+          status: string
+          transaction_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          order_id?: string | null
+          status?: string
+          transaction_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          order_id?: string | null
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       preview_3d_models: {
         Row: {
@@ -3319,6 +3626,7 @@ export type Database = {
           postal_code: string | null
           preferred_language: string | null
           reviews_blocked: boolean | null
+          role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3341,6 +3649,7 @@ export type Database = {
           postal_code?: string | null
           preferred_language?: string | null
           reviews_blocked?: boolean | null
+          role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3363,6 +3672,7 @@ export type Database = {
           postal_code?: string | null
           preferred_language?: string | null
           reviews_blocked?: boolean | null
+          role?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -3632,6 +3942,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_change_audit: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          id: string
+          new_role: string
+          previous_role: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role: string
+          previous_role?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role?: string
+          previous_role?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       seo_audit_log: {
         Row: {
@@ -4221,6 +4561,75 @@ export type Database = {
         }
         Relationships: []
       }
+      status_transition_rules: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          entity_type: string
+          from_status_type: string
+          from_status_value: string
+          id: string
+          is_active: boolean | null
+          is_mandatory: boolean | null
+          options: Json | null
+          priority: number | null
+          prompt_message_en: string | null
+          prompt_message_es: string
+          prompt_message_nl: string | null
+          prompt_title_en: string | null
+          prompt_title_es: string
+          prompt_title_nl: string | null
+          prompt_type: string
+          suggests_status_type: string | null
+          suggests_status_value: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          entity_type: string
+          from_status_type: string
+          from_status_value: string
+          id?: string
+          is_active?: boolean | null
+          is_mandatory?: boolean | null
+          options?: Json | null
+          priority?: number | null
+          prompt_message_en?: string | null
+          prompt_message_es: string
+          prompt_message_nl?: string | null
+          prompt_title_en?: string | null
+          prompt_title_es: string
+          prompt_title_nl?: string | null
+          prompt_type?: string
+          suggests_status_type?: string | null
+          suggests_status_value?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          entity_type?: string
+          from_status_type?: string
+          from_status_value?: string
+          id?: string
+          is_active?: boolean | null
+          is_mandatory?: boolean | null
+          options?: Json | null
+          priority?: number | null
+          prompt_message_en?: string | null
+          prompt_message_es?: string
+          prompt_message_nl?: string | null
+          prompt_title_en?: string | null
+          prompt_title_es?: string
+          prompt_title_nl?: string | null
+          prompt_type?: string
+          suggests_status_type?: string | null
+          suggests_status_value?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       stock_reservations: {
         Row: {
           created_at: string
@@ -4660,7 +5069,41 @@ export type Database = {
       generate_product_code: { Args: never; Returns: string }
       generate_product_keywords: { Args: never; Returns: undefined }
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
+      get_applicable_transition_rules: {
+        Args: {
+          p_entity_type: string
+          p_from_status_type: string
+          p_from_status_value: string
+        }
+        Returns: {
+          id: string
+          is_mandatory: boolean
+          options: Json
+          prompt_message: string
+          prompt_title: string
+          prompt_type: string
+          suggests_status_type: string
+          suggests_status_value: string
+        }[]
+      }
       get_available_stock: { Args: { p_product_id: string }; Returns: number }
+      get_contextual_help: {
+        Args: { p_context?: string; p_language?: string; p_section: string }
+        Returns: {
+          auto_show: boolean
+          color: string
+          content: string
+          dismissible: boolean
+          help_type: string
+          icon: string
+          id: string
+          position: string
+          related_docs_url: string
+          related_video_url: string
+          title: string
+          trigger_on: string
+        }[]
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_or_superadmin: { Args: { user_id?: string }; Returns: boolean }
       is_valid_uuid: { Args: { text_value: string }; Returns: boolean }

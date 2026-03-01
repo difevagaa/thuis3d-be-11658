@@ -268,7 +268,8 @@ export const calculateOrderTotals = (
   cartItems: CartItem[],
   taxRate: number = 0.21,
   giftCardDiscount: number = 0,
-  couponDiscount: number = 0
+  couponDiscount: number = 0,
+  shippingCost: number = 0
 ) => {
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.price * item.quantity),
@@ -280,14 +281,14 @@ export const calculateOrderTotals = (
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const tax = Number((taxableAmount * taxRate).toFixed(2));
-  const shipping = 0; // Always 0 as per business logic
+  const shipping = shippingCost;
   const discount = giftCardDiscount + couponDiscount;
   const total = Math.max(0, subtotal + tax + shipping - discount);
 
   return {
     subtotal: Number(subtotal.toFixed(2)),
     tax,
-    shipping,
+    shipping: Number(shipping.toFixed(2)),
     discount: Number(discount.toFixed(2)),
     total: Number(total.toFixed(2))
   };
@@ -306,7 +307,7 @@ export const generateOrderNotes = (
   // Add gift card note
   if (giftCardData && giftCardDiscount) {
     notes.push(
-      `Tarjeta de regalo aplicada: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
+      `Gift card applied: ${giftCardData.code} (-€${giftCardDiscount.toFixed(2)})`
     );
   }
 
@@ -314,7 +315,7 @@ export const generateOrderNotes = (
   const giftCardItem = cartItems.find(item => item.isGiftCard);
   if (giftCardItem) {
     notes.push(
-      `Tarjeta Regalo: ${giftCardItem.giftCardCode}\nPara: ${giftCardItem.giftCardRecipient}\nDe: ${giftCardItem.giftCardSender}${giftCardItem.giftCardMessage ? '\nMensaje: ' + giftCardItem.giftCardMessage : ''}`
+      `Gift Card: ${giftCardItem.giftCardCode}\nTo: ${giftCardItem.giftCardRecipient}\nFrom: ${giftCardItem.giftCardSender}${giftCardItem.giftCardMessage ? '\nMessage: ' + giftCardItem.giftCardMessage : ''}`
     );
   }
 
