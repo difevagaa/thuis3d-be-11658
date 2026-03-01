@@ -99,11 +99,46 @@
     "waitlistNote": "We'll notify you when stock is available",
     "reservationNote": "Stock is reserved for 30 minutes when added to cart"
   },
-  "viewAllProducts": "View all products",
-  "errors": {
-    "loadData": "Error loading data",
-    "enterCode": "Please enter a product code",
-    "notFoundByCode": "No product found with that code",
-    "searchError": "Error searching for product"
+  "wishlist": {
+    "added": "Added to wishlist",
+    "removed": "Removed from wishlist",
+    "add": "Add to wishlist",
+    "remove": "Remove from wishlist",
+    "error": "Error updating wishlist",
+    "title": "My Wishlist",
+    "empty": "You have no favorite products yet"
+  },
+  "recentlyViewed": {
+    "title": "Recently Viewed"
+  },
+  "relatedProducts": {
+    "title": "Related Products"
+  },
+  "upsell": {
+    "title": "You might also like"
+  },
+  "search": {
+    "placeholder": "Search products...",
+    "searching": "Searching...",
+    "noResults": "No results found"
+  },
+  "share": {
+    "title": "Share",
+    "copyLink": "Copy link",
+    "copied": "Link copied"
+  },
+  "countdown": {
+    "title": "Sale ends in!",
+    "days": "days",
+    "hours": "hrs",
+    "minutes": "min",
+    "seconds": "sec"
+  },
+  "delivery": {
+    "estimate": "Estimated delivery"
+  },
+  "firstPurchase": {
+    "title": "Welcome! 🎉",
+    "description": "Use this code on your first purchase for a special discount."
   }
 }

@@ -99,11 +99,46 @@
     "waitlistNote": "We laten u weten wanneer er voorraad is",
     "reservationNote": "Voorraad wordt 30 minuten gereserveerd bij toevoegen aan winkelwagen"
   },
-  "viewAllProducts": "Bekijk alle producten",
-  "errors": {
-    "loadData": "Fout bij het laden van gegevens",
-    "enterCode": "Voer een productcode in",
-    "notFoundByCode": "Geen product gevonden met die code",
-    "searchError": "Fout bij het zoeken naar product"
+  "wishlist": {
+    "added": "Toegevoegd aan favorieten",
+    "removed": "Verwijderd uit favorieten",
+    "add": "Toevoegen aan favorieten",
+    "remove": "Verwijderen uit favorieten",
+    "error": "Fout bij bijwerken favorieten",
+    "title": "Mijn Favorieten",
+    "empty": "Je hebt nog geen favoriete producten"
+  },
+  "recentlyViewed": {
+    "title": "Recent Bekeken"
+  },
+  "relatedProducts": {
+    "title": "Gerelateerde Producten"
+  },
+  "upsell": {
+    "title": "Misschien vind je dit ook leuk"
+  },
+  "search": {
+    "placeholder": "Producten zoeken...",
+    "searching": "Zoeken...",
+    "noResults": "Geen resultaten gevonden"
+  },
+  "share": {
+    "title": "Delen",
+    "copyLink": "Link kopiëren",
+    "copied": "Link gekopieerd"
+  },
+  "countdown": {
+    "title": "Aanbieding eindigt over!",
+    "days": "dagen",
+    "hours": "uur",
+    "minutes": "min",
+    "seconds": "sec"
+  },
+  "delivery": {
+    "estimate": "Geschatte levering"
+  },
+  "firstPurchase": {
+    "title": "Welkom! 🎉",
+    "description": "Gebruik deze code bij je eerste aankoop voor een speciale korting."
   }
 }

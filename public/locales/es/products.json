@@ -99,11 +99,46 @@
     "waitlistNote": "Te notificaremos cuando haya stock disponible",
     "reservationNote": "El stock se reserva por 30 minutos al añadir al carrito"
   },
-  "viewAllProducts": "Ver todos los productos",
-  "errors": {
-    "loadData": "Error al cargar datos",
-    "enterCode": "Por favor ingresa un código de producto",
-    "notFoundByCode": "No se encontró ningún producto con ese código",
-    "searchError": "Error al buscar el producto"
+  "wishlist": {
+    "added": "Añadido a favoritos",
+    "removed": "Eliminado de favoritos",
+    "add": "Añadir a favoritos",
+    "remove": "Quitar de favoritos",
+    "error": "Error al actualizar favoritos",
+    "title": "Mis Favoritos",
+    "empty": "No tienes productos favoritos aún"
+  },
+  "recentlyViewed": {
+    "title": "Vistos Recientemente"
+  },
+  "relatedProducts": {
+    "title": "Productos Relacionados"
+  },
+  "upsell": {
+    "title": "También te puede interesar"
+  },
+  "search": {
+    "placeholder": "Buscar productos...",
+    "searching": "Buscando...",
+    "noResults": "No se encontraron resultados"
+  },
+  "share": {
+    "title": "Compartir",
+    "copyLink": "Copiar enlace",
+    "copied": "Enlace copiado"
+  },
+  "countdown": {
+    "title": "¡Oferta termina en!",
+    "days": "días",
+    "hours": "hrs",
+    "minutes": "min",
+    "seconds": "seg"
+  },
+  "delivery": {
+    "estimate": "Entrega estimada"
+  },
+  "firstPurchase": {
+    "title": "¡Bienvenido! 🎉",
+    "description": "Usa este código en tu primera compra para obtener un descuento especial."
   }
 }
