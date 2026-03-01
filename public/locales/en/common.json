@@ -89,5 +89,25 @@
     "wheelToZoom": "Scroll to zoom",
     "changeModel": "Change model",
     "customer": "Customer"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "new": "New",
+    "deleteRead": "Delete read",
+    "empty": "You have no notifications",
+    "errorMarking": "Error marking notification",
+    "allMarkedRead": "All notifications marked as read",
+    "deleted": "Notification deleted",
+    "errorDeleting": "Error deleting notification",
+    "readDeleted": "Read notifications deleted"
+  },
+  "chat": {
+    "title": "Virtual Assistant",
+    "welcome": "Hi! I'm your virtual assistant. How can I help you today?",
+    "placeholder": "Type your message...",
+    "errorResponse": "Error getting response",
+    "noResponse": "No response received",
+    "errorSending": "Error sending message"
   }
 }

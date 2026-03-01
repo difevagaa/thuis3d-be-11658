@@ -36,7 +36,7 @@ export default function Gallery() {
       setItems((data || []) as GalleryItem[]);
     } catch (error) {
       console.error('Error loading gallery:', error);
-      toast.error(t('errorLoading', { defaultValue: 'Error al cargar la galería' }));
+      toast.error(t('errorLoading'));
     } finally {
       setLoading(false);
     }

@@ -46,5 +46,13 @@
   "benefit4": "Customizable with your message",
   "availableBalance": "Available Balance",
   "balanceSuccess": "Balance checked successfully",
-  "errorCheckingBalance": "Error checking balance"
+  "errorCheckingBalance": "Error checking balance",
+  "cardCreatedRedirecting": "Card created. Redirecting to payment...",
+  "invalidAmount": "Please enter a valid amount",
+  "fillRequiredFields": "Please fill in all required fields",
+  "errorProcessing": "Error processing your request",
+  "selectedAmount": "Selected amount",
+  "cardDesign": "Design",
+  "cardColor": "Card color",
+  "cardIcon": "Card icon"
 }

@@ -89,5 +89,25 @@
     "wheelToZoom": "Scroll om te zoomen",
     "changeModel": "Model wijzigen",
     "customer": "Klant"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "markAllRead": "Alles als gelezen markeren",
+    "new": "Nieuw",
+    "deleteRead": "Gelezen verwijderen",
+    "empty": "Je hebt geen meldingen",
+    "errorMarking": "Fout bij markeren melding",
+    "allMarkedRead": "Alle meldingen als gelezen gemarkeerd",
+    "deleted": "Melding verwijderd",
+    "errorDeleting": "Fout bij verwijderen melding",
+    "readDeleted": "Gelezen meldingen verwijderd"
+  },
+  "chat": {
+    "title": "Virtuele Assistent",
+    "welcome": "Hallo! Ik ben je virtuele assistent. Hoe kan ik je vandaag helpen?",
+    "placeholder": "Typ je bericht...",
+    "errorResponse": "Fout bij het ophalen van antwoord",
+    "noResponse": "Geen antwoord ontvangen",
+    "errorSending": "Fout bij verzenden bericht"
   }
 }

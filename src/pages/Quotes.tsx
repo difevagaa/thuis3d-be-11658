@@ -80,7 +80,7 @@ const Quotes = () => {
   
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [country, setCountry] = useState('Bélgica');
+  const [country, setCountry] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -127,7 +127,7 @@ const Quotes = () => {
           setCustomerEmail(profile.email || user.email || '');
           setPhone(profile.phone || '');
           setPostalCode(profile.postal_code || '');
-          setCountry(profile.country || (availableCountries[0]?.country_name || 'Bélgica'));
+          setCountry(profile.country || (availableCountries[0]?.country_name || ''));
           setAddress(profile.address || '');
           setCity(profile.city || '');
         } else {
@@ -882,7 +882,7 @@ const Quotes = () => {
                       <div className="bg-background/80 p-4 rounded-lg text-center">
                         <Package className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">{t('quantity')}</p>
-                        <p className="text-lg font-bold">{quantity} {quantity > 1 ? 'unidades' : 'unidad'}</p>
+                        <p className="text-lg font-bold">{quantity} {quantity > 1 ? t('units') : t('unit')}</p>
                       </div>
                     </div>
 
@@ -964,7 +964,7 @@ const Quotes = () => {
                 className="gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
-                {t('back') || 'Anterior'}
+                {t('back')}
               </Button>
               
               {currentStep === 'review' ? (
@@ -993,7 +993,7 @@ const Quotes = () => {
                   disabled={!canProceedToStep(STEPS[STEPS.indexOf(currentStep) + 1] as Step)}
                   className="gap-2"
                 >
-                  {t('next') || 'Siguiente'}
+                  {t('next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}

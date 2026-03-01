@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { logger } from "@/lib/logger";
+import { useTranslation } from "react-i18next";
 
 interface Notification {
   id: string;
@@ -25,11 +26,19 @@ interface Notification {
 
 export default function NotificationBell() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('common');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const isMountedRef = useRef(true);
   const userIdRef = useRef<string | null>(null);
+
+  const getLocale = () => {
+    const lang = i18n.language;
+    if (lang?.startsWith('nl')) return 'nl-BE';
+    if (lang?.startsWith('en')) return 'en-GB';
+    return 'es-ES';
+  };
 
   // Memoized load function to avoid recreating on each render
   const loadNotifications = useCallback(async () => {
@@ -39,7 +48,6 @@ export default function NotificationBell() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMountedRef.current) return;
 
-      // Filtrar SOLO notificaciones de tipo cliente (excluyendo las administrativas)
       const clientTypes = [
         'order', 'order_update', 'order_paid', 'order_cancelled',
         'invoice', 'quote', 'quote_update', 'quote_updated',
@@ -73,112 +81,63 @@ export default function NotificationBell() {
     let broadcastChannel: ReturnType<typeof supabase.channel> | undefined;
     
     const setupSubscription = async () => {
-      // First load notifications
       await loadNotifications();
       if (!isMountedRef.current) return;
       
-      // Get current user for filtering
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMountedRef.current) return;
       userIdRef.current = user.id;
       
-      // Set up realtime subscription for database changes (INSERT and UPDATE events)
-      // Using specific events for better efficiency
       dbChannel = supabase
         .channel(`user-notifications-db-${user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-          },
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
           (payload) => {
             if (!isMountedRef.current) return;
-            
-            // Check if this notification is for the current user
             const newRecord = payload.new as Notification & { user_id?: string };
-            
             if (newRecord?.user_id === userIdRef.current) {
-              logger.debug('📬 New notification received via postgres_changes:', payload);
               loadNotifications();
             }
           }
         )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'notifications',
-          },
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' },
           (payload) => {
             if (!isMountedRef.current) return;
-            
-            // Check if this notification is for the current user
             const newRecord = payload.new as Notification & { user_id?: string };
             const oldRecord = payload.old as Notification & { user_id?: string };
             const recordUserId = newRecord?.user_id || oldRecord?.user_id;
-            
             if (recordUserId === userIdRef.current) {
-              logger.debug('📬 Notification updated via postgres_changes:', payload);
               loadNotifications();
             }
           }
         )
-        .subscribe((status, err) => {
-          if (err) {
-            logger.error('🔔 Notification DB subscription error:', err);
-          } else {
-            logger.debug('🔔 Notification DB subscription status:', status);
-          }
-        });
+        .subscribe();
       
-      // Set up a broadcast channel for immediate updates
-      // This provides faster notification delivery when triggered manually
       broadcastChannel = supabase
         .channel(`user-notifications-broadcast-${user.id}`)
-        .on(
-          'broadcast',
-          { event: 'new-notification' },
-          (payload) => {
+        .on('broadcast', { event: 'new-notification' },
+          () => {
             if (!isMountedRef.current) return;
-            logger.debug('📬 New notification received via broadcast:', payload);
             loadNotifications();
           }
         )
-        .subscribe((status, err) => {
-          if (err) {
-            logger.error('🔔 Notification broadcast subscription error:', err);
-          } else {
-            logger.debug('🔔 Notification broadcast subscription status:', status);
-          }
-        });
+        .subscribe();
     };
     
     setupSubscription();
 
     return () => {
       isMountedRef.current = false;
-      if (dbChannel) {
-        supabase.removeChannel(dbChannel);
-      }
-      if (broadcastChannel) {
-        supabase.removeChannel(broadcastChannel);
-      }
+      if (dbChannel) supabase.removeChannel(dbChannel);
+      if (broadcastChannel) supabase.removeChannel(broadcastChannel);
     };
   }, [loadNotifications]);
 
   const markAsRead = async (id: string) => {
     try {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", id);
-      
+      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
       loadNotifications();
     } catch (error) {
-      toast.error("Error al marcar notificación");
+      toast.error(t('notifications.errorMarking'));
     }
   };
 
@@ -186,35 +145,24 @@ export default function NotificationBell() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      
+      await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
       loadNotifications();
-      toast.success("Todas las notificaciones marcadas como leídas");
+      toast.success(t('notifications.allMarkedRead'));
     } catch (error) {
-      toast.error("Error al marcar notificaciones");
+      toast.error(t('notifications.errorMarking'));
     }
   };
 
   const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id);
-      
+      const { error } = await supabase.from("notifications").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
-      
       loadNotifications();
-      toast.success("Notificación eliminada");
+      toast.success(t('notifications.deleted'));
     } catch (error: any) {
       logger.error("Error deleting notification:", error);
-      toast.error("Error al eliminar notificación: " + (error.message || ""));
+      toast.error(t('notifications.errorDeleting'));
     }
   };
 
@@ -222,28 +170,19 @@ export default function NotificationBell() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { error } = await supabase
-        .from("notifications")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("user_id", user.id)
-        .eq("is_read", true)
-        .is("deleted_at", null);
-      
+      const { error } = await supabase.from("notifications").update({ deleted_at: new Date().toISOString() }).eq("user_id", user.id).eq("is_read", true).is("deleted_at", null);
       if (error) throw error;
-      
       loadNotifications();
-      toast.success("Notificaciones leídas eliminadas");
+      toast.success(t('notifications.readDeleted'));
     } catch (error: any) {
       logger.error("Error deleting read notifications:", error);
-      toast.error("Error al eliminar notificaciones: " + (error.message || ""));
+      toast.error(t('notifications.errorDeleting'));
     }
   };
 
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
     if (notification.link) {
-      // Si el link es inválido o apunta a /puntos, redirigir a /mi-cuenta?tab=points
       if (notification.link === '/puntos' || notification.type === 'points_earned' || notification.type === 'loyalty_points') {
         navigate('/mi-cuenta?tab=points');
       } else {
@@ -259,10 +198,7 @@ export default function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative" id="nav-notifications-btn">
           <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-[10px] sm:text-xs"
-            >
+            <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-[10px] sm:text-xs">
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
@@ -270,15 +206,10 @@ export default function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-h-[60vh] sm:max-h-[500px] overflow-y-auto">
         <div className="flex items-center justify-between p-3 border-b">
-          <h3 className="font-semibold">Notificaciones</h3>
+          <h3 className="font-semibold">{t('notifications.title')}</h3>
           {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={markAllAsRead}
-              className="text-xs h-7"
-            >
-              Marcar todo como leído
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-7">
+              {t('notifications.markAllRead')}
             </Button>
           )}
         </div>
@@ -288,35 +219,24 @@ export default function NotificationBell() {
             {notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className={`flex flex-col items-start p-4 cursor-pointer border-b hover:bg-accent ${
-                  !notification.is_read ? 'bg-primary/5' : ''
-                }`}
+                className={`flex flex-col items-start p-4 cursor-pointer border-b hover:bg-accent ${!notification.is_read ? 'bg-primary/5' : ''}`}
                 onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex justify-between items-start w-full mb-1">
                   <div className="flex-1">
                     <span className="font-semibold text-sm">{notification.title}</span>
                     {!notification.is_read && (
-                      <Badge variant="default" className="ml-2 text-xs">Nuevo</Badge>
+                      <Badge variant="default" className="ml-2 text-xs">{t('notifications.new')}</Badge>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => deleteNotification(notification.id, e)}
-                    className="h-7 w-7 p-0 hover:bg-destructive/20 flex items-center justify-center"
-                  >
+                  <Button variant="ghost" size="sm" onClick={(e) => deleteNotification(notification.id, e)} className="h-7 w-7 p-0 hover:bg-destructive/20 flex items-center justify-center">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mb-1">{notification.message}</p>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(notification.created_at).toLocaleString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  {new Date(notification.created_at).toLocaleString(getLocale(), {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                   })}
                 </span>
               </DropdownMenuItem>
@@ -324,20 +244,15 @@ export default function NotificationBell() {
             
             {notifications.some(n => n.is_read) && (
               <div className="p-2 border-t">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={deleteAllRead}
-                  className="w-full text-xs sm:text-sm h-8 sm:h-9"
-                >
-                  Eliminar leídas
+                <Button variant="outline" size="sm" onClick={deleteAllRead} className="w-full text-xs sm:text-sm h-8 sm:h-9">
+                  {t('notifications.deleteRead')}
                 </Button>
               </div>
             )}
           </>
         ) : (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No tienes notificaciones
+            {t('notifications.empty')}
           </div>
         )}
       </DropdownMenuContent>

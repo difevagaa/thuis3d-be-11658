@@ -4,5 +4,6 @@
   "legalTitle": "Aviso Importante:",
   "legalText": "Las imágenes mostradas en esta galería son ejemplos y referencias de impresión 3D compartidas por diversos usuarios y fuentes externas con fines ilustrativos. Estas imágenes no están a la venta y se muestran únicamente como inspiración. No comercializamos estos diseños ni reclamamos derechos de autor sobre ellos.",
   "loading": "Cargando galería...",
-  "empty": "No hay elementos en la galería por el momento."
+  "empty": "No hay elementos en la galería por el momento.",
+  "errorLoading": "Error al cargar la galería"
 }

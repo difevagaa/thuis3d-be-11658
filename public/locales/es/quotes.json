@@ -97,5 +97,7 @@
   "preview3D": "Vista 3D",
   "shippingNotIncluded": "Introduce tu dirección para ver el costo de envío.",
   "back": "Anterior",
-  "next": "Siguiente"
+  "next": "Siguiente",
+  "unit": "unidad",
+  "units": "unidades"
 }
