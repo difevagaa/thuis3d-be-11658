@@ -580,6 +580,7 @@ export default function MyAccount() {
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm md:text-base">
+                            <span className="font-mono text-xs text-muted-foreground mr-2">{quote.quote_number || ''}</span>
                             {quote.quote_type === 'file_upload' ? t('account:quotes.file3d') : 
                              quote.quote_type === 'service' ? t('account:quotes.service') : 
                              quote.quote_type}
