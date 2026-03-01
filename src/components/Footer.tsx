@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteLogo } from "./SiteLogo";
 
 export const Footer = () => {
   const { t } = useTranslation('footer');
@@ -93,7 +94,9 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {/* Brand & Social */}
           <div>
-            <h3 className="font-bold text-lg md:text-xl mb-3 md:mb-4">{customization?.site_name || "Thuis3D.be"}</h3>
+            <div className="mb-3 md:mb-4">
+              <SiteLogo variant="footer" />
+            </div>
             <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
               {t('brand.tagline')}
             </p>

@@ -11,6 +11,7 @@ import { GlobalSearchBar } from "./GlobalSearchBar";
 import { FirstPurchaseDiscount } from "./FirstPurchaseDiscount";
 import { logger } from "@/lib/logger";
 import { useResponsiveSafe } from "@/contexts/ResponsiveContext";
+import { SiteLogo } from "./SiteLogo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,11 +128,8 @@ export const Layout = ({ children }: LayoutProps) => {
                 <SheetContent side="left" className="w-[280px] p-0">
                   <SheetHeader className="p-4 border-b">
                     <div className="flex items-center justify-between">
-                      <SheetTitle className="flex items-center gap-2 text-left">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                          <Package className="h-4 w-4 text-primary-foreground" />
-                        </div>
-                        <span className="text-base font-bold text-primary">Thuis3D.be</span>
+                     <SheetTitle className="flex items-center gap-2 text-left">
+                        <SiteLogo variant="mobile-menu" />
                       </SheetTitle>
                     </div>
                   </SheetHeader>
@@ -243,15 +241,8 @@ export const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              {/* Logo - Consistent sizing */}
-              <Link to="/" className="flex items-center gap-1.5 notranslate flex-shrink-0 min-w-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Package className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="text-sm sm:text-base font-bold text-primary truncate max-w-[100px] sm:max-w-none">
-                  Thuis3D.be
-                </span>
-              </Link>
+              {/* Logo - Dynamic from settings */}
+              <SiteLogo variant="header" />
             </div>
 
             {/* Center: Search Bar (desktop) */}

@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette } from "lucide-react";
+import { Paintbrush, Type, Image as ImageIcon, Share2, Save, Sparkles, Facebook, Instagram, Twitter, Linkedin, Settings, Palette, Crown } from "lucide-react";
+import LogoCustomizer from '@/components/admin/LogoCustomizer';
 import { useGlobalColors } from "@/hooks/useGlobalColors";
 import { professionalPalettes } from "@/data/professionalPalettes";
 import { logger } from '@/lib/logger';
@@ -668,14 +669,18 @@ export default function SiteCustomizer() {
       <h1 className="text-3xl font-bold mb-6">Personalizador del Sitio</h1>
 
       <Tabs defaultValue="themes" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="themes">
             <Sparkles className="mr-2 h-4 w-4" />
             Paletas
           </TabsTrigger>
           <TabsTrigger value="advanced-colors">
             <Palette className="mr-2 h-4 w-4" />
-            Colores Avanzados
+            Colores
+          </TabsTrigger>
+          <TabsTrigger value="logo">
+            <Crown className="mr-2 h-4 w-4" />
+            Logo
           </TabsTrigger>
           <TabsTrigger value="contrast">
             <Settings className="mr-2 h-4 w-4" />
@@ -774,6 +779,11 @@ export default function SiteCustomizer() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* TAB: LOGO */}
+        <TabsContent value="logo">
+          <LogoCustomizer />
         </TabsContent>
 
         {/* TAB 3: VERIFICADOR DE CONTRASTE */}
