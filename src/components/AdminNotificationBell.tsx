@@ -247,12 +247,12 @@ export default function AdminNotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative overflow-visible">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] flex items-center justify-center px-1 py-0 text-xs rounded-full leading-none"
+              className="pointer-events-none absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 min-w-[20px] h-[20px] flex items-center justify-center px-1 py-0 text-[11px] rounded-full leading-none font-bold"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>

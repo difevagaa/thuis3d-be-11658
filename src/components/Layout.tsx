@@ -292,13 +292,13 @@ export const Layout = ({ children }: LayoutProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-9 w-9 rounded-lg hover:bg-accent" 
+                className="relative overflow-visible h-9 w-9 rounded-lg hover:bg-accent" 
                 onClick={() => navigate("/carrito")}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
-                    {cartCount > 9 ? '9+' : cartCount}
+                  <span className="pointer-events-none absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 bg-primary text-primary-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none font-semibold">
+                    {cartCount > 99 ? '99+' : cartCount}
                   </span>
                 )}
               </Button>
