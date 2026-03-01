@@ -72,14 +72,14 @@
     --shadow-glow: 0 0 25px hsl(36 100% 50% / 0.25);
     --shadow-glow-accent: 0 0 25px hsl(174 62% 47% / 0.25);
 
-    /* Admin Sidebar - Professional Dark */
-    --sidebar-background: 210 24% 16%;
-    --sidebar-foreground: 210 16% 93%;
+    /* Admin Sidebar - Soft Pastel Glassmorphism */
+    --sidebar-background: 220 30% 97%;
+    --sidebar-foreground: 220 20% 30%;
     --sidebar-primary: 36 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 24% 22%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 24% 20%;
+    --sidebar-accent: 220 25% 92%;
+    --sidebar-accent-foreground: 220 20% 30%;
+    --sidebar-border: 220 20% 90%;
     --sidebar-ring: 36 100% 50%;
     --sidebar-label-size: 11px;
 
@@ -144,13 +144,13 @@
     --input: 210 24% 20%;
     --ring: 36 100% 55%;
 
-    --sidebar-background: 210 24% 10%;
-    --sidebar-foreground: 210 16% 93%;
+    --sidebar-background: 220 20% 14%;
+    --sidebar-foreground: 220 15% 85%;
     --sidebar-primary: 36 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 24% 18%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 24% 14%;
+    --sidebar-accent: 220 20% 20%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 20% 18%;
     --sidebar-ring: 36 100% 55%;
 
     /* Header - Dark mode defaults */
@@ -461,11 +461,13 @@
     gap: 1rem;
   }
   
-  /* Toast notifications - better visibility */
+  /* Toast notifications - proper mobile sizing */
   [data-sonner-toast] {
-    font-size: 1rem !important;
-    padding: 1rem 1.25rem !important;
-    border-radius: 1rem !important;
+    font-size: 0.8125rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.75rem !important;
+    max-width: calc(100vw - 2rem) !important;
+    word-break: break-word !important;
   }
 }
 

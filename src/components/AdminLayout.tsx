@@ -95,8 +95,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   
   return (
     <div className="min-h-screen flex flex-col w-full bg-background">
-      {/* Header - Fixed at top with centered content */}
-      <header className="h-14 md:h-16 flex items-center border-b bg-card shadow-sm sticky top-0 z-50 shrink-0">
+      {/* Header - Fixed at top with glassmorphism */}
+      <header className="h-14 md:h-16 flex items-center bg-background/80 backdrop-blur-xl border-b border-border/30 sticky top-0 z-50 shrink-0 shadow-sm">
         <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1 overflow-hidden">
             <SidebarTrigger className="flex-shrink-0 h-8 w-8" />
