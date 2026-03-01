@@ -197,11 +197,20 @@ export default function MyAccount() {
           address: profile.address,
           city: profile.city,
           postal_code: profile.postal_code,
-          country: profile.country
+          country: profile.country,
+          preferred_language: profile.preferred_language || 'en'
         })
         .eq("id", profile.id);
 
       if (error) throw error;
+
+      // Sync i18n runtime + localStorage with saved language
+      const savedLang = profile.preferred_language || 'en';
+      if (i18n.language !== savedLang) {
+        await i18n.changeLanguage(savedLang);
+        localStorage.setItem('i18nextLng', savedLang);
+      }
+
       i18nToast.success("success.profileUpdated");
     } catch (error) {
       i18nToast.error("error.profileUpdateFailed");
@@ -445,6 +454,19 @@ export default function MyAccount() {
                   value={profile?.phone || ""}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                 />
+              </div>
+              <div>
+                <Label>{t('account:profile.preferredLanguage')}</Label>
+                <p className="text-xs text-muted-foreground mb-1">{t('account:profile.languageHint')}</p>
+                <select
+                  value={profile?.preferred_language || 'en'}
+                  onChange={(e) => setProfile({ ...profile, preferred_language: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="es">🇪🇸 Español</option>
+                  <option value="en">🇬🇧 English</option>
+                  <option value="nl">🇳🇱 Nederlands</option>
+                </select>
               </div>
               <div>
                 <Label>{t('account:profile.address')}</Label>

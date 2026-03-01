@@ -27,6 +27,10 @@
     "city": "Ciudad",
     "postalCode": "Código Postal",
     "country": "País",
+    "preferredLanguage": "Idioma Preferido",
+    "languageHint": "Este idioma se usará para todas las comunicaciones, notificaciones y correos electrónicos.",
+    "languageSaved": "Idioma actualizado correctamente",
+    "languageError": "Error al actualizar el idioma",
     "saveChanges": "Guardar Cambios",
     "updated": "Perfil actualizado correctamente",
     "error": "Error al actualizar perfil"

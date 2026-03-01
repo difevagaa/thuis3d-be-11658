@@ -41,8 +41,8 @@ export function LanguageSelector() {
   };
 
   // Get current language, defaulting to first language if undefined
-  const currentLang = i18n.language?.split('-')[0] || 'nl';
-  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[2]; // Default to Dutch
+  const currentLang = i18n.language?.split('-')[0] || 'en';
+  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[1]; // Default to English
 
   return (
     <DropdownMenu>
