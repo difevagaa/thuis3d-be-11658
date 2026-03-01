@@ -15,7 +15,9 @@
     "points": "Punten",
     "pointsShort": "Punten",
     "giftcards": "Kaarten",
-    "giftcardsShort": "Kaarten"
+    "giftcardsShort": "Kaarten",
+    "wishlist": "Verlanglijst",
+    "wishlistShort": "Verlanglijst"
   },
   "profile": {
     "title": "Persoonlijke Informatie",
@@ -164,5 +166,12 @@
       "used": "Gebruikt",
       "expired": "Verlopen"
     }
+  },
+  "wishlist": {
+    "title": "Mijn Verlanglijst",
+    "description": "Producten die u als favoriet heeft opgeslagen",
+    "empty": "U heeft nog geen favoriete producten",
+    "removed": "Product verwijderd van verlanglijst",
+    "unknownProduct": "Product niet beschikbaar"
   }
 }

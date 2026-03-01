@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Star } from "lucide-react";
+import { Star, Upload, X, Image as ImageIcon } from "lucide-react";
 import { ReviewItem } from "@/components/ReviewItem";
 
 interface Review {
@@ -35,6 +35,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [newReview, setNewReview] = useState({
     rating: 5,
     title: "",
@@ -135,7 +136,22 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
         return;
       }
 
-      // Comentario y título son opcionales, solo la calificación es obligatoria
+      // Upload images if any
+      let imageUrls: string[] = [];
+      if (reviewImages.length > 0) {
+        for (const file of reviewImages) {
+          const ext = file.name.split('.').pop();
+          const path = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('review-images')
+            .upload(path, file);
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(path);
+            if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+          }
+        }
+      }
+
       const reviewData = {
         product_id: productId,
         user_id: user.id,
@@ -143,6 +159,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
         title: newReview.title.trim() || null,
         comment: newReview.comment.trim() || null,
         is_approved: false,
+        image_urls: imageUrls.length > 0 ? imageUrls : null,
       };
 
       if (userReview) {
@@ -163,6 +180,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       }
 
       setNewReview({ rating: 5, title: "", comment: "" });
+      setReviewImages([]);
       loadReviews();
     } catch (error: any) {
       toast.error(t('error'));
@@ -259,6 +277,44 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 value={newReview.comment}
                 onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('photos')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {reviewImages.map((file, idx) => (
+                  <div key={idx} className="relative w-16 h-16 rounded border overflow-hidden">
+                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-bl p-0.5"
+                      onClick={() => setReviewImages(prev => prev.filter((_, i) => i !== idx))}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {reviewImages.length < 3 && (
+                  <label className="w-16 h-16 rounded border-2 border-dashed flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && file.size <= 5 * 1024 * 1024) {
+                          setReviewImages(prev => [...prev, file]);
+                        } else if (file) {
+                          toast.error(t('photoTooLarge'));
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{t('photosHint')}</p>
             </div>
 
             <Button

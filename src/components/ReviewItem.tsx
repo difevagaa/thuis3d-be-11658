@@ -10,6 +10,7 @@ interface Review {
   comment: string | null;
   created_at: string;
   is_approved: boolean;
+  image_urls?: string[] | null;
   profiles: {
     full_name: string | null;
   } | null;
@@ -61,6 +62,15 @@ export function ReviewItem({ review }: ReviewItemProps) {
       )}
       {translatedReview.comment && (
         <p className="text-muted-foreground">{translatedReview.comment}</p>
+      )}
+      {review.image_urls && review.image_urls.length > 0 && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {review.image_urls.map((url, idx) => (
+            <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+              <img src={url} alt="" className="w-16 h-16 rounded border object-cover hover:opacity-80 transition-opacity" />
+            </a>
+          ))}
+        </div>
       )}
     </div>
   );

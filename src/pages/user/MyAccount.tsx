@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
-import { User, Package, MessageSquare, Gift, Award, FileText, Download, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { User, Package, MessageSquare, Gift, Award, FileText, Download, Paperclip, X, Image as ImageIcon, Heart, Trash2 } from "lucide-react";
 import { SendAdminMessage } from "@/components/SendAdminMessage";
 import GiftCardPrintable from "@/components/GiftCardPrintable";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { i18nToast } from "@/lib/i18nToast";
 import { logger } from "@/lib/logger";
 import { parseGiftCardMessage } from "@/lib/giftCardUtils";
+import { WishlistTab } from "@/components/WishlistTab";
 
 export default function MyAccount() {
   const { t, i18n } = useTranslation(['account', 'common', 'messages']);
@@ -427,6 +428,10 @@ export default function MyAccount() {
           <TabsTrigger value="giftcards" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
             <Gift className="h-4 w-4" />
             <span className="whitespace-nowrap">{t('account:tabs.giftcards')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="wishlist" className="shrink-0 h-10 px-4 flex items-center gap-2 text-sm rounded-lg">
+            <Heart className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t('account:tabs.wishlist')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1118,6 +1123,9 @@ export default function MyAccount() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="wishlist" className="mt-0">
+          <WishlistTab userId={profile?.id} />
         </TabsContent>
       </Tabs>
     </div>

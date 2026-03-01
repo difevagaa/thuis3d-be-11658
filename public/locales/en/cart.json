@@ -49,5 +49,8 @@
   "checkout": "Proceed to Checkout",
   "continueShopping": "Continue shopping",
   "itemRemoved": "Product removed from cart",
-  "loginRequired": "You must log in to continue with the purchase"
+  "loginRequired": "You must log in to continue with the purchase",
+  "upsell": {
+    "title": "You may also like"
+  }
 }
