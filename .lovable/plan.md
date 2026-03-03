@@ -1,104 +1,58 @@
 
 
-## Plan de Corrección: Cotizaciones, Facturas, Rendimiento y Rediseño
+## Plan: Mascota Interactiva Mejorada
 
-Este plan aborda 4 bloques de trabajo solicitados por el usuario.
+### Problema Actual
+La mascota no se muestra porque:
+1. El componente espera 3 segundos antes de hacerse visible, y luego se esconde/muestra cíclicamente — el usuario quiere que **siempre esté visible**
+2. Las posiciones son estáticas (5 puntos fijos) — el usuario quiere que **camine** por la página
+3. No hay detección de contexto (qué página está viendo el cliente)
 
----
+### Plan de Corrección
 
-### BLOQUE 1: Corrección de Cotizaciones y Facturas
+#### 1. Reescribir `SiteMascot.tsx` completamente
+- **Siempre visible** una vez cargada (sin ciclo hide/show)
+- **Animación de caminar**: la mascota se mueve horizontalmente por el borde inferior de la pantalla con una animación CSS de "pasos" (bounce sutil al caminar)
+- **Detección de contexto**: usar `useLocation()` de react-router para saber en qué página está el usuario y ajustar comportamiento (ej: en admin se posiciona diferente, en home camina más activamente)
+- **Reacciones al clic**: mantener las 5 reacciones actuales + agregar 3 nuevas (dance, nod, heart)
+- **Movimiento continuo**: la mascota camina de un lado a otro del viewport con pausas naturales, girando al cambiar de dirección
+- **Siempre accesible**: `position: fixed` con `z-index: 9999` para que siempre esté encima del contenido
 
-#### Bug 1: Cantidad no visible en el panel de administración de cotizaciones
+#### 2. Agregar 10+ opciones de configuración al admin (`MascotSettings.tsx`)
+Opciones nuevas a agregar (en DB y UI):
+1. **Tamaño** (small/medium/large) — controla el tamaño SVG
+2. **Velocidad de caminar** (slow/normal/fast) — velocidad del movimiento horizontal
+3. **Sonido al clic** (on/off) — reproduce un sonido corto al interactuar
+4. **Mensaje de bienvenida** (texto) — tooltip que aparece al pasar el mouse
+5. **Opacidad** (0.5-1.0) — transparencia de la mascota
+6. **Modo nocturno** (on/off) — la mascota "duerme" de noche (ojos cerrados)
+7. **Seguir cursor** (on/off) — los ojos siguen el cursor del mouse
+8. **Emojis al clic** (on/off) — muestra emojis flotantes al hacer clic
+9. **Ocultar en checkout** (on/off) — se esconde en páginas de pago para no distraer
+10. **Intervalo de reacción espontánea** (segundos) — cada cuánto hace una gesticulación automática
 
-**Problema:** La tabla de cotizaciones en `src/pages/admin/Quotes.tsx` (líneas 296-314) no tiene columna "Cantidad". El admin no puede ver cuántas unidades solicitó el cliente sin entrar al detalle.
+#### 3. Migración DB
+Agregar columnas a `site_mascot_settings`:
+- `size` (text, default 'medium')
+- `walk_speed` (text, default 'normal')
+- `sound_enabled` (boolean, default false)
+- `welcome_message` (text, default '¡Hola! 👋')
+- `opacity` (numeric, default 1.0)
+- `night_mode` (boolean, default false)
+- `follow_cursor` (boolean, default true)
+- `show_emojis` (boolean, default true)
+- `hide_on_checkout` (boolean, default true)
+- `spontaneous_interval` (integer, default 30)
 
-**Corrección:**
-- Agregar columna "Uds." (Unidades) entre "Peso" y "Precio Auto" en la tabla de cotizaciones
-- Mostrar `quote.quantity || 1` en cada fila
+#### 4. Animación de caminar
+- La mascota se moverá horizontalmente usando `requestAnimationFrame` o CSS `@keyframes`
+- Al llegar al borde, se voltea (CSS `scaleX(-1)`) y camina de vuelta
+- Pausa 3-5 segundos en posiciones aleatorias antes de seguir caminando
+- Animación de "bounce" vertical sutil mientras camina para simular pasos
+- Al estar en pausa: animación idle (parpadeo, respiración)
 
-#### Bug 2: Items duplicados en facturas
-
-**Problema:** La base de datos muestra items duplicados para la misma factura (ej: invoice `707e11df` tiene 2 items idénticos). Esto ocurre porque:
-1. La Edge Function `process-quote-approval` crea invoice_items al aprobar
-2. El trigger `trigger_auto_generate_invoice` en la tabla `orders` ejecuta `auto_generate_invoice_on_payment()` que TAMBIÉN crea una factura con items cuando el pedido cambia a `paid`
-3. Posiblemente la Edge Function se ejecuta más de una vez
-
-**Corrección:**
-- Agregar verificación en la Edge Function para no crear invoice_items si ya existen para ese invoice_id
-- Modificar `auto_generate_invoice_on_payment()` para verificar si ya existen invoice_items antes de insertar duplicados
-- Limpiar items duplicados existentes en la BD con una query de deduplicación
-
-#### Bug 3: unit_price incorrecto cuando hay múltiples unidades
-
-**Problema:** Para invoice `7a26c3f3`, 50 unidades tienen `unit_price: 100.00` y `total_price: 100.00`. El unit_price debería ser `100/50 = 2.00`. La línea 293 del edge function calcula correctamente `subtotal / quantity`, pero el registro muestra que no se aplicó.
-
-**Corrección:** Verificar y corregir la lógica en el edge function para que `unit_price = subtotal / quantity` y `total_price = subtotal` siempre sean coherentes.
-
----
-
-### BLOQUE 2: Auditoría de Rendimiento
-
-**Acciones:**
-- Auditar componentes pesados: `usePageSections`, `useVisitorTracking`, cargas de imágenes
-- Verificar lazy loading de rutas en `App.tsx`
-- Identificar queries redundantes o sin paginación
-- Recomendar memoización donde sea necesario (listas grandes, re-renders)
-- Implementar las mejoras que no alteren funcionalidad
-
----
-
-### BLOQUE 3: Rediseño Visual del Sitio
-
-**Acciones:**
-- Actualizar la paleta de colores CSS variables en `index.css` con un diseño moderno y fresco
-- Agregar transiciones y micro-animaciones en hover, scroll y navegación
-- Mejorar gradientes del hero banner y cards
-- Actualizar tipografía y espaciados para un look más premium
-- Asegurar coherencia en modo claro/oscuro
-
----
-
-### BLOQUE 4: Sistema de Mascota Interactiva
-
-**Concepto:** Una mascota animada (sprite/SVG) que aparece en el sitio web con movimientos naturales, se esconde y reaparece en diferentes posiciones, y reacciona al clic del usuario con gesticulaciones.
-
-**Implementación técnica:**
-- Crear componente `SiteMascot.tsx` con animaciones CSS/JS puras (sin video)
-- La mascota será un personaje SVG con partes articuladas (ojos, boca, brazos) animadas con CSS keyframes y transiciones
-- Comportamiento autónomo: idle (parpadeo, movimiento sutil), aparición/desaparición aleatoria en los bordes de la pantalla
-- Al hacer clic: animaciones de reacción (saludo, risa, sorpresa) seleccionadas aleatoriamente
-- Posicionamiento: fixed en la esquina inferior, con movimiento ocasional a otras posiciones
-
-**Panel de Administración:**
-- Nueva sección "Mascota del Sitio" en el admin con opciones:
-  - Habilitar/deshabilitar mascota
-  - Seleccionar entre varios diseños de mascota predefinidos (robot, gato, pulpo, etc.)
-  - Configurar frecuencia de aparición
-  - Configurar posición predeterminada
-  - Configurar colores de la mascota
-- Tabla `site_mascot_settings` en la BD para persistir configuración
-
-**Base de datos:**
-- Crear tabla `site_mascot_settings` con campos: `id`, `enabled`, `mascot_type`, `primary_color`, `secondary_color`, `position`, `animation_frequency`, `click_reactions`
-
----
-
-### Orden de Ejecución
-
-1. **Bloque 1** — Corrección de bugs de cotizaciones/facturas (crítico)
-2. **Bloque 4** — Sistema de mascota (funcionalidad nueva completa)
-3. **Bloque 3** — Rediseño visual
-4. **Bloque 2** — Optimización de rendimiento
-
-### Archivos Principales a Modificar
-
-- `src/pages/admin/Quotes.tsx` — Agregar columna cantidad
-- `supabase/functions/process-quote-approval/index.ts` — Fix duplicados y unit_price
-- `auto_generate_invoice_on_payment` — SQL migration para prevenir duplicados
-- `src/components/SiteMascot.tsx` — Nuevo componente de mascota
-- `src/pages/admin/MascotSettings.tsx` — Nuevo panel admin
-- `src/index.css` — Rediseño de variables de colores
-- `tailwind.config.ts` — Nuevas animaciones
-- `src/App.tsx` — Lazy loading audit
-- Migration SQL — Tabla mascot_settings + limpieza de duplicados
+#### Archivos a modificar
+- `src/components/SiteMascot.tsx` — reescritura completa
+- `src/pages/admin/MascotSettings.tsx` — 10 nuevas opciones
+- Migration SQL — nuevas columnas
 
