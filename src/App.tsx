@@ -39,6 +39,7 @@ import CookieConsent from "./components/CookieConsent";
 import ScrollToTop from "./components/ScrollToTop";
 import NotFound from "./pages/NotFound";
 import { SEOHead } from "./components/SEOHead";
+import SiteMascot from "./components/SiteMascot";
 
 // User pages - lazy loaded
 const MyAccount = lazy(() => import("./pages/user/MyAccount"));
@@ -97,7 +98,8 @@ const PageBuilder = lazy(() => import("./pages/admin/PageBuilder"));
 const EmailManagement = lazy(() => import("./pages/admin/EmailManagement"));
 const DatabaseAdmin = lazy(() => import("./pages/admin/DatabaseAdmin"));
 const Inventory = lazy(() => import("./pages/admin/Inventory"));
-
+const MascotSettings = lazy(() => import("./pages/admin/MascotSettings"));
+const LithophanyAdmin = lazy(() => import("./pages/admin/LithophanyAdmin"));
 
 // Public pages that need to stay eager
 import Gallery from "./pages/Gallery";
@@ -216,12 +218,14 @@ const App = () => {
             <Route path="/admin/emails" element={<AdminLayout><EmailManagement /></AdminLayout>} />
             <Route path="/admin/database" element={<AdminLayout><DatabaseAdmin /></AdminLayout>} />
             <Route path="/admin/inventario" element={<AdminLayout><Inventory /></AdminLayout>} />
+            <Route path="/admin/mascota" element={<AdminLayout><MascotSettings /></AdminLayout>} />
             
             
             {/* 404 route */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
             </Suspense>
+            <SiteMascot />
             <CookieConsent />
               </ErrorBoundary>
           </BrowserRouter>
