@@ -4870,39 +4870,69 @@ export type Database = {
           click_reactions: boolean
           created_at: string
           enabled: boolean
+          follow_cursor: boolean
+          hide_on_checkout: boolean
           id: string
           mascot_type: string
+          night_mode: boolean
+          opacity: number
           position: string
           primary_color: string
           secondary_color: string
+          show_emojis: boolean
           show_on_mobile: boolean
+          size: string
+          sound_enabled: boolean
+          spontaneous_interval: number
           updated_at: string
+          walk_speed: string
+          welcome_message: string
         }
         Insert: {
           animation_frequency?: string
           click_reactions?: boolean
           created_at?: string
           enabled?: boolean
+          follow_cursor?: boolean
+          hide_on_checkout?: boolean
           id?: string
           mascot_type?: string
+          night_mode?: boolean
+          opacity?: number
           position?: string
           primary_color?: string
           secondary_color?: string
+          show_emojis?: boolean
           show_on_mobile?: boolean
+          size?: string
+          sound_enabled?: boolean
+          spontaneous_interval?: number
           updated_at?: string
+          walk_speed?: string
+          welcome_message?: string
         }
         Update: {
           animation_frequency?: string
           click_reactions?: boolean
           created_at?: string
           enabled?: boolean
+          follow_cursor?: boolean
+          hide_on_checkout?: boolean
           id?: string
           mascot_type?: string
+          night_mode?: boolean
+          opacity?: number
           position?: string
           primary_color?: string
           secondary_color?: string
+          show_emojis?: boolean
           show_on_mobile?: boolean
+          size?: string
+          sound_enabled?: boolean
+          spontaneous_interval?: number
           updated_at?: string
+          walk_speed?: string
+          welcome_message?: string
         }
         Relationships: []
       }
