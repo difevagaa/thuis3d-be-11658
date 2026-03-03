@@ -306,6 +306,7 @@ export default function Quotes() {
                   <TableHead>Email</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Peso</TableHead>
+                  <TableHead>Uds.</TableHead>
                   <TableHead>Tiempo</TableHead>
                   <TableHead>Precio Auto</TableHead>
                   <TableHead>Precio Est.</TableHead>
@@ -317,7 +318,7 @@ export default function Quotes() {
               <TableBody>
                 {quotes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
                       No hay cotizaciones registradas
                     </TableCell>
                   </TableRow>
@@ -343,6 +344,9 @@ export default function Quotes() {
                         {quote.calculated_weight ? (
                           <span className="text-sm font-mono">{quote.calculated_weight.toFixed(1)}g</span>
                         ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-mono font-semibold">{quote.quantity || 1}</span>
                       </TableCell>
                       <TableCell>
                         {quote.calculated_time_estimate ? (

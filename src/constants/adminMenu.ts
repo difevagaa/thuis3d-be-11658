@@ -395,6 +395,7 @@ export const adminMenuItems: AdminMenuSection[] = [
       { icon: null, label: "Legal", url: "/admin/paginas-legales", color: "text-slate-700", bgColor: "bg-slate-100 hover:bg-slate-200 border-slate-300" },
       { icon: null, label: "Blog", url: "/admin/blog", color: "text-blue-700", bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300" },
       { icon: null, label: "Galería", url: "/admin/galeria", color: "text-cyan-700", bgColor: "bg-cyan-100 hover:bg-cyan-200 border-cyan-300" },
+      { icon: null, label: "Mascota", url: "/admin/mascota", color: "text-pink-700", bgColor: "bg-pink-100 hover:bg-pink-200 border-pink-300" },
     ],
   },
   {

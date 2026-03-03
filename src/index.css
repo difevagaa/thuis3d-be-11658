@@ -4,173 +4,173 @@
 
 @layer base {
   :root {
-    /* Professional Admin Theme - Amazon/Shopify Inspired */
-    --background: 0 0% 98%;
-    --foreground: 210 24% 16%;
-    --home-hero-bg: 210 40% 96%;
+    /* Modern Fresh Theme - Deep Navy + Electric Coral */
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
+    --home-hero-bg: 220 30% 96%;
 
     /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 210 24% 16%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 24% 16%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary - Professional Orange (Amazon-inspired) */
-    --primary: 36 100% 50%;
+    /* Primary - Electric Coral */
+    --primary: 12 90% 58%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 36 100% 60%;
+    --primary-glow: 12 95% 65%;
 
-    /* Secondary - Professional Gray */
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 210 24% 16%;
+    /* Secondary - Soft Slate */
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 47% 11%;
 
-    /* Accent - Teal (Shopify-inspired) */
-    --accent: 174 62% 47%;
+    /* Accent - Ocean Blue */
+    --accent: 210 100% 52%;
     --accent-foreground: 0 0% 100%;
 
     /* Muted */
-    --muted: 210 16% 93%;
-    --muted-foreground: 210 12% 46%;
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 9% 46%;
 
     /* Destructive */
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Professional Green */
-    --success: 142 71% 45%;
+    /* Success - Emerald */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     
-    /* Warning - Professional Yellow */
-    --warning: 45 93% 47%;
+    /* Warning - Amber */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Info - Professional Blue */
-    --info: 217 91% 60%;
+    /* Info - Sky */
+    --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 210 14% 89%;
-    --input: 210 14% 89%;
-    --ring: 36 100% 50%;
-    --radius: 0.5rem;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 12 90% 58%;
+    --radius: 0.625rem;
     
     /* Fonts */
     --font-heading: "Playfair Display", serif;
     --font-body: "Inter", sans-serif;
 
-    /* Gradients - Professional */
-    --gradient-primary: linear-gradient(135deg, hsl(36 100% 50%) 0%, hsl(36 100% 42%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(210 16% 93%) 0%, hsl(210 16% 88%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(174 62% 40%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(36 100% 50% / 0.05) 0%, hsl(174 62% 47% / 0.05) 100%);
-    --gradient-admin-header: linear-gradient(135deg, hsl(210 24% 16%) 0%, hsl(210 24% 12%) 100%);
+    /* Gradients - Modern & Bold */
+    --gradient-primary: linear-gradient(135deg, hsl(12 90% 58%) 0%, hsl(340 82% 52%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 14% 96%) 0%, hsl(220 14% 90%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(210 100% 52%) 0%, hsl(230 94% 56%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(12 90% 58% / 0.06) 0%, hsl(210 100% 52% / 0.06) 50%, hsl(280 80% 60% / 0.04) 100%);
+    --gradient-admin-header: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(230 40% 18%) 100%);
 
-    /* Shadows - Enhanced */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.06);
-    --shadow-strong: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -2px hsl(0 0% 0% / 0.05);
-    --shadow-glow: 0 0 25px hsl(36 100% 50% / 0.25);
-    --shadow-glow-accent: 0 0 25px hsl(174 62% 47% / 0.25);
+    /* Shadows - Refined */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
+    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.04);
+    --shadow-strong: 0 10px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.05);
+    --shadow-glow: 0 0 30px hsl(12 90% 58% / 0.2);
+    --shadow-glow-accent: 0 0 30px hsl(210 100% 52% / 0.2);
 
-    /* Admin Sidebar - Soft Pastel Glassmorphism */
-    --sidebar-background: 220 30% 97%;
-    --sidebar-foreground: 220 20% 30%;
-    --sidebar-primary: 36 100% 50%;
+    /* Admin Sidebar - Clean Glassmorphism */
+    --sidebar-background: 220 25% 97%;
+    --sidebar-foreground: 222 20% 30%;
+    --sidebar-primary: 12 90% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 92%;
-    --sidebar-accent-foreground: 220 20% 30%;
-    --sidebar-border: 220 20% 90%;
-    --sidebar-ring: 36 100% 50%;
+    --sidebar-accent: 220 20% 93%;
+    --sidebar-accent-foreground: 222 20% 30%;
+    --sidebar-border: 220 15% 91%;
+    --sidebar-ring: 12 90% 58%;
     --sidebar-label-size: 11px;
 
-    /* Header - Default values for customization */
+    /* Header */
     --header-bg: #FFFFFF;
-    --header-text: #1A1A1A;
+    --header-text: #1A1A2E;
 
-    /* Home Menu - Default values for customization */
+    /* Home Menu */
     --home-menu-bg: #FFFFFF;
-    --home-menu-text: #1A1A1A;
-    --home-menu-hover-bg: #F3F4F6;
+    --home-menu-text: #1A1A2E;
+    --home-menu-hover-bg: #F3F4F8;
 
-    /* Chart Colors - Professional Palette */
-    --chart-1: 36 100% 50%;
-    --chart-2: 174 62% 47%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 142 71% 45%;
-    --chart-5: 0 72% 51%;
+    /* Chart Colors */
+    --chart-1: 12 90% 58%;
+    --chart-2: 210 100% 52%;
+    --chart-3: 160 84% 39%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 280 80% 60%;
     
-    /* Admin-specific Colors */
-    --admin-header-bg: 210 24% 16%;
+    /* Admin-specific */
+    --admin-header-bg: 222 47% 11%;
     --admin-header-text: 0 0% 100%;
-    --admin-card-hover: 0 0% 97%;
+    --admin-card-hover: 220 20% 97%;
   }
 
   .dark {
-    /* Professional Dark Mode */
-    --background: 210 24% 12%;
-    --foreground: 210 16% 93%;
+    /* Modern Dark Mode */
+    --background: 222 47% 8%;
+    --foreground: 220 14% 93%;
 
-    --card: 210 24% 16%;
-    --card-foreground: 210 16% 93%;
-    --popover: 210 24% 16%;
-    --popover-foreground: 210 16% 93%;
+    --card: 222 47% 12%;
+    --card-foreground: 220 14% 93%;
+    --popover: 222 47% 12%;
+    --popover-foreground: 220 14% 93%;
 
-    --primary: 36 100% 55%;
+    --primary: 12 90% 62%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 36 100% 65%;
+    --primary-glow: 12 95% 70%;
 
-    --secondary: 210 16% 20%;
+    --secondary: 222 30% 18%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 174 62% 52%;
+    --accent: 210 100% 58%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 210 24% 16%;
-    --muted-foreground: 210 12% 60%;
+    --muted: 222 30% 16%;
+    --muted-foreground: 220 9% 58%;
 
-    --destructive: 0 72% 56%;
+    --destructive: 0 84% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 160 84% 42%;
     --success-foreground: 0 0% 100%;
     
-    --warning: 45 93% 52%;
+    --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 217 91% 65%;
+    --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 210 24% 20%;
-    --input: 210 24% 20%;
-    --ring: 36 100% 55%;
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 12 90% 62%;
 
-    --sidebar-background: 220 20% 14%;
-    --sidebar-foreground: 220 15% 85%;
-    --sidebar-primary: 36 100% 55%;
+    --sidebar-background: 222 40% 10%;
+    --sidebar-foreground: 220 12% 85%;
+    --sidebar-primary: 12 90% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 20%;
-    --sidebar-accent-foreground: 220 15% 85%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 36 100% 55%;
+    --sidebar-accent: 222 30% 16%;
+    --sidebar-accent-foreground: 220 12% 85%;
+    --sidebar-border: 222 30% 15%;
+    --sidebar-ring: 12 90% 62%;
 
-    /* Header - Dark mode defaults */
-    --header-bg: #1A1F2E;
+    /* Header - Dark mode */
+    --header-bg: #0F1629;
     --header-text: #F1F5F9;
 
-    /* Home Menu - Dark mode defaults */
-    --home-menu-bg: #1A1F2E;
+    /* Home Menu - Dark mode */
+    --home-menu-bg: #0F1629;
     --home-menu-text: #F1F5F9;
-    --home-menu-hover-bg: #252B3B;
+    --home-menu-hover-bg: #1E2A45;
 
-    --chart-1: 36 100% 55%;
-    --chart-2: 174 62% 52%;
-    --chart-3: 217 91% 65%;
-    --chart-4: 142 71% 45%;
-    --chart-5: 0 72% 56%;
+    --chart-1: 12 90% 62%;
+    --chart-2: 210 100% 58%;
+    --chart-3: 160 84% 42%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 280 80% 65%;
     
-    --admin-header-bg: 210 24% 10%;
+    --admin-header-bg: 222 47% 6%;
     --admin-header-text: 0 0% 100%;
-    --admin-card-hover: 210 24% 18%;
+    --admin-card-hover: 222 47% 14%;
   }
 }
 

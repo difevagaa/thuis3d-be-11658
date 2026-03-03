@@ -4864,6 +4864,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_mascot_settings: {
+        Row: {
+          animation_frequency: string
+          click_reactions: boolean
+          created_at: string
+          enabled: boolean
+          id: string
+          mascot_type: string
+          position: string
+          primary_color: string
+          secondary_color: string
+          show_on_mobile: boolean
+          updated_at: string
+        }
+        Insert: {
+          animation_frequency?: string
+          click_reactions?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mascot_type?: string
+          position?: string
+          primary_color?: string
+          secondary_color?: string
+          show_on_mobile?: boolean
+          updated_at?: string
+        }
+        Update: {
+          animation_frequency?: string
+          click_reactions?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mascot_type?: string
+          position?: string
+          primary_color?: string
+          secondary_color?: string
+          show_on_mobile?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string | null
