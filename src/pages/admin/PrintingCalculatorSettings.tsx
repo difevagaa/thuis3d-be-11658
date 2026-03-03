@@ -173,6 +173,59 @@ export default function PrintingCalculatorSettings() {
     try {
       setSaving(true);
 
+      // === VALIDACIÓN DE RANGOS ===
+      const validationErrors: string[] = [];
+      const v = (label: string, val: string, min: number, max: number) => {
+        const n = parseFloat(val);
+        if (isNaN(n) || val.trim() === '') {
+          validationErrors.push(`${label}: valor vacío o inválido`);
+          return false;
+        }
+        if (n < min || n > max) {
+          validationErrors.push(`${label}: debe estar entre ${min} y ${max} (actual: ${n})`);
+          return false;
+        }
+        return true;
+      };
+
+      v('Precio kWh', settings.electricityCostPerKwh, 0.01, 5);
+      v('Consumo impresora (W)', settings.printerPowerWatts, 10, 2000);
+      v('Vida útil (horas)', settings.printerLifespanHours, 100, 100000);
+      v('Costo repuestos', settings.replacementPartsCost, 0, 10000);
+      v('Margen error (%)', settings.errorMarginPercentage, 0, 100);
+      v('Multiplicador ganancia', settings.profitMultiplierRetail, 1, 20);
+      v('Insumos', settings.suppliesCost, 0, 100);
+      v('Altura capa', settings.layerHeight, 0.05, 1.0);
+      v('Infill', settings.infill, 0, 100);
+      v('Perímetros', settings.numberOfPerimeters, 1, 10);
+      v('Vel. viaje', settings.travelSpeed, 10, 500);
+      v('Cama (W)', settings.bedHeatingWatts, 0, 1000);
+      v('Calentamiento (min)', settings.heatingTimeMinutes, 0, 60);
+      v('Ancho extrusión', settings.extrusionWidth, 0.1, 2.0);
+      v('Capas top', settings.topSolidLayers, 1, 20);
+      v('Capas bottom', settings.bottomSolidLayers, 1, 20);
+      v('Vel. perímetro', settings.perimeterSpeed, 5, 300);
+      v('Vel. infill', settings.infillSpeed, 5, 300);
+      v('Vel. top/bottom', settings.topBottomSpeed, 5, 300);
+      v('Vel. primera capa', settings.firstLayerSpeed, 5, 100);
+      v('Aceleración', settings.acceleration, 100, 20000);
+      v('Retracciones/capa', settings.retractionCountPerLayer, 0, 100);
+      v('Precio mínimo', settings.minimumPrice, 0, 1000);
+
+      // Validar costos de filamento
+      Object.entries(settings.filamentCosts).forEach(([name, val]) => {
+        v(`Filamento ${name}`, val, 0.01, 500);
+      });
+      Object.entries(settings.materialDensity).forEach(([name, val]) => {
+        v(`Densidad ${name}`, val, 0.1, 30);
+      });
+
+      if (validationErrors.length > 0) {
+        toast.error(`Errores de validación:\n${validationErrors.slice(0, 5).join('\n')}`, { duration: 8000 });
+        setSaving(false);
+        return;
+      }
+
       // Convertir strings a números para guardar
       const filamentCostsNum: Record<string, number> = {};
       Object.keys(settings.filamentCosts).forEach(key => {
@@ -184,33 +237,38 @@ export default function PrintingCalculatorSettings() {
         materialDensityNum[key] = parseFloat(settings.materialDensity[key]) || 0;
       });
 
-      // Actualizar cada configuración
+      // CRÍTICO: Guardar TODOS los escalares como números, no como strings
+      const toNum = (val: string, fallback: number) => {
+        const n = parseFloat(val);
+        return isNaN(n) ? fallback : n;
+      };
+
       const updates = [
         { key: 'filament_costs', value: filamentCostsNum },
         { key: 'material_density', value: materialDensityNum },
-        { key: 'electricity_cost_per_kwh', value: settings.electricityCostPerKwh },
-        { key: 'printer_power_consumption_watts', value: settings.printerPowerWatts },
-        { key: 'printer_lifespan_hours', value: settings.printerLifespanHours },
-        { key: 'replacement_parts_cost', value: settings.replacementPartsCost },
-        { key: 'error_margin_percentage', value: settings.errorMarginPercentage },
-        { key: 'profit_multiplier_retail', value: settings.profitMultiplierRetail },
-        { key: 'additional_supplies_cost', value: settings.suppliesCost },
-        { key: 'default_layer_height', value: settings.layerHeight },
-        { key: 'default_infill', value: settings.infill },
-        { key: 'number_of_perimeters', value: settings.numberOfPerimeters },
-        { key: 'travel_speed', value: settings.travelSpeed },
-        { key: 'bed_heating_watts', value: settings.bedHeatingWatts },
-        { key: 'heating_time_minutes', value: settings.heatingTimeMinutes },
-        { key: 'extrusion_width', value: settings.extrusionWidth },
-        { key: 'top_solid_layers', value: settings.topSolidLayers },
-        { key: 'bottom_solid_layers', value: settings.bottomSolidLayers },
-        { key: 'perimeter_speed', value: settings.perimeterSpeed },
-        { key: 'infill_speed', value: settings.infillSpeed },
-        { key: 'top_bottom_speed', value: settings.topBottomSpeed },
-        { key: 'first_layer_speed', value: settings.firstLayerSpeed },
-        { key: 'acceleration', value: settings.acceleration },
-        { key: 'retraction_count_per_layer', value: settings.retractionCountPerLayer },
-        { key: 'minimum_price', value: settings.minimumPrice }
+        { key: 'electricity_cost_per_kwh', value: toNum(settings.electricityCostPerKwh, 0.15) },
+        { key: 'printer_power_consumption_watts', value: toNum(settings.printerPowerWatts, 120) },
+        { key: 'printer_lifespan_hours', value: toNum(settings.printerLifespanHours, 4320) },
+        { key: 'replacement_parts_cost', value: toNum(settings.replacementPartsCost, 110) },
+        { key: 'error_margin_percentage', value: toNum(settings.errorMarginPercentage, 29) },
+        { key: 'profit_multiplier_retail', value: toNum(settings.profitMultiplierRetail, 5) },
+        { key: 'additional_supplies_cost', value: toNum(settings.suppliesCost, 0) },
+        { key: 'default_layer_height', value: toNum(settings.layerHeight, 0.2) },
+        { key: 'default_infill', value: toNum(settings.infill, 20) },
+        { key: 'number_of_perimeters', value: toNum(settings.numberOfPerimeters, 3) },
+        { key: 'travel_speed', value: toNum(settings.travelSpeed, 120) },
+        { key: 'bed_heating_watts', value: toNum(settings.bedHeatingWatts, 150) },
+        { key: 'heating_time_minutes', value: toNum(settings.heatingTimeMinutes, 5) },
+        { key: 'extrusion_width', value: toNum(settings.extrusionWidth, 0.45) },
+        { key: 'top_solid_layers', value: toNum(settings.topSolidLayers, 4) },
+        { key: 'bottom_solid_layers', value: toNum(settings.bottomSolidLayers, 4) },
+        { key: 'perimeter_speed', value: toNum(settings.perimeterSpeed, 40) },
+        { key: 'infill_speed', value: toNum(settings.infillSpeed, 60) },
+        { key: 'top_bottom_speed', value: toNum(settings.topBottomSpeed, 30) },
+        { key: 'first_layer_speed', value: toNum(settings.firstLayerSpeed, 20) },
+        { key: 'acceleration', value: toNum(settings.acceleration, 1000) },
+        { key: 'retraction_count_per_layer', value: toNum(settings.retractionCountPerLayer, 15) },
+        { key: 'minimum_price', value: toNum(settings.minimumPrice, 5.00) }
       ];
 
       for (const update of updates) {
