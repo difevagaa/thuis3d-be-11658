@@ -136,17 +136,26 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('quote_id', quote_id)
       .maybeSingle();
 
-    // Tax settings
-    const shouldApplyTax = quote.tax_enabled ?? true;
+    // Tax settings - read from site_settings (the canonical source)
+    let shouldApplyTax = true;
     let taxRate = 0;
-    if (shouldApplyTax) {
-      const { data: settings } = await supabase
-        .from('tax_settings')
-        .select('*')
-        .eq('is_enabled', true)
+    {
+      const { data: taxEnabledSetting } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'tax_enabled')
         .maybeSingle();
-      taxRate = settings?.tax_rate || 0;
+      
+      const { data: taxRateSetting } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'tax_rate')
+        .maybeSingle();
+      
+      shouldApplyTax = taxEnabledSetting?.setting_value === 'true';
+      taxRate = parseFloat(String(taxRateSetting?.setting_value)) || 0;
     }
+    console.log('[QUOTE APPROVAL] Tax settings:', { shouldApplyTax, taxRate });
 
     const subtotal = parseFloat(quote.estimated_price || '0');
     const shippingCost = parseFloat(quote.shipping_cost || '0');

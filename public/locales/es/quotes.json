@@ -61,6 +61,8 @@
   "yourFile": "Tu archivo",
   "printingCost": "Costo de impresión",
   "pricePerUnit": "Precio por unidad",
+  "subtotal": "Subtotal",
+  "tax": "IVA",
   "shipping": "Envío",
   "totalEstimated": "Total estimado",
   "calculatingShipping": "Calculando costo de envío...",

@@ -61,6 +61,8 @@
   "yourFile": "Your file",
   "printingCost": "Printing Cost",
   "pricePerUnit": "Price per unit",
+  "subtotal": "Subtotal",
+  "tax": "VAT",
   "shipping": "Shipping",
   "totalEstimated": "Estimated Total",
   "calculatingShipping": "Calculating shipping cost...",

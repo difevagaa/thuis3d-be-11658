@@ -18,6 +18,7 @@ import { useShippingCalculator } from "@/hooks/useShippingCalculator";
 import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useTaxSettings } from "@/hooks/useTaxSettings";
 
 // Lazy-loaded heavy components
 const RandomModelPreview = lazy(() => import('@/components/RandomModelPreview').then(m => ({ default: m.RandomModelPreview })));
@@ -61,6 +62,7 @@ const Quotes = () => {
   const analysisParamsRef = useRef<QuoteAnalysisParams | null>(null);
   const analysisRequestIdRef = useRef(0);
   const { materials, availableColors, filterColorsByMaterial } = useMaterialColors();
+  const { taxSettings, calculateTax } = useTaxSettings();
   const { calculateShippingByPostalCode, getAvailableCountries } = useShippingCalculator();
   
   // Wizard step state
@@ -567,7 +569,9 @@ const Quotes = () => {
     }
   };
 
-  const totalEstimated = analysisResult ? (analysisResult.estimatedTotal + (shippingCost || 0)) : 0;
+  const quoteSubtotal = analysisResult?.estimatedTotal || 0;
+  const quoteTax = calculateTax(quoteSubtotal, true);
+  const totalEstimated = quoteSubtotal + quoteTax + (shippingCost || 0);
 
   return (
     <div className="page-section pb-24 md:pb-12">
@@ -914,7 +918,17 @@ const Quotes = () => {
 
                     {/* Pricing */}
                     <div className="bg-primary/10 rounded-lg p-4 space-y-2">
-                      {shippingCost !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span>{t('subtotal')}</span>
+                        <span className="font-semibold">€{quoteSubtotal.toFixed(2)}</span>
+                      </div>
+                      {quoteTax > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>{t('tax')} ({taxSettings.rate}%)</span>
+                          <span className="font-semibold">€{quoteTax.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {shippingCost !== null && shippingCost > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>{t('shipping')}</span>
                           <span className="font-semibold">€{shippingCost.toFixed(2)}</span>
