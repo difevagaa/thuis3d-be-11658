@@ -4,6 +4,31 @@ import { calculateSupportRisk, type SupportRiskFactors } from './supportRiskAnal
 import { SUPPORT_CONSTANTS } from './calibrationConstants';
 import { logger } from '@/lib/logger';
 
+/**
+ * Safely parse a numeric value with a guaranteed fallback.
+ * Handles strings, numbers, null, undefined, NaN, and empty strings.
+ */
+function safeParse(value: any, defaultValue: number): number {
+  if (value === null || value === undefined || value === '') return defaultValue;
+  const parsed = typeof value === 'number' ? value : parseFloat(String(value));
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    logger.warn(`⚠️ safeParse: valor inválido "${value}", usando default ${defaultValue}`);
+    return defaultValue;
+  }
+  // Protect against zero for values that should never be zero
+  return parsed;
+}
+
+/** safeParse but also rejects zero (for divisors / multipliers that must be > 0) */
+function safeParseNonZero(value: any, defaultValue: number): number {
+  const parsed = safeParse(value, defaultValue);
+  if (parsed === 0) {
+    logger.warn(`⚠️ safeParseNonZero: valor es 0, usando default ${defaultValue}`);
+    return defaultValue;
+  }
+  return parsed;
+}
+
 export interface AnalysisResult {
   volume: number;      // cm³
   weight: number;      // gramos
@@ -364,35 +389,44 @@ export const analyzeSTLFile = async (
       const densities = settings.find(s => s.setting_key === 'material_density')?.setting_value as Record<string, number> || {};
       const costs = settings.find(s => s.setting_key === 'filament_costs')?.setting_value as Record<string, number> || {};
       
-      const electricityCostPerKwh = parseFloat(String(settings.find(s => s.setting_key === 'electricity_cost_per_kwh')?.setting_value || '0.15'));
-      const printerPowerWatts = parseFloat(String(settings.find(s => s.setting_key === 'printer_power_consumption_watts')?.setting_value || '120'));
-      const printerLifespanHours = parseFloat(String(settings.find(s => s.setting_key === 'printer_lifespan_hours')?.setting_value || '4320'));
-      const replacementPartsCost = parseFloat(String(settings.find(s => s.setting_key === 'replacement_parts_cost')?.setting_value || '110'));
-      const errorMarginPercentage = parseFloat(String(settings.find(s => s.setting_key === 'error_margin_percentage')?.setting_value || '29'));
-      const profitMultiplier = parseFloat(String(settings.find(s => s.setting_key === 'profit_multiplier_retail')?.setting_value || '5'));
-      const suppliesCost = parseFloat(String(settings.find(s => s.setting_key === 'additional_supplies_cost')?.setting_value || '0'));
-      const configuredMinimumPrice = parseFloat(String(settings.find(s => s.setting_key === 'minimum_price')?.setting_value || '5.00'));
+      const getSetting = (key: string) => settings.find(s => s.setting_key === key)?.setting_value;
+      
+      const electricityCostPerKwh = safeParse(getSetting('electricity_cost_per_kwh'), 0.15);
+      const printerPowerWatts = safeParse(getSetting('printer_power_consumption_watts'), 120);
+      const printerLifespanHours = safeParseNonZero(getSetting('printer_lifespan_hours'), 4320);
+      const replacementPartsCost = safeParse(getSetting('replacement_parts_cost'), 110);
+      const errorMarginPercentage = safeParse(getSetting('error_margin_percentage'), 29);
+      const profitMultiplier = safeParseNonZero(getSetting('profit_multiplier_retail'), 5);
+      const suppliesCost = safeParse(getSetting('additional_supplies_cost'), 0);
+      const configuredMinimumPrice = safeParse(getSetting('minimum_price'), 5.00);
       
       // Parámetros de impresión
-      const defaultLayerHeight = parseFloat(String(settings.find(s => s.setting_key === 'default_layer_height')?.setting_value || '0.2'));
-      const defaultInfill = parseFloat(String(settings.find(s => s.setting_key === 'default_infill')?.setting_value || '20'));
+      const defaultLayerHeight = safeParseNonZero(getSetting('default_layer_height'), 0.2);
+      const defaultInfill = safeParse(getSetting('default_infill'), 20);
       const layerHeight = layerHeightOverride || defaultLayerHeight;
       
       // Nuevos parámetros precisos
-      const extrusionWidth = parseFloat(String(settings.find(s => s.setting_key === 'extrusion_width')?.setting_value || '0.45'));
-      const topSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'top_solid_layers')?.setting_value || '4'));
-      const bottomSolidLayers = parseFloat(String(settings.find(s => s.setting_key === 'bottom_solid_layers')?.setting_value || '4'));
-      const numberOfPerimeters = parseFloat(String(settings.find(s => s.setting_key === 'number_of_perimeters')?.setting_value || '3'));
-      const perimeterSpeed = parseFloat(String(settings.find(s => s.setting_key === 'perimeter_speed')?.setting_value || '40'));
-      const infillSpeed = parseFloat(String(settings.find(s => s.setting_key === 'infill_speed')?.setting_value || '60'));
-      const topBottomSpeed = parseFloat(String(settings.find(s => s.setting_key === 'top_bottom_speed')?.setting_value || '30'));
-      const firstLayerSpeed = parseFloat(String(settings.find(s => s.setting_key === 'first_layer_speed')?.setting_value || '20'));
-      const travelSpeed = parseFloat(String(settings.find(s => s.setting_key === 'travel_speed')?.setting_value || '120'));
-      const acceleration = parseFloat(String(settings.find(s => s.setting_key === 'acceleration')?.setting_value || '1000'));
-      const retractionCountPerLayer = parseFloat(String(settings.find(s => s.setting_key === 'retraction_count_per_layer')?.setting_value || '15'));
+      const extrusionWidth = safeParseNonZero(getSetting('extrusion_width'), 0.45);
+      const topSolidLayers = safeParse(getSetting('top_solid_layers'), 4);
+      const bottomSolidLayers = safeParse(getSetting('bottom_solid_layers'), 4);
+      const numberOfPerimeters = safeParseNonZero(getSetting('number_of_perimeters'), 3);
+      const perimeterSpeed = safeParseNonZero(getSetting('perimeter_speed'), 40);
+      const infillSpeed = safeParseNonZero(getSetting('infill_speed'), 60);
+      const topBottomSpeed = safeParseNonZero(getSetting('top_bottom_speed'), 30);
+      const firstLayerSpeed = safeParseNonZero(getSetting('first_layer_speed'), 20);
+      const travelSpeed = safeParseNonZero(getSetting('travel_speed'), 120);
+      const acceleration = safeParseNonZero(getSetting('acceleration'), 1000);
+      const retractionCountPerLayer = safeParse(getSetting('retraction_count_per_layer'), 15);
       
-      const bedHeatingWatts = parseFloat(String(settings.find(s => s.setting_key === 'bed_heating_watts')?.setting_value || '150'));
-      const heatingTimeMins = parseFloat(String(settings.find(s => s.setting_key === 'heating_time_minutes')?.setting_value || '5'));
+      const bedHeatingWatts = safeParse(getSetting('bed_heating_watts'), 150);
+      const heatingTimeMins = safeParse(getSetting('heating_time_minutes'), 5);
+      
+      // Log de diagnóstico de configuración cargada
+      logger.debug('⚙️ Configuración cargada (con safeParse):', {
+        electricityCostPerKwh, printerPowerWatts, printerLifespanHours,
+        replacementPartsCost, errorMarginPercentage, profitMultiplier,
+        configuredMinimumPrice, defaultLayerHeight, defaultInfill
+      });
       
       // Obtener nombre del material primero
       const { data: materialData } = await supabase
@@ -806,14 +840,26 @@ export const analyzeSTLFile = async (
         // Primera pieza: costo completo
         totalVariableCost = variableCostPerUnit;
         
-        // Piezas adicionales: economía de escala del 10%
-        const scaleEconomyFactor = 0.90; // 10% de descuento por batch printing
+        // Economía de escala PROGRESIVA basada en cantidad
+        let scaleEconomyFactor: number;
+        if (quantity <= 5) {
+          scaleEconomyFactor = 0.92; // 8% descuento
+        } else if (quantity <= 15) {
+          scaleEconomyFactor = 0.88; // 12% descuento
+        } else if (quantity <= 50) {
+          scaleEconomyFactor = 0.85; // 15% descuento
+        } else {
+          scaleEconomyFactor = 0.82; // 18% descuento
+        }
+        
         const additionalUnitCost = variableCostPerUnit * scaleEconomyFactor;
         totalVariableCost += additionalUnitCost * (quantity - 1);
         
-        logger.log('📦 Economía de escala aplicada:', {
+        logger.log('📦 Economía de escala PROGRESIVA aplicada:', {
           primeraUnidad: variableCostPerUnit.toFixed(2) + '€',
-          unidadesAdicionales: `${quantity - 1} × ${additionalUnitCost.toFixed(2)}€ (90% del costo)`,
+          factorEscala: scaleEconomyFactor,
+          descuento: ((1 - scaleEconomyFactor) * 100).toFixed(0) + '%',
+          unidadesAdicionales: `${quantity - 1} × ${additionalUnitCost.toFixed(2)}€`,
           totalVariable: totalVariableCost.toFixed(2) + '€',
           ahorroPorEscala: ((variableCostPerUnit * quantity - totalVariableCost)).toFixed(2) + '€'
         });
@@ -893,13 +939,22 @@ export const analyzeSTLFile = async (
       // 13. APLICAR DESCUENTO POR CANTIDAD
       const totalAfterQuantityDiscount = Math.max(0, totalBeforeDiscounts - quantityDiscountAmount);
       
-      // 14. PROTECCIÓN: Precio mínimo (solo si el total está debajo del mínimo)
+      // 14. PROTECCIÓN: Precio mínimo POR PIEZA (no al total)
+      // Si el precio por unidad es menor al mínimo configurado, aplicar mínimo × cantidad
       let estimatedTotal = totalAfterQuantityDiscount;
       let minimumPriceApplied = false;
+      const pricePerUnit = totalAfterQuantityDiscount / quantity;
+      const minimumTotalByUnit = configuredMinimumPrice * quantity;
       
-      if (totalAfterQuantityDiscount < configuredMinimumPrice) {
-        estimatedTotal = configuredMinimumPrice;
+      if (pricePerUnit < configuredMinimumPrice) {
+        estimatedTotal = minimumTotalByUnit;
         minimumPriceApplied = true;
+        logger.warn(`🔒 Precio mínimo POR PIEZA aplicado: ${pricePerUnit.toFixed(2)}€/u < ${configuredMinimumPrice.toFixed(2)}€ mínimo → Total: ${minimumTotalByUnit.toFixed(2)}€ (${quantity} × ${configuredMinimumPrice.toFixed(2)}€)`);
+      }
+      
+      // Diagnóstico: alertar si precio por pieza es sospechosamente bajo
+      if (pricePerUnit < 1.00 && !minimumPriceApplied) {
+        logger.warn(`⚠️ PRECIO SOSPECHOSAMENTE BAJO: ${pricePerUnit.toFixed(2)}€/pieza para volumen ${volumeCm3.toFixed(2)}cm³. Revisar configuración.`);
       }
       
       // Calcular precio efectivo por unidad para display
