@@ -61,6 +61,8 @@
   "yourFile": "Jouw 3D-bestand",
   "printingCost": "Printkosten",
   "pricePerUnit": "Effectieve prijs per eenheid",
+  "subtotal": "Subtotaal",
+  "tax": "BTW",
   "shipping": "Verzending",
   "totalEstimated": "Geschat Totaal",
   "calculatingShipping": "Verzendkosten berekenen...",

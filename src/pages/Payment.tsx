@@ -221,7 +221,7 @@ export default function Payment() {
   };
 
   // Calcular IVA solo para productos con tax_enabled=true (no tarjetas regalo)
-  // CRITICAL: Sin gift card en el cálculo de IVA para evitar dependencia circular
+  // IMPORTANT: Apply coupon discount before tax calculation (same logic as Cart.tsx)
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
     if (subtotal === 0) return 0;
@@ -234,9 +234,25 @@ export default function Payment() {
         return sum + (itemPrice * itemQuantity);
       }, 0);
     
-    // Use tax rate from settings
+    // Apply coupon discount proportionally to taxable amount (same as Cart.tsx)
+    let couponDiscount = 0;
+    const savedCoupon = sessionStorage.getItem("applied_coupon");
+    if (savedCoupon) {
+      try {
+        const coupon = JSON.parse(savedCoupon);
+        if (coupon.discount_type === "percentage") {
+          couponDiscount = subtotal * (coupon.discount_value / 100);
+        } else if (coupon.discount_type === "fixed") {
+          couponDiscount = coupon.discount_value;
+        }
+      } catch {}
+    }
+    
+    const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+    const taxableAfterDiscount = Math.max(0, taxableAmount - (couponDiscount * discountRatio));
+    
     const taxRate = taxSettings.enabled ? taxSettings.rate / 100 : 0;
-    return Number((taxableAmount * taxRate).toFixed(2));
+    return Number((taxableAfterDiscount * taxRate).toFixed(2));
   };
 
   const calculateGiftCardAmount = () => {

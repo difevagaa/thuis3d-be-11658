@@ -280,7 +280,11 @@ export const calculateOrderTotals = (
     .filter(item => !item.isGiftCard && (item.tax_enabled ?? true))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const tax = Number((taxableAmount * taxRate).toFixed(2));
+  // Apply coupon discount proportionally to taxable amount (consistent with Cart.tsx)
+  const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 0;
+  const taxableAfterDiscount = Math.max(0, taxableAmount - (couponDiscount * discountRatio));
+
+  const tax = Number((taxableAfterDiscount * taxRate).toFixed(2));
   const shipping = shippingCost;
   const discount = giftCardDiscount + couponDiscount;
   const total = Math.max(0, subtotal + tax + shipping - discount);
