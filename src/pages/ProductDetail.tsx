@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, MessageSquare, Check, Plus, Minus, Leaf, Gift, Star, Sparkles, TrendingUp, Clock, Shield, Truck, Package, Info, AlertTriangle } from "lucide-react";
+import { ProductImageZoom } from "@/components/ProductImageZoom";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -370,7 +371,7 @@ const ProductDetail = () => {
           {/* Main Image */}
           <div className="bg-muted rounded-xl overflow-hidden mx-auto w-full max-w-[320px] sm:max-w-[400px] aspect-square">
             {productImages.length > 0 ? (
-              <img src={productImages[currentImageIndex]} alt={product.name} className="w-full h-full object-contain" style={{ display: 'block' }} />
+              <ProductImageZoom src={productImages[currentImageIndex]} alt={product.name} className="w-full h-full" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <p className="text-muted-foreground text-sm">{t('noImage', 'No image')}</p>
