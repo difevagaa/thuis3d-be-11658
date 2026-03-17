@@ -498,10 +498,10 @@ export default function SiteMascot() {
   const animFrameRef = useRef<number>();
   const posRef = useRef(100);
   const dirRef = useRef<1 | -1>(1);
-  const pauseTimeoutRef = useRef<NodeJS.Timeout>();
-  const spontaneousRef = useRef<NodeJS.Timeout>();
+  const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const spontaneousRef = useRef<ReturnType<typeof setInterval>>();
   const emojiIdRef = useRef(0);
-  const reactionTimeoutRef = useRef<NodeJS.Timeout>();
+  const reactionTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const walkPhaseRef = useRef(0);
   const dragRef = useRef({ active: false, offsetX: 0, offsetY: 0 });
   const posYRef = useRef(10);
