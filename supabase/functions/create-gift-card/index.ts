@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Authentication check
+    // Authentication check - any authenticated user can purchase gift cards
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -42,20 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ success: false, message: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Admin role check
-    const { data: roles } = await supabaseAuth
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
-
-    const isAdmin = roles?.some(r => r.role === 'admin' || r.role === 'superadmin');
-    if (!isAdmin) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Forbidden: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -84,6 +70,8 @@ const handler = async (req: Request): Promise<Response> => {
         message: message || null,
         is_active: false,
         tax_enabled: false,
+        buyer_id: user.id,
+        buyer_email: user.email,
       })
       .select('id')
       .single();
@@ -96,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Gift card created by admin ${user.id}: ${data.id}`);
+    console.log(`Gift card created by user ${user.id}: ${data.id}`);
 
     return new Response(
       JSON.stringify({ success: true, id: data.id }),
