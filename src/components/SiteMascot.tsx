@@ -31,10 +31,18 @@ const REACTIONS = [
   "backflip","peek","shake","bow","clap","bounce","roll","dizzy",
   "stretch","yawn","sneeze","laugh","blush","wink","salute","celebrate",
   "moonwalk","tiptoe","faceplant","hiccup",
-  // 20 new natural reactions
   "lick","earTwitch","headTilt","sniff","scratch","playBall","chase",
   "purr","pounce","tailWag","belly","nuzzle","howl","dig","fetch",
-  "blink","curious","startle","groom","rollOver"
+  "blink","curious","startle","groom","rollOver",
+  // 50 new natural reactions
+  "washFace","kneadPaws","archBack","chaseTail","batAtToy","boxPush","sunbathe","purrVibrate","hiss","slowBlink",
+  "shakeFur","sitPretty","rollOnBack","sniffGround","pointNose","tipTap","zoomies","headShake","pawGive","playDead",
+  "waddle","slideBelly","fishCatch","huddle","flipperClap",
+  "glitch","scanMode","reboot","laserEyes","systemUpdate",
+  "phase","spook","vanish","haunt","ghostFloat",
+  "sneakWalk","peekAround","doubleJump","cartwheel","tipHat",
+  "thinking","confetti","flexMuscle","facepalm","dab",
+  "meditation","electricShock","bubbleBlow","rainbow","tornado"
 ] as const;
 type Reaction = typeof REACTIONS[number];
 
