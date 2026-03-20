@@ -571,7 +571,8 @@ export default function SiteMascot() {
     spontaneousRef.current = setInterval(() => {
       const r = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
       setReaction(r);
-      const duration = ['lick','groom','playBall','fetch','dig','howl'].includes(r) ? 2500 : 1500;
+      const longReactions = ['lick','groom','playBall','fetch','dig','howl','sunbathe','meditation','ghostFloat','purrVibrate','sniffGround','rollOnBack','washFace','kneadPaws','slideBelly','phase','vanish','rainbow','tornado','zoomies'];
+      const duration = longReactions.includes(r) ? 2500 : 1500;
       setTimeout(() => setReaction(null), duration);
     }, interval);
     return () => { if (spontaneousRef.current) clearInterval(spontaneousRef.current); };
