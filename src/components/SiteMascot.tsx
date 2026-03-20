@@ -602,7 +602,8 @@ export default function SiteMascot() {
     const r = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
     setReaction(r);
     if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
-    const duration = ['lick','groom','playBall','fetch','dig','howl'].includes(r) ? 2500 : 1500;
+    const longReactions = ['lick','groom','playBall','fetch','dig','howl','sunbathe','meditation','ghostFloat','purrVibrate','sniffGround','rollOnBack','washFace','kneadPaws','slideBelly','phase','vanish','rainbow','tornado','zoomies'];
+    const duration = longReactions.includes(r) ? 2500 : 1500;
     reactionTimeoutRef.current = setTimeout(() => setReaction(null), duration);
     if (settings.show_emojis) spawnEmoji(posRef.current);
   }, [settings, spawnEmoji, isDragging]);
