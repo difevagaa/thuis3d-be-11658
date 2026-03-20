@@ -113,6 +113,14 @@ export default function GiftCard() {
 
   const handleBuyGiftCard = async () => {
     try {
+      // Check authentication first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error(t('loginRequired') || 'Debes iniciar sesión para comprar una tarjeta de regalo');
+        navigate('/auth?returnTo=/tarjeta-regalo');
+        return;
+      }
+
       const amount = buyForm.amount === "custom" 
         ? parseFloat(buyForm.customAmount)
         : parseFloat(buyForm.amount);

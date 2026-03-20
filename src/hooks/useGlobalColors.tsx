@@ -243,9 +243,21 @@ export const useGlobalColors = () => {
           
           // CRÍTICO: SIEMPRE aplicar fuentes independientemente de la paleta
           applyFonts(data);
+          // Remove loading overlay after colors are applied
+          const overlay = document.getElementById('app-loading-overlay');
+          if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 300);
+          }
         }
       } catch (error) {
         logger.error('Error in loadAndApplyColors:', error);
+        // Still remove overlay on error
+        const overlay = document.getElementById('app-loading-overlay');
+        if (overlay) {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 300);
+        }
       }
     };
 

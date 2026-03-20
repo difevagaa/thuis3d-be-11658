@@ -54,7 +54,7 @@ export function ResponsiveProvider({ children }: ResponsiveProviderProps) {
     };
 
     // Throttle resize events
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const throttledResize = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleResize, 100);

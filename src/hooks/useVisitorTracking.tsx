@@ -18,7 +18,7 @@ export function useVisitorTracking() {
     sessionStorage.getItem('visitor_session_id') || 
     crypto.randomUUID()
   );
-  const updateIntervalRef = useRef<NodeJS.Timeout>();
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;

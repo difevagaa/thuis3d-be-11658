@@ -32,8 +32,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { setOpen, open } = useSidebar();
-  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const mouseLeaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mouseLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
   // Toggle fullscreen mode

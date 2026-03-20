@@ -31,10 +31,18 @@ const REACTIONS = [
   "backflip","peek","shake","bow","clap","bounce","roll","dizzy",
   "stretch","yawn","sneeze","laugh","blush","wink","salute","celebrate",
   "moonwalk","tiptoe","faceplant","hiccup",
-  // 20 new natural reactions
   "lick","earTwitch","headTilt","sniff","scratch","playBall","chase",
   "purr","pounce","tailWag","belly","nuzzle","howl","dig","fetch",
-  "blink","curious","startle","groom","rollOver"
+  "blink","curious","startle","groom","rollOver",
+  // 50 new natural reactions
+  "washFace","kneadPaws","archBack","chaseTail","batAtToy","boxPush","sunbathe","purrVibrate","hiss","slowBlink",
+  "shakeFur","sitPretty","rollOnBack","sniffGround","pointNose","tipTap","zoomies","headShake","pawGive","playDead",
+  "waddle","slideBelly","fishCatch","huddle","flipperClap",
+  "glitch","scanMode","reboot","laserEyes","systemUpdate",
+  "phase","spook","vanish","haunt","ghostFloat",
+  "sneakWalk","peekAround","doubleJump","cartwheel","tipHat",
+  "thinking","confetti","flexMuscle","facepalm","dab",
+  "meditation","electricShock","bubbleBlow","rainbow","tornado"
 ] as const;
 type Reaction = typeof REACTIONS[number];
 
@@ -563,7 +571,8 @@ export default function SiteMascot() {
     spontaneousRef.current = setInterval(() => {
       const r = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
       setReaction(r);
-      const duration = ['lick','groom','playBall','fetch','dig','howl'].includes(r) ? 2500 : 1500;
+      const longReactions = ['lick','groom','playBall','fetch','dig','howl','sunbathe','meditation','ghostFloat','purrVibrate','sniffGround','rollOnBack','washFace','kneadPaws','slideBelly','phase','vanish','rainbow','tornado','zoomies'];
+      const duration = longReactions.includes(r) ? 2500 : 1500;
       setTimeout(() => setReaction(null), duration);
     }, interval);
     return () => { if (spontaneousRef.current) clearInterval(spontaneousRef.current); };
@@ -593,7 +602,8 @@ export default function SiteMascot() {
     const r = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
     setReaction(r);
     if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
-    const duration = ['lick','groom','playBall','fetch','dig','howl'].includes(r) ? 2500 : 1500;
+    const longReactions = ['lick','groom','playBall','fetch','dig','howl','sunbathe','meditation','ghostFloat','purrVibrate','sniffGround','rollOnBack','washFace','kneadPaws','slideBelly','phase','vanish','rainbow','tornado','zoomies'];
+    const duration = longReactions.includes(r) ? 2500 : 1500;
     reactionTimeoutRef.current = setTimeout(() => setReaction(null), duration);
     if (settings.show_emojis) spawnEmoji(posRef.current);
   }, [settings, spawnEmoji, isDragging]);
@@ -683,6 +693,57 @@ export default function SiteMascot() {
         @keyframes mascot-react-startle { 0%{transform:scale(1) translateY(0)} 15%{transform:scale(1.2) translateY(-15px)} 30%{transform:scale(0.95) translateY(0)} 50%{transform:scale(1.05) translateY(-5px)} 100%{transform:scale(1) translateY(0)} }
         @keyframes mascot-react-groom { 0%,100%{transform:rotate(0)} 20%{transform:rotate(8deg)} 40%{transform:rotate(5deg)} 60%{transform:rotate(8deg)} 80%{transform:rotate(5deg)} }
         @keyframes mascot-react-rollOver { 0%{transform:rotate(0)} 25%{transform:rotate(90deg)} 50%{transform:rotate(180deg) translateY(-8px)} 75%{transform:rotate(270deg)} 100%{transform:rotate(360deg)} }
+        /* 50 new natural reaction keyframes */
+        @keyframes mascot-react-washFace { 0%,100%{transform:rotate(0)} 15%{transform:rotate(6deg) translateY(-2px)} 30%{transform:rotate(-4deg)} 45%{transform:rotate(5deg) translateY(-1px)} 60%{transform:rotate(-3deg)} 75%{transform:rotate(4deg)} }
+        @keyframes mascot-react-kneadPaws { 0%,100%{transform:translateY(0)} 15%{transform:translateY(2px) scaleY(0.97)} 30%{transform:translateY(0)} 45%{transform:translateY(2px) scaleY(0.97)} 60%{transform:translateY(0)} 75%{transform:translateY(2px) scaleY(0.97)} }
+        @keyframes mascot-react-archBack { 0%,100%{transform:scaleY(1) scaleX(1)} 40%{transform:scaleY(1.15) scaleX(0.9) translateY(-6px)} 60%{transform:scaleY(1.15) scaleX(0.9) translateY(-6px)} }
+        @keyframes mascot-react-chaseTail { 0%{transform:rotate(0)} 100%{transform:rotate(720deg)} }
+        @keyframes mascot-react-batAtToy { 0%,100%{transform:translateX(0) rotate(0)} 20%{transform:translateX(8px) rotate(5deg)} 40%{transform:translateX(-5px) rotate(-8deg)} 60%{transform:translateX(10px) rotate(6deg)} 80%{transform:translateX(-3px) rotate(-3deg)} }
+        @keyframes mascot-react-boxPush { 0%,100%{transform:translateX(0)} 30%{transform:translateX(12px) scaleX(0.95)} 60%{transform:translateX(12px) scaleX(0.95)} }
+        @keyframes mascot-react-sunbathe { 0%,100%{transform:scaleY(1) rotate(0)} 30%{transform:scaleY(0.85) rotate(5deg)} 70%{transform:scaleY(0.85) rotate(5deg)} }
+        @keyframes mascot-react-purrVibrate { 0%,100%{transform:translateX(0)} 10%{transform:translateX(1px)} 20%{transform:translateX(-1px)} 30%{transform:translateX(1px)} 40%{transform:translateX(-1px)} 50%{transform:translateX(1px)} 60%{transform:translateX(-1px)} 70%{transform:translateX(1px)} 80%{transform:translateX(-1px)} }
+        @keyframes mascot-react-hiss { 0%{transform:scale(1)} 20%{transform:scale(1.2) scaleX(1.1)} 80%{transform:scale(1.2) scaleX(1.1)} 100%{transform:scale(1)} }
+        @keyframes mascot-react-slowBlink { 0%,60%,100%{transform:scaleY(1)} 70%{transform:scaleY(0.05)} 80%{transform:scaleY(1)} }
+        @keyframes mascot-react-shakeFur { 0%,100%{transform:rotate(0) scaleX(1)} 10%{transform:rotate(-8deg) scaleX(1.05)} 20%{transform:rotate(8deg) scaleX(1.05)} 30%{transform:rotate(-6deg)} 40%{transform:rotate(6deg)} 50%{transform:rotate(-4deg)} 60%{transform:rotate(4deg)} }
+        @keyframes mascot-react-sitPretty { 0%,100%{transform:translateY(0)} 30%{transform:translateY(-10px) scaleY(1.08)} 70%{transform:translateY(-10px) scaleY(1.08)} }
+        @keyframes mascot-react-rollOnBack { 0%{transform:rotate(0)} 30%{transform:rotate(150deg) translateY(-5px)} 70%{transform:rotate(150deg) translateY(-5px)} 100%{transform:rotate(0)} }
+        @keyframes mascot-react-sniffGround { 0%,100%{transform:translateY(0) rotate(0)} 30%{transform:translateY(8px) rotate(10deg)} 50%{transform:translateY(10px) rotate(12deg)} 70%{transform:translateY(8px) rotate(10deg)} }
+        @keyframes mascot-react-pointNose { 0%,100%{transform:rotate(0) scaleX(1)} 30%{transform:rotate(-3deg) scaleX(1.05)} 70%{transform:rotate(-3deg) scaleX(1.05)} }
+        @keyframes mascot-react-tipTap { 0%,100%{transform:translateY(0)} 10%{transform:translateY(-3px)} 20%{transform:translateY(0)} 30%{transform:translateY(-3px)} 40%{transform:translateY(0)} 50%{transform:translateY(-3px)} 60%{transform:translateY(0)} }
+        @keyframes mascot-react-zoomies { 0%{transform:translateX(0) scaleX(1)} 20%{transform:translateX(25px) scaleX(1)} 30%{transform:translateX(25px) scaleX(-1)} 50%{transform:translateX(-25px) scaleX(-1)} 60%{transform:translateX(-25px) scaleX(1)} 80%{transform:translateX(15px) scaleX(1)} 100%{transform:translateX(0) scaleX(1)} }
+        @keyframes mascot-react-headShake { 0%,100%{transform:rotate(0)} 15%{transform:rotate(-10deg)} 30%{transform:rotate(10deg)} 45%{transform:rotate(-8deg)} 60%{transform:rotate(8deg)} 75%{transform:rotate(-4deg)} }
+        @keyframes mascot-react-pawGive { 0%,100%{transform:rotate(0) translateY(0)} 30%{transform:rotate(-8deg) translateY(-4px)} 50%{transform:rotate(-5deg) translateY(-2px)} 70%{transform:rotate(-8deg) translateY(-4px)} }
+        @keyframes mascot-react-playDead { 0%{transform:rotate(0)} 30%{transform:rotate(90deg) translateX(10px)} 80%{transform:rotate(90deg) translateX(10px)} 100%{transform:rotate(0)} }
+        @keyframes mascot-react-waddle { 0%,100%{transform:rotate(0) translateY(0)} 25%{transform:rotate(-8deg) translateY(-3px)} 50%{transform:rotate(0) translateY(0)} 75%{transform:rotate(8deg) translateY(-3px)} }
+        @keyframes mascot-react-slideBelly { 0%{transform:scaleY(1) translateX(0)} 30%{transform:scaleY(0.7) translateX(0)} 80%{transform:scaleY(0.7) translateX(30px)} 100%{transform:scaleY(1) translateX(0)} }
+        @keyframes mascot-react-fishCatch { 0%{transform:translateY(0)} 20%{transform:translateY(-15px)} 40%{transform:translateY(0) rotate(5deg)} 60%{transform:translateY(-5px) rotate(-3deg)} 100%{transform:translateY(0) rotate(0)} }
+        @keyframes mascot-react-huddle { 0%,100%{transform:scaleX(1) scaleY(1)} 40%{transform:scaleX(0.85) scaleY(0.9)} 60%{transform:scaleX(0.85) scaleY(0.9)} }
+        @keyframes mascot-react-flipperClap { 0%,100%{transform:scaleX(1)} 20%{transform:scaleX(0.8)} 30%{transform:scaleX(1.05)} 50%{transform:scaleX(0.8)} 60%{transform:scaleX(1.05)} 80%{transform:scaleX(0.8)} }
+        @keyframes mascot-react-glitch { 0%{transform:translate(0)} 10%{transform:translate(-3px,2px) skewX(5deg)} 20%{transform:translate(3px,-2px) skewX(-3deg)} 30%{transform:translate(0)} 40%{transform:translate(2px,3px) skewY(2deg)} 50%{transform:translate(-2px,-1px)} 60%{transform:translate(0)} 100%{transform:translate(0)} }
+        @keyframes mascot-react-scanMode { 0%,100%{opacity:1} 25%{opacity:0.6} 50%{opacity:1} 75%{opacity:0.7} }
+        @keyframes mascot-react-reboot { 0%{transform:scale(1) rotate(0)} 30%{transform:scale(0) rotate(180deg)} 60%{transform:scale(0) rotate(180deg)} 100%{transform:scale(1) rotate(360deg)} }
+        @keyframes mascot-react-laserEyes { 0%,100%{transform:scale(1)} 30%{transform:scale(1.1)} 50%{transform:scale(1.15) translateY(-3px)} 70%{transform:scale(1.1)} }
+        @keyframes mascot-react-systemUpdate { 0%{transform:translateY(0)} 50%{transform:translateY(-2px)} 51%{transform:translateY(0)} 100%{transform:translateY(0)} }
+        @keyframes mascot-react-phase { 0%,100%{opacity:1} 30%{opacity:0.3} 50%{opacity:0.1} 70%{opacity:0.3} }
+        @keyframes mascot-react-spook { 0%{transform:scale(1) translateY(0)} 30%{transform:scale(1.3) translateY(-15px)} 50%{transform:scale(1.4) translateY(-20px)} 100%{transform:scale(1) translateY(0)} }
+        @keyframes mascot-react-vanish { 0%{opacity:1;transform:scale(1)} 50%{opacity:0;transform:scale(0.5)} 51%{opacity:0;transform:scale(0.5) translateX(50px)} 100%{opacity:1;transform:scale(1) translateX(0)} }
+        @keyframes mascot-react-haunt { 0%{transform:translateY(0) translateX(0)} 25%{transform:translateY(-10px) translateX(5px)} 50%{transform:translateY(-5px) translateX(-5px)} 75%{transform:translateY(-12px) translateX(3px)} 100%{transform:translateY(0) translateX(0)} }
+        @keyframes mascot-react-ghostFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+        @keyframes mascot-react-sneakWalk { 0%,100%{transform:scaleY(0.9) translateY(3px)} 50%{transform:scaleY(0.85) translateY(5px) translateX(10px)} }
+        @keyframes mascot-react-peekAround { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-15px)} 50%{transform:translateX(0)} 75%{transform:translateX(15px)} }
+        @keyframes mascot-react-doubleJump { 0%{transform:translateY(0)} 20%{transform:translateY(-20px)} 35%{transform:translateY(0)} 55%{transform:translateY(-30px) scale(1.05)} 75%{transform:translateY(0)} 100%{transform:translateY(0)} }
+        @keyframes mascot-react-cartwheel { 0%{transform:rotate(0) translateX(0)} 100%{transform:rotate(360deg) translateX(30px)} }
+        @keyframes mascot-react-tipHat { 0%,100%{transform:rotate(0) translateY(0)} 30%{transform:rotate(-10deg) translateY(-5px)} 70%{transform:rotate(-10deg) translateY(-5px)} }
+        @keyframes mascot-react-thinking { 0%,100%{transform:rotate(0)} 30%{transform:rotate(-5deg) translateY(-3px)} 70%{transform:rotate(-5deg) translateY(-3px)} }
+        @keyframes mascot-react-confetti { 0%{transform:scale(1)} 20%{transform:scale(1.15) rotate(5deg)} 40%{transform:scale(1.1) rotate(-5deg)} 60%{transform:scale(1.15) rotate(3deg) translateY(-8px)} 80%{transform:scale(1.1)} 100%{transform:scale(1)} }
+        @keyframes mascot-react-flexMuscle { 0%,100%{transform:scaleX(1) scaleY(1)} 30%{transform:scaleX(1.15) scaleY(0.92)} 70%{transform:scaleX(1.15) scaleY(0.92)} }
+        @keyframes mascot-react-facepalm { 0%,100%{transform:rotate(0)} 30%{transform:rotate(15deg) translateY(5px)} 70%{transform:rotate(15deg) translateY(5px)} }
+        @keyframes mascot-react-dab { 0%{transform:rotate(0) translateY(0)} 40%{transform:rotate(-15deg) translateY(-5px) scaleX(1.1)} 70%{transform:rotate(-15deg) translateY(-5px) scaleX(1.1)} 100%{transform:rotate(0) translateY(0)} }
+        @keyframes mascot-react-meditation { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.02)} }
+        @keyframes mascot-react-electricShock { 0%{transform:translate(0) scale(1)} 10%{transform:translate(3px,-2px) scale(1.05)} 20%{transform:translate(-3px,2px) scale(0.95)} 30%{transform:translate(2px,-3px) scale(1.08)} 40%{transform:translate(-2px,1px) scale(0.97)} 50%{transform:translate(0) scale(1.1)} 60%{transform:translate(0) scale(1)} 100%{transform:translate(0) scale(1)} }
+        @keyframes mascot-react-bubbleBlow { 0%,100%{transform:scale(1)} 30%{transform:scale(1.05) translateY(-2px)} 60%{transform:scale(1.08) translateY(-4px)} }
+        @keyframes mascot-react-rainbow { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+        @keyframes mascot-react-tornado { 0%{transform:rotate(0) scale(1)} 50%{transform:rotate(360deg) scale(0.8) translateY(-15px)} 100%{transform:rotate(720deg) scale(1) translateY(0)} }
         .mascot-react-wave{animation:mascot-react-wave 1.2s ease-in-out}
         .mascot-react-jump{animation:mascot-react-jump 0.8s ease-out}
         .mascot-react-spin{animation:mascot-react-spin 1s ease-in-out}
@@ -731,6 +792,56 @@ export default function SiteMascot() {
         .mascot-react-startle{animation:mascot-react-startle 1s ease-out}
         .mascot-react-groom{animation:mascot-react-groom 2s ease-in-out}
         .mascot-react-rollOver{animation:mascot-react-rollOver 1.5s ease-in-out}
+        .mascot-react-washFace{animation:mascot-react-washFace 2s ease-in-out}
+        .mascot-react-kneadPaws{animation:mascot-react-kneadPaws 2s ease-in-out}
+        .mascot-react-archBack{animation:mascot-react-archBack 1.5s ease-in-out}
+        .mascot-react-chaseTail{animation:mascot-react-chaseTail 1.5s ease-in-out}
+        .mascot-react-batAtToy{animation:mascot-react-batAtToy 1.5s ease-in-out}
+        .mascot-react-boxPush{animation:mascot-react-boxPush 1.5s ease-in-out}
+        .mascot-react-sunbathe{animation:mascot-react-sunbathe 2.5s ease-in-out}
+        .mascot-react-purrVibrate{animation:mascot-react-purrVibrate 1.5s ease-in-out}
+        .mascot-react-hiss{animation:mascot-react-hiss 1s ease-in-out}
+        .mascot-react-slowBlink{animation:mascot-react-slowBlink 2s ease-in-out}
+        .mascot-react-shakeFur{animation:mascot-react-shakeFur 1s ease-in-out}
+        .mascot-react-sitPretty{animation:mascot-react-sitPretty 1.5s ease-in-out}
+        .mascot-react-rollOnBack{animation:mascot-react-rollOnBack 2s ease-in-out}
+        .mascot-react-sniffGround{animation:mascot-react-sniffGround 2s ease-in-out}
+        .mascot-react-pointNose{animation:mascot-react-pointNose 1.5s ease-in-out}
+        .mascot-react-tipTap{animation:mascot-react-tipTap 1s ease-in-out}
+        .mascot-react-zoomies{animation:mascot-react-zoomies 1.5s ease-in-out}
+        .mascot-react-headShake{animation:mascot-react-headShake 1s ease-in-out}
+        .mascot-react-pawGive{animation:mascot-react-pawGive 1.5s ease-in-out}
+        .mascot-react-playDead{animation:mascot-react-playDead 2s ease-in-out}
+        .mascot-react-waddle{animation:mascot-react-waddle 1s ease-in-out}
+        .mascot-react-slideBelly{animation:mascot-react-slideBelly 2s ease-in-out}
+        .mascot-react-fishCatch{animation:mascot-react-fishCatch 1.5s ease-in-out}
+        .mascot-react-huddle{animation:mascot-react-huddle 1.5s ease-in-out}
+        .mascot-react-flipperClap{animation:mascot-react-flipperClap 1s ease-in-out}
+        .mascot-react-glitch{animation:mascot-react-glitch 1s ease-in-out}
+        .mascot-react-scanMode{animation:mascot-react-scanMode 1.5s ease-in-out}
+        .mascot-react-reboot{animation:mascot-react-reboot 1.5s ease-in-out}
+        .mascot-react-laserEyes{animation:mascot-react-laserEyes 1.5s ease-in-out}
+        .mascot-react-systemUpdate{animation:mascot-react-systemUpdate 2s steps(1)}
+        .mascot-react-phase{animation:mascot-react-phase 2s ease-in-out}
+        .mascot-react-spook{animation:mascot-react-spook 1.5s ease-out}
+        .mascot-react-vanish{animation:mascot-react-vanish 2s ease-in-out}
+        .mascot-react-haunt{animation:mascot-react-haunt 2s ease-in-out}
+        .mascot-react-ghostFloat{animation:mascot-react-ghostFloat 2s ease-in-out infinite}
+        .mascot-react-sneakWalk{animation:mascot-react-sneakWalk 2s ease-in-out}
+        .mascot-react-peekAround{animation:mascot-react-peekAround 2s ease-in-out}
+        .mascot-react-doubleJump{animation:mascot-react-doubleJump 1.2s ease-out}
+        .mascot-react-cartwheel{animation:mascot-react-cartwheel 1s ease-in-out}
+        .mascot-react-tipHat{animation:mascot-react-tipHat 1.5s ease-in-out}
+        .mascot-react-thinking{animation:mascot-react-thinking 2s ease-in-out}
+        .mascot-react-confetti{animation:mascot-react-confetti 1.5s ease-in-out}
+        .mascot-react-flexMuscle{animation:mascot-react-flexMuscle 1.5s ease-in-out}
+        .mascot-react-facepalm{animation:mascot-react-facepalm 1.5s ease-in-out}
+        .mascot-react-dab{animation:mascot-react-dab 1s ease-in-out}
+        .mascot-react-meditation{animation:mascot-react-meditation 3s ease-in-out}
+        .mascot-react-electricShock{animation:mascot-react-electricShock 1s ease-in-out}
+        .mascot-react-bubbleBlow{animation:mascot-react-bubbleBlow 2s ease-in-out}
+        .mascot-react-rainbow{animation:mascot-react-rainbow 2s linear}
+        .mascot-react-tornado{animation:mascot-react-tornado 1.5s ease-in-out}
         @keyframes emoji-float { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-60px) scale(1.5)} }
         .floating-emoji { animation: emoji-float 1.5s ease-out forwards; pointer-events: none; }
         .mascot-tooltip { animation: tooltip-pop 0.3s ease-out; }
