@@ -17,7 +17,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const baseUrl = "https://thuis3d.com"; // Update with actual domain
+    const baseUrl = "https://thuis3d.be";
     const currentDate = new Date().toISOString().split("T")[0];
 
     // Fetch all products with their top keywords
