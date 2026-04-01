@@ -92,19 +92,33 @@ async function batchUpsertKeywords(
 /**
  * Upsert a meta tag for a page path
  */
-async function upsertMetaTag(pagePath: string, data: Record<string, any>) {
+async function upsertMetaTag(pagePath: string, data: {
+  page_title: string;
+  meta_description: string;
+  og_title: string;
+  og_description: string;
+  twitter_title: string;
+  twitter_description: string;
+  keywords: string[];
+}) {
   const { data: existing } = await supabase
     .from('seo_meta_tags')
     .select('id')
     .eq('page_path', pagePath)
     .maybeSingle();
 
-  const metaTagData = { ...data, page_path: pagePath, updated_at: new Date().toISOString() };
-
   if (existing) {
-    await supabase.from('seo_meta_tags').update(metaTagData).eq('id', existing.id);
+    await supabase.from('seo_meta_tags').update({
+      ...data,
+      page_path: pagePath,
+      updated_at: new Date().toISOString()
+    }).eq('id', existing.id);
   } else {
-    await supabase.from('seo_meta_tags').insert(metaTagData);
+    await supabase.from('seo_meta_tags').insert({
+      ...data,
+      page_path: pagePath,
+      updated_at: new Date().toISOString()
+    });
   }
 }
 
