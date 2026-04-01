@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <!-- Homepage - Highest priority, updated daily -->
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Homepage -->
   <url>
     <loc>https://thuis3d.be/</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/" />
@@ -14,10 +13,10 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://thuis3d.be/" />
   </url>
   
-  <!-- Products page - High priority, updated daily -->
+  <!-- Products -->
   <url>
     <loc>https://thuis3d.be/productos</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/productos" />
@@ -25,10 +24,10 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/productos" />
   </url>
   
-  <!-- Quotes page - High priority -->
+  <!-- Quotes -->
   <url>
     <loc>https://thuis3d.be/cotizaciones</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/cotizaciones" />
@@ -36,10 +35,10 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/cotizaciones" />
   </url>
   
-  <!-- Blog page - Regular updates -->
+  <!-- Blog -->
   <url>
     <loc>https://thuis3d.be/blog</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/blog" />
@@ -47,10 +46,21 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/blog" />
   </url>
   
-  <!-- Gift cards page -->
+  <!-- Gallery -->
+  <url>
+    <loc>https://thuis3d.be/galeria</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/galeria" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://thuis3d.be/galeria" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/galeria" />
+  </url>
+  
+  <!-- Gift Cards -->
   <url>
     <loc>https://thuis3d.be/tarjetas-regalo</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/tarjetas-regalo" />
@@ -58,30 +68,30 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/tarjetas-regalo" />
   </url>
   
-  <!-- Gallery page -->
+  <!-- Lithophany -->
   <url>
-    <loc>https://thuis3d.be/gallery</loc>
-    <lastmod>2025-12-14</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://thuis3d.be/litofanias</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/gallery" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://thuis3d.be/gallery" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/gallery" />
+    <xhtml:link rel="alternate" hreflang="nl-BE" href="https://thuis3d.be/litofanias" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://thuis3d.be/litofanias" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://thuis3d.be/litofanias" />
   </url>
   
-  <!-- Cart page -->
+  <!-- Cart -->
   <url>
     <loc>https://thuis3d.be/carrito</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   
-  <!-- Authentication page - Lower priority -->
+  <!-- Auth -->
   <url>
     <loc>https://thuis3d.be/auth</loc>
-    <lastmod>2025-12-14</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
 </urlset>
