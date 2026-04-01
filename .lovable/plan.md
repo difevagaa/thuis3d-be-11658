@@ -1,78 +1,91 @@
 
 
-## Plan: Corrección de Flash Visual, Tarjetas de Regalo y Mejora de Mascota
+## Plan: Auditoría SEO Completa + Depuración de Código
 
-### Problema 1: Flash de colores antiguos al cargar por primera vez
+### Diagnóstico Principal: ¿Por qué Google no encuentra tu sitio?
 
-**Causa raíz:** Cuando un visitante nuevo abre la página, no tiene caché en `localStorage`. Los colores CSS por defecto en `index.css` (Electric Coral/Ocean Blue) se muestran primero. Luego, `useGlobalColors` carga la paleta real desde la base de datos (~1-2 seg) y la aplica, causando el "flash" de colores.
+**Causa raíz #1: Tu sitio es una SPA (Single Page Application).** Cuando Google visita `thuis3d.be`, solo ve un `<div id="root"></div>` vacío. Todo el contenido se renderiza con JavaScript del lado del cliente. Google puede ejecutar JS, pero lo hace con retraso (días/semanas) y frecuentemente falla. **Esto es el problema principal.**
 
-**Corrección:**
-- En `index.css`, hacer que los colores base `:root` sean neutros/mínimos (blanco/gris) para que el flash sea imperceptible
-- Agregar un overlay de carga en `index.html` (inline CSS, sin JS) que cubra la pantalla con fondo blanco hasta que React monte y aplique los colores reales
-- En `App.tsx` o `useGlobalColors`, remover el overlay una vez los colores estén aplicados
-- Esto elimina completamente el flash visible de "versión antigua"
+**Causa raíz #2: Meta tags duplicados y conflictivos.** `index.html` tiene `og:title` definido DOS veces (líneas 73 y 174) con valores diferentes. Google penaliza esto.
 
-### Problema 2: Error al comprar tarjeta de regalo sin sesión
+**Causa raíz #3: Sitemap desactualizado y con dominio incorrecto.** El `sitemap.xml` estático usa rutas en español. La Edge Function `generate-sitemap` usa `thuis3d.com` en vez de `thuis3d.be`.
 
-**Causa raíz:** La Edge Function `create-gift-card` requiere autenticación (`Authorization` header). Cuando un usuario no ha iniciado sesión, `supabase.functions.invoke` no envía el header, y la función devuelve 401.
+**Causa raíz #4: Google Site Verification probablemente inválido.** El valor `11397960639` no parece un código de verificación válido de Google (son tipo `aBcDeFgHiJkLmNoPqRsTuVwXyZ`).
 
-**Corrección:**
-- En `GiftCard.tsx`, antes de llamar a `create-gift-card`, verificar si el usuario tiene sesión activa
-- Si no tiene sesión: mostrar un toast amigable pidiendo iniciar sesión y redirigir a `/auth` con un `returnTo` parameter
-- No permitir compras anónimas (la función necesita `buyer_id` para el tracking)
-- Verificar que el mismo patrón se aplique en otros flujos de compra (Cart checkout, etc.)
+**Causa raíz #5: Carga de 20+ fuentes en una sola petición** destruye los Core Web Vitals (LCP/FCP), y Google penaliza en ranking por rendimiento pobre.
 
-### Problema 3: Build errors - `NodeJS.Timeout`
+---
 
-**Causa raíz:** El `tsconfig.app.json` actual no incluye `"types": ["node"]` y la librería `@types/node` puede no estar instalada. Los archivos usan `NodeJS.Timeout` para refs de timers.
+### Bloque 1: Pre-rendering para SEO (Crítico)
 
-**Corrección:** Cambiar todas las ocurrencias de `NodeJS.Timeout` a `ReturnType<typeof setTimeout>` en los 7 archivos afectados. Esto es compatible con el entorno del navegador sin necesidad de tipos de Node.
+Implementar un sistema de pre-rendering que genere HTML estático para las páginas principales. Dado que no podemos usar SSR (no hay servidor Node), la solución es:
 
-**Archivos afectados:**
-- `src/components/AdminLayout.tsx` (líneas 35-36)
-- `src/components/GlobalSearchBar.tsx` (línea 25)
-- `src/components/page-builder/AdvancedCarousel.tsx` (línea 70)
-- `src/contexts/ResponsiveContext.tsx` (línea 57)
-- `src/hooks/useVisitorTracking.tsx` (línea 21)
-- `src/lib/advancedEditorFunctions.ts` (línea 641)
+1. **Edge Function `render-page`** que usa la API de metadata para generar HTML con meta tags completos para crawlers
+2. **Mejorar el `index.html`** para incluir contenido semántico visible antes de que React cargue (texto real, no solo un div vacío)
+3. **Agregar `<noscript>` fallback** con contenido textual de las páginas principales para crawlers que no ejecutan JS
 
-### Problema 4: Mascota con 50+ movimientos más naturales
+### Bloque 2: Corregir index.html (10 fixes)
 
-**Estado actual:** La mascota tiene 48 reacciones definidas pero los movimientos anatómicos son básicos (solo `walkPhase` sinusoidal para piernas/brazos).
+1. Eliminar meta tags duplicados (líneas 174-177)
+2. Cambiar `lang="es"` → `lang="nl-BE"` (el mercado es belga, no español)
+3. Reducir carga de fuentes de 20+ a solo las 3-4 que realmente se usan
+4. Agregar contenido semántico real dentro de `<noscript>` para crawlers
+5. Mover el script de tema al `<body>` para no bloquear el render
+6. Agregar `<meta name="description">` más relevante en neerlandés
+7. Corregir la imagen OG para que apunte al dominio propio
+8. Agregar structured data JSON-LD directamente en el HTML (no depender de React)
+9. Agregar `<link rel="preload">` para recursos críticos
+10. Limpiar el bloque de Google Translate innecesario
 
-**Corrección:**
-- Agregar 50 nuevas reacciones específicas por tipo de mascota:
-  - **Gato:** `washFace`, `kneadPaws`, `archBack`, `chaseTail`, `batAtToy`, `boxPush`, `sunbathe`, `purrVibrate`, `hiss`, `slowBlink`
-  - **Perro/genéricos:** `shakeFur`, `sitPretty`, `rollOnBack`, `sniffGround`, `pointNose`, `tipTap`, `zoomies`, `headShake`, `pawGive`, `playDead`
-  - **Pingüino:** `waddle`, `slideBelly`, `fishCatch`, `huddle`, `flipperClap`
-  - **Robot:** `glitch`, `scanMode`, `reboot`, `laserEyes`, `systemUpdate`
-  - **Fantasma:** `phase`, `spook`, `vanish`, `haunt`, `ghostFloat`
-  - **Universales:** `sneakWalk`, `peekAround`, `doubleJump`, `cartwheel`, `tipHat`, `thinking`, `confetti`, `flexMuscle`, `facepalm`, `dab`, `meditation`, `electricShock`, `bubbleBlow`, `rainbow`, `tornado`
-- Mejorar la fluidez del movimiento con:
-  - Curvas Bézier en lugar de sinusoidales simples
-  - Micro-movimientos de "idle" más variados (respiración irregular, pestañeo aleatorio, movimiento de orejas esporádico)
-  - Transiciones suaves entre estados (ease-in-out en lugar de cambios abruptos)
-  - Velocidad variable al caminar (aceleración/desaceleración)
-  - Pausas con comportamiento idle contextual (el gato se sienta y se lame, el perro olfatea el suelo)
+### Bloque 3: Corregir sitemap.xml y robots.txt
 
-### Orden de ejecución
+1. **sitemap.xml**: Regenerar con rutas correctas, dominio `thuis3d.be`, y `lastmod` actualizado
+2. **robots.txt**: Limpiar rutas y asegurar que `/galeria`, `/litofanias` estén incluidas
+3. **Edge Function `generate-sitemap`**: Cambiar `thuis3d.com` → `thuis3d.be`
+4. Agregar todas las rutas públicas que faltan al sitemap
 
-1. Fix build errors (`NodeJS.Timeout` → `ReturnType<typeof setTimeout>`)
-2. Fix flash de colores (overlay en `index.html` + colores neutros en CSS)
-3. Fix gift card auth check en frontend
-4. Mascota: 50+ nuevos movimientos naturales
+### Bloque 4: Corregir SEOHead.tsx
+
+1. Las descripciones en `seo_meta_tags` están en español — el mercado principal es Bélgica (neerlandés). Actualizar los fallbacks
+2. Evitar que `SEOHead` genere meta tags que conflicten con los de `index.html`
+3. Mejorar el `canonicalUrl` para que siempre incluya el dominio completo
+
+### Bloque 5: Depuración de código (optimización de rendimiento)
+
+1. **Fuentes**: Cargar solo Poppins (la fuente activa) en vez de 20+ fuentes → mejora LCP en ~2 segundos
+2. **Eliminar código muerto** en `seoUtils.ts` (926 líneas con traducciones redundantes que nunca mejoran el ranking real)
+3. **Optimizar `SEOHead`**: Hacer 5 queries paralelas en cada navegación es excesivo. Cachear en memoria con TTL
+4. **Limpiar `useAutoSEO`**: Hace upsert keyword-por-keyword (N+1 queries). Refactorizar a batch insert
+5. **Consolidar caches SEO duplicados**: `seoCache` existe tanto en `SEOHead.tsx` como en `seoCache.ts`
+
+### Bloque 6: Verificación Google Search Console
+
+1. Verificar que el código de verificación `11397960639` sea correcto (parece inválido)
+2. Asegurar que el meta tag de verificación se renderice correctamente en el HTML inicial (no solo después de React)
+3. Mover `google-site-verification` al `index.html` estático para que Google siempre lo vea
+
+---
 
 ### Archivos a modificar
 
-- `src/components/AdminLayout.tsx`
-- `src/components/GlobalSearchBar.tsx`
-- `src/components/page-builder/AdvancedCarousel.tsx`
-- `src/contexts/ResponsiveContext.tsx`
-- `src/hooks/useVisitorTracking.tsx`
-- `src/lib/advancedEditorFunctions.ts`
-- `index.html` — agregar overlay anti-flash
-- `src/index.css` — colores base neutros
-- `src/hooks/useGlobalColors.tsx` — remover overlay al cargar
-- `src/pages/GiftCard.tsx` — auth check antes de comprar
-- `src/components/SiteMascot.tsx` — 50+ movimientos naturales
+- `index.html` — Limpieza completa, lang, fuentes, structured data, noscript content
+- `public/robots.txt` — Rutas actualizadas
+- `public/sitemap.xml` — Regenerado con datos correctos
+- `supabase/functions/generate-sitemap/index.ts` — Fix dominio
+- `src/components/SEOHead.tsx` — Optimización y deduplicación
+- `src/hooks/useAutoSEO.tsx` — Batch operations
+- `src/lib/seoUtils.ts` — Limpieza de código muerto
+- `src/lib/seoCache.ts` — Consolidación
+
+### Lista de verificación final
+
+1. `index.html` tiene `lang="nl-BE"` y meta tags sin duplicados
+2. Google Site Verification está en HTML estático
+3. Structured data JSON-LD visible sin JavaScript
+4. Sitemap tiene dominio `thuis3d.be` y todas las rutas públicas
+5. Solo se cargan 2-3 fuentes (no 20+)
+6. `<noscript>` tiene contenido real para crawlers
+7. No hay meta tags duplicados entre `index.html` y `SEOHead`
+8. Core Web Vitals mejorados por reducción de fuentes
+9. Edge Function sitemap usa dominio correcto
 
