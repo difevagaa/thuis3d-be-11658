@@ -5501,41 +5501,109 @@ export type Database = {
       generate_product_keywords: { Args: never; Returns: undefined }
       generate_product_keywords_optimized: { Args: never; Returns: undefined }
       generate_reference_code: { Args: never; Returns: string }
-      get_applicable_transition_rules: {
-        Args: {
-          p_entity_type: string
-          p_from_status_type: string
-          p_from_status_value: string
-        }
-        Returns: {
-          id: string
-          is_mandatory: boolean
-          options: Json
-          prompt_message: string
-          prompt_title: string
-          prompt_type: string
-          suggests_status_type: string
-          suggests_status_value: string
-        }[]
-      }
+      get_applicable_transition_rules:
+        | {
+            Args: {
+              p_entity_type: string
+              p_from_status_type: string
+              p_from_status_value: string
+            }
+            Returns: {
+              id: string
+              is_mandatory: boolean
+              options: Json
+              prompt_message: string
+              prompt_title: string
+              prompt_type: string
+              suggests_status_type: string
+              suggests_status_value: string
+            }[]
+          }
+        | {
+            Args: { p_current_status: string; p_entity_type: string }
+            Returns: {
+              created_at: string | null
+              created_by: string | null
+              entity_type: string
+              from_status_type: string
+              from_status_value: string
+              id: string
+              is_active: boolean | null
+              is_mandatory: boolean | null
+              options: Json | null
+              priority: number | null
+              prompt_message_en: string | null
+              prompt_message_es: string
+              prompt_message_nl: string | null
+              prompt_title_en: string | null
+              prompt_title_es: string
+              prompt_title_nl: string | null
+              prompt_type: string
+              suggests_status_type: string | null
+              suggests_status_value: string | null
+              updated_at: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "status_transition_rules"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       get_available_stock: { Args: { p_product_id: string }; Returns: number }
-      get_contextual_help: {
-        Args: { p_context?: string; p_language?: string; p_section: string }
-        Returns: {
-          auto_show: boolean
-          color: string
-          content: string
-          dismissible: boolean
-          help_type: string
-          icon: string
-          id: string
-          position: string
-          related_docs_url: string
-          related_video_url: string
-          title: string
-          trigger_on: string
-        }[]
-      }
+      get_contextual_help:
+        | {
+            Args: { p_context?: string; p_language?: string; p_section: string }
+            Returns: {
+              auto_show: boolean
+              color: string
+              content: string
+              dismissible: boolean
+              help_type: string
+              icon: string
+              id: string
+              position: string
+              related_docs_url: string
+              related_video_url: string
+              title: string
+              trigger_on: string
+            }[]
+          }
+        | {
+            Args: { p_context?: string; p_section: string }
+            Returns: {
+              auto_show: boolean | null
+              color: string | null
+              content_en: string | null
+              content_es: string
+              content_nl: string | null
+              context: string
+              created_at: string | null
+              created_by: string | null
+              dismissible: boolean | null
+              help_type: string
+              icon: string | null
+              id: string
+              is_active: boolean | null
+              position: string | null
+              priority: number | null
+              related_docs_url: string | null
+              related_video_url: string | null
+              requires_role: string | null
+              section: string
+              title_en: string | null
+              title_es: string
+              title_nl: string | null
+              trigger_on: string | null
+              updated_at: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "contextual_help_messages"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_or_superadmin: { Args: { user_id?: string }; Returns: boolean }
       is_valid_uuid: { Args: { text_value: string }; Returns: boolean }
