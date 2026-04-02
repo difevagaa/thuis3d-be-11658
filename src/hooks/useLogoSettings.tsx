@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 export interface LogoSettings {
   logo_url: string;
@@ -128,7 +129,7 @@ export function useLogoSettings() {
         localStorage.setItem("logo_settings", JSON.stringify(settings));
       }
     } catch (err) {
-      console.error("Error loading logo settings:", err);
+      logger.error("Error loading logo settings:", err);
     } finally {
       setLoading(false);
     }

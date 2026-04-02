@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to translate Page Builder section content based on current language
@@ -144,7 +145,7 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
       setTranslatedContent(newContent);
       setTranslatedName(newName);
     } catch (error) {
-      console.error('Error loading page builder translations:', error);
+      logger.error('Error loading page builder translations:', error);
       setTranslatedContent(originalContent);
       setTranslatedName(originalName);
     } finally {
