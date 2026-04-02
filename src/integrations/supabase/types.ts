@@ -5509,15 +5509,33 @@ export type Database = {
               p_from_status_value: string
             }
             Returns: {
+              created_at: string | null
+              created_by: string | null
+              entity_type: string
+              from_status_type: string
+              from_status_value: string
               id: string
-              is_mandatory: boolean
-              options: Json
-              prompt_message: string
-              prompt_title: string
+              is_active: boolean | null
+              is_mandatory: boolean | null
+              options: Json | null
+              priority: number | null
+              prompt_message_en: string | null
+              prompt_message_es: string
+              prompt_message_nl: string | null
+              prompt_title_en: string | null
+              prompt_title_es: string
+              prompt_title_nl: string | null
               prompt_type: string
-              suggests_status_type: string
-              suggests_status_value: string
+              suggests_status_type: string | null
+              suggests_status_value: string | null
+              updated_at: string | null
             }[]
+            SetofOptions: {
+              from: "*"
+              to: "status_transition_rules"
+              isOneToOne: false
+              isSetofReturn: true
+            }
           }
         | {
             Args: { p_current_status: string; p_entity_type: string }
@@ -5555,19 +5573,37 @@ export type Database = {
         | {
             Args: { p_context?: string; p_language?: string; p_section: string }
             Returns: {
-              auto_show: boolean
-              color: string
-              content: string
-              dismissible: boolean
+              auto_show: boolean | null
+              color: string | null
+              content_en: string | null
+              content_es: string
+              content_nl: string | null
+              context: string
+              created_at: string | null
+              created_by: string | null
+              dismissible: boolean | null
               help_type: string
-              icon: string
+              icon: string | null
               id: string
-              position: string
-              related_docs_url: string
-              related_video_url: string
-              title: string
-              trigger_on: string
+              is_active: boolean | null
+              position: string | null
+              priority: number | null
+              related_docs_url: string | null
+              related_video_url: string | null
+              requires_role: string | null
+              section: string
+              title_en: string | null
+              title_es: string
+              title_nl: string | null
+              trigger_on: string | null
+              updated_at: string | null
             }[]
+            SetofOptions: {
+              from: "*"
+              to: "contextual_help_messages"
+              isOneToOne: false
+              isSetofReturn: true
+            }
           }
         | {
             Args: { p_context?: string; p_section: string }
