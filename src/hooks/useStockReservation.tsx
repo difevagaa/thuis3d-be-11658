@@ -25,7 +25,7 @@ export function useStockReservation() {
     });
     
     if (error) {
-      console.error('Error getting available stock:', error);
+      logger.error('Error getting available stock:', error);
       return null;
     }
     
@@ -51,7 +51,7 @@ export function useStockReservation() {
       });
       
       if (error) {
-        console.error('Error creating reservation:', error);
+        logger.error('Error creating reservation:', error);
         return { success: false, error: error.message };
       }
       
@@ -67,7 +67,7 @@ export function useStockReservation() {
       
       return result;
     } catch (err) {
-      console.error('Error in createReservation:', err);
+      logger.error('Error in createReservation:', err);
       return { success: false, error: 'Unknown error' };
     } finally {
       setLoading(false);
@@ -89,13 +89,13 @@ export function useStockReservation() {
       });
       
       if (error) {
-        console.error('Error completing reservation:', error);
+        logger.error('Error completing reservation:', error);
         return false;
       }
       
       return data === true;
     } catch (err) {
-      console.error('Error in completeReservation:', err);
+      logger.error('Error in completeReservation:', err);
       return false;
     }
   }, []);
@@ -115,13 +115,13 @@ export function useStockReservation() {
       });
       
       if (error) {
-        console.error('Error cancelling reservation:', error);
+        logger.error('Error cancelling reservation:', error);
         return false;
       }
       
       return data === true;
     } catch (err) {
-      console.error('Error in cancelReservation:', err);
+      logger.error('Error in cancelReservation:', err);
       return false;
     }
   }, []);
@@ -152,7 +152,7 @@ export function useStockReservation() {
       });
       
       if (error) {
-        console.error('Error joining waitlist:', error);
+        logger.error('Error joining waitlist:', error);
         toast({
           title: t('products:stock.waitlistError'),
           variant: 'destructive'
@@ -171,7 +171,7 @@ export function useStockReservation() {
       
       return result.success;
     } catch (err) {
-      console.error('Error in joinWaitlist:', err);
+      logger.error('Error in joinWaitlist:', err);
       return false;
     } finally {
       setLoading(false);
@@ -194,13 +194,13 @@ export function useStockReservation() {
         .maybeSingle();
       
       if (error) {
-        console.error('Error checking waitlist:', error);
+        logger.error('Error checking waitlist:', error);
         return false;
       }
       
       return !!data;
     } catch (err) {
-      console.error('Error in isInWaitlist:', err);
+      logger.error('Error in isInWaitlist:', err);
       return false;
     }
   }, []);
@@ -219,7 +219,7 @@ export function useStockReservation() {
         .eq('user_id', user.id);
       
       if (error) {
-        console.error('Error leaving waitlist:', error);
+        logger.error('Error leaving waitlist:', error);
         return false;
       }
       
@@ -229,7 +229,7 @@ export function useStockReservation() {
       
       return true;
     } catch (err) {
-      console.error('Error in leaveWaitlist:', err);
+      logger.error('Error in leaveWaitlist:', err);
       return false;
     }
   }, [toast, t]);

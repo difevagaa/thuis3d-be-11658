@@ -44,7 +44,7 @@ export function useMaterialColors() {
       setAllColors(colorsRes.data || []);
       setAvailableColors(colorsRes.data || []); // Por defecto, todos los colores están disponibles
     } catch (error) {
-      console.error("Error loading materials and colors:", error);
+      logger.error("Error loading materials and colors:", error);
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export function useMaterialColors() {
         }
       }
     } catch (error) {
-      console.error("Error filtering colors:", error);
+      logger.error("Error filtering colors:", error);
       setAvailableColors(allColors);
     }
   };

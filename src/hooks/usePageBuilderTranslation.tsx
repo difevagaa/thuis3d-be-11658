@@ -145,7 +145,7 @@ export const usePageBuilderTranslation = (sectionId: string, originalContent: an
       setTranslatedContent(newContent);
       setTranslatedName(newName);
     } catch (error) {
-      console.error('Error loading page builder translations:', error);
+      logger.error('Error loading page builder translations:', error);
       setTranslatedContent(originalContent);
       setTranslatedName(originalName);
     } finally {

@@ -93,7 +93,7 @@ export async function testSectionSave(section: any): Promise<boolean> {
     const validation = await validateSectionSave(section);
     
     if (!validation.success) {
-      console.error('Validation failed:', validation.errors);
+      logger.error('Validation failed:', validation.errors);
       toast.error('Validation failed: ' + validation.errors.join(', '));
       return false;
     }
@@ -104,7 +104,7 @@ export async function testSectionSave(section: any): Promise<boolean> {
       .upsert(section);
 
     if (error) {
-      console.error('Save error:', error);
+      logger.error('Save error:', error);
       toast.error('Error saving section: ' + error.message);
       return false;
     }
@@ -112,7 +112,7 @@ export async function testSectionSave(section: any): Promise<boolean> {
     toast.success(`Section saved successfully (${validation.passed}/${validation.tested} tests passed)`);
     return true;
   } catch (error) {
-    console.error('Test error:', error);
+    logger.error('Test error:', error);
     toast.error('Test failed: ' + (error as Error).message);
     return false;
   }
@@ -289,7 +289,7 @@ export async function runComprehensiveTests(pageId: string): Promise<Record<stri
   const results: Record<string, ValidationResult> = {};
 
   for (const type of sectionTypes) {
-    console.log(`Testing ${type}...`);
+    logger.info(`Testing ${type}...`);
     results[type] = await testAllOptions(type, pageId);
   }
 
@@ -363,7 +363,7 @@ export async function testPreviewUpdate(section: any): Promise<boolean> {
     const validation = await validateSectionSave(updatedSection);
     return validation.success;
   } catch (error) {
-    console.error('Preview test failed:', error);
+    logger.error('Preview test failed:', error);
     return false;
   }
 }
@@ -381,7 +381,7 @@ export async function testOptionPersistence(sectionId: string, option: string, v
       .single();
 
     if (readError || !section) {
-      console.error('Failed to read section:', readError);
+      logger.error('Failed to read section:', readError);
       return false;
     }
 
@@ -405,7 +405,7 @@ export async function testOptionPersistence(sectionId: string, option: string, v
       .eq('id', sectionId);
 
     if (updateError) {
-      console.error('Failed to update:', updateError);
+      logger.error('Failed to update:', updateError);
       return false;
     }
 
@@ -417,7 +417,7 @@ export async function testOptionPersistence(sectionId: string, option: string, v
       .single();
 
     if (verifyError || !verified) {
-      console.error('Failed to verify:', verifyError);
+      logger.error('Failed to verify:', verifyError);
       return false;
     }
 
@@ -425,12 +425,12 @@ export async function testOptionPersistence(sectionId: string, option: string, v
     const matches = JSON.stringify(savedValue) === JSON.stringify(value);
 
     if (!matches) {
-      console.error('Value mismatch:', { expected: value, actual: savedValue });
+      logger.error('Value mismatch:', { expected: value, actual: savedValue });
     }
 
     return matches;
   } catch (error) {
-    console.error('Persistence test failed:', error);
+    logger.error('Persistence test failed:', error);
     return false;
   }
 }

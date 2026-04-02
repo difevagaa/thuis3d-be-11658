@@ -129,7 +129,7 @@ export function useLogoSettings() {
         localStorage.setItem("logo_settings", JSON.stringify(settings));
       }
     } catch (err) {
-      console.error("Error loading logo settings:", err);
+      logger.error("Error loading logo settings:", err);
     } finally {
       setLoading(false);
     }
