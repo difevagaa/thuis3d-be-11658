@@ -118,7 +118,7 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                     <Input
                       value={localContent.buttonText || ''}
                       onChange={(e) => updateContent('buttonText', e.target.value)}
-                      placeholder="Ver más"
+                      placeholder={t('pageBuilder:common.viewMore', 'Ver más')}
                     />
                   </div>
                   <URLSelector
