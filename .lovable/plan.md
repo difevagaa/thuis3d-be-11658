@@ -1,65 +1,46 @@
 
 
-## Plan: Depuración Completa del Código — Limpieza Segura
+## Plan: Corrección de Selector de País + Auditoría de Traducción Completa
 
-### Resumen
-Limpieza de código muerto, archivos no usados, y correcciones menores de calidad sin alterar ninguna funcionalidad existente.
+### Problema 1: Selector de país no selecciona (Quotes.tsx)
+
+**Causa raíz:** En `src/pages/Quotes.tsx` línea 841, el `SelectItem` usa `value={c.country_name}` (ej: "Bélgica"), pero cuando se carga el perfil del usuario (línea 132), se usa `profile.country` que almacena el **código** de país (ej: "BE"). El valor del Select no coincide con ningún SelectItem, así que aparece desmarcado.
+
+**Solución:** Cambiar el Select en Quotes.tsx para usar `country_code` como valor en vez de `country_name`, igual que ShippingInfo.tsx. Ajustar la inicialización del estado `country` para usar códigos.
+
+### Problema 2: Texto hardcoded "FREE" en ProductCard.tsx
+
+**Causa raíz:** Línea 51 de ProductCard.tsx tiene `<span className="sm:hidden">FREE</span>` hardcoded en inglés. Debería usar `t('freeShipping')` igual que la versión desktop.
+
+**Solución:** Reemplazar el texto hardcoded con la traducción existente.
+
+### Problema 3: Placeholders hardcoded en español en Page Builder
+
+Archivos `PageBuilderSidebar.tsx`, `SectionEditor.tsx`, `PageBuilderSettings.tsx` tienen `placeholder="Ver más"` hardcoded. Cambiar a `t('pageBuilder:common.viewMore')` o similar.
+
+### Problema 4: Texto hardcoded en admin/Loyalty.tsx
+
+Línea 391: `"Añadir"` / `"Restar"` hardcoded en español.
+
+### Problema 5: SectionEditor.tsx texto hardcoded
+
+Línea 356: `"No hay características. Haz clic en "Añadir" para crear una."` hardcoded en español.
 
 ---
 
-### Bloque 1: Eliminar archivos completamente no usados (0 imports)
-
-| Archivo | Líneas | Razón |
-|---------|--------|-------|
-| `src/data/themePresets.ts` | 393 | No importado en ningún lado |
-| `src/data/colorPalettes.ts` | 874 | No importado en ningún lado |
-| `src/components/ChatWidget.tsx` | ~100 | No importado en ningún lado |
-| `src/components/ClientChatWidget.tsx` | ~100 | No importado en ningún lado |
-| `src/components/AdminSidebarMemo.tsx` | 10 | No importado en ningún lado |
-| `src/components/BackInStockNotify.tsx` | ~60 | No importado en ningún lado |
-| `src/components/ColorPreview3D.tsx` | ~30 | No importado en ningún lado |
-
-**Total eliminado: ~1,567 líneas de código muerto**
-
-### Bloque 2: Eliminar funciones no usadas en seoUtils.ts
-
-Las siguientes funciones exportadas NO son importadas por ningún archivo:
-- `validateSEOConfiguration` (líneas 780-868)
-- `generateProductStructuredData` (líneas 873-898)
-- `generateArticleStructuredData` (líneas 903-926)
-- Tipos `MultilingualKeywordResult` y `MetaDescriptionResult` (no importados externamente)
-
-**Reducción: ~150 líneas**
-
-### Bloque 3: Eliminar 21 archivos .md de documentación innecesarios
-
-Los archivos `AUDITORIA_COMPLETA.md`, `CAROUSEL_ROLE_TESTING.md`, `CODE_REVIEW_COHERENCE.md`, `DEPLOYMENT_GUIDE.md`, `EDITOR_OPTIONS_GUIDE.md`, `ENHANCED_PAGE_BUILDER_GUIDE.md`, `GUIA_EDITOR_PAGINAS.md`, `GUIA_SEO_GOOGLE.md`, `IMPLEMENTATION_*.md`, `LITHOPHANE_*.md`, `MEJORAS_PAGE_BUILDER.md`, `PAGE_BUILDER_DOCUMENTATION.md`, `RESUMEN_EJECUTIVO.md`, `SECURITY_SUMMARY.md`, `SEO_QUICK_START.md`, `SEO_SUMMARY.md`, `AUDITORIA_MOBILE_CHECKLIST.md` no son referenciados en el código. Son documentación de desarrollo que no se despliega ni usa. Se mantiene `README.md`.
-
-### Bloque 4: Reemplazar console.log/error con logger
-
-En `src/lib/sectionTesting.ts` hay 12 `console.log/error` directos que deberían usar el `logger` existente para consistencia. Mismo patrón en `src/hooks/useStockReservation.tsx` (12 console.error), `src/hooks/useLogoSettings.tsx`, `src/hooks/useMaterialColors.tsx`, `src/hooks/usePageBuilderTranslation.tsx`.
-
-**Cambio: Reemplazar ~35 console.log/error → logger.error/logger.info**
-
-### Bloque 5: Limpiar tipos `any` seguros
-
-- `src/lib/paymentUtils.ts`: Reemplazar `[key: string]: any` y `const insertData: any` con tipos más específicos donde sea posible
-- `src/lib/errorHandler.ts`: Mantener los cast `as any` ya que son necesarios para error genérico
-
-### Verificación final
-- TypeScript compila sin errores (ya verificado: `tsc --noEmit` = 0 errores)
-- Ningún archivo eliminado es importado por otro archivo (verificado con grep exhaustivo)
-- No se altera ninguna función, ruta, o componente visible
-- El servidor de desarrollo funciona sin warnings nuevos
-
-### Archivos a eliminar
-7 archivos de componentes/datos + 21 archivos .md
-
 ### Archivos a modificar
-- `src/lib/seoUtils.ts` — eliminar 3 funciones + 2 tipos no usados
-- `src/lib/sectionTesting.ts` — console → logger
-- `src/hooks/useStockReservation.tsx` — console → logger
-- `src/hooks/useLogoSettings.tsx` — console → logger
-- `src/hooks/useMaterialColors.tsx` — console → logger
-- `src/hooks/usePageBuilderTranslation.tsx` — console → logger
+
+1. **`src/pages/Quotes.tsx`** — Cambiar SelectItem value a `country_code`, ajustar estado
+2. **`src/components/ProductCard.tsx`** — Reemplazar "FREE" hardcoded con `t('freeShipping')`  
+3. **`src/components/page-builder/PageBuilderSidebar.tsx`** — Traducir placeholder
+4. **`src/components/page-builder/SectionEditor.tsx`** — Traducir placeholder y mensaje vacío
+5. **`src/components/page-builder/PageBuilderSettings.tsx`** — Traducir placeholder
+6. **`src/pages/admin/Loyalty.tsx`** — Traducir "Añadir"/"Restar"
+7. **`public/locales/*/pageBuilder.json`** — Agregar claves faltantes si no existen
+
+### Verificación
+- Selector de país en Quotes funciona al hacer clic
+- Badges "FREE" se muestran en el idioma correcto en móvil
+- Placeholders del Page Builder se muestran traducidos
+- No se rompe ninguna funcionalidad existente
 
