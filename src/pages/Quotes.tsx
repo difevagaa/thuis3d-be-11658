@@ -93,19 +93,32 @@ const Quotes = () => {
   const [availableCountries, setAvailableCountries] = useState<Array<{id: string, country_name: string, country_code: string}>>([]);
   const [activeTab, setActiveTab] = useState<'3d' | 'service'>('3d');
 
-  // Load countries
+  // Load countries and normalize current country value
   useEffect(() => {
+    let mounted = true;
+
     const loadCountries = async () => {
       const countries = await getAvailableCountries();
+      if (!mounted) return;
+
       setAvailableCountries(countries);
-      if (countries.length === 1) {
-        setCountry(countries[0].country_name);
-      } else if (countries.length > 0 && !country) {
-        setCountry(countries[0].country_name);
-      }
+      setCountry((currentCountry) => {
+        if (!countries.length) return currentCountry;
+
+        const matchedCountry = countries.find(
+          (c) => c.country_code === currentCountry || c.country_name === currentCountry
+        );
+
+        if (matchedCountry) return matchedCountry.country_name;
+        return currentCountry || countries[0].country_name;
+      });
     };
+
     loadCountries();
-  }, []);
+    return () => {
+      mounted = false;
+    };
+  }, [getAvailableCountries]);
 
   // Prefetch lazy components
   useEffect(() => {
@@ -117,26 +130,22 @@ const Quotes = () => {
   // Load user data
   useEffect(() => {
     const loadUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (user) {
         setIsAuthenticated(true);
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, email, phone, postal_code, country, address, city')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profile) {
           setCustomerName(profile.full_name || user.email || '');
           setCustomerEmail(profile.email || user.email || '');
           setPhone(profile.phone || '');
           setPostalCode(profile.postal_code || '');
-          // Convert country code from profile to country name for the Select
-          const profileCountry = profile.country || '';
-          const matchedCountry = availableCountries.find(
-            c => c.country_code === profileCountry || c.country_name === profileCountry
-          );
-          setCountry(matchedCountry?.country_name || profileCountry || (availableCountries[0]?.country_name || ''));
+          setCountry(profile.country || '');
           setAddress(profile.address || '');
           setCity(profile.city || '');
         } else {
@@ -149,7 +158,7 @@ const Quotes = () => {
     };
     loadUserData();
     filterColorsByMaterial(null);
-  }, []);
+  }, [filterColorsByMaterial]);
   
   // Calculate shipping
   useEffect(() => {

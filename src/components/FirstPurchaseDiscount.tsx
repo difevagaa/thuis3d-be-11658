@@ -17,7 +17,8 @@ export function FirstPurchaseDiscount() {
     // Don't show if dismissed
     if (sessionStorage.getItem("first_purchase_dismissed")) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     // Check if user has any orders

@@ -348,22 +348,30 @@ const Products = () => {
           )}
 
           {/* Products Grid - 2 columns mobile, 3-4 desktop */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-            {filteredProducts.map((product) => {
-              const firstImage = product.product_images?.find((img: any) => img.display_order === 0)?.image_url 
-                || product.product_images?.[0]?.image_url;
-              
-              return (
-                <ProductCard key={product.id} product={product} firstImage={firstImage} />
-              );
-            })}
-          </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center text-muted-foreground py-12">
-              <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">{t('noProducts')}</p>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                {filteredProducts.map((product) => {
+                  const firstImage = product.product_images?.find((img: any) => img.display_order === 0)?.image_url 
+                    || product.product_images?.[0]?.image_url;
+                  
+                  return (
+                    <ProductCard key={product.id} product={product} firstImage={firstImage} />
+                  );
+                })}
+              </div>
+
+              {filteredProducts.length === 0 && (
+                <div className="text-center text-muted-foreground py-12">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">{t('noProducts')}</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
