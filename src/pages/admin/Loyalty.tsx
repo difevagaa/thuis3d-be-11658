@@ -388,7 +388,7 @@ export default function Loyalty() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {pointsAdjustment.points_change > 0 ? "Añadir" : "Restar"} {Math.abs(pointsAdjustment.points_change)} puntos
+                    {pointsAdjustment.points_change > 0 ? t('admin:loyalty.add', 'Añadir') : t('admin:loyalty.subtract', 'Restar')} {Math.abs(pointsAdjustment.points_change)} {t('admin:loyalty.points', 'puntos')}
                   </p>
                 </div>
 

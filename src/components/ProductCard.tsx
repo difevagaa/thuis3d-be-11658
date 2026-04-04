@@ -47,8 +47,7 @@ export function ProductCard({ product, firstImage }: ProductCardProps) {
             {product.shipping_type === 'free' && (
               <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 flex items-center gap-1 bg-success text-success-foreground text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-md uppercase tracking-wide z-10 shadow-sm">
                 <TruckIcon className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                <span className="hidden sm:inline">{t('freeShipping')}</span>
-                <span className="sm:hidden">FREE</span>
+                <span>{t('freeShipping')}</span>
               </div>
             )}
 

@@ -98,7 +98,9 @@ const Quotes = () => {
     const loadCountries = async () => {
       const countries = await getAvailableCountries();
       setAvailableCountries(countries);
-      if (countries.length > 0 && !country) {
+      if (countries.length === 1) {
+        setCountry(countries[0].country_name);
+      } else if (countries.length > 0 && !country) {
         setCountry(countries[0].country_name);
       }
     };

@@ -353,7 +353,7 @@ export function SectionEditor({ section, onUpdate, onClose }: SectionEditorProps
                   ))}
                   {(!localContent.features || localContent.features.length === 0) && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No hay características. Haz clic en "Añadir" para crear una.
+                      {t('pageBuilder:common.noFeatures', 'No hay características. Haz clic en "Añadir" para crear una.')}
                     </p>
                   )}
                 </div>
