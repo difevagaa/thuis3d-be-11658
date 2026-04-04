@@ -13,5 +13,10 @@
   "translationManagement": "Vertaalbeheer",
   "translationQueue": "Vertaalwachtrij",
   "dynamicContent": "Dynamische Inhoud",
-  "translationSettings": "Vertaalinstellingen"
+  "translationSettings": "Vertaalinstellingen",
+  "loyalty": {
+    "add": "Toevoegen",
+    "subtract": "Aftrekken",
+    "points": "punten"
+  }
 }

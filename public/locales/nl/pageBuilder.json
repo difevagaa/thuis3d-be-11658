@@ -1,4 +1,8 @@
 {
+  "common": {
+    "viewMore": "Meer bekijken",
+    "noFeatures": "Geen kenmerken. Klik op \"Toevoegen\" om er een te maken."
+  },
   "pricing": {
     "featured": "Uitgelicht",
     "selectPlan": "Kies plan"

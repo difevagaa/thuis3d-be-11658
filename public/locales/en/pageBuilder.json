@@ -1,4 +1,8 @@
 {
+  "common": {
+    "viewMore": "View more",
+    "noFeatures": "No features. Click \"Add\" to create one."
+  },
   "pricing": {
     "featured": "Featured",
     "selectPlan": "Select plan"

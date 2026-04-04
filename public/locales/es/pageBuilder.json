@@ -1,4 +1,8 @@
 {
+  "common": {
+    "viewMore": "Ver más",
+    "noFeatures": "No hay características. Haz clic en \"Añadir\" para crear una."
+  },
   "pricing": {
     "featured": "Destacado",
     "selectPlan": "Seleccionar plan"

@@ -13,5 +13,10 @@
   "translationManagement": "Gestión de Traducciones",
   "translationQueue": "Cola de Traducción",
   "dynamicContent": "Contenido Dinámico",
-  "translationSettings": "Configuración de Traducción"
+  "translationSettings": "Configuración de Traducción",
+  "loyalty": {
+    "add": "Añadir",
+    "subtract": "Restar",
+    "points": "puntos"
+  }
 }

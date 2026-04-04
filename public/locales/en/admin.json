@@ -13,5 +13,10 @@
   "translationManagement": "Translation Management",
   "translationQueue": "Translation Queue",
   "dynamicContent": "Dynamic Content",
-  "translationSettings": "Translation Settings"
+  "translationSettings": "Translation Settings",
+  "loyalty": {
+    "add": "Add",
+    "subtract": "Subtract",
+    "points": "points"
+  }
 }
