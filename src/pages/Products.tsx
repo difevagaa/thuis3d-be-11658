@@ -34,6 +34,7 @@ const Products = () => {
   const [productCodeSearch, setProductCodeSearch] = useState<string>("");
   const [searchedByCode, setSearchedByCode] = useState<boolean>(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const showMobileFilters = isMobile || isTablet;
 
@@ -65,6 +66,7 @@ const Products = () => {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("*, product_roles(role), product_images(image_url, display_order)")
@@ -82,6 +84,8 @@ const Products = () => {
       setMaterials(materialsRes.data || []);
     } catch (error) {
       toast.error(t('errors.loadData', 'Error loading data'));
+    } finally {
+      setLoading(false);
     }
   };
 
