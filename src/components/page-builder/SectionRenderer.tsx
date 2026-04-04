@@ -1320,7 +1320,8 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
       let userRoles: string[] = [];
       
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (user) {
           const { data: rolesData } = await supabase
             .from('user_roles')
@@ -1331,7 +1332,6 @@ function ProductsCarouselSection({ section }: { section: SectionData }) {
             .filter(role => role.length > 0);
         }
       } catch (authError) {
-        // User not authenticated, continue with empty roles
         logger.info('User not authenticated, showing public products only');
       }
       

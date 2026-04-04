@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 export interface PageBuilderSectionData {
   id: string;
@@ -9,7 +10,6 @@ export interface PageBuilderSectionData {
   settings: any;
   content: any;
   styles: any;
-  // Used for ordering in renderer
   display_order?: number;
 }
 
@@ -34,20 +34,32 @@ function withTimeout<T>(promiseLike: PromiseLike<T>, ms: number, label: string):
   });
 }
 
-/**
- * Loads Page Builder sections for a given page key.
- * Root-cause fix: avoid dynamic import (chunk fetch can hang on some clients) and guarantee loading resolves.
- */
 export function usePageSections(pageKey: string) {
   const [sections, setSections] = useState<PageBuilderSectionData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    const cacheKey = `page_sections_${pageKey}`;
+    let hasCache = false;
+
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setSections(parsed);
+          setLoading(false);
+          hasCache = true;
+        }
+      }
+    } catch (error) {
+      logger.warn('[usePageSections] Invalid cache', { pageKey, error });
+    }
 
     async function loadSections() {
       const startedAt = performance.now();
-      setLoading(true);
+      if (!hasCache) setLoading(true);
 
       try {
         const pageRes = await withTimeout(
@@ -64,10 +76,8 @@ export function usePageSections(pageKey: string) {
         if (cancelled) return;
 
         if (pageRes.error || !pageRes.data?.id) {
-          if (pageRes.error) {
-            console.error("[usePageSections] page query error:", pageRes.error);
-          }
-          setSections([]);
+          if (pageRes.error) logger.error("[usePageSections] page query error", { pageKey, error: pageRes.error });
+          if (!hasCache) setSections([]);
           return;
         }
 
@@ -85,21 +95,21 @@ export function usePageSections(pageKey: string) {
         if (cancelled) return;
 
         if (sectionsRes.error) {
-          console.error("[usePageSections] sections query error:", sectionsRes.error);
-          setSections([]);
+          logger.error("[usePageSections] sections query error", { pageKey, error: sectionsRes.error });
+          if (!hasCache) setSections([]);
           return;
         }
 
-        setSections((sectionsRes.data as PageBuilderSectionData[]) || []);
+        const freshSections = (sectionsRes.data as PageBuilderSectionData[]) || [];
+        setSections(freshSections);
+        localStorage.setItem(cacheKey, JSON.stringify(freshSections));
       } catch (e) {
-        console.error("[usePageSections] Error loading sections:", e);
-        if (!cancelled) setSections([]);
+        logger.error("[usePageSections] Error loading sections", { pageKey, error: e });
+        if (!cancelled && !hasCache) setSections([]);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-          const ms = Math.round(performance.now() - startedAt);
-          console.log(`[usePageSections] loaded '${pageKey}' in ${ms}ms`);
-        }
+        if (!cancelled && !hasCache) setLoading(false);
+        const ms = Math.round(performance.now() - startedAt);
+        logger.info(`[usePageSections] loaded '${pageKey}' in ${ms}ms`);
       }
     }
 

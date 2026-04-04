@@ -23,8 +23,12 @@ export function WishlistButton({ productId, size = "icon", className, variant = 
   }, [productId]);
 
   const checkWishlist = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) {
+      setIsWished(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("wishlists" as any)
@@ -40,7 +44,8 @@ export function WishlistButton({ productId, size = "icon", className, variant = 
     e.preventDefault();
     e.stopPropagation();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       toast.error(t('mustLogin'));
       return;

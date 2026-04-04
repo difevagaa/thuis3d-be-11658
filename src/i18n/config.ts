@@ -56,28 +56,37 @@ i18n
 // Ensure we have a valid language after init
 const ensureValidLanguage = () => {
   const currentLang = i18n.language;
+  const storedLang = localStorage.getItem('i18nextLng');
+  const hasValidStoredLanguage = !!storedLang && ['es', 'en', 'nl'].includes(storedLang);
+
   if (!currentLang || currentLang === 'undefined' || !['es', 'en', 'nl'].includes(currentLang)) {
     const browserLang = navigator.language || navigator.languages?.[0];
     const mappedLang = mapToSupportedLanguage(browserLang);
     i18n.changeLanguage(mappedLang);
     localStorage.setItem('i18nextLng', mappedLang);
     console.log('[i18n] Fixed invalid language, set to:', mappedLang);
-  } else {
-    // Sync preferred_language from profile when user is logged in
-    import('@/integrations/supabase/client').then(({ supabase }) => {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          supabase.from('profiles').select('preferred_language').eq('id', user.id).maybeSingle().then(({ data }) => {
-            if (data?.preferred_language && ['es', 'en', 'nl'].includes(data.preferred_language) && data.preferred_language !== i18n.language) {
-              i18n.changeLanguage(data.preferred_language);
-              localStorage.setItem('i18nextLng', data.preferred_language);
-              console.log('[i18n] Synced language from profile:', data.preferred_language);
-            }
-          });
+    return;
+  }
+
+  // Only sync profile language when there is no explicit local preference stored.
+  if (hasValidStoredLanguage) {
+    return;
+  }
+
+  import('@/integrations/supabase/client').then(({ supabase }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
+      if (!user) return;
+
+      supabase.from('profiles').select('preferred_language').eq('id', user.id).maybeSingle().then(({ data }) => {
+        if (data?.preferred_language && ['es', 'en', 'nl'].includes(data.preferred_language) && data.preferred_language !== i18n.language) {
+          i18n.changeLanguage(data.preferred_language);
+          localStorage.setItem('i18nextLng', data.preferred_language);
+          console.log('[i18n] Synced language from profile:', data.preferred_language);
         }
       });
-    }).catch(() => { /* silent */ });
-  }
+    });
+  }).catch(() => { /* silent */ });
 };
 
 // Run after a short delay to ensure i18n is fully initialized
