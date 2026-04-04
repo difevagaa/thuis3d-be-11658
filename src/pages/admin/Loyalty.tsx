@@ -19,6 +19,7 @@ import UserSearchSelector from "@/components/admin/UserSearchSelector";
 
 export default function Loyalty() {
   const [settings, setSettings] = useState<any>(null);
+  const { t } = useTranslation(['admin']);
   const [rewards, setRewards] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
