@@ -178,7 +178,7 @@ export function PageBuilderSettings({ section, onUpdate }: PageBuilderSettingsPr
                           <Input
                             value={section.content?.buttonText || ''}
                             onChange={(e) => handleContentChange('buttonText', e.target.value)}
-                            placeholder="Ver más"
+                            placeholder={t('pageBuilder:common.viewMore', 'Ver más')}
                           />
                         </div>
                         <div className="space-y-2">

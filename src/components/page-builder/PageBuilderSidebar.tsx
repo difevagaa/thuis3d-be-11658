@@ -372,7 +372,7 @@ export function PageBuilderSidebar({
                         <Input
                           value={selectedSection.content?.buttonText || ''}
                           onChange={(e) => handleContentChange('buttonText', e.target.value)}
-                          placeholder="Ver más"
+                          placeholder={t('pageBuilder:common.viewMore', 'Ver más')}
                           className="h-8 text-xs"
                         />
                       </div>

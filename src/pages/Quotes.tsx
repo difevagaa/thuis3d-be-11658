@@ -98,7 +98,9 @@ const Quotes = () => {
     const loadCountries = async () => {
       const countries = await getAvailableCountries();
       setAvailableCountries(countries);
-      if (countries.length > 0 && !country) {
+      if (countries.length === 1) {
+        setCountry(countries[0].country_name);
+      } else if (countries.length > 0 && !country) {
         setCountry(countries[0].country_name);
       }
     };
@@ -129,7 +131,12 @@ const Quotes = () => {
           setCustomerEmail(profile.email || user.email || '');
           setPhone(profile.phone || '');
           setPostalCode(profile.postal_code || '');
-          setCountry(profile.country || (availableCountries[0]?.country_name || ''));
+          // Convert country code from profile to country name for the Select
+          const profileCountry = profile.country || '';
+          const matchedCountry = availableCountries.find(
+            c => c.country_code === profileCountry || c.country_name === profileCountry
+          );
+          setCountry(matchedCountry?.country_name || profileCountry || (availableCountries[0]?.country_name || ''));
           setAddress(profile.address || '');
           setCity(profile.city || '');
         } else {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import UserSearchSelector from "@/components/admin/UserSearchSelector";
 
 export default function Loyalty() {
   const [settings, setSettings] = useState<any>(null);
+  const { t } = useTranslation(['admin']);
   const [rewards, setRewards] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
@@ -388,7 +390,7 @@ export default function Loyalty() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {pointsAdjustment.points_change > 0 ? "Añadir" : "Restar"} {Math.abs(pointsAdjustment.points_change)} puntos
+                    {pointsAdjustment.points_change > 0 ? t('admin:loyalty.add', 'Añadir') : t('admin:loyalty.subtract', 'Restar')} {Math.abs(pointsAdjustment.points_change)} {t('admin:loyalty.points', 'puntos')}
                   </p>
                 </div>
 
